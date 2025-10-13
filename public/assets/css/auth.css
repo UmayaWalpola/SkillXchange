@@ -3,9 +3,10 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 80vh;
+  min-height: 100vh;
   background: var(--blue-bg);
   padding: 2rem;
+  margin-top: 100px;
 }
 
 /* Card */
@@ -13,125 +14,232 @@
   display: flex;
   background: var(--white-bg);
   border-radius: 20px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   width: 100%;
   max-width: 900px;
   overflow: hidden;
+  min-height: 500px;
 }
 
 /* Left side (logo or image) */
 .login-left {
   flex: 1;
-  background: #000;
+  background: linear-gradient(135deg, var(--primary-blue), var(--accent-blue));
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 2rem;
+  padding: 3rem;
 }
 
 .login-left img {
-  max-width: 100%;
+  max-width: 90%;
   height: auto;
+  object-fit: contain;
 }
 
 /* Right side (forms) */
 .login-right {
   flex: 1;
-  padding: 3rem 2rem;
-  text-align: center;
+  padding: 2rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* Headings */
 .login-right h2 {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
+  font-size: 2.2rem;
+  margin-bottom: 0.25rem;
   color: var(--dark-bg);
+  font-weight: 700;
 }
 
 .login-right h3 {
-  font-size: 1.2rem;
-  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
   color: var(--primary-blue);
+  font-weight: 600;
 }
 
 .login-right p {
-  font-size: 1rem;
+  font-size: 0.95rem;
   margin-bottom: 1.5rem;
   color: var(--primary-blue);
+  line-height: 1.5;
 }
 
 /* Tabs */
 .signup-tabs {
   display: flex;
   justify-content: center;
-  margin-bottom: 1.5rem;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid var(--blue-bg);
+  padding-bottom: 1rem;
 }
 
 .tab-btn {
   flex: 1;
-  padding: 0.75rem 1rem;
-  background: var(--white-bg);
-  border: 1px solid var(--primary-blue);
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  border: 2px solid transparent;
+  border-bottom: 3px solid transparent;
   cursor: pointer;
-  font-weight: bold;
-  transition: all 0.3s;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--dark-bg);
+  transition: all 0.3s ease;
+  text-transform: capitalize;
+}
+
+.tab-btn:hover {
+  color: var(--primary-blue);
 }
 
 .tab-btn.active {
-  background: var(--primary-blue);
-  color: var(--white-bg);
+  color: var(--primary-blue);
+  border-bottom-color: var(--primary-blue);
 }
 
 /* Form container */
 .form-container form {
   display: none;
-  text-align: left;
 }
 
 .form-container form.active {
   display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .form-container .quote {
   font-style: italic;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   color: var(--primary-blue);
+  font-size: 0.9rem;
+  line-height: 1.6;
 }
 
 /* Form inputs */
 .form-container label {
   display: block;
-  margin-bottom: 0.25rem;
-  font-weight: 500;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
   color: var(--dark-bg);
+  font-size: 0.9rem;
 }
 
 .form-container input {
   width: 100%;
-  padding: 0.5rem 0.75rem;
-  margin-bottom: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+  border: 2px solid var(--blue-bg);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  background: var(--white-bg);
+  color: var(--dark-bg);
+  font-family: inherit;
+}
+
+.form-container input:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(101, 131, 150, 0.1);
+  transform: translateY(-2px);
+}
+
+.form-container input:hover:not(:focus) {
+  border-color: var(--accent-blue);
 }
 
 /* File input */
 .form-container input[type="file"] {
-  padding: 0.3rem;
+  padding: 0.5rem;
+  cursor: pointer;
+}
+
+.form-container input[type="file"]::file-selector-button {
+  background: var(--primary-blue);
+  color: var(--white-bg);
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.form-container input[type="file"]::file-selector-button:hover {
+  background: var(--accent-blue);
+  color: var(--dark-bg);
 }
 
 /* Buttons */
 .form-container button {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.9rem 1.5rem;
+  margin-top: 1rem;
   background: var(--primary-blue);
   color: var(--white-bg);
   border: none;
-  border-radius: 8px;
-  font-weight: bold;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 1rem;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .form-container button:hover {
   background: var(--accent-blue);
+  color: var(--dark-bg);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(101, 131, 150, 0.3);
+}
+
+.form-container button:active {
+  transform: translateY(0);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .login-card {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .login-left {
+    padding: 2rem;
+    min-height: 200px;
+  }
+
+  .login-right {
+    padding: 2rem 1.5rem;
+    max-height: none;
+  }
+
+  .login-right h2 {
+    font-size: 1.8rem;
+  }
+
+  .signup-tabs {
+    margin-bottom: 1.5rem;
+  }
+
+  .tab-btn {
+    padding: 0.65rem 1rem;
+    font-size: 0.85rem;
+  }
 }

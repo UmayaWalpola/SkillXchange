@@ -10,7 +10,7 @@ RewriteRule ^(.+)$ index.php?url=$1 [QSA,L]
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteBase /project/public
+  RewriteBase /SkillXchange/public
 
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
