@@ -13,7 +13,7 @@
 <header class="header header-user">
     <nav class="nav-container">
         <div class="logo-section">
-            <img src="<?= URLROOT; ?>/assets/images/logo.png" alt="SkillXchange Logo" class="logo-image">
+            <img src="<?= URLROOT; ?>/assets/images/logo-new.png" alt="SkillXchange Logo" class="logo-image">
         </div>
         <div class="auth-section">
             <a href="<?= URLROOT ?>/users/userprofile" class="btn btn-profile">

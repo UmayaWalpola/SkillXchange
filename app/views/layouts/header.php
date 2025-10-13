@@ -13,7 +13,7 @@
 <header class="header" id="header">
     <nav class="nav-container">
         <div class="logo-section">
-            <img src="<?= URLROOT; ?>/assets/images/logo.png" alt="SkillXchange Logo" class="logo-image">
+            <img src="<?= URLROOT; ?>/assets/images/logo-new.png" alt="SkillXchange Logo" class="logo-image">
         </div>
         <div class="nav-menu">
             <a href="#how" class="nav-link">How it Works</a>

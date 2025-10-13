@@ -90,7 +90,7 @@ body {
 
 .logo-section { flex: 0 0 auto; }
 
-.logo-image { height: 85px; width: 320px; }
+.logo-image { height: 80px; width: auto; object-fit: contain; }
 
 .nav-menu {
   flex: 1;
