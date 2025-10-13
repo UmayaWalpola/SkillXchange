@@ -1,0 +1,19 @@
+Options -Indexes
+RewriteEngine On
+
+# Allow direct access to files and directories that actually exist
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Only redirect if the file/directory doesn't exist
+RewriteRule ^(.+)$ index.php?url=$1 [QSA,L]
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /project/public
+
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+
+  RewriteRule ^(.+)$ index.php?url=$1 [QSA,L]
+</IfModule>

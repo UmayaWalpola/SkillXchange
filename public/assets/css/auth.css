@@ -1,0 +1,137 @@
+/* Container */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+  background: var(--blue-bg);
+  padding: 2rem;
+}
+
+/* Card */
+.login-card {
+  display: flex;
+  background: var(--white-bg);
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 900px;
+  overflow: hidden;
+}
+
+/* Left side (logo or image) */
+.login-left {
+  flex: 1;
+  background: #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.login-left img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Right side (forms) */
+.login-right {
+  flex: 1;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+/* Headings */
+.login-right h2 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  color: var(--dark-bg);
+}
+
+.login-right h3 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: var(--primary-blue);
+}
+
+.login-right p {
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  color: var(--primary-blue);
+}
+
+/* Tabs */
+.signup-tabs {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background: var(--white-bg);
+  border: 1px solid var(--primary-blue);
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s;
+}
+
+.tab-btn.active {
+  background: var(--primary-blue);
+  color: var(--white-bg);
+}
+
+/* Form container */
+.form-container form {
+  display: none;
+  text-align: left;
+}
+
+.form-container form.active {
+  display: block;
+}
+
+.form-container .quote {
+  font-style: italic;
+  margin-bottom: 1rem;
+  color: var(--primary-blue);
+}
+
+/* Form inputs */
+.form-container label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+  color: var(--dark-bg);
+}
+
+.form-container input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+/* File input */
+.form-container input[type="file"] {
+  padding: 0.3rem;
+}
+
+/* Buttons */
+.form-container button {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--primary-blue);
+  color: var(--white-bg);
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.form-container button:hover {
+  background: var(--accent-blue);
+}
