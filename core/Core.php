@@ -8,10 +8,10 @@ class Core {
         $url = $this->getUrl();
 
         // Look in controllers folder for controller
-        if(file_exists('../app/controllers/' . ucwords($url[0]) . 'Controller.php')) {
-            $this->currentController = ucwords($url[0]) . 'Controller';
-            unset($url[0]);
-        }
+    if(isset($url[0]) && file_exists('../app/controllers/' . ucwords($url[0]) . 'Controller.php')) {
+        $this->currentController = ucwords($url[0]) . 'Controller';
+        unset($url[0]);
+}
 
         require_once '../app/controllers/' . $this->currentController . '.php';
         $this->currentController = new $this->currentController;

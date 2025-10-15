@@ -6,11 +6,10 @@
     <title>SkillXchange - Dashboard</title>
     <link rel="stylesheet" href="<?= URLROOT; ?>/assets/css/global.css">
     <link rel="stylesheet" href="<?= URLROOT; ?>/assets/css/profile.css">
-    <link rel="stylesheet" href="<?= URLROOT ?>/public/assets/css/auth.css">
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
 </head>
 <body>
-<header class="header header-user">
+    <header class="header" style="left: 250px !important; width: calc(100% - 250px) !important;">
     <nav class="nav-container">
         <div class="logo-section">
             <img src="<?= URLROOT; ?>/assets/images/logo-new.png" alt="SkillXchange Logo" class="logo-image">

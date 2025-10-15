@@ -1,0 +1,234 @@
+/* Quiz-specific styles only */
+
+.dashboard-main {
+    background: var(--white-bg);
+    min-height: 100vh;
+}
+
+.quiz-container {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 10px 40px;
+    background: var(--white-bg);
+}
+
+.quiz-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-top: 0px;
+}
+
+.quiz-header h1 {
+    color: var(--primary-blue);
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+.quiz-header p {
+    color: var(--dark-bg);
+    opacity: 0.7;
+    font-size: 1.1rem;
+}
+
+/* Make sure content doesn't get cut off */
+.quiz-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 25px;
+    margin-top: 30px;
+    width: 100%;
+}
+
+/* Search Section */
+.search-section {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.search-bar {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 15px 20px;
+    border: 2px solid var(--blue-bg);
+    border-radius: 25px;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.3s;
+}
+
+.search-input:focus {
+    border-color: var(--primary-blue);
+}
+
+/* Filters */
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.filter-btn {
+    padding: 10px 20px;
+    border: 2px solid var(--blue-bg);
+    background: white;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 14px;
+    color: var(--primary-blue);
+}
+
+.filter-btn:hover {
+    border-color: var(--primary-blue);
+    background-color: var(--blue-bg);
+}
+
+.filter-btn.active {
+    background: var(--primary-blue);
+    color: white;
+    border-color: var(--primary-blue);
+}
+
+/* Toggle Tabs */
+.toggle-tabs {
+    display: flex;
+    background: var(--blue-bg);
+    border-radius: 25px;
+    padding: 5px;
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    background: transparent;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 500;
+    color: var(--primary-blue);
+}
+
+.tab-btn.active {
+    background: white;
+    color: var(--primary-blue);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Quiz Grid */
+.quiz-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 30px;
+    margin-top: 30px;
+}
+
+/* Quiz Card */
+.quiz-card {
+    background: white;
+    border-radius: 15px;
+    padding: 28px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    position: relative;
+    overflow: hidden;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border: 1px solid var(--blue-bg);
+}
+
+.quiz-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 8px 25px rgba(101, 131, 150, 0.15);
+    border-color: var(--accent-blue);
+}
+
+.quiz-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.quiz-info h3 {
+    font-size: 1.2rem;
+    color: var(--primary-blue);
+    margin-bottom: 10px;
+}
+
+.quiz-description {
+    color: var(--dark-bg);
+    line-height: 1.5;
+    margin: 15px 0;
+    flex-grow: 1;
+}
+
+/* Quiz Actions */
+.quiz-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--blue-bg);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.quiz-actions-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Status badges */
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.status-completed { color: #22c55e; }
+.status-saved { color: var(--primary-blue); }
+.status-not-started { color: var(--dark-bg); opacity: 0.6; }
+
+/* No Results */
+.no-results {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--primary-blue);
+}
+
+.no-results h3 {
+    margin-bottom: 10px;
+    color: var(--primary-blue);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .quiz-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .filters {
+        justify-content: center;
+    }
+    
+    .toggle-tabs {
+        flex-direction: column;
+        gap: 5px;
+    }
+}

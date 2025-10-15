@@ -3,6 +3,12 @@
 
 class UsersController extends Controller {
 
+    public function index() {
+        // Redirect to home page
+        header('Location: /pages/index');
+        exit;
+    }
+
     // Show regular user profile
     public function userprofile($userId = null) {
         if (!$userId) {
@@ -35,7 +41,7 @@ class UsersController extends Controller {
             'activity' => $userActivity
         ];
 
-        $this->view('users/userprofile', $data);
+        $this->view('users/profile', $data);
     }
 
     // Show admin profile

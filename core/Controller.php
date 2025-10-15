@@ -1,4 +1,8 @@
 <?php
+// Show all errors for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 // core/Controller.php
 class Controller {
 
@@ -23,6 +27,5 @@ class Controller {
         die("View $view not found at: " . $viewPath);
     }
 }
-
 }
 

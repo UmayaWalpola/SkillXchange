@@ -1,15 +1,16 @@
 <?php require_once "../app/views/layouts/header_user.php"; ?>
+<?php require_once "../app/views/layouts/usersidebar.php"; ?>
 
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/profile.css">
 
+<main class="site-main">
 <div class="dashboard-container">
-    <?php require_once "../app/views/layouts/usersidebar.php"; ?>
 
-    <main class="dashboard-main">
+    <div class="dashboard-main">
         <!-- Profile Content -->
         <div class="profile-content">
-            <!-- Profile Header -->
+            <!-- Profile Header - SHORTENED -->
             <div class="profile-header">
                 <button class="edit-profile-btn">Edit details</button>
                 <div class="profile-info">
@@ -35,54 +36,46 @@
                         <span class="stat-number"><?= $data['user']['skills_learning']; ?></span>
                         <span class="stat-label">Skills Learning</span>
                     </div>
-                    <div class="stat-item">
-                        <span class="stat-number"><?= $data['user']['hours_exchanged']; ?></span>
-                        <span class="stat-label">Hours Exchanged</span>
-                    </div>
                 </div>
-
-                  <!-- Badges Section -->
-                <section class="profile-section">
-                    <div class="section-header">
-                        <h2 class="section-title">Achievements & Badges</h2>
-                        <a href="#" class="view-all-btn">View all badges</a>
-                    </div>
-                    <div class="badges-grid">
-                        <?php foreach ($data['badges'] as $badge): ?>
-                            <div class="badge-item">
-                                <div class="badge-icon"><?= $badge['icon']; ?></div>
-                                <div class="badge-name"><?= htmlspecialchars($badge['name']); ?></div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                </section>
             </div>
 
 
             <!-- Profile Body -->
             <div class="profile-body">
-                <!-- Skills Section -->
+                <!-- Skills Section - SPLIT INTO TWO -->
                 <section class="profile-section">
                     <div class="section-header">
                         <h2 class="section-title">Skills & Expertise</h2>
                         <a href="#" class="view-all-btn">View all skills</a>
                     </div>
-                    <div class="skills-grid">
-                        <div class="skills-category">
-                            <h3>Teaches:</h3>
-                            <div class="skills-list">
-                                <?php foreach ($data['skills']['teaches'] as $skill): ?>
-                                    <span class="skill-tag"><?= htmlspecialchars($skill); ?></span>
-                                <?php endforeach; ?>
-                            </div>
+                    
+                    <!-- Teaching Skills -->
+                    <div class="skills-category-section">
+                        <h3 class="skills-category-title">Teaching Skills</h3>
+                        <div class="skills-container">
+                            <?php foreach ($data['skills']['teaches'] as $skill): ?>
+                                <div class="skill-item">
+                                    <div class="skill-name"><?= htmlspecialchars($skill['name']); ?></div>
+                                    <span class="badge badge-<?= strtolower($skill['level']); ?>">
+                                        <?= htmlspecialchars($skill['level']); ?>
+                                    </span>
+                                </div>
+                            <?php endforeach; ?>
                         </div>
-                        <div class="skills-category">
-                            <h3>Learns:</h3>
-                            <div class="skills-list">
-                                <?php foreach ($data['skills']['learns'] as $skill): ?>
-                                    <span class="skill-tag learning"><?= htmlspecialchars($skill); ?></span>
-                                <?php endforeach; ?>
-                            </div>
+                    </div>
+
+                    <!-- Learning Skills -->
+                    <div class="skills-category-section">
+                        <h3 class="skills-category-title">Learning Skills</h3>
+                        <div class="skills-container">
+                            <?php foreach ($data['skills']['learns'] as $skill): ?>
+                                <div class="skill-item">
+                                    <div class="skill-name"><?= htmlspecialchars($skill['name']); ?></div>
+                                    <span class="badge badge-<?= strtolower($skill['level']); ?>">
+                                        <?= htmlspecialchars($skill['level']); ?>
+                                    </span>
+                                </div>
+                            <?php endforeach; ?>
                         </div>
                     </div>
                 </section>
@@ -153,25 +146,13 @@
                     </div>
                 </section>
 
-                <!-- Recent Activity -->
-                <section class="profile-section">
-                    <div class="section-header">
-                        <h2 class="section-title">Recent Activity</h2>
-                    </div>
-                    <div class="activity-timeline">
-                        <?php foreach ($data['activity'] as $activity): ?>
-                            <div class="activity-item">
-                                <div class="activity-date"><?= htmlspecialchars($activity['date']); ?></div>
-                                <div class="activity-description"><?= htmlspecialchars($activity['description']); ?></div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                </section>
+                <!-- REMOVED: Recent Activity section -->
             </div>
         </div>
-    </main>
+    </div>
 </div>
+</main>
 
 <script src="<?= URLROOT ?>/assets/js/profile.js" defer></script>
 
-<?php require_once "../app/views/layouts/footer.php"; ?>
+<?php require_once "../app/views/layouts/footer_user.php"; ?>
