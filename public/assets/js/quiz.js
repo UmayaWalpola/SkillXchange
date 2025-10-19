@@ -1,71 +1,7 @@
-// Quiz data
-let quizzes = [
-    {
-        id: 1,
-        title: 'Programming Fundamentals',
-        description: 'Explore core programming concepts using Python, JavaScript, or Java—covering variables, loops, functions, OOP, and error handling.',
-        category: 'Programming',
-        difficulty: 'Beginner',
-        status: 'not_started'
-    },
-    {
-        id: 2,
-        title: 'Frontend Development',
-        description: 'Dive into HTML, CSS, and JavaScript fundamentals, plus component-based frameworks like React or Vue and state management tools.',
-        category: 'Frontend',
-        difficulty: 'Advanced',
-        status: 'completed'
-    },
-    {
-        id: 3,
-        title: 'System Design & Architecture',
-        description: 'Understand microservices, caching, scalability, and architectural trade-offs like the CAP theorem.',
-        category: 'System',
-        difficulty: 'Intermediate',
-        status: 'saved'
-    },
-    {
-        id: 4,
-        title: 'UI/UX Design',
-        description: 'Master wireframing, user flows, accessibility, responsive layouts, and palette-driven design systems.',
-        category: 'UI/UX',
-        difficulty: 'Intermediate',
-        status: 'not_started'
-    },
-    {
-        id: 5,
-        title: 'Database Design & Management',
-        description: 'Learn SQL and NoSQL fundamentals, normalization, indexing, ER modeling, and query optimization.',
-        category: 'Database',
-        difficulty: 'Advanced',
-        status: 'saved',
-        isPremium: true
-    },
-    {
-        id: 6,
-        title: 'Cybersecurity Basics',
-        description: 'Cover authentication, secure coding, encryption, and role-based access control with threat modeling.',
-        category: 'Cyber',
-        difficulty: 'Beginner',
-        status: 'completed'
-    },
-    {
-        id: 7,
-        title: 'DevOps & Deployment',
-        description: 'Build CI/CD pipelines, work with Docker, and deploy to cloud platforms like Vercel, Netlify, or AWS.',
-        category: 'Devops',
-        difficulty: 'Advanced',
-        status: 'not_started'
-    },
-    {
-        id: 8,
-        title: 'Version Control & Collaboration',
-        description: 'Master Git workflows, branching strategies, pull requests, and collaborative code reviews.',
-        category: 'Version Control',
-        difficulty: 'Intermediate',
-        status: 'not_started'
-    }
-];
+// Get data from HTML data attributes
+const quizDataElement = document.getElementById('quiz-data');
+const quizzes = JSON.parse(quizDataElement.dataset.quizzes);
+const urlRoot = quizDataElement.dataset.urlroot;
 
 // Current filter state
 let currentFilter = { 
@@ -114,12 +50,7 @@ function toggleSave(quizId) {
 }
 
 function startQuiz(quizId) {
-    const quiz = quizzes.find(q => q.id === quizId);
-    if (quiz) {
-        quiz.status = 'completed';
-        renderQuizzes();
-        alert(`Starting quiz: ${quiz.title}`);
-    }
+    window.location.href = urlRoot + '/userdashboard/takeQuiz/' + quizId;
 }
 
 function getStatusText(status) {
