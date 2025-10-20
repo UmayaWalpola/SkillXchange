@@ -5,78 +5,157 @@ class AuthController extends Controller {
 
     public function __construct() {
         $this->userModel = $this->model('User');
-        session_start();
+        // session_start() removed - already in config.php
     }
 
-    // 🔹 Show registration page
+    // Show registration page
     public function register() {
-        $this->view('auth/register');
+        $data = [
+            'errors' => [],
+            'success' => ''
+        ];
+        $this->view('auth/register', $data);
     }
 
-    // 🔹 Register Organization
+    // Register Organization
     public function registerOrganization() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $name = trim($_POST['org-name']);
-            $email = trim($_POST['org-email']);
-            $password = $_POST['org-password'];
-            $confirm = $_POST['org-password-confirm'];
-            $file = $_FILES['org-cert'];
+            $errors = [];
+            
+            $name = trim($_POST['org-name'] ?? '');
+            $email = trim($_POST['org-email'] ?? '');
+            $password = $_POST['org-password'] ?? '';
+            $confirm = $_POST['org-password-confirm'] ?? '';
+            $file = $_FILES['org-cert'] ?? null;
 
+            // Validation
+            if (empty($name)) $errors[] = "Organization name is required.";
+            if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $errors[] = "Valid email is required.";
+            }
+            if (strlen($password) < 8) {
+                $errors[] = "Password must be at least 8 characters.";
+            }
             if ($password !== $confirm) {
-                echo "Passwords do not match.";
-                return;
+                $errors[] = "Passwords do not match.";
             }
 
-            // Handle file upload
+            // Handle file upload with validation
             $filePath = null;
-            if ($file['error'] === 0) {
-                $uploadDir = '../public/uploads/org_certs/';
-                if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+            if ($file && $file['error'] === 0) {
+                $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+                $maxSize = 5 * 1024 * 1024; // 5MB
+                
+                if (!in_array($file['type'], $allowedTypes)) {
+                    $errors[] = "Only PDF, JPG, and PNG files are allowed.";
+                }
+                if ($file['size'] > $maxSize) {
+                    $errors[] = "File size must not exceed 5MB.";
+                }
+                
+                if (empty($errors)) {
+                    $uploadDir = '../public/uploads/org_certs/';
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0755, true);
+                    }
 
-                $fileName = uniqid() . "_" . basename($file['name']);
-                $filePath = $uploadDir . $fileName;
-                move_uploaded_file($file['tmp_name'], $filePath);
-            }
-
-            // Register organization
-            if ($this->userModel->registerOrganization($name, $email, $password, $filePath)) {
-                echo "✅ Organization registered successfully!";
+                    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+                    $fileName = uniqid('org_', true) . '.' . $extension;
+                    $filePath = $uploadDir . $fileName;
+                    
+                    if (!move_uploaded_file($file['tmp_name'], $filePath)) {
+                        $errors[] = "Failed to upload certificate.";
+                        $filePath = null;
+                    }
+                }
             } else {
-                echo "❌ Registration failed.";
+                $errors[] = "Certificate file is required.";
             }
+
+            // Register if no errors
+            if (empty($errors)) {
+                if ($this->userModel->registerOrganization($name, $email, $password, $filePath)) {
+                    $_SESSION['success'] = "Organization registered successfully! Please login.";
+                    header("Location: " . URLROOT . "/auth/login");
+                    exit;
+                } else {
+                    $errors[] = "Registration failed. Email may already be in use.";
+                    // Delete uploaded file if registration failed
+                    if ($filePath && file_exists($filePath)) {
+                        unlink($filePath);
+                    }
+                }
+            }
+
+            // Show errors
+            $data = [
+                'errors' => $errors,
+                'old' => $_POST
+            ];
+            $this->view('auth/register', $data);
         } else {
-            $this->view('auth/register');
+            $this->register();
         }
     }
 
-    // 🔹 Register Individual
+    // Register Individual
     public function registerIndividual() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $name = trim($_POST['ind-fullname']);
-            $email = trim($_POST['ind-email']);
-            $password = $_POST['ind-password'];
-            $confirm = $_POST['ind-password-confirm'];
+            $errors = [];
+            
+            $name = trim($_POST['ind-fullname'] ?? '');
+            $email = trim($_POST['ind-email'] ?? '');
+            $password = $_POST['ind-password'] ?? '';
+            $confirm = $_POST['ind-password-confirm'] ?? '';
 
+            // Validation
+            if (empty($name)) $errors[] = "Full name is required.";
+            if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $errors[] = "Valid email is required.";
+            }
+            if (strlen($password) < 8) {
+                $errors[] = "Password must be at least 8 characters.";
+            }
             if ($password !== $confirm) {
-                echo "Passwords do not match.";
-                return;
+                $errors[] = "Passwords do not match.";
             }
 
-            if ($this->userModel->registerIndividual($name, $email, $password)) {
-                echo "✅ Individual registered successfully!";
-            } else {
-                echo "❌ Registration failed.";
+            // Register if no errors
+            if (empty($errors)) {
+                if ($this->userModel->registerIndividual($name, $email, $password)) {
+                    $_SESSION['success'] = "Registration successful! Please login.";
+                    header("Location: " . URLROOT . "/auth/login");
+                    exit;
+                } else {
+                    $errors[] = "Registration failed. Email may already be in use.";
+                }
             }
+
+            // Show errors
+            $data = [
+                'errors' => $errors,
+                'old' => $_POST
+            ];
+            $this->view('auth/register', $data);
         } else {
-            $this->view('auth/register');
+            $this->register();
         }
     }
 
-    // 🔹 Show login page
+    // Show login page
     public function login() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $email = trim($_POST['email']);
-            $password = $_POST['password'];
+            $email = trim($_POST['email'] ?? '');
+            $password = $_POST['password'] ?? '';
+
+            if (empty($email) || empty($password)) {
+                $data = [
+                    'error' => 'Please provide both email and password.',
+                    'email' => $email
+                ];
+                $this->view('auth/signin', $data);
+                return;
+            }
 
             $user = $this->userModel->login($email, $password);
 
@@ -88,18 +167,27 @@ class AuthController extends Controller {
                 header("Location: " . URLROOT . "/home");
                 exit;
             } else {
-                echo "❌ Invalid email or password.";
+                $data = [
+                    'error' => 'Invalid email or password.',
+                    'email' => $email
+                ];
+                $this->view('auth/signin', $data);
             }
         } else {
-            $this->view('auth/login');
+            $data = [
+                'error' => $_SESSION['error'] ?? '',
+                'success' => $_SESSION['success'] ?? '',
+                'email' => ''
+            ];
+            unset($_SESSION['error'], $_SESSION['success']);
+            $this->view('auth/signin', $data);
         }
     }
 
-    // 🔹 Logout
+    // Logout
     public function logout() {
         session_destroy();
         header("Location: " . URLROOT . "/auth/login");
         exit;
     }
 }
-
