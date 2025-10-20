@@ -1,111 +1,105 @@
 <?php
 class AuthController extends Controller {
 
+    private $userModel;
+
     public function __construct() {
-        // Ensure session is started
-        if (session_status() == PHP_SESSION_NONE) {
-            session_start();
-        }
+        $this->userModel = $this->model('User');
+        session_start();
     }
 
-    public function index() {
-        $this->signin();
-    }
-
-    public function signin() {
-        $this->view('auth/signin');
-    }
-
+    // 🔹 Show registration page
     public function register() {
         $this->view('auth/register');
     }
 
-    // Add these method aliases to match your form actions
+    // 🔹 Register Organization
     public function registerOrganization() {
-        $this->processRegisterOrg();
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $name = trim($_POST['org-name']);
+            $email = trim($_POST['org-email']);
+            $password = $_POST['org-password'];
+            $confirm = $_POST['org-password-confirm'];
+            $file = $_FILES['org-cert'];
+
+            if ($password !== $confirm) {
+                echo "Passwords do not match.";
+                return;
+            }
+
+            // Handle file upload
+            $filePath = null;
+            if ($file['error'] === 0) {
+                $uploadDir = '../public/uploads/org_certs/';
+                if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+
+                $fileName = uniqid() . "_" . basename($file['name']);
+                $filePath = $uploadDir . $fileName;
+                move_uploaded_file($file['tmp_name'], $filePath);
+            }
+
+            // Register organization
+            if ($this->userModel->registerOrganization($name, $email, $password, $filePath)) {
+                echo "✅ Organization registered successfully!";
+            } else {
+                echo "❌ Registration failed.";
+            }
+        } else {
+            $this->view('auth/register');
+        }
     }
 
+    // 🔹 Register Individual
     public function registerIndividual() {
-        $this->processRegisterInd();
-    }
-
-    public function processRegisterOrg() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Validate form data
-            $orgName = $_POST['org-name'] ?? '';
-            $email = $_POST['org-email'] ?? '';
-            $password = $_POST['org-password'] ?? '';
-            $confirmPassword = $_POST['org-password-confirm'] ?? '';
-            
-            // Basic validation
-            if (empty($orgName) || empty($email) || empty($password)) {
-                // Set error session and redirect
-                $_SESSION['error'] = 'All fields are required';
-                header('Location: ' . URLROOT . '/auth/register');
-                exit;
+            $name = trim($_POST['ind-fullname']);
+            $email = trim($_POST['ind-email']);
+            $password = $_POST['ind-password'];
+            $confirm = $_POST['ind-password-confirm'];
+
+            if ($password !== $confirm) {
+                echo "Passwords do not match.";
+                return;
             }
-            
-            if ($password !== $confirmPassword) {
-                $_SESSION['error'] = 'Passwords do not match';
-                header('Location: ' . URLROOT . '/auth/register');
-                exit;
+
+            if ($this->userModel->registerIndividual($name, $email, $password)) {
+                echo "✅ Individual registered successfully!";
+            } else {
+                echo "❌ Registration failed.";
             }
-            
-            // TODO: Save to database
-            // For now, just redirect with success
-            $_SESSION['success'] = 'Organization registered successfully!';
-            header('Location: ' . URLROOT . '/auth/signin');
-            exit;
+        } else {
+            $this->view('auth/register');
         }
     }
 
-    public function processRegisterInd() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Validate form data
-            $fullName = $_POST['ind-fullname'] ?? '';
-            $email = $_POST['ind-email'] ?? '';
-            $password = $_POST['ind-password'] ?? '';
-            $confirmPassword = $_POST['ind-password-confirm'] ?? '';
-            
-            // Basic validation
-            if (empty($fullName) || empty($email) || empty($password)) {
-                $_SESSION['error'] = 'All fields are required';
-                header('Location: ' . URLROOT . '/auth/register');
-                exit;
-            }
-            
-            if ($password !== $confirmPassword) {
-                $_SESSION['error'] = 'Passwords do not match';
-                header('Location: ' . URLROOT . '/auth/register');
-                exit;
-            }
-            
-            // TODO: Save to database
-            // For now, just redirect with success
-            $_SESSION['success'] = 'Registration successful!';
-            header('Location: ' . URLROOT . '/auth/signin');
-            exit;
-        }
-    }
-
+    // 🔹 Show login page
     public function login() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $username = $_POST['username'] ?? '';
-            $password = $_POST['password'] ?? '';
-            
-            // TODO: Validate against database
-            // For testing, just set session and redirect
-            if (!empty($username) && !empty($password)) {
-                $_SESSION['user_id'] = 123; // Mock user ID
-                $_SESSION['username'] = $username;
-                header('Location: ' . URLROOT . '/users/userprofile');
+            $email = trim($_POST['email']);
+            $password = $_POST['password'];
+
+            $user = $this->userModel->login($email, $password);
+
+            if ($user) {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['role'] = $user['role'];
+
+                header("Location: " . URLROOT . "/home");
                 exit;
+            } else {
+                echo "❌ Invalid email or password.";
             }
-            
-            $_SESSION['error'] = 'Invalid credentials';
-            header('Location: ' . URLROOT . '/auth/signin');
         } else {
-            $this->view('auth/signin');
+            $this->view('auth/login');
         }
     }
+
+    // 🔹 Logout
+    public function logout() {
+        session_destroy();
+        header("Location: " . URLROOT . "/auth/login");
+        exit;
+    }
 }
+
