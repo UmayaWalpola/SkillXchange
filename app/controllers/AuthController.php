@@ -8,6 +8,11 @@ class AuthController extends Controller {
         // session_start() removed - already in config.php
     }
 
+    // Default method - redirect to signin
+    public function index() {
+        $this->signin();
+    }
+
     // Show registration page
     public function register() {
         $data = [
@@ -76,7 +81,7 @@ class AuthController extends Controller {
             if (empty($errors)) {
                 if ($this->userModel->registerOrganization($name, $email, $password, $filePath)) {
                     $_SESSION['success'] = "Organization registered successfully! Please login.";
-                    header("Location: " . URLROOT . "/auth/login");
+                    header("Location: " . URLROOT . "/auth/signin");
                     exit;
                 } else {
                     $errors[] = "Registration failed. Email may already be in use.";
@@ -124,7 +129,7 @@ class AuthController extends Controller {
             if (empty($errors)) {
                 if ($this->userModel->registerIndividual($name, $email, $password)) {
                     $_SESSION['success'] = "Registration successful! Please login.";
-                    header("Location: " . URLROOT . "/auth/login");
+                    header("Location: " . URLROOT . "/auth/signin");
                     exit;
                 } else {
                     $errors[] = "Registration failed. Email may already be in use.";
@@ -142,8 +147,8 @@ class AuthController extends Controller {
         }
     }
 
-    // Show login page
-    public function login() {
+    // Show signin page
+    public function signin() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $email = trim($_POST['email'] ?? '');
             $password = $_POST['password'] ?? '';
@@ -187,7 +192,7 @@ class AuthController extends Controller {
     // Logout
     public function logout() {
         session_destroy();
-        header("Location: " . URLROOT . "/auth/login");
+        header("Location: " . URLROOT . "/auth/signin");
         exit;
     }
 }

@@ -1,4 +1,8 @@
 <?php
+
+// Load config (includes session_start)
+require_once '../app/config/config.php';
+// ... rest of your code
 // index.php (Front Controller)
 
 // Load config (includes session_start)

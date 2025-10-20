@@ -1,4 +1,4 @@
-<?php
+<<?php
 class Core {
     protected $currentController = 'PagesController';
     protected $currentMethod = 'index';
@@ -7,24 +7,33 @@ class Core {
     public function __construct() {
         $url = $this->getUrl();
 
-        // Controller
-        if (isset($url[0]) && file_exists('../app/controllers/' . ucwords($url[0]) . '.php')) {
-            $this->currentController = ucwords($url[0]);
-            unset($url[0]);
+        // Controller - check if it exists with "Controller" suffix
+        if (isset($url[0])) {
+            $controllerName = ucwords($url[0]) . 'Controller';
+            $controllerFile = '../app/controllers/' . $controllerName . '.php';
+            
+            if (file_exists($controllerFile)) {
+                $this->currentController = $controllerName;
+                unset($url[0]);
+            }
         }
+
+        // Require the controller file
         require_once '../app/controllers/' . $this->currentController . '.php';
+        
+        // Instantiate controller
         $this->currentController = new $this->currentController;
 
-        // Method
+        // Method - check if method exists in controller
         if (isset($url[1]) && method_exists($this->currentController, $url[1])) {
             $this->currentMethod = $url[1];
             unset($url[1]);
         }
 
-        // Params
+        // Params - get remaining URL segments as parameters
         $this->params = $url ? array_values($url) : [];
 
-        // Call
+        // Call controller method with parameters
         call_user_func_array([$this->currentController, $this->currentMethod], $this->params);
     }
 
@@ -34,6 +43,7 @@ class Core {
             $url = filter_var($url, FILTER_SANITIZE_URL);
             return explode('/', $url);
         }
+        return [];
     }
 }
 
