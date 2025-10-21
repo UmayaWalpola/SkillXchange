@@ -803,5 +803,76 @@ form button:hover {
     text-transform: uppercase;
 }
 
+/* Main Page Wrapper - The white container that holds all page content */
+.page-wrapper {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+    background: var(--white-bg);
+    min-height: calc(100vh - 200px);
+}
+
+/* Page Header Section - Consistent across ALL pages */
+.page-header {
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid var(--blue-bg);
+}
+
+.page-header h1 {
+    font-size: 2.5rem;
+    color: var(--dark-bg);
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.page-header p {
+    color: var(--dark-bg);
+    opacity: 0.7;
+    font-size: 1.1rem;
+    line-height: 1.5;
+    max-width: 700px;
+}
+
+/* Page Content Area - Where the main content goes */
+.page-content {
+    width: 100%;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page-wrapper {
+        padding: 1.5rem;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+    }
+
+    .page-header h1 {
+        font-size: 2rem;
+    }
+
+    .page-header p {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-wrapper {
+        padding: 1rem;
+    }
+
+    .page-header h1 {
+        font-size: 1.75rem;
+    }
+
+    .page-header p {
+        font-size: 0.95rem;
+    }
+}
+
 
 

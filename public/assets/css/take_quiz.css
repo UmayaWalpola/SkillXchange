@@ -1,5 +1,3 @@
-/* Take Quiz Specific Styles - Uses global.css as base */
-
 /* Quiz Container - Adjusted to fit with fixed header and sidebar */
 .take-quiz-container {
   background: var(--white-bg);

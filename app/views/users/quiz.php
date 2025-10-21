@@ -8,7 +8,7 @@
 <div class="dashboard-container">
     <div class="dashboard-main">
         <div class="quiz-container">
-            <div class="quiz-header">
+            <div class="page-header">
                 <h1>Your tech journey starts here</h1>
                 <p>Take a quiz, earn badges, level up</p>
             </div>
