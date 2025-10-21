@@ -1,4 +1,4 @@
-<<?php
+<?php
 class Core {
     protected $currentController = 'PagesController';
     protected $currentMethod = 'index';

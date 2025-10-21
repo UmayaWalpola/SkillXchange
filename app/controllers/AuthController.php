@@ -5,7 +5,6 @@ class AuthController extends Controller {
 
     public function __construct() {
         $this->userModel = $this->model('User');
-        // session_start() removed - already in config.php
     }
 
     // Default method - redirect to signin
@@ -127,9 +126,19 @@ class AuthController extends Controller {
 
             // Register if no errors
             if (empty($errors)) {
-                if ($this->userModel->registerIndividual($name, $email, $password)) {
-                    $_SESSION['success'] = "Registration successful! Please login.";
-                    header("Location: " . URLROOT . "/auth/signin");
+                $userId = $this->userModel->registerIndividual($name, $email, $password);
+                if ($userId) {
+                    // Auto-login and redirect to profile setup
+                    $_SESSION['user_id'] = $userId;
+                    $_SESSION['username'] = $name;
+                    $_SESSION['role'] = 'individual';
+                    $_SESSION['profile_completed'] = 0;
+                    
+                    // Award "Early Adopter" badge
+                    $this->userModel->awardBadge($userId, 'Early Adopter', '🌟');
+                    
+                    // Redirect to profile setup
+                    header("Location: " . URLROOT . "/users/profileSetup");
                     exit;
                 } else {
                     $errors[] = "Registration failed. Email may already be in use.";
@@ -148,47 +157,69 @@ class AuthController extends Controller {
     }
 
     // Show signin page
-    public function signin() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $email = trim($_POST['email'] ?? '');
-            $password = $_POST['password'] ?? '';
+public function signin() {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $email = trim($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
 
-            if (empty($email) || empty($password)) {
-                $data = [
-                    'error' => 'Please provide both email and password.',
-                    'email' => $email
-                ];
-                $this->view('auth/signin', $data);
-                return;
-            }
+        if (empty($email) || empty($password)) {
+            $data = [
+                'error' => 'Please provide both email and password.',
+                'email' => $email
+            ];
+            $this->view('auth/signin', $data);
+            return;
+        }
 
-            $user = $this->userModel->login($email, $password);
+        $user = $this->userModel->login($email, $password);
 
-            if ($user) {
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['username'] = $user['username'];
-                $_SESSION['role'] = $user['role'];
+        if ($user) {
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['username'] = $user['username'];
+            $_SESSION['role'] = $user['role'];
+            $_SESSION['profile_completed'] = $user['profile_completed'];
 
-                header("Location: " . URLROOT . "/home");
+            // Redirect based on role and profile completion
+            if ($user['role'] === 'individual') {
+                // Check if profile needs to be completed
+                if (!$user['profile_completed']) {
+                    header("Location: " . URLROOT . "/users/profileSetup");
+                    exit;
+                } else {
+                    // Profile is complete, go to user profile
+                    header("Location: " . URLROOT . "/users/userprofile");
+                    exit;
+                }
+            } elseif ($user['role'] === 'organization') {
+                // Organizations go to manager profile
+                header("Location: " . URLROOT . "/users/managerprofile");
+                exit;
+            } elseif ($user['role'] === 'admin') {
+                // Admins go to admin profile
+                header("Location: " . URLROOT . "/users/adminprofile");
                 exit;
             } else {
-                $data = [
-                    'error' => 'Invalid email or password.',
-                    'email' => $email
-                ];
-                $this->view('auth/signin', $data);
+                // Default fallback
+                header("Location: " . URLROOT . "/home");
+                exit;
             }
         } else {
             $data = [
-                'error' => $_SESSION['error'] ?? '',
-                'success' => $_SESSION['success'] ?? '',
-                'email' => ''
+                'error' => 'Invalid email or password.',
+                'email' => $email
             ];
-            unset($_SESSION['error'], $_SESSION['success']);
             $this->view('auth/signin', $data);
         }
+    } else {
+        $data = [
+            'error' => $_SESSION['error'] ?? '',
+            'success' => $_SESSION['success'] ?? '',
+            'email' => ''
+        ];
+        unset($_SESSION['error'], $_SESSION['success']);
+        $this->view('auth/signin', $data);
     }
-
+}
     // Logout
     public function logout() {
         session_destroy();

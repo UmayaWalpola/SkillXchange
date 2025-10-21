@@ -25,7 +25,7 @@
                 </div>
             <?php endif; ?>
 
-            <form action="<?= URLROOT ?>/auth/login" method="POST">
+            <form action="<?= URLROOT ?>/auth/signin" method="POST">
                 <input type="email" name="email" placeholder="Email" required>
                 <input type="password" name="password" placeholder="Password" required>
                 <p><a href="<?= URLROOT ?>/auth/forgot">Forgot password?</a></p>
