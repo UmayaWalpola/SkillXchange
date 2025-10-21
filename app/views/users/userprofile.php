@@ -13,18 +13,7 @@
             <div class="profile-header">
                 <button class="edit-profile-btn">Edit details</button>
                 <div class="profile-info">
-                    <!-- FIXED: Profile Avatar with Image Support -->
-<div class="profile-avatar">
-    <?php if (!empty($data['user']['avatar']) && !ctype_upper($data['user']['avatar'])): ?>
-        <!-- Show profile picture if exists -->
-        <img src="<?= URLROOT ?>/<?= htmlspecialchars($data['user']['avatar']) ?>" 
-             alt="<?= htmlspecialchars($data['user']['name']) ?>" 
-             style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
-    <?php else: ?>
-        <!-- Show initials as fallback -->
-        <?= htmlspecialchars($data['user']['avatar']) ?>
-    <?php endif; ?>
-</div>
+                    <div class="profile-avatar"><?= strtoupper(substr($user['name'], 0, 2)); ?></div>
                     <div class="profile-details">
                         <h1><?= htmlspecialchars($user['name']); ?></h1>
                         <p class="profile-username">@<?= htmlspecialchars($user['username']); ?></p>
@@ -42,7 +31,7 @@
                         <span class="stat-number"><?= $data['user']['skills_taught']; ?></span>
                         <span class="stat-label">Skills Taught</span>
                     </div>
-                    <div class="stat-item">
+                    <div class="stat-item">z
                         <span class="stat-number"><?= $data['user']['skills_learning']; ?></span>
                         <span class="stat-label">Skills Learning</span>
                     </div>
@@ -164,6 +153,20 @@
                     </div>
                 </section>
 
+                <!-- Recent Activity -->
+                <section class="profile-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Recent Activity</h2>
+                    </div>
+                    <div class="activity-timeline">
+                        <?php foreach ($data['activity'] as $activity): ?>
+                            <div class="activity-item">
+                                <div class="activity-date"><?= htmlspecialchars($activity['date']); ?></div>
+                                <div class="activity-description"><?= htmlspecialchars($activity['description']); ?></div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </section>
             </div>
         </div>
     </main>

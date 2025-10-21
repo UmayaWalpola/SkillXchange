@@ -95,7 +95,6 @@
                                 <option value="ai">AI and ML</option>
                                 <option value="marketing">Digital Marketing</option>
                                 <option value="data-science">Data Science</option>
-            
                             </select>
                         </div>
                         <div class="form-group skill-level-group">

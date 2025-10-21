@@ -207,27 +207,28 @@ class User extends Database {
         return $feedback;
     }
 
-    // 🔹 Get User Activity Log
-    public function getUserActivity($userId) {
-        $sql = "SELECT description, created_at 
-                FROM user_activity 
-                WHERE user_id = :user_id 
-                ORDER BY created_at DESC 
-                LIMIT 10";
-        $stmt = $this->connect()->prepare($sql);
-        $stmt->bindValue(':user_id', $userId);
-        $stmt->execute();
-        
-        $activity = [];
-        while ($row = $stmt->fetch()) {
-            $activity[] = [
-                'description' => $row['description'],
-                'date' => $this->timeAgo($row['created_at'])
-            ];
-        }
-        
-        return $activity;
-    }
+    // 🔹 Update Profile (for editing)
+public function updateProfile($userId, $username, $profilePicture, $bio = null) {
+    $sql = "UPDATE users 
+            SET username = :username, 
+                profile_picture = :picture, 
+                bio = :bio
+            WHERE id = :id";
+    $stmt = $this->connect()->prepare($sql);
+    $stmt->bindValue(':username', $username);
+    $stmt->bindValue(':picture', $profilePicture);
+    $stmt->bindValue(':bio', $bio);
+    $stmt->bindValue(':id', $userId);
+    return $stmt->execute();
+}
+
+// 🔹 Delete User Skills (before updating)
+public function deleteUserSkills($userId) {
+    $sql = "DELETE FROM user_skills WHERE user_id = :user_id";
+    $stmt = $this->connect()->prepare($sql);
+    $stmt->bindValue(':user_id', $userId);
+    return $stmt->execute();
+}
 
     // 🔹 Get User Stats
     public function getUserStats($userId) {
@@ -307,6 +308,18 @@ class User extends Database {
         $stmt->bindValue(':icon', $badgeIcon);
         return $stmt->execute();
     }
+
+
+    // 🔹 Get User Activity
+public function getUserActivity($userId) {
+    $sql = "SELECT * FROM user_activity 
+            WHERE user_id = :user_id 
+            ORDER BY created_at DESC";
+    $stmt = $this->connect()->prepare($sql);
+    $stmt->bindValue(':user_id', $userId);
+    $stmt->execute();
+    return $stmt->fetchAll();
+}
 
     // 🔹 Helper: Time Ago
     private function timeAgo($timestamp) {
