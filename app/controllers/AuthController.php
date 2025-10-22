@@ -196,7 +196,7 @@ public function signin() {
                 exit;
             } elseif ($user['role'] === 'admin') {
                 // Admins go to admin profile
-                header("Location: " . URLROOT . "/users/adminprofile");
+                header("Location: " . URLROOT . "/admin");
                 exit;
             } else {
                 // Default fallback

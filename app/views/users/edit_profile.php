@@ -1,4 +1,6 @@
 <?php require_once "../app/views/layouts/header_user.php"; ?>
+<?php require_once "../app/views/layouts/usersidebar.php"; ?>
+
 
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/profile_setup.css">

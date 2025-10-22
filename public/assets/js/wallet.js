@@ -12,7 +12,7 @@
         ];
 
         // Update display function
-        function updateDisplay() {
+        /*function updateDisplay() {
             // Update stats
             document.getElementById('balanceAmount').textContent = balance;
             document.getElementById('totalSent').textContent = totalSent;
@@ -45,7 +45,7 @@
                     <div class="transaction-amount received">+${tx.amount} BuckX</div>
                 </div>`
             ).join('');
-        }
+        }*/
 
         // Handle form submission
         document.getElementById('transferForm').addEventListener('submit', function(e) {

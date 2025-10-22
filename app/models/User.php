@@ -348,4 +348,84 @@ public function getUserActivity($userId) {
         $stmt->execute();
         return $stmt->fetch() ? true : false;
     }
+
+    // Add these methods to your existing User model
+
+// Get total users count
+public function getTotalUsers() {
+    $this->db->query('SELECT COUNT(*) as count FROM users WHERE role = "user"');
+    $result = $this->db->single();
+    return $result['count'] ?? 0;
+}
+
+// Get recent users
+public function getRecentUsers($limit = 5) {
+    $this->db->query('
+        SELECT id, username, email, created_at, status 
+        FROM users 
+        WHERE role = "user"
+        ORDER BY created_at DESC 
+        LIMIT :limit
+    ');
+    $this->db->bind(':limit', $limit);
+    return $this->db->resultSet();
+}
+
+// Get all users with stats
+public function getAllUsersWithStats() {
+    $this->db->query('
+        SELECT 
+            u.id,
+            u.username,
+            u.email,
+            u.created_at,
+            u.status,
+            COUNT(DISTINCT CASE WHEN us.type = "teach" THEN us.skill_id END) as total_skills,
+            COUNT(DISTINCT e.id) as total_exchanges
+        FROM users u
+        LEFT JOIN user_skills us ON u.id = us.user_id
+        LEFT JOIN exchanges e ON (u.id = e.requester_id OR u.id = e.provider_id)
+        WHERE u.role = "user"
+        GROUP BY u.id
+        ORDER BY u.created_at DESC
+    ');
+    return $this->db->resultSet();
+}
+
+// Update user status
+public function updateUserStatus($userId, $status) {
+    $this->db->query('UPDATE users SET status = :status WHERE id = :id');
+    $this->db->bind(':status', $status);
+    $this->db->bind(':id', $userId);
+    return $this->db->execute();
+}
+
+// Delete user
+public function deleteUser($userId) {
+    // Start transaction
+    $this->db->beginTransaction();
+    
+    try {
+        // Delete user skills
+        $this->db->query('DELETE FROM user_skills WHERE user_id = :user_id');
+        $this->db->bind(':user_id', $userId);
+        $this->db->execute();
+        
+        // Delete user exchanges (or update them to mark as cancelled)
+        $this->db->query('UPDATE exchanges SET status = "cancelled" WHERE requester_id = :user_id OR provider_id = :user_id');
+        $this->db->bind(':user_id', $userId);
+        $this->db->execute();
+        
+        // Delete user
+        $this->db->query('DELETE FROM users WHERE id = :id');
+        $this->db->bind(':id', $userId);
+        $this->db->execute();
+        
+        $this->db->commit();
+        return true;
+    } catch (Exception $e) {
+        $this->db->rollback();
+        return false;
+    }
+}
 }
