@@ -10,7 +10,7 @@
             
             <div class="footer-logo-center">
                 <a href="<?php echo URLROOT; ?>" class="footer-logo-link" aria-label="SkillXchange home">
-                    <img src="<?php echo URLROOT; ?>/assets/images/logo.png" alt="SkillXchange logo" class="footer-logo-img" />
+                    <img src="<?= URLROOT; ?>/assets/images/logo-new.png" alt="SkillXchange Logo" class="logo-image">
                 </a>
             </div>
             

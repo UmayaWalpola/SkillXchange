@@ -1,3 +1,10 @@
+<?php if (!empty($data['errors'])): ?>
+    <div class="error-messages">
+        <?php foreach($data['errors'] as $error): ?>
+            <p><?= htmlspecialchars($error) ?></p>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
 
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/assets/css/global.css">
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/assets/css/auth.css">

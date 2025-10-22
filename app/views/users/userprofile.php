@@ -14,7 +14,18 @@
             <div class="profile-header">
                 <button class="edit-profile-btn">Edit details</button>
                 <div class="profile-info">
-                    <div class="profile-avatar"><?= strtoupper(substr($user['name'], 0, 2)); ?></div>
+                    <!-- FIXED: Profile Avatar with Image Support -->
+<div class="profile-avatar">
+    <?php if (!empty($data['user']['avatar']) && !ctype_upper($data['user']['avatar'])): ?>
+        <!-- Show profile picture if exists -->
+        <img src="<?= URLROOT ?>/<?= htmlspecialchars($data['user']['avatar']) ?>" 
+             alt="<?= htmlspecialchars($data['user']['name']) ?>" 
+             style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+    <?php else: ?>
+        <!-- Show initials as fallback -->
+        <?= htmlspecialchars($data['user']['avatar']) ?>
+    <?php endif; ?>
+</div>
                     <div class="profile-details">
                         <h1><?= htmlspecialchars($user['name']); ?></h1>
                         <p class="profile-username">@<?= htmlspecialchars($user['username']); ?></p>
@@ -146,7 +157,6 @@
                     </div>
                 </section>
 
-                <!-- REMOVED: Recent Activity section -->
             </div>
         </div>
     </div>

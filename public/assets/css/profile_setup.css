@@ -1,0 +1,326 @@
+/* Profile Setup Page Styles */
+
+.profile-setup-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+    background: var(--white-bg);
+}
+
+/* Setup Header */
+.setup-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.setup-title {
+    font-size: 2.5rem;
+    color: var(--dark-bg);
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+.setup-subtitle {
+    font-size: 1.1rem;
+    color: var(--dark-bg);
+    opacity: 0.7;
+}
+
+/* Progress Bar */
+.setup-progress {
+    margin-bottom: 2rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--blue-bg);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-blue), var(--accent-blue));
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--dark-bg);
+    opacity: 0.8;
+    font-weight: 500;
+}
+
+/* Form Sections */
+.profile-setup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.form-section {
+    background: var(--white-bg);
+    border: 2px solid var(--blue-bg);
+    border-radius: 15px;
+    padding: 2rem;
+    transition: all 0.3s ease;
+}
+
+.form-section:hover {
+    border-color: var(--accent-blue);
+    box-shadow: 0 5px 20px rgba(101, 131, 150, 0.1);
+}
+
+.section-title {
+    font-size: 1.8rem;
+    color: var(--dark-bg);
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+.section-description {
+    font-size: 1rem;
+    color: var(--dark-bg);
+    opacity: 0.7;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+/* Form Groups */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--dark-bg);
+}
+
+.form-group input[type="text"],
+.form-group select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--primary-blue);
+    border-radius: 8px;
+    font-size: 1rem;
+    background: var(--blue-bg);
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(156, 199, 223, 0.3);
+    transform: translateY(-2px);
+}
+
+.form-group input:hover:not(:focus),
+.form-group select:hover:not(:focus) {
+    border-color: var(--accent-blue);
+}
+
+.field-hint {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--dark-bg);
+    opacity: 0.6;
+}
+
+/* File Upload */
+.file-upload-wrapper {
+    position: relative;
+}
+
+.file-input {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.file-upload-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    border: 2px dashed var(--primary-blue);
+    border-radius: 10px;
+    background: var(--blue-bg);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.file-upload-wrapper:hover .file-upload-display {
+    border-color: var(--accent-blue);
+    background: rgba(213, 234, 246, 0.7);
+}
+
+.upload-icon {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.upload-text {
+    font-size: 1rem;
+    color: var(--dark-bg);
+    font-weight: 500;
+    margin-bottom: 0.3rem;
+}
+
+.upload-hint {
+    font-size: 0.85rem;
+    color: var(--dark-bg);
+    opacity: 0.6;
+}
+
+/* Skills Groups */
+.skills-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.skill-entry {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--blue-bg);
+    border-radius: 10px;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.skill-entry:hover {
+    border-color: var(--accent-blue);
+    box-shadow: 0 3px 10px rgba(101, 131, 150, 0.1);
+}
+
+.skill-name-group,
+.skill-level-group {
+    margin-bottom: 0;
+}
+
+.skill-name-group label,
+.skill-level-group label {
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+}
+
+/* Form Actions */
+.form-actions {
+    text-align: center;
+    padding: 2rem 0;
+}
+
+.btn-large {
+    padding: 16px 48px;
+    font-size: 1.1rem;
+    border-radius: 10px;
+    font-weight: 700;
+    transition: all 0.3s ease;
+}
+
+.btn-large:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(101, 131, 150, 0.3);
+}
+
+.form-footer-note {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: var(--dark-bg);
+    opacity: 0.6;
+}
+
+/* Error Messages */
+.error-message {
+    background: #ffe6e6;
+    color: #d32f2f;
+    padding: 1.5rem;
+    border-radius: 10px;
+    border-left: 4px solid #d32f2f;
+    margin-bottom: 2rem;
+    animation: shake 0.5s ease-in-out;
+}
+
+.error-message strong {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.error-message ul {
+    margin: 10px 0 0 20px;
+}
+
+.error-message li {
+    margin-bottom: 0.3rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .profile-setup-container {
+        padding: 1rem;
+    }
+    
+    .setup-title {
+        font-size: 2rem;
+    }
+    
+    .setup-subtitle {
+        font-size: 1rem;
+    }
+    
+    .form-section {
+        padding: 1.5rem;
+    }
+    
+    .section-title {
+        font-size: 1.5rem;
+    }
+    
+    .skill-entry {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+    }
+    
+    .btn-large {
+        width: 100%;
+        padding: 14px 24px;
+    }
+}
+
+@media (max-width: 480px) {
+    .profile-setup-container {
+        padding: 1rem 0.5rem;
+    }
+    
+    .form-section {
+        padding: 1rem;
+    }
+    
+    .setup-title {
+        font-size: 1.8rem;
+    }
+    
+    .file-upload-display {
+        padding: 1.5rem 1rem;
+    }
+    
+    .upload-icon {
+        font-size: 2.5rem;
+    }
+}
