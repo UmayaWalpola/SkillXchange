@@ -36,155 +36,179 @@ class UsersController extends Controller {
         }
     }
 
-    // Handle Profile Setup Form Submission
-    private function handleProfileSetup($userId) {
-        $errors = [];
-        
-        // Get form data
-        $username = trim($_POST['username'] ?? '');
-        $teachSkills = $_POST['teach_skills'] ?? [];
-        $teachLevels = $_POST['teach_levels'] ?? [];
-        $learnSkills = $_POST['learn_skills'] ?? [];
-        $learnLevels = $_POST['learn_levels'] ?? [];
-        
-        // Validation - Username
-        if (empty($username)) {
-            $errors[] = "Username is required.";
-        } elseif (strlen($username) < 3 || strlen($username) > 20) {
-            $errors[] = "Username must be between 3 and 20 characters.";
-        } elseif ($this->userModel->usernameExists($username, $userId)) {
-            $errors[] = "Username already taken.";
-        }
+ // Handle Profile Setup Form Submission
+private function handleProfileSetup($userId) {
+    $errors = [];
+    
+    // Get form data
+    $username = trim($_POST['username'] ?? '');
+    $teachSkills = $_POST['teach_skills'] ?? [];
+    $teachLevels = $_POST['teach_levels'] ?? [];
+    $learnSkills = $_POST['learn_skills'] ?? [];
+    $learnLevels = $_POST['learn_levels'] ?? [];
+    
+    // Validation - Username
+    if (empty($username)) {
+        $errors[] = "Username is required.";
+    } elseif (strlen($username) < 3 || strlen($username) > 20) {
+        $errors[] = "Username must be between 3 and 20 characters.";
+    } elseif ($this->userModel->usernameExists($username, $userId)) {
+        $errors[] = "Username already taken.";
+    }
 
-        // Validate Learn Skills (AT LEAST 1 REQUIRED)
-        $validLearnSkills = [];
-        $validLearnLevels = [];
-        $hasAtLeastOneLearnSkill = false;
-        
-        foreach ($learnSkills as $index => $skill) {
-            $skill = trim($skill);
-            if (!empty($skill)) {
-                $hasAtLeastOneLearnSkill = true;
-                // If skill is selected, level MUST be selected
-                if (empty($learnLevels[$index])) {
-                    $skillName = ucfirst(str_replace('-', ' ', $skill));
-                    $errors[] = "Please select a proficiency level for learning skill: {$skillName}";
-                } else {
-                    $validLearnSkills[] = $skill;
-                    $validLearnLevels[] = $learnLevels[$index];
-                }
-            }
-        }
-        
-        // Check if at least one learn skill was provided
-        if (!$hasAtLeastOneLearnSkill) {
-            $errors[] = "Please select at least one skill you want to learn.";
-        }
-
-        // Validate Teach Skills (OPTIONAL - but if skill selected, level required)
-        $validTeachSkills = [];
-        $validTeachLevels = [];
-        
-        foreach ($teachSkills as $index => $skill) {
-            $skill = trim($skill);
-            if (!empty($skill)) {
-                // If skill is selected, level MUST be selected
-                if (empty($teachLevels[$index])) {
-                    $skillName = ucfirst(str_replace('-', ' ', $skill));
-                    $errors[] = "Please select a proficiency level for teaching skill: {$skillName}";
-                } else {
-                    $validTeachSkills[] = $skill;
-                    $validTeachLevels[] = $teachLevels[$index];
-                }
-            }
-        }
-
-        // Handle profile picture upload
-        $profilePicture = null;
-        if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === 0) {
-            $file = $_FILES['profile_picture'];
-            $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
-            $maxSize = 5 * 1024 * 1024; // 5MB
-            
-            if (!in_array($file['type'], $allowedTypes)) {
-                $errors[] = "Only JPG, PNG, and GIF images are allowed.";
-            } elseif ($file['size'] > $maxSize) {
-                $errors[] = "Profile picture must not exceed 5MB.";
+    // Validate Learn Skills (AT LEAST 1 REQUIRED)
+    $validLearnSkills = [];
+    $validLearnLevels = [];
+    $hasAtLeastOneLearnSkill = false;
+    
+    foreach ($learnSkills as $index => $skill) {
+        $skill = trim($skill);
+        if (!empty($skill)) {
+            $hasAtLeastOneLearnSkill = true;
+            // If skill is selected, level MUST be selected
+            if (empty($learnLevels[$index])) {
+                $skillName = ucfirst(str_replace('-', ' ', $skill));
+                $errors[] = "Please select a proficiency level for learning skill: {$skillName}";
             } else {
-                $uploadDir = '../public/uploads/profile_pictures/';
-                if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0755, true);
-                }
-
-                $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-                $fileName = 'user_' . $userId . '_' . uniqid() . '.' . $extension;
-                $profilePicture = 'uploads/profile_pictures/' . $fileName;
-                $fullPath = $uploadDir . $fileName;
-                
-                if (!move_uploaded_file($file['tmp_name'], $fullPath)) {
-                    $errors[] = "Failed to upload profile picture.";
-                    $profilePicture = null;
-                }
+                $validLearnSkills[] = $skill;
+                $validLearnLevels[] = $learnLevels[$index];
             }
         }
+    }
+    
+    // Check if at least one learn skill was provided
+    if (!$hasAtLeastOneLearnSkill) {
+        $errors[] = "Please select at least one skill you want to learn.";
+    }
 
-        // If no errors, save everything
-        if (empty($errors)) {
-            try {
-                // Update basic profile
-                $profileUpdated = $this->userModel->completeProfile($userId, $username, $profilePicture);
-                if (!$profileUpdated) {
-                    throw new Exception("Failed to update profile");
-                }
-                
-                // Add teaching skills (only if any were provided)
-                if (!empty($validTeachSkills)) {
-                    $teachSkillsAdded = $this->userModel->addUserSkills($userId, $validTeachSkills, $validTeachLevels, 'teach');
-                    if (!$teachSkillsAdded) {
+    // Validate Teach Skills (OPTIONAL - but if skill selected, level required)
+    $validTeachSkills = [];
+    $validTeachLevels = [];
+    
+    foreach ($teachSkills as $index => $skill) {
+        $skill = trim($skill);
+        if (!empty($skill)) {
+            // If skill is selected, level MUST be selected
+            if (empty($teachLevels[$index])) {
+                $skillName = ucfirst(str_replace('-', ' ', $skill));
+                $errors[] = "Please select a proficiency level for teaching skill: {$skillName}";
+            } else {
+                $validTeachSkills[] = $skill;
+                $validTeachLevels[] = $teachLevels[$index];
+            }
+        }
+    }
+
+    // Handle profile picture upload
+    $profilePicture = null;
+    if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === 0) {
+        $file = $_FILES['profile_picture'];
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+        $maxSize = 5 * 1024 * 1024; // 5MB
+        
+        if (!in_array($file['type'], $allowedTypes)) {
+            $errors[] = "Only JPG, PNG, and GIF images are allowed.";
+        } elseif ($file['size'] > $maxSize) {
+            $errors[] = "Profile picture must not exceed 5MB.";
+        } else {
+            $uploadDir = '../public/uploads/profile_pictures/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $fileName = 'user_' . $userId . '_' . uniqid() . '.' . $extension;
+            $profilePicture = 'uploads/profile_pictures/' . $fileName;
+            $fullPath = $uploadDir . $fileName;
+            
+            if (!move_uploaded_file($file['tmp_name'], $fullPath)) {
+                $errors[] = "Failed to upload profile picture.";
+                $profilePicture = null;
+            }
+        }
+    }
+
+    // If no errors, save everything
+    if (empty($errors)) {
+        try {
+            $db = new Database();
+            
+            // Start transaction
+            $db->query("START TRANSACTION");
+            
+            // Update basic profile with profile_completed = 1
+            $db->query("UPDATE users SET 
+                username = :username, 
+                profile_picture = :profile_picture,
+                profile_completed = 1
+                WHERE id = :user_id");
+            $db->bind(':username', $username);
+            $db->bind(':profile_picture', $profilePicture);
+            $db->bind(':user_id', $userId);
+            
+            if (!$db->execute()) {
+                throw new Exception("Failed to update profile");
+            }
+            
+            // Add teaching skills (only if any were provided)
+            if (!empty($validTeachSkills)) {
+                foreach ($validTeachSkills as $index => $skill) {
+                    $db->query("INSERT INTO user_skills (user_id, skill_name, skill_type, proficiency_level) 
+                               VALUES (:user_id, :skill_name, 'teach', :proficiency_level)");
+                    $db->bind(':user_id', $userId);
+                    $db->bind(':skill_name', $skill);
+                    $db->bind(':proficiency_level', $validTeachLevels[$index]);
+                    
+                    if (!$db->execute()) {
                         throw new Exception("Failed to add teaching skills");
                     }
                 }
+            }
+            
+            // Add learning skills (at least one is guaranteed at this point)
+            foreach ($validLearnSkills as $index => $skill) {
+                $db->query("INSERT INTO user_skills (user_id, skill_name, skill_type, proficiency_level) 
+                           VALUES (:user_id, :skill_name, 'learn', :proficiency_level)");
+                $db->bind(':user_id', $userId);
+                $db->bind(':skill_name', $skill);
+                $db->bind(':proficiency_level', $validLearnLevels[$index]);
                 
-                // Add learning skills (at least one is guaranteed at this point)
-                $learnSkillsAdded = $this->userModel->addUserSkills($userId, $validLearnSkills, $validLearnLevels, 'learn');
-                if (!$learnSkillsAdded) {
+                if (!$db->execute()) {
                     throw new Exception("Failed to add learning skills");
                 }
-                
-                // Log activity (optional - comment out if table doesn't exist)
-                try {
-                    $this->userModel->logActivity($userId, 'profile_setup', 'Completed profile setup');
-                } catch (Exception $e) {
-                    // Activity logging failed, but continue anyway
-                    error_log("Activity logging failed: " . $e->getMessage());
-                }
-                
-                // Update session
-                $_SESSION['username'] = $username;
-                $_SESSION['profile_completed'] = 1;
-                
-                // Redirect to profile
-                $_SESSION['success'] = "Profile setup completed successfully!";
-                header('Location: ' . URLROOT . '/users/userprofile');
-                exit;
-                
-            } catch (Exception $e) {
-                // Show the actual error message for debugging
-                $errors[] = "Error: " . $e->getMessage();
-                // Log the full error details
-                error_log("Profile Setup Error: " . $e->getMessage() . " | File: " . $e->getFile() . " | Line: " . $e->getLine());
             }
+            
+            // Commit transaction
+            $db->query("COMMIT");
+            
+            // Update session with profile_completed = 1
+            $_SESSION['username'] = $username;
+            $_SESSION['profile_completed'] = 1;
+            
+            // Redirect to profile
+            $_SESSION['success'] = "Profile setup completed successfully!";
+            header('Location: ' . URLROOT . '/users/userprofile');
+            exit;
+            
+        } catch (Exception $e) {
+            // Rollback on error
+            $db->query("ROLLBACK");
+            
+            // Show the actual error message for debugging
+            $errors[] = "Error: " . $e->getMessage();
+            error_log("Profile Setup Error: " . $e->getMessage());
         }
-
-        // If there are errors, show the form again with errors
-        $user = $this->userModel->getUserById($userId);
-        $data = [
-            'user' => $user,
-            'errors' => $errors,
-            'old' => $_POST
-        ];
-        $this->view('users/profile_setup', $data);
     }
+
+    // If there are errors, show the form again with errors
+    $user = $this->userModel->getUserById($userId);
+    $data = [
+        'user' => $user,
+        'errors' => $errors,
+        'old' => $_POST
+    ];
+    $this->view('users/profile_setup', $data);
+}
 
     // Show user profile
     public function userprofile($userId = null) {
