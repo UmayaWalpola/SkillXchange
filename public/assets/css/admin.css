@@ -1,0 +1,470 @@
+/* Admin Dashboard Styles - Uses global.css as base */
+
+.admin-content {
+    max-width: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* Admin Header */
+.admin-header {
+    background: linear-gradient(135deg, var(--accent-blue), var(--primary-blue));
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    color: var(--white-bg);
+}
+
+.admin-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+.admin-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: var(--white-bg);
+    border-radius: 15px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    box-shadow: 0 5px 15px rgba(18, 18, 13, 0.05);
+    border: 1px solid var(--blue-bg);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(101, 131, 150, 0.15);
+}
+
+.stat-icon {
+    font-size: 3rem;
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--blue-bg);
+    border-radius: 15px;
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--primary-blue);
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--dark-bg);
+    opacity: 0.7;
+}
+
+/* Admin Body */
+.admin-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.admin-section {
+    background: var(--white-bg);
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 5px 15px rgba(18, 18, 13, 0.05);
+    border: 1px solid var(--blue-bg);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--blue-bg);
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--dark-bg);
+}
+
+/* Table Styles */
+.table-container {
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.admin-table thead {
+    background: var(--blue-bg);
+}
+
+.admin-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--dark-bg);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.admin-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--blue-bg);
+}
+
+.admin-table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.admin-table tbody tr:hover {
+    background: var(--blue-bg);
+}
+
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--primary-blue);
+    color: var(--white-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.user-avatar-sm {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: var(--primary-blue);
+    color: var(--white-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.8rem;
+}
+
+/* Action Buttons */
+.action-btn {
+    padding: 0.4rem 0.8rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-right: 0.5rem;
+}
+
+.btn-view {
+    background: var(--primary-blue);
+    color: var(--white-bg);
+}
+
+.btn-view:hover {
+    background: var(--accent-blue);
+    color: var(--dark-bg);
+}
+
+.btn-suspend {
+    background: #fecaca;
+    color: #ef4444;
+}
+
+.btn-suspend:hover {
+    background: #ef4444;
+    color: var(--white-bg);
+}
+
+.btn-activate {
+    background: #dcfce7;
+    color: #22c55e;
+}
+
+.btn-activate:hover {
+    background: #22c55e;
+    color: var(--white-bg);
+}
+
+.btn-resolve {
+    background: var(--accent-blue);
+    color: var(--dark-bg);
+}
+
+.btn-resolve:hover {
+    background: var(--primary-blue);
+    color: var(--white-bg);
+}
+
+/* Exchanges Grid */
+.exchanges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.exchange-card {
+    background: var(--blue-bg);
+    border-radius: 10px;
+    padding: 1.5rem;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.exchange-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(101, 131, 150, 0.15);
+    border-color: var(--accent-blue);
+}
+
+.exchange-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.exchange-date {
+    font-size: 0.85rem;
+    color: var(--dark-bg);
+    opacity: 0.7;
+}
+
+.exchange-users {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.exchange-user {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.exchange-arrow {
+    font-size: 1.5rem;
+    color: var(--primary-blue);
+}
+
+.exchange-skills {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(101, 131, 150, 0.2);
+    font-size: 0.9rem;
+    color: var(--dark-bg);
+    opacity: 0.8;
+}
+
+.resolve-btn {
+    width: 100%;
+    margin-top: 1rem;
+    padding: 0.6rem;
+    background: var(--primary-blue);
+    color: var(--white-bg);
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.resolve-btn:hover {
+    background: var(--accent-blue);
+    color: var(--dark-bg);
+}
+
+/* Skills Stats Grid */
+.skills-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.skill-stat-card {
+    background: var(--blue-bg);
+    border-radius: 10px;
+    padding: 1.5rem;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.skill-stat-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent-blue);
+    box-shadow: 0 5px 15px rgba(101, 131, 150, 0.15);
+}
+
+.skill-stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.skill-stat-header h3 {
+    font-size: 1.2rem;
+    color: var(--dark-bg);
+}
+
+.skill-stat-numbers {
+    display: flex;
+    gap: 2rem;
+}
+
+.skill-stat-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-num {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: var(--primary-blue);
+}
+
+.stat-text {
+    font-size: 0.85rem;
+    color: var(--dark-bg);
+    opacity: 0.7;
+}
+
+/* Reports List */
+.reports-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.report-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    background: var(--blue-bg);
+    border-radius: 10px;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.report-item:hover {
+    border-color: var(--accent-blue);
+    transform: translateY(-2px);
+}
+
+.report-info {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    flex: 1;
+}
+
+.report-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.report-details strong {
+    color: var(--dark-bg);
+    font-size: 1.05rem;
+}
+
+.report-details p {
+    color: var(--dark-bg);
+    opacity: 0.8;
+    font-size: 0.9rem;
+}
+
+.report-meta {
+    font-size: 0.8rem;
+    color: var(--dark-bg);
+    opacity: 0.6;
+    margin-top: 0.3rem;
+}
+
+.report-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-header h1 {
+        font-size: 2rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .exchanges-grid,
+    .skills-stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .table-container {
+        overflow-x: scroll;
+    }
+    
+    .report-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .report-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}

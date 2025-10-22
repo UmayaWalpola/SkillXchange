@@ -257,23 +257,6 @@ private function handleProfileSetup($userId) {
         $this->view('users/userprofile', $data);
     }
 
-    // Show admin profile
-    public function adminprofile() {
-        if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-            header('Location: ' . URLROOT . '/auth/signin');
-            exit;
-        }
-
-        $adminData = [
-            'name' => $_SESSION['username'],
-            'role' => 'Administrator',
-            'email' => 'admin@skillxchange.com'
-        ];
-
-        $data = ['admin' => $adminData];
-        $this->view('users/adminprofile', $data);
-    }
-
     // Show manager profile
     public function managerprofile() {
         if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'organization') {
