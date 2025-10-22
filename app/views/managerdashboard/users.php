@@ -36,18 +36,24 @@
                                         <td><strong><?= htmlspecialchars($user['name']) ?></strong></td>
                                         <td><?= htmlspecialchars($user['email']) ?></td>
                                         <td>
-                                            <?php 
-                                            $badgeClass = 'badge-info';
-                                            if($user['role'] == 'Admin') $badgeClass = 'badge-danger';
-                                            elseif($user['role'] == 'Quiz Manager') $badgeClass = 'badge-warning';
-                                            elseif($user['role'] == 'Community Admin') $badgeClass = 'badge-success';
-                                            ?>
-                                            <span class="badge <?= $badgeClass ?>"><?= htmlspecialchars($user['role']) ?></span>
+                                       <?php 
+$badgeClass = 'badge-info';
+if($user['role'] == 'admin') $badgeClass = 'badge-danger';
+elseif($user['role'] == 'quiz_manager') $badgeClass = 'badge-warning';
+elseif($user['role'] == 'manager') $badgeClass = 'badge-primary';
+elseif($user['role'] == 'community_admin') $badgeClass = 'badge-success';
+?>
+                                        <span class="badge <?= $badgeClass ?>">
+                                        <?= htmlspecialchars(str_replace('_', ' ', ucwords($user['role'], '_'))) ?>
+                                        </span>
                                         </td>
                                         <td><?= date('M d, Y', strtotime($user['created_at'])) ?></td>
                                         <td>
                                             <div class="action-buttons">
-                                                <button class="btn-icon btn-delete" title="Remove User" onclick="removeUser(<?= $user['id'] ?>, '<?= htmlspecialchars($user['name']) ?>')">
+                                                <button class="btn-icon btn-edit" title="Edit User" onclick="openEditUserModal(<?= $user['id'] ?>, '<?= htmlspecialchars($user['name'], ENT_QUOTES) ?>', '<?= htmlspecialchars($user['email'], ENT_QUOTES) ?>', '<?= htmlspecialchars($user['role'], ENT_QUOTES) ?>')">
+                                                    Edit
+                                                </button>
+                                                <button class="btn-icon btn-delete" title="Remove User" onclick="removeUser(<?= $user['id'] ?>, '<?= htmlspecialchars($user['name'], ENT_QUOTES) ?>')">
                                                     Remove
                                                 </button>
                                             </div>
@@ -73,7 +79,7 @@
     <div class="modal-content">
         <span class="close" onclick="closeAddUserModal()">&times;</span>
         <h2>Add New User</h2>
-        <form id="addUserForm" style="margin-top: 20px;">
+        <form id="addUserForm" data-urlroot="<?= URLROOT ?>" style="margin-top: 20px;">
             <div style="margin-bottom: 15px;">
                 <label for="userName">Full Name</label>
                 <input type="text" id="userName" name="name" required>
@@ -104,73 +110,44 @@
     </div>
 </div>
 
-<script>
-function openAddUserModal() {
-    document.getElementById('addUserModal').style.display = 'block';
-}
+<!-- Edit User Modal -->
+<div id="editUserModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeEditUserModal()">&times;</span>
+        <h2>Edit User</h2>
+        <form id="editUserForm" data-urlroot="<?= URLROOT ?>" style="margin-top: 20px;">
+            <input type="hidden" id="editUserId" name="user_id">
+            
+            <div style="margin-bottom: 15px;">
+                <label for="editUserName">Full Name</label>
+                <input type="text" id="editUserName" name="name" required>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label for="editUserEmail">Email Address</label>
+                <input type="email" id="editUserEmail" name="email" required>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label for="editUserRole">Role</label>
+                <select id="editUserRole" name="role" required style="width: 100%; padding: 15px 20px; border-radius: 10px; border: 2px solid var(--primary-blue); font-size: 1rem; background-color: var(--blue-bg);">
+                    <option value="">Select Role</option>
+                    <option value="Admin">Admin</option>
+                    <option value="Quiz Manager">Quiz Manager</option>
+                    <option value="Community Admin">Community Admin</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label for="editUserPassword">New Password (leave blank to keep current)</label>
+                <input type="password" id="editUserPassword" name="password" placeholder="Leave blank to keep current password">
+            </div>
+            
+            <button type="submit" class="btn-primary" style="width: 100%;">Update User</button>
+        </form>
+    </div>
+</div>
 
-function closeAddUserModal() {
-    document.getElementById('addUserModal').style.display = 'none';
-    document.getElementById('addUserForm').reset();
-}
-
-document.getElementById('addUserForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    
-    fetch('<?= URLROOT ?>/managerdashboard/addUser', {
-        method: 'POST',
-        body: new URLSearchParams(formData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(data.message);
-            closeAddUserModal();
-            location.reload(); // Reload to show new user
-        } else {
-            alert('Error adding user');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error adding user');
-    });
-});
-
-function removeUser(userId, userName) {
-    if (confirm(`Are you sure you want to remove "${userName}"? This action cannot be undone.`)) {
-        fetch('<?= URLROOT ?>/managerdashboard/removeUser', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `user_id=${userId}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                document.querySelector(`tr[data-user-id="${userId}"]`).remove();
-            } else {
-                alert('Error removing user');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error removing user');
-        });
-    }
-}
-
-// Close modal when clicking outside of it
-window.onclick = function(event) {
-    const addModal = document.getElementById('addUserModal');
-    if (event.target == addModal) {
-        addModal.style.display = 'none';
-    }
-}
-</script>
+<script src="<?= URLROOT ?>/assets/js/manager_users.js"></script>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>

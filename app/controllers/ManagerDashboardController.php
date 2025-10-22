@@ -109,38 +109,37 @@ class ManagerDashboardController extends Controller {
      * User Management Page
      */
     public function users() {
-        // Mock users data
-        $users = [
-            [
-                'id' => 1,
-                'name' => 'John Admin',
-                'email' => 'john@admin.com',
-                'role' => 'Admin',
-                'created_at' => '2024-12-15'
-            ],
-            [
-                'id' => 2,
-                'name' => 'Sarah Quiz Manager',
-                'email' => 'sarah@quizmanager.com',
-                'role' => 'Quiz Manager',
-                'created_at' => '2024-12-20'
-            ],
-            [
-                'id' => 3,
-                'name' => 'Mike Community Admin',
-                'email' => 'mike@community.com',
-                'role' => 'Community Admin',
-                'created_at' => '2025-01-05'
-            ]
-        ];
-        
-        $data = [
-            'title' => 'User Management',
-            'page' => 'users',
-            'users' => $users
-        ];
-        
-        $this->view('managerdashboard/users', $data);
+        try {
+            $db = (new Database())->connect();
+            
+            // Fetch all admin users from database
+            $sql = "SELECT id, username as name, email, role, created_at 
+                    FROM users 
+                    WHERE role IN ('admin', 'quiz_manager', 'manager', 'community_admin')
+                    ORDER BY created_at DESC";
+            
+            $stmt = $db->prepare($sql);
+            $stmt->execute();
+            $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $data = [
+                'title' => 'User Management',
+                'page' => 'users',
+                'users' => $users
+            ];
+            
+            $this->view('managerdashboard/users', $data);
+            
+        } catch (Exception $e) {
+            // If error, show empty array
+            $data = [
+                'title' => 'User Management',
+                'page' => 'users',
+                'users' => []
+            ];
+            
+            $this->view('managerdashboard/users', $data);
+        }
     }
     
     /**
@@ -148,14 +147,119 @@ class ManagerDashboardController extends Controller {
      */
     public function addUser() {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $name = $_POST['name'] ?? '';
-            $email = $_POST['email'] ?? '';
-            $role = $_POST['role'] ?? '';
+            $name = trim($_POST['name'] ?? '');
+            $email = trim($_POST['email'] ?? '');
+            $role = trim($_POST['role'] ?? '');
             $password = $_POST['password'] ?? '';
             
-            // TODO: Implement actual database insertion with password hashing
-            // For now, return success
-            echo json_encode(['success' => true, 'message' => 'User added successfully']);
+            // Validate inputs
+            if (empty($name) || empty($email) || empty($role) || empty($password)) {
+                echo json_encode(['success' => false, 'message' => 'All fields are required']);
+                return;
+            }
+            
+            // Validate email format
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                echo json_encode(['success' => false, 'message' => 'Invalid email format']);
+                return;
+            }
+            
+            try {
+                $db = (new Database())->connect();
+                
+                // Check if email already exists
+                $checkSql = "SELECT id FROM users WHERE email = :email";
+                $checkStmt = $db->prepare($checkSql);
+                $checkStmt->bindValue(':email', $email);
+                $checkStmt->execute();
+                
+                if ($checkStmt->fetch()) {
+                    echo json_encode(['success' => false, 'message' => 'Email already exists']);
+                    return;
+                }
+                
+                // Hash the password
+                $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+                
+                // Insert into database
+                $sql = "INSERT INTO users (username, email, password, role, profile_completed, created_at) 
+                        VALUES (:username, :email, :password, :role, 1, NOW())";
+                
+                $stmt = $db->prepare($sql);
+                $stmt->bindValue(':username', $name);
+                $stmt->bindValue(':email', $email);
+                $stmt->bindValue(':password', $hashedPassword);
+                $stmt->bindValue(':role', $role);
+                
+                if ($stmt->execute()) {
+                    echo json_encode(['success' => true, 'message' => 'User added successfully']);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Failed to add user']);
+                }
+                
+            } catch (Exception $e) {
+                echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+            }
+        }
+    }
+    
+    /**
+     * Update User (AJAX endpoint)
+     */
+    public function updateUser() {
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $userId = trim($_POST['user_id'] ?? '');
+            $name = trim($_POST['name'] ?? '');
+            $email = trim($_POST['email'] ?? '');
+            $role = trim($_POST['role'] ?? '');
+            $password = $_POST['password'] ?? '';
+            
+            // Validate inputs
+            if (empty($userId) || empty($name) || empty($email) || empty($role)) {
+                echo json_encode(['success' => false, 'message' => 'All fields except password are required']);
+                return;
+            }
+            
+            // Validate email format
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                echo json_encode(['success' => false, 'message' => 'Invalid email format']);
+                return;
+            }
+            
+            try {
+                $db = (new Database())->connect();
+                
+                // Build update query
+                if (!empty($password)) {
+                    // Update with new password
+                    $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+                    $sql = "UPDATE users 
+                            SET username = :username, email = :email, role = :role, password = :password 
+                            WHERE id = :id";
+                    $stmt = $db->prepare($sql);
+                    $stmt->bindValue(':password', $hashedPassword);
+                } else {
+                    // Update without changing password
+                    $sql = "UPDATE users 
+                            SET username = :username, email = :email, role = :role 
+                            WHERE id = :id";
+                    $stmt = $db->prepare($sql);
+                }
+                
+                $stmt->bindValue(':username', $name);
+                $stmt->bindValue(':email', $email);
+                $stmt->bindValue(':role', $role);
+                $stmt->bindValue(':id', $userId);
+                
+                if ($stmt->execute()) {
+                    echo json_encode(['success' => true, 'message' => 'User updated successfully']);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Failed to update user']);
+                }
+                
+            } catch (Exception $e) {
+                echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+            }
         }
     }
     
@@ -166,9 +270,28 @@ class ManagerDashboardController extends Controller {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $userId = $_POST['user_id'] ?? null;
             
-            // TODO: Implement actual database deletion
-            // For now, return success
-            echo json_encode(['success' => true, 'message' => 'User removed successfully']);
+            if (empty($userId)) {
+                echo json_encode(['success' => false, 'message' => 'User ID is required']);
+                return;
+            }
+            
+            try {
+                $db = (new Database())->connect();
+                
+                // Delete the user
+                $sql = "DELETE FROM users WHERE id = :id";
+                $stmt = $db->prepare($sql);
+                $stmt->bindValue(':id', $userId);
+                
+                if ($stmt->execute()) {
+                    echo json_encode(['success' => true, 'message' => 'User removed successfully']);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Failed to remove user']);
+                }
+                
+            } catch (Exception $e) {
+                echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
+            }
         }
     }
     
