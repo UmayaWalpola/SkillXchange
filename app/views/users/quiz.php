@@ -8,7 +8,7 @@
 <div class="dashboard-container">
     <div class="dashboard-main">
         <div class="quiz-container">
-            <div class="quiz-header">
+            <div class="page-header">
                 <h1>Your tech journey starts here</h1>
                 <p>Take a quiz, earn badges, level up</p>
             </div>
@@ -19,6 +19,7 @@
                 </div>
 
                 <div class="filters" id="categoryFilters">
+                    <button class="filter-btn active" data-category="All">All</button>
                     <button class="filter-btn" data-category="Programming">Programming Fundamentals</button>
                     <button class="filter-btn" data-category="UI/UX">UI/UX Design</button>
                     <button class="filter-btn" data-category="Frontend">Frontend Development</button>
@@ -50,5 +51,13 @@
 </div>
 </main>
 
+<!-- Pass data to JavaScript using data attributes -->
+<div id="quiz-data" 
+     data-quizzes='<?= json_encode($data['quizzes']) ?>'
+     data-urlroot='<?= URLROOT ?>' 
+     style="display: none;">
+</div>
+
 <script src="<?= URLROOT ?>/assets/js/quiz.js"></script>
+
 <?php require_once "../app/views/layouts/footer_user.php"; ?>

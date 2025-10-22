@@ -8,6 +8,10 @@
 <div class="dashboard-container">
 <div class="dashboard-main">
 <div class="container">
+    <div class="page-header">
+    <h1>Your Wallet</h1>
+    <p>Manage your funds and transactions</p>
+</div>
     
     <!-- Top Statistics Row -->
     <div class="stats-row">
