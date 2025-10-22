@@ -70,8 +70,8 @@ body {
 .header {
   position: fixed;
   top: 0;
-  left: 0;
-  width: 100%;
+  left: 0; 
+  width: 100%; 
   background: var(--dark-bg);
   z-index: 1000;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -320,19 +320,35 @@ form button:hover {
   .logo-image { height: 40px; }
 
   .btn { padding: 8px 16px; font-size: 13px; }
+/* ADDED - Mobile fixes for sidebar layout */
+  .header {
+    left: 0;
+    width: 100%;
+  }
+  
+  .dashboard-container {
+    margin-left: 0;
+  }
+  
+  .footer-minimal {
+    margin-left: 0;
+    width: 100%;
+  }
+  
 }
 
 /* Sidebar Dashboard */
 .sidebar {
-    background: var(--accent-blue);
+    background: var(--primary-blue);
     width: 250px;
     padding: 2rem 0;
     color: #FFFFFF;
-    min-height: calc(100vh - 100px); /* Full height minus header */
+    min-height: 100vh; /* CHANGED: Full viewport height */
     box-shadow: 2px 0 10px rgba(37, 99, 235, 0.1);
     position: fixed;
     left: 0;
-    top: 100px; /* Start below header */
+    top:0;/* CHANGED: Start from very top */
+    z-index: 999; /* ADDED */
 }
 
 .sidebar-item {
@@ -438,15 +454,28 @@ form button:hover {
 /* ===== Dashboard Layout ===== */
 .dashboard-container {
     display: flex;
-    margin-top: 100px; /* Push down below header */
-    min-height: calc(100vh - 100px); /* Full height minus header */
+    margin-left: 250px; /* CHANGED: Push right of sidebar */
+    min-height: 100vh; /* CHANGED: Full viewport height */
+    flex-direction: column; /* ADDED */
 }
 
 .dashboard-main {
     flex: 1;
-    margin-left: 250px; /* Push right for sidebar */
     padding: 2rem;
+    padding-top: 80px; /* CHANGED: Account for fixed header */
     background: var(--white-bg);
+    min-height: 100vh;
+}
+
+@media (max-width: 768px) {
+    .dashboard-main {
+        margin-left: 0;
+        width: 100%;
+    }
+    
+    .dashboard-container {
+        flex-direction: column;
+    }
 }
 
 /* ===== Footer ===== */
@@ -454,7 +483,8 @@ form button:hover {
   background: var(--dark-bg);
   color: var(--white-bg);
   padding: 3rem 0 2rem;
-  margin-top: auto;
+  margin-left: 0; 
+  width: 100%;
 }
 
 .footer-minimal-container {
@@ -704,3 +734,74 @@ form button:hover {
     height: 18px;
   }
 }
+
+/* ===== Badges ===== */
+.badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Difficulty Badge Colors */
+.badge-beginner,
+.difficulty-beginner { 
+    background: #dcfce7; 
+    color: #22c55e;
+    border: 1px solid #22c55e;
+}
+
+.badge-intermediate,
+.difficulty-intermediate { 
+    background: #fef3c7; 
+    color: #e4b015ff;
+    border: 1px solid #e4b015ff;
+}
+
+.badge-advanced,
+.difficulty-advanced { 
+    background: #fecaca; 
+    color: #ef4444;
+    border: 1px solid #ef4444;
+}
+
+/* Status Badge Colors */
+.badge-success { 
+    background: #dcfce7; 
+    color: #22c55e;
+}
+
+.badge-warning { 
+    background: #fef3c7; 
+    color: #e4b015ff;
+}
+
+.badge-danger { 
+    background: #fecaca; 
+    color: #ef4444;
+}
+
+.badge-info { 
+    background: var(--blue-bg); 
+    color: var(--primary-blue);
+}
+
+/* Premium Badge */
+.premium-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: linear-gradient(45deg, var(--primary-blue), var(--accent-blue));
+    color: white;
+    padding: 8px 15px;
+    border-radius: 0 15px 0 20px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+
+

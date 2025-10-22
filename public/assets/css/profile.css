@@ -1,18 +1,16 @@
-/* Profile Page Styles - Using global.css variables */
+/* Profile Page Styles - Minimal, uses global.css */
 
 .profile-content {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
-    background: var(--white-bg);
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(18, 18, 13, 0.1);
+    max-width: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
 }
 
-/* Profile Header */
+/* Profile Header with Gradient */
 .profile-header {
     position: relative;
-    background: linear-gradient(135deg, var(--primary-blue), var(--accent-blue));
+    background: linear-gradient(135deg, var(--accent-blue), var(--primary-blue));
     border-radius: 15px;
     padding: 2rem;
     margin-bottom: 2rem;
@@ -39,6 +37,7 @@
     transform: translateY(-2px);
 }
 
+/* Profile Info Layout */
 .profile-info {
     display: flex;
     align-items: flex-start;
@@ -80,6 +79,7 @@
     max-width: 600px;
 }
 
+/* Stats Grid */
 .profile-stats {
     display: flex;
     gap: 2rem;
@@ -153,52 +153,54 @@
     color: var(--dark-bg);
 }
 
-/* Skills Section */
-.skills-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
+/* Skills Section - Split Layout */
+.skills-category-section {
+    margin-bottom: 2rem;
 }
 
-.skills-category h3 {
+.skills-category-section:last-child {
+    margin-bottom: 0;
+}
+
+.skills-category-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--primary-blue);
     margin-bottom: 1rem;
-    color: var(--dark-bg);
-    font-size: 1.1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--blue-bg);
 }
 
-.skills-list {
+.skills-container {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
-.skill-tag {
-    background: var(--primary-blue);
-    color: var(--white-bg);
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-size: 0.9rem;
-    font-weight: 500;
+.skill-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    background: var(--white-bg);
+    border-radius: 10px;
+    border: 1px solid transparent;
     transition: all 0.3s ease;
 }
 
-.skill-tag:hover {
-    background: var(--accent-blue);
+.skill-item:hover {
+    border-color: var(--accent-blue);
+    transform: translateX(5px);
+    box-shadow: 0 3px 10px rgba(101, 131, 150, 0.1);
+}
+
+.skill-name {
+    font-weight: 600;
     color: var(--dark-bg);
-    transform: translateY(-2px);
+    font-size: 1.05rem;
 }
 
-.skill-tag.learning {
-    background: var(--accent-blue);
-    color: var(--dark-bg);
-}
-
-.skill-tag.learning:hover {
-    background: var(--primary-blue);
-    color: var(--white-bg);
-}
-
-/* Projects Section */
+/* Project Toggle Buttons */
 .project-toggle {
     display: flex;
     gap: 0.5rem;
@@ -223,6 +225,7 @@
     border-color: var(--primary-blue);
 }
 
+/* Projects Grid */
 .projects-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -277,15 +280,17 @@
     opacity: 0.8;
 }
 
-/* Badges Section */
+/* Badges Grid - Simplified without icons */
 .badges-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1rem;
 }
 
 .badge-item {
-    text-align: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     padding: 1.5rem;
     background: var(--blue-bg);
     border-radius: 10px;
@@ -299,14 +304,10 @@
     box-shadow: 0 5px 15px rgba(101, 131, 150, 0.15);
 }
 
-.badge-icon {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-}
-
 .badge-name {
     font-weight: 600;
     color: var(--dark-bg);
+    font-size: 1.1rem;
 }
 
 /* Feedback Section */
@@ -411,11 +412,6 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .profile-content {
-        padding: 1rem;
-        margin: 0 1rem;
-    }
-    
     .profile-info {
         flex-direction: column;
         text-align: center;
@@ -431,10 +427,7 @@
         min-width: 100px;
     }
     
-    .skills-grid {
-        grid-template-columns: 1fr;
-    }
-    
+    .skills-grid,
     .projects-grid {
         grid-template-columns: 1fr;
     }
@@ -443,12 +436,7 @@
         grid-template-columns: repeat(2, 1fr);
     }
     
-    .feedback-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-    }
-    
+    .feedback-header,
     .activity-item {
         flex-direction: column;
         gap: 0.5rem;

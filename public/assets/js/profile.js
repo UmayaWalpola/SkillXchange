@@ -237,10 +237,10 @@ function setActiveItem(clickedItem) {
 // Add click event listeners to all sidebar items
 document.querySelectorAll('.sidebar-item').forEach(item => {
     item.addEventListener('click', function(e) {
-        e.preventDefault();
+        // Don't prevent default - let the link work!
         setActiveItem(this);
-
-        // You can add page navigation logic here
+        
+        // Optional: You can add loading state here
         console.log('Navigating to:', this.querySelector('span:last-child').textContent);
     });
 });
