@@ -1,0 +1,292 @@
+/* Quiz Manager Dashboard Styles */
+/* Simple and clean - uses global.css */
+
+.dashboard-container {
+  padding: 30px;
+  padding-bottom: 100px;
+  max-width: 1400px;  
+  margin: 120px auto 0 auto;
+  margin-left: calc(250px + 100px);  
+  margin-right: 100px;
+  width: calc(100% - 450px);
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.dashboard-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--dark-bg);
+}
+
+/* Table Container */
+.quiz-table-container {
+  background: var(--white-bg);
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.table-header {
+  padding: 20px 25px;
+  border-bottom: 1px solid var(--accent-blue);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.table-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--dark-bg);
+}
+
+/* Filter */
+.filter-select {
+  padding: 8px 15px;
+  border: 2px solid var(--accent-blue);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--white-bg);
+  cursor: pointer;
+  outline: none;
+}
+
+.filter-select:hover {
+  border-color: var(--primary-blue);
+}
+
+/* Table Styles */
+.quiz-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.quiz-table th,
+.quiz-table td {
+  padding: 15px 25px;
+  text-align: left;
+  border-bottom: 1px solid var(--blue-bg);
+}
+
+.quiz-table th {
+  background-color: var(--blue-bg);
+  font-weight: 600;
+  color: var(--dark-bg);
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.quiz-table tbody tr:hover {
+  background-color: var(--blue-bg);
+  transition: background-color 0.2s ease;
+}
+
+/* Quiz Details Column */
+.quiz-title {
+  font-weight: 600;
+  color: var(--dark-bg);
+  font-size: 15px;
+  margin-bottom: 5px;
+}
+
+.quiz-badge {
+  display: inline-block;
+  margin: 5px 0;
+}
+
+.quiz-meta {
+  font-size: 12px;
+  color: #666;
+  margin-top: 3px;
+}
+
+/* Status - Simple text only, no styling */
+.status-text {
+  font-weight: 600;
+  color: var(--dark-bg);
+  text-transform: uppercase;
+  font-size: 13px;
+}
+
+/* Participants and Score Display */
+.participants-count {
+  font-weight: 600;
+  color: var(--primary-blue);
+  font-size: 16px;
+}
+
+.score-display {
+  font-weight: 600;
+  color: var(--dark-bg);
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-view {
+  background: var(--primary-blue);
+  color: var(--white-bg);
+  border: 2px solid var(--primary-blue);
+}
+
+.btn-view:hover {
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+  color: var(--dark-bg);
+  transform: translateY(-1px);
+}
+
+.btn-edit {
+  background: transparent;
+  color: var(--primary-blue);
+  border: 2px solid var(--primary-blue);
+}
+
+.btn-edit:hover {
+  background: var(--primary-blue);
+  color: var(--white-bg);
+  transform: translateY(-1px);
+}
+
+.btn-pause, .btn-play {
+  background: #fef3c7;
+  color: #e4b015ff;
+  border: 2px solid #e4b015ff;
+}
+
+.btn-pause:hover, .btn-play:hover {
+  background: #e4b015ff;
+  color: var(--white-bg);
+  transform: translateY(-1px);
+}
+
+.btn-delete {
+  background: #fecaca;
+  color: #ef4444;
+  border: 2px solid #ef4444;
+}
+
+.btn-delete:hover {
+  background: #ef4444;
+  color: var(--white-bg);
+  transform: translateY(-1px);
+}
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  background-color: var(--white-bg);
+  margin: 5% auto;
+  padding: 30px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content h2 {
+  color: var(--dark-bg);
+  margin-bottom: 20px;
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.close:hover {
+  color: var(--dark-bg);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .action-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 15px;
+    margin-top: 140px;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+
+  .dashboard-title {
+    font-size: 22px;
+  }
+
+  .quiz-table {
+    font-size: 13px;
+  }
+
+  .quiz-table th,
+  .quiz-table td {
+    padding: 10px;
+  }
+
+  .table-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 480px) {
+  .quiz-table th,
+  .quiz-table td {
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  .action-btn {
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+}
