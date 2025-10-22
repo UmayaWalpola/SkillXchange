@@ -132,7 +132,7 @@ class AdminController extends Controller {
             $users = $db->resultSet();
 
             $data = ['users' => $users];
-            $this->view('admin/users_list', $data);
+            $this->view('users/admin_users', $data);
         } catch (Exception $e) {
             $data = ['users' => [], 'error' => 'Failed to load users'];
             $this->view('admin/users_list', $data);
@@ -144,12 +144,12 @@ class AdminController extends Controller {
         $popularSkills = $this->getPopularSkills(20);
         
         $data = ['skills' => $popularSkills];
-        $this->view('admin/skills_list', $data);
+        $this->view('users/admin_skills', $data);
     }
 
     // Reports page
     public function reports() {
         $data = ['reports' => []];
-        $this->view('admin/reports_list', $data);
+        $this->view('users/admin_reports', $data);
     }
 }
