@@ -43,6 +43,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData(this);
         const urlRoot = this.getAttribute('data-urlroot');
         
+        // Log the data being sent for debugging
+        console.log('Sending data:', {
+            user_id: formData.get('user_id'),
+            name: formData.get('name'),
+            email: formData.get('email'),
+            role: formData.get('role'),
+            password: formData.get('password') ? '***' : '(empty)'
+        });
+        
         fetch(`${urlRoot}/managerdashboard/updateUser`, {
             method: 'POST',
             body: new URLSearchParams(formData)
@@ -66,10 +75,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Edit User Modal Functions
 function openEditUserModal(userId, name, email, role) {
+    console.log('Opening edit modal with:', { userId, name, email, role }); // Debug log
+    
     document.getElementById('editUserId').value = userId;
     document.getElementById('editUserName').value = name;
     document.getElementById('editUserEmail').value = email;
-    document.getElementById('editUserRole').value = role;
+    document.getElementById('editUserRole').value = role; // This will now match the database value
     document.getElementById('editUserPassword').value = '';
     document.getElementById('editUserModal').style.display = 'block';
 }

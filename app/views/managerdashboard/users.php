@@ -50,10 +50,10 @@ elseif($user['role'] == 'community_admin') $badgeClass = 'badge-success';
                                         <td><?= date('M d, Y', strtotime($user['created_at'])) ?></td>
                                         <td>
                                             <div class="action-buttons">
-                                                <button class="btn-icon btn-edit" title="Edit User" onclick="openEditUserModal(<?= $user['id'] ?>, '<?= htmlspecialchars($user['name'], ENT_QUOTES) ?>', '<?= htmlspecialchars($user['email'], ENT_QUOTES) ?>', '<?= htmlspecialchars($user['role'], ENT_QUOTES) ?>')">
+                                                <button class="btn-icon btn-edit" title="Edit User" onclick='openEditUserModal(<?= $user['id'] ?>, <?= json_encode($user['name']) ?>, <?= json_encode($user['email']) ?>, <?= json_encode($user['role']) ?>)'>
                                                     Edit
                                                 </button>
-                                                <button class="btn-icon btn-delete" title="Remove User" onclick="removeUser(<?= $user['id'] ?>, '<?= htmlspecialchars($user['name'], ENT_QUOTES) ?>')">
+                                                <button class="btn-icon btn-delete" title="Remove User" onclick='removeUser(<?= $user['id'] ?>, <?= json_encode($user['name']) ?>)'>
                                                     Remove
                                                 </button>
                                             </div>
@@ -94,9 +94,9 @@ elseif($user['role'] == 'community_admin') $badgeClass = 'badge-success';
                 <label for="userRole">Role</label>
                 <select id="userRole" name="role" required style="width: 100%; padding: 15px 20px; border-radius: 10px; border: 2px solid var(--primary-blue); font-size: 1rem; background-color: var(--blue-bg);">
                     <option value="">Select Role</option>
-                    <option value="Admin">Admin</option>
-                    <option value="Quiz Manager">Quiz Manager</option>
-                    <option value="Community Admin">Community Admin</option>
+                    <option value="admin">Admin</option>
+                    <option value="quiz_manager">Quiz Manager</option>
+                    <option value="community_admin">Community Admin</option>
                 </select>
             </div>
             
@@ -132,9 +132,9 @@ elseif($user['role'] == 'community_admin') $badgeClass = 'badge-success';
                 <label for="editUserRole">Role</label>
                 <select id="editUserRole" name="role" required style="width: 100%; padding: 15px 20px; border-radius: 10px; border: 2px solid var(--primary-blue); font-size: 1rem; background-color: var(--blue-bg);">
                     <option value="">Select Role</option>
-                    <option value="Admin">Admin</option>
-                    <option value="Quiz Manager">Quiz Manager</option>
-                    <option value="Community Admin">Community Admin</option>
+                    <option value="admin">Admin</option>
+                    <option value="quiz_manager">Quiz Manager</option>
+                    <option value="community_admin">Community Admin</option>
                 </select>
             </div>
             
