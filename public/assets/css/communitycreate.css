@@ -16,7 +16,9 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   padding: 40px;
 }
-
+.create-container {
+    margin-left: 260px;
+}
 /* Header */
 .builder-header {
   margin-bottom: 40px;

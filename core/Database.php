@@ -13,7 +13,7 @@ class Database {
         $options = [
             PDO::ATTR_PERSISTENT => true, 
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC  // ← This fixes the array issue!
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ  // ← This fixes the array issue!
         ];
         try {
             $this->dbh = new PDO($dsn, $this->user, $this->pass, $options);

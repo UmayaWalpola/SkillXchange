@@ -6,7 +6,8 @@ class CommunityController extends Controller {
     private $communityModel;
 
     public function __construct() {
-        $this->communityModel = $this->model('Community');
+        require_once "../app/models/Community.php";
+        $this->communityModel = new Community();
         
         // TEMPORARILY DISABLED - Authentication will be added later
         /*
@@ -21,6 +22,19 @@ class CommunityController extends Controller {
         }
         */
     }
+    public function testStats() {
+    // Direct query test
+    $this->communityModel->db->query('SELECT COUNT(*) as total FROM communities');
+    $result = $this->communityModel->db->single();
+    
+    echo "<pre>";
+    echo "Result object: ";
+    var_dump($result);
+    echo "\n\nTotal communities: ";
+    var_dump($result->total ?? 'NULL');
+    echo "</pre>";
+    exit;
+}
 
     // Main dashboard page - READ all communities
     public function index() {

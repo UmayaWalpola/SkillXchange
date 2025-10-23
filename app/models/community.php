@@ -158,27 +158,37 @@ class Community {
     }
 
     // Get dashboard statistics
-    public function getStats() {
-        $this->db->query('SELECT 
-            COUNT(*) as total_communities,
-            SUM(CASE WHEN status = "active" THEN 1 ELSE 0 END) as active_communities
-        FROM communities');
-        
-        $communityStats = $this->db->single();
-
-        $this->db->query('SELECT COUNT(*) as total_members FROM community_members');
-        $memberStats = $this->db->single();
-
-        $this->db->query('SELECT COUNT(*) as total_posts FROM posts');
-        $postStats = $this->db->single();
-
-        return [
-            'total_communities' => $communityStats->total_communities ?? 0,
-            'active_communities' => $communityStats->active_communities ?? 0,
-            'total_members' => $memberStats->total_members ?? 0,
-            'total_posts' => $postStats->total_posts ?? 0
-        ];
-    }
+   
+// Get dashboard statistics - FIXED VERSION
+public function getStats() {
+    // Get total and active communities
+    $this->db->query('SELECT 
+        COUNT(*) as total_communities,
+        SUM(CASE WHEN status = "active" THEN 1 ELSE 0 END) as active_communities
+    FROM communities');
+    
+    $communityStats = $this->db->single();
+    
+    // Get total members
+    $this->db->query('SELECT COUNT(*) as total_members FROM community_members');
+    $memberStats = $this->db->single();
+    
+    // Get total posts
+    $this->db->query('SELECT COUNT(*) as total_posts FROM posts');
+    $postStats = $this->db->single();
+    
+    // Debug: Log the results
+    error_log("Community Stats: " . print_r($communityStats, true));
+    error_log("Member Stats: " . print_r($memberStats, true));
+    error_log("Post Stats: " . print_r($postStats, true));
+    
+    return [
+        'total_communities' => (int)($communityStats->total_communities ?? 0),
+        'active_communities' => (int)($communityStats->active_communities ?? 0),
+        'total_members' => (int)($memberStats->total_members ?? 0),
+        'total_posts' => (int)($postStats->total_posts ?? 0)
+    ];
+}
 
     // Check if community name already exists
     public function communityNameExists($name, $excludeId = null) {
