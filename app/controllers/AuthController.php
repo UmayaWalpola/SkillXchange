@@ -5,7 +5,6 @@ class AuthController extends Controller {
 
     public function __construct() {
         $this->userModel = $this->model('User');
-
     }
 
     // Default method - redirect to signin
@@ -21,7 +20,6 @@ class AuthController extends Controller {
         ];
         $this->view('auth/register', $data);
     }
-
 
     // Register Organization
     public function registerOrganization() {
@@ -159,74 +157,75 @@ class AuthController extends Controller {
     }
 
     // Show signin page
-public function signin() {
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $email = trim($_POST['email'] ?? '');
-        $password = $_POST['password'] ?? '';
+    public function signin() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $email = trim($_POST['email'] ?? '');
+            $password = $_POST['password'] ?? '';
 
-        if (empty($email) || empty($password)) {
-            $data = [
-                'error' => 'Please provide both email and password.',
-                'email' => $email
-            ];
-            $this->view('auth/signin', $data);
-            return;
-        }
+            if (empty($email) || empty($password)) {
+                $data = [
+                    'error' => 'Please provide both email and password.',
+                    'email' => $email
+                ];
+                $this->view('auth/signin', $data);
+                return;
+            }
 
-        $user = $this->userModel->login($email, $password);
+            $user = $this->userModel->login($email, $password);
 
-        if ($user) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['username'] = $user['username'];
-            $_SESSION['role'] = $user['role'];
-            $_SESSION['profile_completed'] = $user['profile_completed'];
+            if ($user) {
+                // Set session variables
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['role'] = $user['role'];
+                $_SESSION['profile_completed'] = $user['profile_completed'] ?? 1;
 
-            // Redirect based on role and profile completion
-            if ($user['role'] === 'individual') {
-                // Check if profile needs to be completed
-                if (!$user['profile_completed']) {
-                    header("Location: " . URLROOT . "/users/profileSetup");
+                // Redirect based on role and profile completion
+                if ($user['role'] === 'individual') {
+                    // Check if profile needs to be completed
+                    if (!$user['profile_completed']) {
+                        header("Location: " . URLROOT . "/users/profileSetup");
+                        exit;
+                    } else {
+                        // Profile is complete, go to user profile
+                        header("Location: " . URLROOT . "/users/userprofile");
+                        exit;
+                    }
+                } elseif ($user['role'] === 'organization') {
+                    // Organizations go to their profile page (landing page)
+                    header("Location: " . URLROOT . "/organization/profile");
+                    exit;
+                } elseif ($user['role'] === 'manager') {
+                    // Manager go to manager dashboard
+                    header("Location: " . URLROOT . "/managerdashboard");
+                    exit;
+                } elseif ($user['role'] === 'admin') {
+                    // Admins go to admin dashboard
+                    header("Location: " . URLROOT . "/admin");
                     exit;
                 } else {
-                    // Profile is complete, go to user profile
-                    header("Location: " . URLROOT . "/users/userprofile");
+                    // Default fallback
+                    header("Location: " . URLROOT . "/home");
                     exit;
                 }
-            }elseif ($user['role'] === 'organization') {
-        // Organizations go to their profile page (landing page)
-        header("Location: " . URLROOT . "/organization/profile");
-        exit;
-    }
-            elseif ($user['role'] === 'manager') {
-                // manager go to manager profile
-                header("Location: " . URLROOT . "/managerdashboard");
-                exit;
-            } elseif ($user['role'] === 'admin') {
-                // Admins go to admin profile
-                header("Location: " . URLROOT . "/admin");
-                exit;
             } else {
-                // Default fallback
-                header("Location: " . URLROOT . "/home");
-                exit;
+                $data = [
+                    'error' => 'Invalid email or password.',
+                    'email' => $email
+                ];
+                $this->view('auth/signin', $data);
             }
         } else {
             $data = [
-                'error' => 'Invalid email or password.',
-                'email' => $email
+                'error' => $_SESSION['error'] ?? '',
+                'success' => $_SESSION['success'] ?? '',
+                'email' => ''
             ];
+            unset($_SESSION['error'], $_SESSION['success']);
             $this->view('auth/signin', $data);
         }
-    } else {
-        $data = [
-            'error' => $_SESSION['error'] ?? '',
-            'success' => $_SESSION['success'] ?? '',
-            'email' => ''
-        ];
-        unset($_SESSION['error'], $_SESSION['success']);
-        $this->view('auth/signin', $data);
     }
-}
+    
     // Logout
     public function logout() {
         session_destroy();
