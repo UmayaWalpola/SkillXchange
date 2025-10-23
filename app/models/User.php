@@ -37,7 +37,7 @@ class User extends Database {
         $stmt = $this->connect()->prepare($sql);
         $stmt->bindValue(':email', $email);
         $stmt->execute();
-        $user = $stmt->fetch();
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($user && password_verify($password, $user['password'])) {
             return $user;
@@ -51,7 +51,7 @@ class User extends Database {
         $stmt = $this->connect()->prepare($sql);
         $stmt->bindValue(':id', $id);
         $stmt->execute();
-        return $stmt->fetch();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     // 🔹 Complete Profile Setup
@@ -113,7 +113,7 @@ class User extends Database {
             'learns' => []
         ];
         
-        while ($row = $stmt->fetch()) {
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $skillData = [
                 'name' => $row['skill_name'],
                 'level' => $row['proficiency_level']
@@ -143,7 +143,7 @@ class User extends Database {
             'in_progress' => []
         ];
         
-        while ($row = $stmt->fetch()) {
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $project = [
                 'title' => $row['title'],
                 'description' => $row['description'],
@@ -171,7 +171,7 @@ class User extends Database {
         $stmt->execute();
         
         $badges = [];
-        while ($row = $stmt->fetch()) {
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $badges[] = [
                 'icon' => $row['badge_icon'],
                 'name' => $row['badge_name'],
@@ -195,7 +195,7 @@ class User extends Database {
         $stmt->execute();
         
         $feedback = [];
-        while ($row = $stmt->fetch()) {
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $feedback[] = [
                 'reviewer_name' => $row['reviewer_name'],
                 'rating' => $row['rating'],
@@ -208,27 +208,27 @@ class User extends Database {
     }
 
     // 🔹 Update Profile (for editing)
-public function updateProfile($userId, $username, $profilePicture, $bio = null) {
-    $sql = "UPDATE users 
-            SET username = :username, 
-                profile_picture = :picture, 
-                bio = :bio
-            WHERE id = :id";
-    $stmt = $this->connect()->prepare($sql);
-    $stmt->bindValue(':username', $username);
-    $stmt->bindValue(':picture', $profilePicture);
-    $stmt->bindValue(':bio', $bio);
-    $stmt->bindValue(':id', $userId);
-    return $stmt->execute();
-}
+    public function updateProfile($userId, $username, $profilePicture, $bio = null) {
+        $sql = "UPDATE users 
+                SET username = :username, 
+                    profile_picture = :picture, 
+                    bio = :bio
+                WHERE id = :id";
+        $stmt = $this->connect()->prepare($sql);
+        $stmt->bindValue(':username', $username);
+        $stmt->bindValue(':picture', $profilePicture);
+        $stmt->bindValue(':bio', $bio);
+        $stmt->bindValue(':id', $userId);
+        return $stmt->execute();
+    }
 
-// 🔹 Delete User Skills (before updating)
-public function deleteUserSkills($userId) {
-    $sql = "DELETE FROM user_skills WHERE user_id = :user_id";
-    $stmt = $this->connect()->prepare($sql);
-    $stmt->bindValue(':user_id', $userId);
-    return $stmt->execute();
-}
+    // 🔹 Delete User Skills (before updating)
+    public function deleteUserSkills($userId) {
+        $sql = "DELETE FROM user_skills WHERE user_id = :user_id";
+        $stmt = $this->connect()->prepare($sql);
+        $stmt->bindValue(':user_id', $userId);
+        return $stmt->execute();
+    }
 
     // 🔹 Get User Stats
     public function getUserStats($userId) {
@@ -237,7 +237,7 @@ public function deleteUserSkills($userId) {
         $stmt->bindValue(':user_id', $userId);
         $stmt->execute();
         
-        $stats = $stmt->fetch();
+        $stats = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$stats) {
             // Initialize if doesn't exist
             $this->initializeUserStats($userId);
@@ -261,7 +261,7 @@ public function deleteUserSkills($userId) {
         $stmt->bindValue(':user_id', $userId);
         $stmt->execute();
         
-        $result = $stmt->fetch();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
         return [
             'rating' => $result['avg_rating'] ? round($result['avg_rating'], 1) : 0,
             'count' => $result['review_count']
@@ -309,17 +309,16 @@ public function deleteUserSkills($userId) {
         return $stmt->execute();
     }
 
-
     // 🔹 Get User Activity
-public function getUserActivity($userId) {
-    $sql = "SELECT * FROM user_activity 
-            WHERE user_id = :user_id 
-            ORDER BY created_at DESC";
-    $stmt = $this->connect()->prepare($sql);
-    $stmt->bindValue(':user_id', $userId);
-    $stmt->execute();
-    return $stmt->fetchAll();
-}
+    public function getUserActivity($userId) {
+        $sql = "SELECT * FROM user_activity 
+                WHERE user_id = :user_id 
+                ORDER BY created_at DESC";
+        $stmt = $this->connect()->prepare($sql);
+        $stmt->bindValue(':user_id', $userId);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
     // 🔹 Helper: Time Ago
     private function timeAgo($timestamp) {
@@ -346,86 +345,84 @@ public function getUserActivity($userId) {
             $stmt->bindValue(':exclude_id', $excludeUserId);
         }
         $stmt->execute();
-        return $stmt->fetch() ? true : false;
+        return $stmt->fetch(PDO::FETCH_ASSOC) ? true : false;
     }
 
-    // Add these methods to your existing User model
+    // Get total users count
+    public function getTotalUsers() {
+        $this->db->query('SELECT COUNT(*) as count FROM users WHERE role = "user"');
+        $result = $this->db->single();
+        return $result['count'] ?? 0;
+    }
 
-// Get total users count
-public function getTotalUsers() {
-    $this->db->query('SELECT COUNT(*) as count FROM users WHERE role = "user"');
-    $result = $this->db->single();
-    return $result['count'] ?? 0;
-}
+    // Get recent users
+    public function getRecentUsers($limit = 5) {
+        $this->db->query('
+            SELECT id, username, email, created_at, status 
+            FROM users 
+            WHERE role = "user"
+            ORDER BY created_at DESC 
+            LIMIT :limit
+        ');
+        $this->db->bind(':limit', $limit);
+        return $this->db->resultSet();
+    }
 
-// Get recent users
-public function getRecentUsers($limit = 5) {
-    $this->db->query('
-        SELECT id, username, email, created_at, status 
-        FROM users 
-        WHERE role = "user"
-        ORDER BY created_at DESC 
-        LIMIT :limit
-    ');
-    $this->db->bind(':limit', $limit);
-    return $this->db->resultSet();
-}
+    // Get all users with stats
+    public function getAllUsersWithStats() {
+        $this->db->query('
+            SELECT 
+                u.id,
+                u.username,
+                u.email,
+                u.created_at,
+                u.status,
+                COUNT(DISTINCT CASE WHEN us.type = "teach" THEN us.skill_id END) as total_skills,
+                COUNT(DISTINCT e.id) as total_exchanges
+            FROM users u
+            LEFT JOIN user_skills us ON u.id = us.user_id
+            LEFT JOIN exchanges e ON (u.id = e.requester_id OR u.id = e.provider_id)
+            WHERE u.role = "user"
+            GROUP BY u.id
+            ORDER BY u.created_at DESC
+        ');
+        return $this->db->resultSet();
+    }
 
-// Get all users with stats
-public function getAllUsersWithStats() {
-    $this->db->query('
-        SELECT 
-            u.id,
-            u.username,
-            u.email,
-            u.created_at,
-            u.status,
-            COUNT(DISTINCT CASE WHEN us.type = "teach" THEN us.skill_id END) as total_skills,
-            COUNT(DISTINCT e.id) as total_exchanges
-        FROM users u
-        LEFT JOIN user_skills us ON u.id = us.user_id
-        LEFT JOIN exchanges e ON (u.id = e.requester_id OR u.id = e.provider_id)
-        WHERE u.role = "user"
-        GROUP BY u.id
-        ORDER BY u.created_at DESC
-    ');
-    return $this->db->resultSet();
-}
-
-// Update user status
-public function updateUserStatus($userId, $status) {
-    $this->db->query('UPDATE users SET status = :status WHERE id = :id');
-    $this->db->bind(':status', $status);
-    $this->db->bind(':id', $userId);
-    return $this->db->execute();
-}
-
-// Delete user
-public function deleteUser($userId) {
-    // Start transaction
-    $this->db->beginTransaction();
-    
-    try {
-        // Delete user skills
-        $this->db->query('DELETE FROM user_skills WHERE user_id = :user_id');
-        $this->db->bind(':user_id', $userId);
-        $this->db->execute();
-        
-        // Delete user exchanges (or update them to mark as cancelled)
-        $this->db->query('UPDATE exchanges SET status = "cancelled" WHERE requester_id = :user_id OR provider_id = :user_id');
-        $this->db->bind(':user_id', $userId);
-        $this->db->execute();
-        
-        // Delete user
-        $this->db->query('DELETE FROM users WHERE id = :id');
+    // Update user status
+    public function updateUserStatus($userId, $status) {
+        $this->db->query('UPDATE users SET status = :status WHERE id = :id');
+        $this->db->bind(':status', $status);
         $this->db->bind(':id', $userId);
-        $this->db->execute();
-        
-        $this->db->commit();
-        return true;
-    } catch (Exception $e) {
-        $this->db->rollback();
-        return false;
+        return $this->db->execute();
     }
-}
+
+    // Delete user
+    public function deleteUser($userId) {
+        // Start transaction
+        $this->db->beginTransaction();
+        
+        try {
+            // Delete user skills
+            $this->db->query('DELETE FROM user_skills WHERE user_id = :user_id');
+            $this->db->bind(':user_id', $userId);
+            $this->db->execute();
+            
+            // Delete user exchanges (or update them to mark as cancelled)
+            $this->db->query('UPDATE exchanges SET status = "cancelled" WHERE requester_id = :user_id OR provider_id = :user_id');
+            $this->db->bind(':user_id', $userId);
+            $this->db->execute();
+            
+            // Delete user
+            $this->db->query('DELETE FROM users WHERE id = :id');
+            $this->db->bind(':id', $userId);
+            $this->db->execute();
+            
+            $this->db->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollback();
+            return false;
+        }
+    }
 }

@@ -5,6 +5,7 @@ class AuthController extends Controller {
 
     public function __construct() {
         $this->userModel = $this->model('User');
+
     }
 
     // Default method - redirect to signin
@@ -20,6 +21,7 @@ class AuthController extends Controller {
         ];
         $this->view('auth/register', $data);
     }
+
 
     // Register Organization
     public function registerOrganization() {

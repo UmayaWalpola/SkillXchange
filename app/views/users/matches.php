@@ -18,7 +18,7 @@
                 <!-- Teach Them Column -->
                 <div class="matches-column">
                     <h2 class="column-title">
-                        <span class="title-icon">👨‍🏫</span>
+                        <span class="title-icon"></span>
                         Teach Them
                     </h2>
                     <div class="matches-list">
@@ -48,7 +48,7 @@
                 <!-- Learn From Them Column -->
                 <div class="matches-column">
                     <h2 class="column-title">
-                        <span class="title-icon">📚</span>
+                        <span class="title-icon"></span>
                         Learn From Them
                     </h2>
                     <div class="matches-list">
@@ -67,7 +67,7 @@
                             <?php endforeach; ?>
                         <?php else: ?>
                             <div class="no-matches">
-                                <div class="empty-icon">🔍</div>
+                                <div class="empty-icon"></div>
                                 <p>No matches found to learn from at the moment.</p>
                                 <small>Check back later for new matches!</small>
                             </div>

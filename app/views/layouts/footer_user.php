@@ -9,7 +9,7 @@
 
             <div class="footer-logo-center">
                 <a href="<?= URLROOT ?>" class="footer-logo-link">
-                    <img src="<?= URLROOT ?>/assets/images/logo.png" alt="SkillXchange Logo" class="footer-logo-img">
+                    <img src="<?= URLROOT; ?>/assets/images/logo-new.png" alt="SkillXchange Logo" class="logo-image">
                 </a>
             </div>
 
