@@ -1,83 +1,52 @@
-// Community Admin Dashboard JavaScript
+// Community Admin Dashboard JavaScript - Backend Integrated
 
-// Sample community data
-let communities = [
-  {
-    id: 1,
-    name: "Web Developers Hub",
-    description: "A community for web developers to share knowledge and collaborate",
-    category: "technology",
-    status: "active",
-    members: 1247,
-    posts: 3456,
-    privacy: "public",
-    createdDate: "2024-01-15"
-  },
-  {
-    id: 2,
-    name: "Fitness & Wellness",
-    description: "Share your fitness journey and wellness tips",
-    category: "health",
-    status: "active",
-    members: 892,
-    posts: 2134,
-    privacy: "public",
-    createdDate: "2024-02-10"
-  },
-  {
-    id: 3,
-    name: "Digital Marketing Pros",
-    description: "Learn and discuss digital marketing strategies",
-    category: "business",
-    status: "active",
-    members: 654,
-    posts: 1523,
-    privacy: "private",
-    createdDate: "2024-02-20"
-  },
-  {
-    id: 4,
-    name: "Creative Writers Circle",
-    description: "A space for writers to share and improve their craft",
-    category: "lifestyle",
-    status: "inactive",
-    members: 423,
-    posts: 891,
-    privacy: "public",
-    createdDate: "2024-03-05"
-  },
-  {
-    id: 5,
-    name: "Online Learning Community",
-    description: "Discuss online courses and educational resources",
-    category: "education",
-    status: "active",
-    members: 1105,
-    posts: 2876,
-    privacy: "public",
-    createdDate: "2024-01-25"
-  }
-];
-
+let communities = [];
 let communityToDelete = null;
 
 // Initialize dashboard
-function initDashboard() {
-  updateStats();
-  renderCommunityTable();
+async function initDashboard() {
+  await loadCommunities();
+  await loadStats();
 }
 
-// Update statistics
-function updateStats() {
-  const totalCommunities = communities.length;
-  const activeCommunities = communities.filter(c => c.status === 'active').length;
-  const totalMembers = communities.reduce((sum, c) => sum + c.members, 0);
-  const totalPosts = communities.reduce((sum, c) => sum + c.posts, 0);
+// Load communities from backend
+async function loadCommunities() {
+  try {
+    const response = await fetch(`${URLROOT}/community/getAll`);
+    const result = await response.json();
+    
+    if(result.success) {
+      communities = result.data;
+      renderCommunityTable();
+    } else {
+      showNotification('Failed to load communities', 'error');
+    }
+  } catch(error) {
+    console.error('Error loading communities:', error);
+    showNotification('Error loading communities', 'error');
+  }
+}
 
-  document.getElementById('totalCommunities').textContent = totalCommunities;
-  document.getElementById('activeCommunities').textContent = activeCommunities;
-  document.getElementById('totalMembers').textContent = totalMembers.toLocaleString();
-  document.getElementById('totalPosts').textContent = totalPosts.toLocaleString();
+// Load statistics from backend
+async function loadStats() {
+  try {
+    const response = await fetch(`${URLROOT}/community/getStats`);
+    const result = await response.json();
+    
+    if(result.success) {
+      updateStats(result.data);
+    }
+  } catch(error) {
+    console.error('Error loading stats:', error);
+  }
+}
+
+// Update statistics display
+function updateStats(stats) {
+  document.getElementById('totalCommunities').textContent = stats.total_communities || 0;
+  document.getElementById('activeCommunities').textContent = stats.active_communities || 0;
+  document.getElementById('totalMembers').textContent = (stats.total_members || 0).toLocaleString();
+  document.getElementById('totalPosts').textContent = (stats.total_posts || 0).toLocaleString();
 }
 
 // Render community table
@@ -86,7 +55,7 @@ function renderCommunityTable(filteredCommunities = null) {
   const tbody = document.getElementById('communityTableBody');
   tbody.innerHTML = '';
 
-  if (communitiesToShow.length === 0) {
+  if(communitiesToShow.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #999;">No communities found</td></tr>';
     return;
   }
@@ -96,25 +65,25 @@ function renderCommunityTable(filteredCommunities = null) {
     
     row.innerHTML = `
       <td>
-        <div class="community-name">${community.name}</div>
-        <div class="community-description">${community.description}</div>
+        <div class="community-name">${escapeHtml(community.name)}</div>
+        <div class="community-description">${escapeHtml(community.description.substring(0, 100))}...</div>
       </td>
       <td>
-        <span class="category-badge">${community.category}</span>
+        <span class="category-badge">${escapeHtml(community.category)}</span>
       </td>
       <td>
         <span class="status-text status-${community.status}">${community.status}</span>
       </td>
-      <td><div class="count-display">${community.members.toLocaleString()}</div></td>
-      <td><div class="count-display">${community.posts.toLocaleString()}</div></td>
-      <td><div class="date-display">${new Date(community.createdDate).toLocaleDateString()}</div></td>
+      <td><div class="count-display">${parseInt(community.members || 0).toLocaleString()}</div></td>
+      <td><div class="count-display">${parseInt(community.posts || 0).toLocaleString()}</div></td>
+      <td><div class="date-display">${formatDate(community.created_at)}</div></td>
       <td>
         <div class="action-buttons">
           <button class="action-btn btn-view" onclick="viewCommunity(${community.id})">View</button>
           <button class="action-btn btn-edit" onclick="editCommunity(${community.id})">Edit</button>
           ${community.status === 'active' 
-            ? `<button class="action-btn btn-deactivate" onclick="deactivateCommunity(${community.id})">Deactivate</button>`
-            : `<button class="action-btn btn-activate" onclick="activateCommunity(${community.id})">Activate</button>`
+            ? `<button class="action-btn btn-deactivate" onclick="toggleStatus(${community.id}, 'inactive')">Deactivate</button>`
+            : `<button class="action-btn btn-activate" onclick="toggleStatus(${community.id}, 'active')">Activate</button>`
           }
           <button class="action-btn btn-delete" onclick="openDeleteModal(${community.id})">Delete</button>
         </div>
@@ -131,68 +100,91 @@ function filterCommunities() {
   
   let filtered = communities;
   
-  if (categoryFilter !== 'all') {
+  if(categoryFilter !== 'all') {
     filtered = filtered.filter(c => c.category === categoryFilter);
   }
   
-  if (statusFilter !== 'all') {
+  if(statusFilter !== 'all') {
     filtered = filtered.filter(c => c.status === statusFilter);
   }
   
   renderCommunityTable(filtered);
 }
 
-// Community management functions
+// View community
 function viewCommunity(id) {
-  // Future: Redirect to community view page
   window.location.href = `${URLROOT}/community/view/${id}`;
 }
 
+// Edit community
 function editCommunity(id) {
-  // Future: Redirect to community edit page
   window.location.href = `${URLROOT}/community/edit/${id}`;
 }
 
-function activateCommunity(id) {
-  const community = communities.find(c => c.id === id);
-  if (community) {
-    community.status = 'active';
-    updateStats();
-    renderCommunityTable();
-    showNotification('Community activated successfully!', 'success');
-    // Future: Make AJAX call to backend
+// Toggle community status (activate/deactivate)
+async function toggleStatus(id, newStatus) {
+  try {
+    const response = await fetch(`${URLROOT}/community/toggleStatus`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ id: id })
+    });
+
+    const result = await response.json();
+    
+    if(result.success) {
+      showNotification(result.message, 'success');
+      await loadCommunities();
+      await loadStats();
+    } else {
+      showNotification(result.message, 'error');
+    }
+  } catch(error) {
+    console.error('Error toggling status:', error);
+    showNotification('Error updating community status', 'error');
   }
 }
 
-function deactivateCommunity(id) {
-  const community = communities.find(c => c.id === id);
-  if (community) {
-    community.status = 'inactive';
-    updateStats();
-    renderCommunityTable();
-    showNotification('Community deactivated successfully!', 'success');
-    // Future: Make AJAX call to backend
-  }
-}
-
+// Open delete modal
 function openDeleteModal(id) {
   communityToDelete = id;
   document.getElementById('deleteModal').style.display = 'block';
 }
 
+// Close delete modal
 function closeDeleteModal() {
   communityToDelete = null;
   document.getElementById('deleteModal').style.display = 'none';
 }
 
-function confirmDelete() {
-  if (communityToDelete !== null) {
-    communities = communities.filter(c => c.id !== communityToDelete);
-    updateStats();
-    renderCommunityTable();
-    closeDeleteModal();
-    showNotification('Community deleted successfully!', 'success');
-    // Future: Make AJAX call to backend
+// Confirm delete
+async function confirmDelete() {
+  if(communityToDelete === null) return;
+  
+  try {
+    const response = await fetch(`${URLROOT}/community/delete`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ id: communityToDelete })
+    });
+
+    const result = await response.json();
+    
+    if(result.success) {
+      showNotification(result.message, 'success');
+      closeDeleteModal();
+      await loadCommunities();
+      await loadStats();
+    } else {
+      showNotification(result.message, 'error');
+    }
+  } catch(error) {
+    console.error('Error deleting community:', error);
+    showNotification('Error deleting community', 'error');
   }
 }
 
@@ -222,10 +214,26 @@ function showNotification(message, type = 'success') {
   }, 3000);
 }
 
+// Utility functions
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric' 
+  });
+}
+
 // Close modal when clicking outside
 window.onclick = function(event) {
   const modal = document.getElementById('deleteModal');
-  if (event.target == modal) {
+  if(event.target == modal) {
     closeDeleteModal();
   }
 }

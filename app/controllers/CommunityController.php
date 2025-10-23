@@ -2,9 +2,12 @@
 // app/controllers/CommunityController.php
 
 class CommunityController extends Controller {
-
+    
+    private $communityModel;
 
     public function __construct() {
+        $this->communityModel = $this->model('Community');
+        
         // TEMPORARILY DISABLED - Authentication will be added later
         /*
         if(!isset($_SESSION['user_id'])) {
@@ -19,13 +22,16 @@ class CommunityController extends Controller {
         */
     }
 
-    // Main dashboard page
+    // Main dashboard page - READ all communities
     public function index() {
+        $communities = $this->communityModel->getAllCommunities();
         
+        $data = [
+            'title' => 'Community Dashboard',
+            'communities' => $communities
+        ];
 
-        $this->view('cmmanager/dashboard', );
-
-
+        $this->view('cmmanager/dashboard', $data);
     }
 
     // Show community creation form
@@ -35,6 +41,7 @@ class CommunityController extends Controller {
             'community_name' => '',
             'category' => '',
             'description' => '',
+            'privacy' => '',
             'name_err' => '',
             'category_err' => '',
             'description_err' => ''
@@ -43,25 +50,134 @@ class CommunityController extends Controller {
         $this->view('cmmanager/community_create', $data);
     }
 
-    // Save community (create or update)
-    public function save() {
+    // CREATE - Save new community
+    public function store() {
         if($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Get JSON data from request
             $json = file_get_contents('php://input');
             $communityData = json_decode($json, true);
 
+            // Sanitize inputs
+            $data = [
+                'name' => trim($communityData['name'] ?? ''),
+                'category' => trim($communityData['category'] ?? ''),
+                'description' => trim($communityData['description'] ?? ''),
+                'privacy' => trim($communityData['privacy'] ?? 'public'),
+                'rules' => json_encode($communityData['rules'] ?? []),
+                'tags' => json_encode($communityData['tags'] ?? []),
+                'status' => trim($communityData['status'] ?? 'active'),
+                'created_by' => $_SESSION['user_id'] ?? 1, // Default to 1 for testing
+            ];
+
             // Validate inputs
             $errors = [];
 
-            if(empty($communityData['name'])) {
+            if(empty($data['name'])) {
                 $errors[] = 'Community name is required';
+            } elseif(strlen($data['name']) > 100) {
+                $errors[] = 'Community name cannot exceed 100 characters';
             }
 
-            if(empty($communityData['category'])) {
+            if(empty($data['category'])) {
                 $errors[] = 'Category is required';
             }
 
-            if(empty($communityData['description'])) {
+            if(empty($data['description'])) {
+                $errors[] = 'Description is required';
+            } elseif(strlen($data['description']) > 1000) {
+                $errors[] = 'Description cannot exceed 1000 characters';
+            }
+
+            if(!empty($errors)) {
+                echo json_encode(['success' => false, 'errors' => $errors]);
+                exit;
+            }
+
+            // Save to database
+            if($this->communityModel->create($data)) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Community created successfully!',
+                    'redirect' => URLROOT . '/community'
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'errors' => ['Failed to create community. Please try again.']
+                ]);
+            }
+            exit;
+        } else {
+            header('Location: ' . URLROOT . '/community');
+            exit;
+        }
+    }
+
+    // READ - Get all communities (API endpoint)
+    public function getAll() {
+        $communities = $this->communityModel->getAllCommunities();
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'data' => $communities]);
+        exit;
+    }
+
+    // READ - View single community
+    
+
+    // Show edit form
+    public function edit($id) {
+        $community = $this->communityModel->getCommunityById($id);
+        
+        if(!$community) {
+            header('Location: ' . URLROOT . '/community');
+            exit;
+        }
+
+        $data = [
+            'title' => 'Edit Community',
+            'community' => $community
+        ];
+
+        $this->view('cmmanager/community_edit', $data);
+    }
+
+    // UPDATE - Update existing community
+    public function update($id) {
+        if($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $json = file_get_contents('php://input');
+            $communityData = json_decode($json, true);
+
+            // Check if community exists
+            $community = $this->communityModel->getCommunityById($id);
+            if(!$community) {
+                echo json_encode(['success' => false, 'errors' => ['Community not found']]);
+                exit;
+            }
+
+            // Sanitize inputs
+            $data = [
+                'id' => $id,
+                'name' => trim($communityData['name'] ?? ''),
+                'category' => trim($communityData['category'] ?? ''),
+                'description' => trim($communityData['description'] ?? ''),
+                'privacy' => trim($communityData['privacy'] ?? 'public'),
+                'rules' => json_encode($communityData['rules'] ?? []),
+                'tags' => json_encode($communityData['tags'] ?? []),
+                'status' => trim($communityData['status'] ?? 'active')
+            ];
+
+            // Validate inputs
+            $errors = [];
+
+            if(empty($data['name'])) {
+                $errors[] = 'Community name is required';
+            }
+
+            if(empty($data['category'])) {
+                $errors[] = 'Category is required';
+            }
+
+            if(empty($data['description'])) {
                 $errors[] = 'Description is required';
             }
 
@@ -70,23 +186,58 @@ class CommunityController extends Controller {
                 exit;
             }
 
-            // TODO: Save to database when ready
-            echo json_encode([
-                'success' => true,
-                'message' => 'Community saved successfully!',
-                'status' => $communityData['status'] ?? 'active'
-            ]);
+            // Update in database
+            if($this->communityModel->update($data)) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Community updated successfully!'
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'errors' => ['Failed to update community']
+                ]);
+            }
             exit;
         } else {
-            header('Location: ' . URLROOT . '/cmanager');
+            header('Location: ' . URLROOT . '/community');
             exit;
         }
     }
 
-    // View community details
-    
+    // UPDATE - Toggle community status
+    public function toggleStatus() {
+        if($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $json = file_get_contents('php://input');
+            $data = json_decode($json, true);
 
-    // Delete community
+            if(empty($data['id'])) {
+                echo json_encode(['success' => false, 'message' => 'Community ID is required']);
+                exit;
+            }
+
+            $community = $this->communityModel->getCommunityById($data['id']);
+            if(!$community) {
+                echo json_encode(['success' => false, 'message' => 'Community not found']);
+                exit;
+            }
+
+            $newStatus = $community->status === 'active' ? 'inactive' : 'active';
+            
+            if($this->communityModel->updateStatus($data['id'], $newStatus)) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Community status updated successfully!',
+                    'status' => $newStatus
+                ]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Failed to update status']);
+            }
+            exit;
+        }
+    }
+
+    // DELETE - Remove community
     public function delete() {
         if($_SERVER['REQUEST_METHOD'] == 'POST') {
             $json = file_get_contents('php://input');
@@ -97,13 +248,37 @@ class CommunityController extends Controller {
                 exit;
             }
 
-            // TODO: Delete from database later
-            echo json_encode(['success' => true, 'message' => 'Community deleted successfully!']);
+            // Check if community exists
+            $community = $this->communityModel->getCommunityById($data['id']);
+            if(!$community) {
+                echo json_encode(['success' => false, 'message' => 'Community not found']);
+                exit;
+            }
+
+            // Delete from database
+            if($this->communityModel->delete($data['id'])) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Community deleted successfully!'
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Failed to delete community'
+                ]);
+            }
             exit;
         } else {
-            header('Location: ' . URLROOT . '/cmmanager');
+            header('Location: ' . URLROOT . '/community');
             exit;
         }
     }
-}
 
+    // Get dashboard stats
+    public function getStats() {
+        $stats = $this->communityModel->getStats();
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'data' => $stats]);
+        exit;
+    }
+}
