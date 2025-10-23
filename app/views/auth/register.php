@@ -13,7 +13,7 @@
     <div class="login-card">
         <!-- Left side: logo/image -->
         <div class="login-left">
-            <img src="<?php echo URLROOT; ?>/assets/images/logo.png" alt="Skill Exchange Logo">
+            <img src="<?= URLROOT ?>/assets/images/logo-new.png" alt="Skill Exchange Logo">
         </div>
 
         <!-- Right side: forms -->

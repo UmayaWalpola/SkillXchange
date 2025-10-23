@@ -6,7 +6,7 @@
 <div class="login-container">
     <div class="login-card">
         <div class="login-left">
-            <img src="<?= URLROOT ?>/assets/images/logo.png" alt="Skill Exchange Logo">
+            <img src="<?= URLROOT ?>/assets/images/logo-new.png" alt="Skill Exchange Logo">
         </div>
 
         <div class="login-right">
@@ -28,7 +28,7 @@
             <form action="<?= URLROOT ?>/auth/signin" method="POST">
                 <input type="email" name="email" placeholder="Email" required>
                 <input type="password" name="password" placeholder="Password" required>
-                <p><a href="<?= URLROOT ?>/auth/forgot">Forgot password?</a></p>
+                <!--<p><a href="<?= URLROOT ?>/auth/forgot">Forgot password?</a></p>-->
                 <button type="submit">Log In</button>
             </form>
 

@@ -190,9 +190,9 @@ public function signin() {
                     header("Location: " . URLROOT . "/users/userprofile");
                     exit;
                 }
-            } elseif ($user['role'] === 'organization') {
-                // Organizations go to manager profile
-                header("Location: " . URLROOT . "/users/managerprofile");
+            } elseif ($user['role'] === 'manager') {
+                // manager go to manager profile
+                header("Location: " . URLROOT . "/managerdashboard");
                 exit;
             } elseif ($user['role'] === 'admin') {
                 // Admins go to admin profile

@@ -10,63 +10,80 @@ function closeAddUserModal() {
 
 // Add User Form Submit
 document.addEventListener('DOMContentLoaded', function() {
-    // Add User
-    document.getElementById('addUserForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(this);
-        const urlRoot = this.getAttribute('data-urlroot');
-        
-        fetch(`${urlRoot}/managerdashboard/addUser`, {
-            method: 'POST',
-            body: new URLSearchParams(formData)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                closeAddUserModal();
-                location.reload();
-            } else {
-                alert(data.message || 'Error adding user');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error adding user');
-        });
-    });
+    const addUserForm = document.getElementById('addUserForm');
+    const editUserForm = document.getElementById('editUserForm');
 
-    // Edit User
-    document.getElementById('editUserForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(this);
-        const urlRoot = this.getAttribute('data-urlroot');
-        
-        fetch(`${urlRoot}/managerdashboard/updateUser`, {
-            method: 'POST',
-            body: new URLSearchParams(formData)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                closeEditUserModal();
-                location.reload();
-            } else {
-                alert(data.message || 'Error updating user');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error updating user');
+    // --- Add User ---
+    if (addUserForm) {
+        addUserForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const urlRoot = this.getAttribute('data-urlroot');
+
+            fetch(`${urlRoot}/managerdashboard/addUser`, {
+                method: 'POST',
+                body: new URLSearchParams(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    closeAddUserModal();
+                    location.reload();
+                } else {
+                    alert(data.message || 'Error adding user');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error adding user');
+            });
         });
-    });
+    }
+
+    // --- Edit User ---
+    if (editUserForm) {
+        editUserForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const urlRoot = this.getAttribute('data-urlroot');
+
+            console.log('Sending data:', {
+                user_id: formData.get('user_id'),
+                name: formData.get('name'),
+                email: formData.get('email'),
+                role: formData.get('role'),
+                password: formData.get('password') ? '*' : '(empty)'
+            });
+
+            fetch(`${urlRoot}/managerdashboard/updateUser`, {
+                method: 'POST',
+                body: new URLSearchParams(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    closeEditUserModal();
+                    location.reload();
+                } else {
+                    alert(data.message || 'Error updating user');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating user');
+            });
+        });
+    }
 });
 
-// Edit User Modal Functions
+// --- Edit User Modal Functions ---
 function openEditUserModal(userId, name, email, role) {
+    console.log('Opening edit modal with:', { userId, name, email, role });
+
     document.getElementById('editUserId').value = userId;
     document.getElementById('editUserName').value = name;
     document.getElementById('editUserEmail').value = email;
@@ -80,11 +97,11 @@ function closeEditUserModal() {
     document.getElementById('editUserForm').reset();
 }
 
-// Remove User Function
+// --- Remove User Function ---
 function removeUser(userId, userName) {
     if (confirm(`Are you sure you want to remove "${userName}"? This action cannot be undone.`)) {
         const urlRoot = document.querySelector('[data-urlroot]').getAttribute('data-urlroot');
-        
+
         fetch(`${urlRoot}/managerdashboard/removeUser`, {
             method: 'POST',
             headers: {
@@ -109,11 +126,11 @@ function removeUser(userId, userName) {
     }
 }
 
-// Close modals when clicking outside
+// --- Close modals when clicking outside ---
 window.onclick = function(event) {
     const addModal = document.getElementById('addUserModal');
     const editModal = document.getElementById('editUserModal');
-    
+
     if (event.target === addModal) {
         addModal.style.display = 'none';
     }
@@ -121,3 +138,4 @@ window.onclick = function(event) {
         editModal.style.display = 'none';
     }
 };
+
