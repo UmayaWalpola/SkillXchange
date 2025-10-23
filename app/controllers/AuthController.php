@@ -192,7 +192,12 @@ public function signin() {
                     header("Location: " . URLROOT . "/users/userprofile");
                     exit;
                 }
-            } elseif ($user['role'] === 'manager') {
+            }elseif ($user['role'] === 'organization') {
+        // Organizations go to their profile page (landing page)
+        header("Location: " . URLROOT . "/organization/profile");
+        exit;
+    }
+            elseif ($user['role'] === 'manager') {
                 // manager go to manager profile
                 header("Location: " . URLROOT . "/managerdashboard");
                 exit;
