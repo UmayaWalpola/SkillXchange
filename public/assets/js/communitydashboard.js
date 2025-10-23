@@ -95,14 +95,10 @@ function renderCommunityTable(filteredCommunities = null) {
 
 // Filter communities
 function filterCommunities() {
-  const categoryFilter = document.getElementById('categoryFilter').value;
   const statusFilter = document.getElementById('statusFilter').value;
   
   let filtered = communities;
   
-  if(categoryFilter !== 'all') {
-    filtered = filtered.filter(c => c.category === categoryFilter);
-  }
   
   if(statusFilter !== 'all') {
     filtered = filtered.filter(c => c.status === statusFilter);

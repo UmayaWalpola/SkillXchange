@@ -52,29 +52,29 @@
     <div class="community-table-container">
         <div class="table-header">
             <h2 class="table-title">Community Management</h2>
-            <div class="table-filters">
-                <select class="filter-select" id="categoryFilter" onchange="filterCommunities()">
+           <div class="table-filters">
+                 <!--<select class="filter-select" id="categoryFilter" onchange="filterCommunities()">
                     <option value="all">All Categories</option>
                     <option value="technology">Technology</option>
                     <option value="education">Education</option>
                     <option value="health">Health</option>
                     <option value="lifestyle">Lifestyle</option>
                     <option value="business">Business</option>
-                </select>
+                </select> -->
                 
                 <select class="filter-select" id="statusFilter" onchange="filterCommunities()">
                     <option value="all">All Status</option>
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
                 </select>
-            </div>
+            </div> 
         </div>
 
         <table class="community-table">
             <thead>
                 <tr>
                     <th>Community Details</th>
-                    <th>Category</th>
+                    <!--<th>Category</th> -->
                     <th>Status</th>
                     <th>Members</th>
                     <th>Posts</th>

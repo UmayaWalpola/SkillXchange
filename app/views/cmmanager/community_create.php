@@ -1,5 +1,5 @@
 <?php require_once '../app/views/layouts/header_user.php'; ?>
-<?php require_once '../app/views/layouts/adminsidebar.php'; ?>
+<?php require_once '../app/views/layouts/commanagersidebar.php'; ?>
 
 <!-- Link CSS -->
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/assets/css/communitycreate.css">
@@ -29,7 +29,7 @@
             </div>
 
             <div class="form-row">
-                <div class="form-group">
+               <!-- <div class="form-group">
                     <label for="communityCategory">Category *</label>
                     <select id="communityCategory">
                         <option value="">Select category</option>
@@ -43,7 +43,7 @@
                         <option value="other">Other</option>
                     </select>
                     <span class="error-text" id="categoryError"></span>
-                </div>
+                </div> -->
 
                 <div class="form-group">
                     <label for="communityPrivacy">Privacy Setting *</label>

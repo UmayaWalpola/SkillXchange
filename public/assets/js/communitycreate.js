@@ -1,4 +1,4 @@
-// Community Create JavaScript - Backend Integrated
+// Community Create JavaScript - FIXED WITHOUT CATEGORY
 
 let rules = [];
 let tags = [];
@@ -7,6 +7,8 @@ const MAX_TAGS = 10;
 
 // Initialize
 function init() {
+  console.log('Initializing community create page...');
+  console.log('URLROOT:', URLROOT);
   setupEventListeners();
   updateRuleCount();
 }
@@ -15,13 +17,17 @@ function init() {
 function setupEventListeners() {
   // Character counter for description
   const descTextarea = document.getElementById('communityDescription');
-  descTextarea.addEventListener('input', function() {
-    document.getElementById('descCharCount').textContent = this.value.length;
-  });
+  if (descTextarea) {
+    descTextarea.addEventListener('input', function() {
+      document.getElementById('descCharCount').textContent = this.value.length;
+    });
+  }
 }
 
 // Add rule
 function addRule() {
+  console.log('Add rule button clicked');
+  
   if(rules.length >= MAX_RULES) {
     showNotification('Maximum 10 rules allowed', 'error');
     return;
@@ -35,6 +41,8 @@ function addRule() {
 
 // Edit rule
 function editRule(index) {
+  console.log('Edit rule:', index);
+  
   const rule = rules[index];
   document.getElementById('ruleModalTitle').textContent = 'Edit Rule';
   document.getElementById('editingRuleIndex').value = index;
@@ -46,6 +54,7 @@ function editRule(index) {
 // Save rule
 function saveRule(event) {
   event.preventDefault();
+  console.log('Save rule submitted');
   
   const title = document.getElementById('ruleTitle').value.trim();
   const description = document.getElementById('ruleDescription').value.trim();
@@ -60,8 +69,10 @@ function saveRule(event) {
   
   if(editingIndex === -1) {
     rules.push(rule);
+    console.log('Rule added:', rule);
   } else {
     rules[editingIndex] = rule;
+    console.log('Rule updated:', rule);
   }
   
   renderRules();
@@ -71,6 +82,8 @@ function saveRule(event) {
 
 // Delete rule
 function deleteRule(index) {
+  console.log('Delete rule:', index);
+  
   if(confirm('Are you sure you want to delete this rule?')) {
     rules.splice(index, 1);
     renderRules();
@@ -108,12 +121,18 @@ function renderRules() {
   updateRuleCount();
   
   // Enable/disable add button based on rule count
-  document.getElementById('addRuleBtn').disabled = rules.length >= MAX_RULES;
+  const addRuleBtn = document.getElementById('addRuleBtn');
+  if (addRuleBtn) {
+    addRuleBtn.disabled = rules.length >= MAX_RULES;
+  }
 }
 
 // Update rule count
 function updateRuleCount() {
-  document.getElementById('ruleCount').textContent = rules.length;
+  const ruleCountEl = document.getElementById('ruleCount');
+  if (ruleCountEl) {
+    ruleCountEl.textContent = rules.length;
+  }
 }
 
 // Close rule modal
@@ -154,6 +173,7 @@ function addTag() {
 
 // Remove tag
 function removeTag(index) {
+  console.log('Remove tag:', index);
   tags.splice(index, 1);
   renderTags();
 }
@@ -161,6 +181,8 @@ function removeTag(index) {
 // Render tags
 function renderTags() {
   const container = document.getElementById('tagsContainer');
+  
+  if(!container) return;
   
   if(tags.length === 0) {
     container.innerHTML = '<div style="color: #999; font-size: 14px;">No tags added yet</div>';
@@ -174,8 +196,10 @@ function renderTags() {
   }
 }
 
-// Validate form
+// Validate form - REMOVED CATEGORY VALIDATION
 function validateForm() {
+  console.log('Validating form...');
+  
   let isValid = true;
   let errors = {};
   
@@ -184,62 +208,70 @@ function validateForm() {
   document.querySelectorAll('.form-group').forEach(el => el.classList.remove('has-error'));
   
   const name = document.getElementById('communityName').value.trim();
-  const category = document.getElementById('communityCategory').value;
   const description = document.getElementById('communityDescription').value.trim();
   
+  // Validate name
   if(!name) {
     errors.name = 'Community name is required';
     isValid = false;
+    console.log('Validation error: name is required');
   } else if(name.length > 100) {
     errors.name = 'Community name cannot exceed 100 characters';
     isValid = false;
+    console.log('Validation error: name too long');
   }
   
-  if(!category) {
-    errors.category = 'Category is required';
-    isValid = false;
-  }
-  
+  // Validate description
   if(!description) {
     errors.description = 'Description is required';
     isValid = false;
+    console.log('Validation error: description is required');
   } else if(description.length > 1000) {
     errors.description = 'Description cannot exceed 1000 characters';
     isValid = false;
+    console.log('Validation error: description too long');
   }
   
   // Display errors
   if(errors.name) {
-    document.getElementById('nameError').textContent = errors.name;
-    document.getElementById('communityName').closest('.form-group').classList.add('has-error');
-  }
-  if(errors.category) {
-    document.getElementById('categoryError').textContent = errors.category;
-    document.getElementById('communityCategory').closest('.form-group').classList.add('has-error');
-  }
-  if(errors.description) {
-    document.getElementById('descriptionError').textContent = errors.description;
-    document.getElementById('communityDescription').closest('.form-group').classList.add('has-error');
+    const nameError = document.getElementById('nameError');
+    if (nameError) {
+      nameError.textContent = errors.name;
+      document.getElementById('communityName').closest('.form-group').classList.add('has-error');
+    }
   }
   
+  if(errors.description) {
+    const descError = document.getElementById('descriptionError');
+    if (descError) {
+      descError.textContent = errors.description;
+      document.getElementById('communityDescription').closest('.form-group').classList.add('has-error');
+    }
+  }
+  
+  console.log('Validation result:', isValid);
   return isValid;
 }
 
-// Get form data
+// Get form data - REMOVED CATEGORY
 function getFormData() {
-  return {
+  const data = {
     name: document.getElementById('communityName').value.trim(),
-    category: document.getElementById('communityCategory').value,
     description: document.getElementById('communityDescription').value.trim(),
     privacy: document.getElementById('communityPrivacy').value,
     rules: rules,
     tags: tags,
     status: 'active'
   };
+  
+  console.log('Form data:', data);
+  return data;
 }
 
 // Save draft
 async function saveDraft() {
+  console.log('Save draft clicked');
+  
   if(!validateForm()) {
     showNotification('Please fix the errors before saving', 'error');
     return;
@@ -253,20 +285,22 @@ async function saveDraft() {
 
 // Preview community
 function previewCommunity() {
+  console.log('Preview clicked');
+  
   if(!validateForm()) {
     showNotification('Please fix the errors before previewing', 'error');
     return;
   }
   
-  const formData = getFormData();
-  
-  // Show preview in modal or new tab
-  showNotification('Preview feature coming soon!', 'success');
+  showNotification('Preview feature coming soon!', 'info');
 }
 
-// Publish community
+// Publish community - MAIN FUNCTION
 async function publishCommunity() {
+  console.log('=== PUBLISH COMMUNITY CLICKED ===');
+  
   if(!validateForm()) {
+    console.log('Validation failed');
     showNotification('Please fix the errors before publishing', 'error');
     return;
   }
@@ -274,14 +308,20 @@ async function publishCommunity() {
   const formData = getFormData();
   formData.status = 'active';
   
+  console.log('Publishing community with data:', formData);
+  
   await saveCommunity(formData, 'Community created successfully!');
 }
 
 // Save community to backend
 async function saveCommunity(data, successMessage) {
+  console.log('=== SAVING COMMUNITY ===');
+  console.log('URL:', `${URLROOT}/community/store`);
+  console.log('Data:', data);
+  
   try {
     // Show loading
-    const loadingNotification = showNotification('Saving community...', 'info');
+    showNotification('Saving community...', 'info');
     
     const response = await fetch(`${URLROOT}/community/store`, {
       method: 'POST',
@@ -291,12 +331,27 @@ async function saveCommunity(data, successMessage) {
       body: JSON.stringify(data)
     });
     
-    const result = await response.json();
+    console.log('Response status:', response.status);
+    console.log('Response headers:', response.headers);
+    
+    const responseText = await response.text();
+    console.log('Response text:', responseText);
+    
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch(e) {
+      console.error('Failed to parse JSON:', e);
+      showNotification('Server error: Invalid response', 'error');
+      return;
+    }
+    
+    console.log('Parsed result:', result);
     
     if(result.success) {
       showNotification(successMessage, 'success');
       
-      // Redirect to dashboard after 1.5 seconds
+      // Redirect after 1.5 seconds
       setTimeout(() => {
         window.location.href = result.redirect || `${URLROOT}/community`;
       }, 1500);
@@ -311,15 +366,24 @@ async function saveCommunity(data, successMessage) {
       }
     }
   } catch(error) {
-    console.error('Error saving community:', error);
-    showNotification('Error saving community. Please try again.', 'error');
+    console.error('=== ERROR SAVING COMMUNITY ===');
+    console.error('Error details:', error);
+    showNotification('Network error. Please check console for details.', 'error');
   }
 }
 
 // Notification system
 function showNotification(message, type = 'success') {
+  console.log(`Notification [${type}]:`, message);
+  
+  // Remove existing notification
+  const existing = document.querySelector('.custom-notification');
+  if (existing) {
+    existing.remove();
+  }
+  
   const notification = document.createElement('div');
-  notification.className = `notification notification-${type}`;
+  notification.className = `custom-notification notification-${type}`;
   notification.textContent = message;
   notification.style.cssText = `
     position: fixed;
@@ -332,6 +396,7 @@ function showNotification(message, type = 'success') {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     z-index: 10000;
     animation: slideIn 0.3s ease;
+    max-width: 400px;
   `;
   
   document.body.appendChild(notification);
@@ -486,4 +551,9 @@ style.textContent = `
 document.head.appendChild(style);
 
 // Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM Content Loaded - Initializing...');
+  init();
+});
+
+console.log('Community Create JS file loaded successfully');

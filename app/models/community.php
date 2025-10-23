@@ -11,12 +11,11 @@ class Community {
     // CREATE - Add new community
     public function create($data) {
         $this->db->query('INSERT INTO communities 
-            (name, category, description, privacy, rules, tags, status, created_by, created_at) 
+            (name, description, privacy, rules, tags, status, created_by, created_at) 
             VALUES 
-            (:name, :category, :description, :privacy, :rules, :tags, :status, :created_by, NOW())');
+            (:name, :description, :privacy, :rules, :tags, :status, :created_by, NOW())');
         
         $this->db->bind(':name', $data['name']);
-        $this->db->bind(':category', $data['category']);
         $this->db->bind(':description', $data['description']);
         $this->db->bind(':privacy', $data['privacy']);
         $this->db->bind(':rules', $data['rules']);
@@ -64,7 +63,7 @@ class Community {
     }
 
     // READ - Get communities by category
-    public function getCommunitiesByCategory($category) {
+   /* public function getCommunitiesByCategory($category) {
         $this->db->query('SELECT 
                 c.*,
                 COUNT(DISTINCT cm.user_id) as members,
@@ -79,7 +78,7 @@ class Community {
         $this->db->bind(':category', $category);
 
         return $this->db->resultSet();
-    }
+    } */
 
     // READ - Get communities by status
     public function getCommunitiesByStatus($status) {
@@ -104,7 +103,6 @@ class Community {
         $this->db->query('UPDATE communities 
             SET 
                 name = :name,
-                category = :category,
                 description = :description,
                 privacy = :privacy,
                 rules = :rules,
@@ -115,7 +113,6 @@ class Community {
         
         $this->db->bind(':id', $data['id']);
         $this->db->bind(':name', $data['name']);
-        $this->db->bind(':category', $data['category']);
         $this->db->bind(':description', $data['description']);
         $this->db->bind(':privacy', $data['privacy']);
         $this->db->bind(':rules', $data['rules']);

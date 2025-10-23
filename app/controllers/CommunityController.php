@@ -8,33 +8,7 @@ class CommunityController extends Controller {
     public function __construct() {
         require_once "../app/models/Community.php";
         $this->communityModel = new Community();
-        
-        // TEMPORARILY DISABLED - Authentication will be added later
-        /*
-        if(!isset($_SESSION['user_id'])) {
-            header('Location: ' . URLROOT . '/users/login');
-            exit;
-        }
-
-        if($_SESSION['user_role'] !== 'manager') {
-            header('Location: ' . URLROOT . '/pages/index');
-            exit;
-        }
-        */
     }
-    public function testStats() {
-    // Direct query test
-    $this->communityModel->db->query('SELECT COUNT(*) as total FROM communities');
-    $result = $this->communityModel->db->single();
-    
-    echo "<pre>";
-    echo "Result object: ";
-    var_dump($result);
-    echo "\n\nTotal communities: ";
-    var_dump($result->total ?? 'NULL');
-    echo "</pre>";
-    exit;
-}
 
     // Main dashboard page - READ all communities
     public function index() {
@@ -53,11 +27,9 @@ class CommunityController extends Controller {
         $data = [
             'title' => 'Create New Community',
             'community_name' => '',
-            'category' => '',
             'description' => '',
             'privacy' => '',
             'name_err' => '',
-            'category_err' => '',
             'description_err' => ''
         ];
 
@@ -71,10 +43,9 @@ class CommunityController extends Controller {
             $json = file_get_contents('php://input');
             $communityData = json_decode($json, true);
 
-            // Sanitize inputs
+            // Sanitize inputs - REMOVED category
             $data = [
                 'name' => trim($communityData['name'] ?? ''),
-                'category' => trim($communityData['category'] ?? ''),
                 'description' => trim($communityData['description'] ?? ''),
                 'privacy' => trim($communityData['privacy'] ?? 'public'),
                 'rules' => json_encode($communityData['rules'] ?? []),
@@ -92,9 +63,7 @@ class CommunityController extends Controller {
                 $errors[] = 'Community name cannot exceed 100 characters';
             }
 
-            if(empty($data['category'])) {
-                $errors[] = 'Category is required';
-            }
+            // REMOVED category validation
 
             if(empty($data['description'])) {
                 $errors[] = 'Description is required';
@@ -135,9 +104,6 @@ class CommunityController extends Controller {
         exit;
     }
 
-    // READ - View single community
-    
-
     // Show edit form
     public function edit($id) {
         $community = $this->communityModel->getCommunityById($id);
@@ -168,11 +134,10 @@ class CommunityController extends Controller {
                 exit;
             }
 
-            // Sanitize inputs
+            // Sanitize inputs - REMOVED category
             $data = [
                 'id' => $id,
                 'name' => trim($communityData['name'] ?? ''),
-                'category' => trim($communityData['category'] ?? ''),
                 'description' => trim($communityData['description'] ?? ''),
                 'privacy' => trim($communityData['privacy'] ?? 'public'),
                 'rules' => json_encode($communityData['rules'] ?? []),
@@ -187,9 +152,7 @@ class CommunityController extends Controller {
                 $errors[] = 'Community name is required';
             }
 
-            if(empty($data['category'])) {
-                $errors[] = 'Category is required';
-            }
+            // REMOVED category validation
 
             if(empty($data['description'])) {
                 $errors[] = 'Description is required';
