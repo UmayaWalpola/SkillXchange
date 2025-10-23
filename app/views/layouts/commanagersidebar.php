@@ -8,21 +8,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - SkillXchange</title>
 </head>
 <body>
     <div class="admin-container">
         <!-- Admin Sidebar -->
         <nav class="sidebar">
-            <div class="sidebar-header">
-                <h2>Admin Panel</h2>
-            </div>
+        
             
             <div class="sidebar-menu">
                 <a href="<?= URLROOT ?>/admin/dashboard" class="sidebar-item active">
-                    <span class="icon">📊</span>
+                    <span class="icon"></span>
                     <span>Dashboard</span>
                 </a>
+</div>
         </nav>
 
         <!-- Main Content Area -->

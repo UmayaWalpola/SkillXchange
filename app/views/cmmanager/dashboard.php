@@ -1,5 +1,5 @@
 <?php require_once '../app/views/layouts/header_user.php'; ?>
-<?php require_once '../app/views/layouts/adminsidebar.php'; ?>
+<?php require_once '../app/views/layouts/commanagersidebar.php'; ?>
 
 <!-- Link CSS -->
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/assets/css/communitydashboard.css">
