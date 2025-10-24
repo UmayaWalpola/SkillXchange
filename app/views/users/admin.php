@@ -73,17 +73,17 @@
                                             <td>
                                                 <div class="user-cell">
                                                     <div class="user-avatar">
-                                                        <?= strtoupper(substr($report['reported_username'] ?? 'U', 0, 2)) ?>
+                                                        <?= strtoupper(substr($report->reported_username ?? 'U', 0, 2)) ?>
                                                     </div>
-                                                    <span><?= htmlspecialchars($report['reported_username'] ?? 'Unknown') ?></span>
+                                                    <span><?= htmlspecialchars($report->reported_username ?? 'Unknown') ?></span>
                                                 </div>
                                             </td>
-                                            <td><?= htmlspecialchars($report['reporter_username'] ?? 'Anonymous') ?></td>
-                                            <td><?= htmlspecialchars($report['reason']) ?></td>
-                                            <td><?= date('M d, Y', strtotime($report['created_at'])) ?></td>
+                                            <td><?= htmlspecialchars($report->reporter_username ?? 'Anonymous') ?></td>
+                                            <td><?= htmlspecialchars($report->reason) ?></td>
+                                            <td><?= date('M d, Y', strtotime($report->created_at)) ?></td>
                                             <td>
-                                                <a href="<?= URLROOT ?>/admin/viewReport/<?= $report['id'] ?>" class="action-btn btn-view">View</a>
-                                                <button class="action-btn btn-suspend" onclick="sendWarning(<?= $report['reported_user_id'] ?>, <?= $report['id'] ?>)">Warn</button>
+                                                <a href="<?= URLROOT ?>/admin/viewReport/<?= $report->id ?>" class="action-btn btn-view">View</a>
+                                                <button class="action-btn btn-suspend" onclick="sendWarning(<?= $report->reported_user_id ?>, <?= $report->id ?>)">Warn</button>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -122,19 +122,19 @@
                                             <td>
                                                 <div class="user-cell">
                                                     <div class="user-avatar">
-                                                        <?= strtoupper(substr($user['username'] ?? 'U', 0, 2)) ?>
+                                                        <?= strtoupper(substr($user->username ?? 'U', 0, 2)) ?>
                                                     </div>
-                                                    <span><?= htmlspecialchars($user['username'] ?? 'Unknown') ?></span>
+                                                    <span><?= htmlspecialchars($user->username ?? 'Unknown') ?></span>
                                                 </div>
                                             </td>
-                                            <td><?= htmlspecialchars($user['email']) ?></td>
-                                            <td><?= date('M d, Y', strtotime($user['created_at'])) ?></td>
+                                            <td><?= htmlspecialchars($user->email) ?></td>
+                                            <td><?= date('M d, Y', strtotime($user->created_at)) ?></td>
                                             <td>
                                                 <span class="badge badge-success">Active</span>
                                             </td>
                                             <td>
-                                                <a href="<?= URLROOT ?>/admin/viewUser/<?= $user['id'] ?>" class="action-btn btn-view">View</a>
-                                                <button class="action-btn btn-suspend" onclick="suspendUser(<?= $user['id'] ?>)">Suspend</button>
+                                                <a href="<?= URLROOT ?>/admin/viewUser/<?= $user->id ?>" class="action-btn btn-view">View</a>
+                                                <button class="action-btn btn-suspend" onclick="suspendUser(<?= $user->id ?>)">Suspend</button>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -160,15 +160,15 @@
                             <?php foreach (array_slice($data['popular_skills'], 0, 3) as $skill): ?>
                                 <div class="skill-stat-card">
                                     <div class="skill-stat-header">
-                                        <h3><?= htmlspecialchars($skill['skill_name']) ?></h3>
+                                        <h3><?= htmlspecialchars($skill->skill_name) ?></h3>
                                     </div>
                                     <div class="skill-stat-numbers">
                                         <div class="skill-stat-item">
-                                            <span class="stat-num"><?= $skill['teachers'] ?></span>
+                                            <span class="stat-num"><?= $skill->teachers ?></span>
                                             <span class="stat-text">Teachers</span>
                                         </div>
                                         <div class="skill-stat-item">
-                                            <span class="stat-num"><?= $skill['learners'] ?></span>
+                                            <span class="stat-num"><?= $skill->learners ?></span>
                                             <span class="stat-text">Learners</span>
                                         </div>
                                     </div>

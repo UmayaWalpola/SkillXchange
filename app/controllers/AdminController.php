@@ -47,41 +47,42 @@ class AdminController extends Controller {
         $this->view('users/admin', $data);
     }
 
-    // Get admin statistics
     private function getAdminStats() {
-        try {
-            $db = new Database();
-            
-            // Total users (exclude admins)
-            $db->query("SELECT COUNT(*) as total FROM users WHERE role != 'admin'");
-            $totalUsers = $db->single()['total'] ?? 0;
-            
-            // Total unique skills
-            $db->query("SELECT COUNT(DISTINCT skill_name) as total FROM user_skills");
-            $totalSkills = $db->single()['total'] ?? 0;
-            
-            // Active exchanges (placeholder - set to 0 for now)
-            $activeExchanges = 0;
-            
-            // Completed exchanges (placeholder - set to 0 for now)
-            $completedExchanges = 0;
+    try {
+        $db = new Database();
+        
+        // Total users (exclude admins)
+        $db->query("SELECT COUNT(*) as total FROM users WHERE role != 'admin'");
+        $result = $db->single();
+        $totalUsers = $result->total ?? 0;  // Changed from ['total'] to ->total
+        
+        // Total unique skills
+        $db->query("SELECT COUNT(DISTINCT skill_name) as total FROM user_skills");
+        $result = $db->single();
+        $totalSkills = $result->total ?? 0;  // Changed from ['total'] to ->total
+        
+        // Active exchanges (placeholder - set to 0 for now)
+        $activeExchanges = 0;
+        
+        // Completed exchanges (placeholder - set to 0 for now)
+        $completedExchanges = 0;
 
-            return [
-                'total_users' => $totalUsers,
-                'active_exchanges' => $activeExchanges,
-                'completed_exchanges' => $completedExchanges,
-                'total_skills' => $totalSkills
-            ];
-        } catch (Exception $e) {
-            error_log("Admin stats error: " . $e->getMessage());
-            return [
-                'total_users' => 0,
-                'active_exchanges' => 0,
-                'completed_exchanges' => 0,
-                'total_skills' => 0
-            ];
-        }
+        return [
+            'total_users' => $totalUsers,
+            'active_exchanges' => $activeExchanges,
+            'completed_exchanges' => $completedExchanges,
+            'total_skills' => $totalSkills
+        ];
+    } catch (Exception $e) {
+        error_log("Admin stats error: " . $e->getMessage());
+        return [
+            'total_users' => 0,
+            'active_exchanges' => 0,
+            'completed_exchanges' => 0,
+            'total_skills' => 0
+        ];
     }
+}
 
     // Get recent users
     private function getRecentUsers($limit = 10) {
