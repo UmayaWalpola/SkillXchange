@@ -203,6 +203,14 @@ class AuthController extends Controller {
                     // Admins go to admin dashboard
                     header("Location: " . URLROOT . "/admin");
                     exit;
+                } elseif ($user['role'] === 'community_admin') {
+                    // Community admins go to community dashboard
+                    header("Location: " . URLROOT . "/community");
+                    exit;
+                } elseif ($user['role'] === 'quiz_manager') {
+                    // Quiz managers go to quiz management dashboard
+                    header("Location: " . URLROOT . "/quizmanager");
+                    exit;
                 } else {
                     // Default fallback
                     header("Location: " . URLROOT . "/home");
