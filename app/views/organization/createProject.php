@@ -349,24 +349,78 @@
 </style>
 
 <script>
-// Validate dates
+// Get today's date in YYYY-MM-DD format
+const today = new Date().toISOString().split('T')[0];
+
+// Set minimum date for both date inputs to today
+document.getElementById('start_date').setAttribute('min', today);
+document.getElementById('end_date').setAttribute('min', today);
+
+// Validate start date - cannot be in the past
+document.getElementById('start_date').addEventListener('change', function() {
+    const startDate = this.value;
+    const endDate = document.getElementById('end_date').value;
+    
+    // Check if start date is in the past
+    if (startDate < today) {
+        alert('Start date cannot be in the past');
+        this.value = '';
+        return;
+    }
+    
+    // Check if end date is before start date
+    if (endDate && endDate < startDate) {
+        alert('End date cannot be before start date');
+        document.getElementById('end_date').value = '';
+    }
+    
+    // Update minimum end date to start date
+    document.getElementById('end_date').setAttribute('min', startDate);
+});
+
+// Validate end date - cannot be in the past or before start date
 document.getElementById('end_date').addEventListener('change', function() {
     const startDate = document.getElementById('start_date').value;
     const endDate = this.value;
     
-    if (startDate && endDate && endDate < startDate) {
+    // Check if end date is in the past
+    if (endDate < today) {
+        alert('End date cannot be in the past');
+        this.value = '';
+        return;
+    }
+    
+    // Check if end date is before start date
+    if (startDate && endDate < startDate) {
         alert('End date cannot be before start date');
         this.value = '';
     }
 });
 
-document.getElementById('start_date').addEventListener('change', function() {
-    const startDate = this.value;
+// Form submission validation
+document.querySelector('.project-form').addEventListener('submit', function(e) {
+    const startDate = document.getElementById('start_date').value;
     const endDate = document.getElementById('end_date').value;
     
+    // Validate start date if provided
+    if (startDate && startDate < today) {
+        e.preventDefault();
+        alert('Start date cannot be in the past');
+        return false;
+    }
+    
+    // Validate end date if provided
+    if (endDate && endDate < today) {
+        e.preventDefault();
+        alert('End date cannot be in the past');
+        return false;
+    }
+    
+    // Validate end date is after start date
     if (startDate && endDate && endDate < startDate) {
+        e.preventDefault();
         alert('End date cannot be before start date');
-        document.getElementById('end_date').value = '';
+        return false;
     }
 });
 </script>
