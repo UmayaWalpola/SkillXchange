@@ -305,3 +305,17 @@ document.addEventListener('DOMContentLoaded', function() {
 </style>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>
+
+<h1>My Projects</h1>
+
+<a href="/SkillXchange/public/ProjectController/create">Create New Project</a>
+
+<?php foreach ($data['projects'] as $p): ?>
+    <div style="border:1px solid #ccc;padding:10px;margin:10px 0">
+        <h3><?= $p->name ?></h3>
+        <p><?= $p->description ?></p>
+
+        <a href="/SkillXchange/public/ProjectController/edit/<?= $p->id ?>">Edit</a>
+        <a href="/SkillXchange/public/ProjectController/delete/<?= $p->id ?>">Delete</a>
+    </div>
+<?php endforeach; ?>

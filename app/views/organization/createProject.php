@@ -426,3 +426,29 @@ document.querySelector('.project-form').addEventListener('submit', function(e) {
 </script>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>
+
+<h1>Create Project</h1>
+
+<form action="/SkillXchange/public/ProjectController/store" method="POST">
+
+    <input type="text" name="name" placeholder="Project Name" required>
+
+    <textarea name="description" placeholder="Project Description" required></textarea>
+
+    <select name="category">
+        <option value="web">Web</option>
+        <option value="mobile">Mobile</option>
+        <option value="design">Design</option>
+        <option value="data">Data</option>
+        <option value="other">Other</option>
+    </select>
+
+    <input type="text" name="required_skills" placeholder="Required Skills">
+
+    <input type="number" name="max_members" placeholder="Max Members">
+
+    <input type="date" name="start_date">
+    <input type="date" name="end_date">
+
+    <button type="submit">Create</button>
+</form>
