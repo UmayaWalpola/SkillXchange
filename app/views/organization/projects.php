@@ -57,13 +57,12 @@
         <div class="projects-grid" id="projectsGrid">
             <?php if(!empty($data['projects'])): ?>
                 <?php foreach($data['projects'] as $project): ?>
-                    <?php
-                    // Convert array to object if needed
-                    if (is_array($project)) {
-                        $project = (object)$project;
-                    }
-                    ?>
-                    <div class="project-card" data-status="<?= $project->status ?>" data-category="<?= $project->category ?>">
+                    <?php if (is_array($project)) $project = (object)$project; ?>
+
+                    <div class="project-card" 
+                         data-status="<?= $project->status ?>" 
+                         data-category="<?= $project->category ?>">
+
                         <div class="project-header <?= $project->category ?>">
                             <div class="project-icon">
                                 <?php 
@@ -90,21 +89,14 @@
                             </p>
                             
                             <div class="project-meta">
-                                <span class="meta-item">
-                                    <span class="meta-icon">📂</span>
-                                    <?= ucfirst($project->category) ?>
-                                </span>
-                                <span class="meta-item">
-                                    <span class="meta-icon">👥</span>
-                                    <?= $project->current_members ?? 0 ?>/<?= $project->max_members ?> Members
-                                </span>
+                                <span class="meta-item">📂 <?= ucfirst($project->category) ?></span>
+                                <span class="meta-item">👥 <?= $project->current_members ?? 0 ?>/<?= $project->max_members ?> Members</span>
                             </div>
 
                             <div class="project-skills">
                                 <?php 
-                                $skills = explode(',', $project->required_skills);
-                                $displaySkills = array_slice($skills, 0, 3);
-                                foreach($displaySkills as $skill): 
+                                    $skills = explode(',', $project->required_skills);
+                                    foreach(array_slice($skills, 0, 3) as $skill): 
                                 ?>
                                     <span class="skill-tag"><?= trim(htmlspecialchars($skill)) ?></span>
                                 <?php endforeach; ?>
@@ -118,22 +110,18 @@
                                     Created: <?= date('M d, Y', strtotime($project->created_at)) ?>
                                 </span>
                                 <div class="project-actions">
-                                    <!--<button class="action-btn view-btn" onclick="viewProject(<?= $project->id ?>)">
-                                        View
-                                    </button> -->
-                                    <button class="action-btn edit-btn" onclick="editProject(<?= $project->id ?>)">
-                                         Edit
-                                    </button>
-                                    <button class="action-btn delete-btn" onclick="deleteProject(<?= $project->id ?>, '<?= htmlspecialchars($project->name, ENT_QUOTES) ?>')">
-                                         Delete
+                                    <button class="action-btn edit-btn" onclick="editProject(<?= $project->id ?>)">Edit</button>
+                                    <button class="action-btn delete-btn"
+                                        onclick="deleteProject(<?= $project->id ?>, '<?= htmlspecialchars($project->name, ENT_QUOTES) ?>')">
+                                        Delete
                                     </button>
                                 </div>
                             </div>
                         </div>
+
                     </div>
                 <?php endforeach; ?>
             <?php else: ?>
-                <!-- Empty State -->
                 <div class="empty-state">
                     <div class="empty-icon">📁</div>
                     <h3>No Projects Found</h3>
@@ -148,174 +136,52 @@
 </main>
 
 <script>
-// Define URLROOT for JavaScript
+// URLROOT for JS
 const URLROOT = '<?= URLROOT ?>';
 
-// View project
-function viewProject(projectId) {
-    window.location.href = URLROOT + '/organization/viewProject/' + projectId;
+function editProject(id) {
+    window.location.href = URLROOT + '/organization/editProject/' + id;
 }
 
-// Edit project
-function editProject(projectId) {
-    window.location.href = URLROOT + '/organization/editProject/' + projectId;
-}
+function deleteProject(id, name) {
+    if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
 
-// Delete project
-function deleteProject(projectId, projectName) {
-    if (confirm(`Are you sure you want to delete "${projectName}"? This action cannot be undone.`)) {
-        const formData = new FormData();
-        formData.append('project_id', projectId);
-        
-        fetch(URLROOT + '/organization/deleteProject', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                location.reload();
-            } else {
-                alert('Error: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while deleting the project');
-        });
-    }
-}
+    let form = new FormData();
+    form.append('project_id', id);
 
-// Filter projects
-function filterProjects() {
-    const searchInput = document.getElementById('searchInput').value.toLowerCase();
-    const statusFilter = document.getElementById('statusFilter').value;
-    const categoryFilter = document.getElementById('categoryFilter').value;
-    
-    const projectCards = document.querySelectorAll('.project-card');
-    let visibleCount = 0;
-    
-    projectCards.forEach(card => {
-        const title = card.querySelector('.project-title').textContent.toLowerCase();
-        const description = card.querySelector('.project-description').textContent.toLowerCase();
-        const status = card.dataset.status;
-        const category = card.dataset.category;
-        
-        const matchesSearch = title.includes(searchInput) || description.includes(searchInput);
-        const matchesStatus = statusFilter === 'all' || status === statusFilter;
-        const matchesCategory = categoryFilter === 'all' || category === categoryFilter;
-        
-        if (matchesSearch && matchesStatus && matchesCategory) {
-            card.style.display = 'block';
-            visibleCount++;
-        } else {
-            card.style.display = 'none';
-        }
+    fetch(URLROOT + '/organization/deleteProject', {
+        method: 'POST',
+        body: form
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        if (data.success) location.reload();
     });
-    
-    // Show/hide empty state
-    const emptyState = document.querySelector('.empty-state');
-    const projectsGrid = document.getElementById('projectsGrid');
-    
-    if (visibleCount === 0 && projectCards.length > 0) {
-        if (!document.querySelector('.no-results')) {
-            const noResults = document.createElement('div');
-            noResults.className = 'empty-state no-results';
-            noResults.innerHTML = `
-                <div class="empty-icon">🔍</div>
-                <h3>No Projects Match Your Filters</h3>
-                <p>Try adjusting your search criteria</p>
-            `;
-            projectsGrid.appendChild(noResults);
-        }
-    } else {
-        const noResults = document.querySelector('.no-results');
-        if (noResults) noResults.remove();
-    }
 }
 
-// Add event listeners
+function filterProjects() {
+    let search = document.getElementById('searchInput').value.toLowerCase();
+    let status = document.getElementById('statusFilter').value;
+    let category = document.getElementById('categoryFilter').value;
+
+    document.querySelectorAll('.project-card').forEach(card => {
+        let title = card.querySelector('.project-title').textContent.toLowerCase();
+        let desc = card.querySelector('.project-description').textContent.toLowerCase();
+        
+        let matchesSearch = title.includes(search) || desc.includes(search);
+        let matchesStatus = (status === 'all') || (card.dataset.status === status);
+        let matchesCategory = (category === 'all') || (card.dataset.category === category);
+
+        card.style.display = (matchesSearch && matchesStatus && matchesCategory)
+            ? "block" 
+            : "none";
+    });
+}
+
 document.getElementById('searchInput').addEventListener('input', filterProjects);
 document.getElementById('statusFilter').addEventListener('change', filterProjects);
 document.getElementById('categoryFilter').addEventListener('change', filterProjects);
-
-// Auto-hide alerts after 5 seconds
-document.addEventListener('DOMContentLoaded', function() {
-    const alerts = document.querySelectorAll('.alert');
-    alerts.forEach(alert => {
-        setTimeout(() => {
-            alert.style.opacity = '0';
-            setTimeout(() => alert.remove(), 300);
-        }, 5000);
-    });
-});
 </script>
 
-<style>
-.alert {
-    padding: 15px 20px;
-    margin-bottom: 20px;
-    border-radius: 8px;
-    font-weight: 500;
-    transition: opacity 0.3s ease;
-}
-
-.alert-success {
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-}
-
-.alert-error {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-}
-
-.empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    grid-column: 1 / -1;
-}
-
-.empty-icon {
-    font-size: 64px;
-    margin-bottom: 20px;
-}
-
-.empty-state h3 {
-    color: #333;
-    margin-bottom: 10px;
-}
-
-.empty-state p {
-    color: #666;
-    margin-bottom: 20px;
-}
-
-.delete-btn {
-    background-color: #dc3545;
-    color: white;
-}
-
-.delete-btn:hover {
-    background-color: #c82333;
-}
-</style>
-
 <?php require_once "../app/views/layouts/footer_user.php"; ?>
-
-<h1>My Projects</h1>
-
-<a href="/SkillXchange/public/ProjectController/create">Create New Project</a>
-
-<?php foreach ($data['projects'] as $p): ?>
-    <div style="border:1px solid #ccc;padding:10px;margin:10px 0">
-        <h3><?= $p->name ?></h3>
-        <p><?= $p->description ?></p>
-
-        <a href="/SkillXchange/public/ProjectController/edit/<?= $p->id ?>">Edit</a>
-        <a href="/SkillXchange/public/ProjectController/delete/<?= $p->id ?>">Delete</a>
-    </div>
-<?php endforeach; ?>
