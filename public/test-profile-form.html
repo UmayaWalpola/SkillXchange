@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Organization Profile Update</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .form-group { margin: 10px 0; }
+        input, textarea { padding: 8px; width: 300px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        .success { color: green; }
+        .error { color: red; }
+        #status { margin-top: 20px; padding: 10px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>Test Organization Profile Update</h1>
+    <p>Use this form to test the profile update functionality</p>
+    
+    <form id="profileForm">
+        <div class="form-group">
+            <label>Organization Name:</label><br>
+            <input type="text" name="org_name" value="Pretty Software" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Email:</label><br>
+            <input type="email" name="email" value="ps@gmail.com" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Description:</label><br>
+            <textarea name="description" rows="4">Organization description</textarea>
+        </div>
+        
+        <button type="button" onclick="testUpdate()">Test Update</button>
+    </form>
+    
+    <div id="status"></div>
+    
+    <script>
+        async function testUpdate() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '<p>Sending request...</p>';
+            
+            const formData = new FormData(document.getElementById('profileForm'));
+            const urlroot = 'http://localhost/SkillXchange/public';
+            const url = urlroot + '/organization/updateProfile';
+            
+            console.log('URL:', url);
+            console.log('FormData contents:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`  ${key}: ${value}`);
+            }
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+                
+                if (data.success) {
+                    statusDiv.innerHTML = '<p class="success">✓ Update successful!</p><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                } else {
+                    statusDiv.innerHTML = '<p class="error">✗ Update failed: ' + data.message + '</p><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                statusDiv.innerHTML = '<p class="error">✗ Error: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>

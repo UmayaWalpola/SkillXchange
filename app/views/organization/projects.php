@@ -110,9 +110,12 @@
                                     Created: <?= date('M d, Y', strtotime($project->created_at)) ?>
                                 </span>
                                 <div class="project-actions">
+                                    <button class="action-btn members-btn" onclick="manageMembers(<?= $project->id ?>)">👥 Members</button>
                                     <button class="action-btn edit-btn" onclick="editProject(<?= $project->id ?>)">Edit</button>
                                     <button class="action-btn delete-btn"
-                                        onclick="deleteProject(<?= $project->id ?>, '<?= htmlspecialchars($project->name, ENT_QUOTES) ?>')">
+                                        data-project-id="<?= $project->id ?>"
+                                        data-project-name="<?= htmlspecialchars($project->name, ENT_QUOTES) ?>"
+                                        onclick="deleteProject(this, <?= $project->id ?>, '<?= htmlspecialchars($project->name, ENT_QUOTES) ?>')">
                                         Delete
                                     </button>
                                 </div>
@@ -136,27 +139,54 @@
 </main>
 
 <script>
-// URLROOT for JS
-const URLROOT = '<?= URLROOT ?>';
+// Ensure URLROOT exists (set in header)
+window.URLROOT = window.URLROOT || '<?= URLROOT ?>';
+
+function manageMembers(id) {
+    window.location.href = URLROOT + '/organization/members/' + id;
+}
 
 function editProject(id) {
     window.location.href = URLROOT + '/organization/editProject/' + id;
 }
 
-function deleteProject(id, name) {
+function deleteProject(btn, id, name) {
     if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
 
     let form = new FormData();
     form.append('project_id', id);
 
+    if (btn) btn.disabled = true;
+
     fetch(URLROOT + '/organization/deleteProject', {
         method: 'POST',
-        body: form
+        body: form,
+        credentials: 'same-origin',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
     })
-    .then(res => res.json())
+    .then(async res => {
+        let text = await res.text();
+        try { return JSON.parse(text); } catch (e) { throw new Error('Invalid JSON response: ' + text); }
+    })
     .then(data => {
-        alert(data.message);
-        if (data.success) location.reload();
+        alert(data.message || 'Done');
+        if (data.success) {
+            // remove project card from DOM if possible
+            try {
+                const card = btn.closest('.project-card');
+                if (card) card.remove();
+                else location.reload();
+            } catch (e) { location.reload(); }
+        } else {
+            if (btn) btn.disabled = false;
+        }
+    })
+    .catch(err => {
+        console.error('Delete error:', err);
+        alert('Error deleting project: ' + err.message);
+        if (btn) btn.disabled = false;
     });
 }
 
@@ -182,6 +212,63 @@ function filterProjects() {
 document.getElementById('searchInput').addEventListener('input', filterProjects);
 document.getElementById('statusFilter').addEventListener('change', filterProjects);
 document.getElementById('categoryFilter').addEventListener('change', filterProjects);
+
+// Delegated delete handler (works if inline handlers fail)
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.delete-btn');
+    if (!btn) return;
+
+    // Prevent double-binding if inline handler also runs
+    e.preventDefault();
+
+    const projectId = btn.getAttribute('data-project-id');
+    const projectName = btn.getAttribute('data-project-name') || 'this project';
+
+    console.log('Delete clicked for', projectId, projectName);
+
+    // Reuse the existing deleteProject function if available
+    if (typeof deleteProject === 'function') {
+        try {
+            deleteProject(btn, projectId, projectName);
+            return;
+        } catch (err) {
+            console.warn('deleteProject threw, falling back to inline fetch', err);
+        }
+    }
+
+    // Fallback: perform fetch here
+    if (!confirm(`Are you sure you want to delete "${projectName}"?`)) return;
+
+    btn.disabled = true;
+    const form = new FormData();
+    form.append('project_id', projectId);
+
+    fetch(URLROOT + '/organization/deleteProject', {
+        method: 'POST',
+        body: form,
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(async res => {
+        const text = await res.text();
+        try { return JSON.parse(text); } catch(e) { throw new Error('Invalid JSON: ' + text); }
+    })
+    .then(data => {
+        console.log('Delete response:', data);
+        alert(data.message || 'Done');
+        if (data.success) {
+            const card = btn.closest('.project-card');
+            if (card) card.remove(); else location.reload();
+        } else {
+            btn.disabled = false;
+        }
+    })
+    .catch(err => {
+        console.error('Delete error fallback:', err);
+        alert('Error deleting project: ' + err.message);
+        btn.disabled = false;
+    });
+});
 </script>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>

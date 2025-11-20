@@ -79,4 +79,157 @@ class ProjectController extends Controller
         header("Location: /SkillXchange/public/ProjectController/index");
         exit;
     }
+
+    // Public project detail view (user-facing)
+    public function detail($id = null)
+    {
+        if (!$id) {
+            header('Location: ' . URLROOT . '/');
+            exit();
+        }
+
+        $project = $this->projectModel->getProjectById($id);
+        if (!$project) {
+            $_SESSION['error'] = 'Project not found.';
+            header('Location: ' . URLROOT . '/');
+            exit();
+        }
+
+
+        $application = null;
+        $is_member = false;
+        if (isset($_SESSION['user_id'])) {
+            $application = $this->projectModel->getUserApplication($id, $_SESSION['user_id']);
+            // Check membership
+            $is_member = $this->projectModel->isUserMember($id, $_SESSION['user_id']);
+        }
+
+        // Get team members
+        $members = $this->projectModel->getMembersByProject($id);
+
+        $data = [
+            'title' => $project->name,
+            'project' => $project,
+            'application' => $application,
+            'is_member' => $is_member,
+            'members' => $members ?? []
+        ];
+
+        parent::view('projects/view', $data);
+    }
+
+    /**
+     * Handle project application submission
+     * POST: /project/submitApplication/{projectId}
+     */
+    public function submitApplication($projectId = null)
+    {
+        $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+                return;
+            }
+            $_SESSION['error'] = 'Invalid request method.';
+            header('Location: ' . URLROOT . '/project/detail/' . ($projectId ?? ''));
+            exit();
+        }
+
+        if (!$projectId) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Project ID missing.']);
+                return;
+            }
+            $_SESSION['error'] = 'Project ID missing.';
+            header('Location: ' . URLROOT . '/');
+            exit();
+        }
+
+        // Ensure logged in
+        if (!isset($_SESSION['user_id'])) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'You must be logged in to apply.']);
+                return;
+            }
+            $_SESSION['error'] = 'You must be logged in to apply.';
+            header('Location: ' . URLROOT . '/auth/signin');
+            exit();
+        }
+
+        // Collect and normalize fields (support legacy and new names)
+        $data = [];
+        $data['project_id'] = (int)$projectId;
+        $data['user_id'] = (int)$_SESSION['user_id'];
+
+        // Accept both name variants for compatibility
+        $data['relevant_experience'] = trim($_POST['relevant_experience'] ?? $_POST['experience'] ?? '');
+        $data['matching_skills'] = trim($_POST['matching_skills'] ?? $_POST['skills'] ?? '');
+        $data['contribution'] = trim($_POST['contribution'] ?? '');
+        $data['availability'] = trim($_POST['availability'] ?? $_POST['commitment'] ?? '');
+        $data['expected_duration'] = trim($_POST['expected_duration'] ?? $_POST['duration'] ?? '');
+        $data['motivation'] = trim($_POST['motivation'] ?? '');
+        $data['portfolio_link'] = trim($_POST['portfolio'] ?? '');
+        $data['agreement'] = isset($_POST['agreement']) ? 1 : (isset($_POST['agree_terms']) ? 1 : 0);
+
+        // Basic validation
+        $errors = [];
+        if (empty($data['relevant_experience'])) $errors[] = 'Relevant experience is required.';
+        if (empty($data['matching_skills'])) $errors[] = 'Matching skills are required.';
+        if (empty($data['contribution'])) $errors[] = 'Contribution details are required.';
+        if (empty($data['availability'])) $errors[] = 'Availability is required.';
+        if (empty($data['expected_duration'])) $errors[] = 'Expected duration is required.';
+        if (empty($data['motivation'])) $errors[] = 'Motivation is required.';
+        if (empty($data['agreement'])) $errors[] = 'You must agree to the project guidelines.';
+
+        if (!empty($errors)) {
+            $msg = implode(' ', $errors);
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $msg]);
+                return;
+            }
+            $_SESSION['error'] = $msg;
+            header('Location: ' . URLROOT . '/project/detail/' . $projectId);
+            exit();
+        }
+
+        // Optionally prevent duplicate pending application
+        $existing = $this->projectModel->getUserApplication($projectId, $data['user_id']);
+        if ($existing && $existing->status === 'pending') {
+            $msg = 'You already have a pending application for this project.';
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $msg]);
+                return;
+            }
+            $_SESSION['error'] = $msg;
+            header('Location: ' . URLROOT . '/project/detail/' . $projectId);
+            exit();
+        }
+
+        // Save via model
+        $saved = $this->projectModel->saveFullApplication($data);
+
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            if ($saved) {
+                echo json_encode(['success' => true, 'message' => 'Application submitted successfully.']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Failed to submit application. Please try again.']);
+            }
+            return;
+        }
+
+        if ($saved) {
+            $_SESSION['success'] = 'Application submitted successfully.';
+        } else {
+            $_SESSION['error'] = 'Failed to submit application. Please try again.';
+        }
+
+        header('Location: ' . URLROOT . '/project/detail/' . $projectId);
+        exit();
+    }
 }

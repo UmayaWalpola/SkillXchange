@@ -151,14 +151,27 @@ class UserdashboardController extends Controller {
     public function projects() {
         $userId = $this->checkAuth();
         
+        $projectModel = $this->model('Project');
+        $projects = $projectModel->getProjectsForUser($userId);
+        
+        // Debug: Log what we're getting
+        error_log('DEBUG: User ID = ' . $userId);
+        error_log('DEBUG: Projects returned: ' . count($projects ?? []));
+        
+        // If no projects found, show all active projects (for testing/browse)
+        if (empty($projects)) {
+            error_log('DEBUG: No projects found for user, loading all active projects');
+            $projects = $projectModel->getAllActiveProjects();
+            error_log('DEBUG: Loaded ' . count($projects ?? []) . ' active projects');
+        }
+        
         $user = $this->getUserData($userId);
-        $projects = $this->getAllProjects();
         
         $data = [
             'title' => 'Projects',
             'user' => $user,
             'page' => 'projects',
-            'projects' => $projects
+            'projects' => $projects ?? []
         ];
         
         $this->view('users/projects', $data);

@@ -16,7 +16,7 @@
                 <button class="action-btn edit-btn" onclick="window.location.href='<?= URLROOT ?>/organization/editProject/<?= $data['project']->id ?>'">
                     ✏️ Edit Project
                 </button>
-                <button class="action-btn delete-btn" onclick="deleteProject(<?= $data['project']->id ?>, '<?= htmlspecialchars($data['project']->name) ?>')">
+                <button class="action-btn delete-btn" onclick="deleteProject(this, <?= $data['project']->id ?>, '<?= htmlspecialchars($data['project']->name) ?>')">
                     🗑️ Delete Project
                 </button>
             </div>
@@ -356,31 +356,40 @@
 </style>
 
 <script>
-const URLROOT = '<?= URLROOT ?>';
+window.URLROOT = window.URLROOT || '<?= URLROOT ?>';
 
-function deleteProject(projectId, projectName) {
-    if (confirm(`Are you sure you want to delete "${projectName}"? This action cannot be undone.`)) {
-        const formData = new FormData();
-        formData.append('project_id', projectId);
-        
-        fetch(URLROOT + '/organization/deleteProject', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                window.location.href = URLROOT + '/organization/projects';
-            } else {
-                alert('Error: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while deleting the project');
-        });
-    }
+function deleteProject(btn, projectId, projectName) {
+    if (!confirm(`Are you sure you want to delete "${projectName}"? This action cannot be undone.`)) return;
+
+    const formData = new FormData();
+    formData.append('project_id', projectId);
+
+    if (btn) btn.disabled = true;
+
+    fetch(URLROOT + '/organization/deleteProject', {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(async res => {
+        let text = await res.text();
+        try { return JSON.parse(text); } catch (e) { throw new Error('Invalid JSON response: ' + text); }
+    })
+    .then(data => {
+        if (data.success) {
+            alert(data.message || 'Project deleted');
+            window.location.href = URLROOT + '/organization/projects';
+        } else {
+            alert('Error: ' + (data.message || 'Unknown'));
+            if (btn) btn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while deleting the project: ' + error.message);
+        if (btn) btn.disabled = false;
+    });
 }
 </script>
 

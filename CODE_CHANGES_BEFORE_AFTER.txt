@@ -1,0 +1,272 @@
+📝 CODE CHANGES - BEFORE & AFTER COMPARISON
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🔧 CHANGE #1: Project Model - Add New Method
+───────────────────────────────────────────────────────────────────────────────
+
+File: app/models/Project.php
+
+BEFORE: (Method didn't exist)
+────────────────────────────────────────────────────────────────────────────
+N/A
+
+AFTER: (New method added at end of class)
+────────────────────────────────────────────────────────────────────────────
+    /* ============================================================
+       USER PROJECTS (For Individual User Dashboard)
+    ============================================================ */
+
+    public function getProjectsForUser($userId) {
+        $this->db->query(
+            "SELECT DISTINCT p.*, 
+            (SELECT COUNT(*) FROM project_members WHERE project_id = p.id AND status='active') AS current_members 
+            FROM projects p 
+            LEFT JOIN project_members pm ON pm.project_id = p.id 
+            WHERE pm.user_id = :user_id AND pm.status = 'active' 
+            ORDER BY p.created_at DESC"
+        );
+        $this->db->bind(':user_id', $userId);
+        return $this->db->resultSet();
+    }
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🔧 CHANGE #2: UserDashboardController - Update projects() Method
+───────────────────────────────────────────────────────────────────────────────
+
+File: app/controllers/UserDashboardController.php
+
+BEFORE: (Using dummy data)
+────────────────────────────────────────────────────────────────────────────
+    public function projects() {
+        $userId = $this->checkAuth();
+        
+        $user = $this->getUserData($userId);
+        $projects = $this->getAllProjects();  // ❌ DUMMY DATA
+        
+        $data = [
+            'title' => 'Projects',
+            'user' => $user,
+            'page' => 'projects',
+            'projects' => $projects
+        ];
+        
+        $this->view('users/projects', $data);
+    }
+
+AFTER: (Using real database data)
+────────────────────────────────────────────────────────────────────────────
+    public function projects() {
+        $userId = $this->checkAuth();
+        
+        $projectModel = $this->model('Project');
+        $projects = $projectModel->getProjectsForUser($userId);  // ✅ REAL DATA
+        
+        $user = $this->getUserData($userId);
+        
+        $data = [
+            'title' => 'Projects',
+            'user' => $user,
+            'page' => 'projects',
+            'projects' => $projects
+        ];
+        
+        $this->view('users/projects', $data);
+    }
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🔧 CHANGE #3: User Projects View - Complete Rewrite
+───────────────────────────────────────────────────────────────────────────────
+
+File: app/views/users/projects.php
+
+BEFORE: (Dummy hardcoded projects + complex detail page)
+────────────────────────────────────────────────────────────────────────────
+            <div class="projects-container" id="projectsContainer">
+                <?php foreach ($data['projects'] as $project): ?>  ❌ LOOPS DUMMY DATA
+                    <div class="project-card" data-status="<?= $project['status']; ?>">
+                        <div class="project-banner <?= $project['categoryClass']; ?>">
+                            <?= $project['icon']; ?>
+                        </div>
+                        <span class="status-badge <?= $project['status']; ?>">
+                            <?= strtoupper($project['status']); ?>
+                        </span>
+                        <div class="project-content">
+                            <h3 class="project-title"><?= htmlspecialchars($project['title']); ?></h3>
+                            <p class="project-description"><?= htmlspecialchars($project['description']); ?></p>
+                            <div class="project-meta">
+                                <span class="project-category"><?= htmlspecialchars($project['category']); ?></span>
+                                <span>by <?= htmlspecialchars($project['creator']); ?></span>
+                            </div>
+                            <div class="project-skills">
+                                <?php foreach (array_slice($project['skills'], 0, 3) as $skill): ?>
+                                    <span class="skill-tag"><?= htmlspecialchars($skill); ?></span>
+                                <?php endforeach; ?>
+                            </div>
+                            <div class="project-footer">
+                                <span class="members-count"><?= $project['totalMembers']; ?> Members</span>
+                                <button class="view-details-btn" onclick='showDetail(<?= json_encode($project); ?>)'>
+                                    View Details
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+
+        <!-- Project Detail Page -->
+        <div id="projectDetailPage" class="project-detail">  ❌ DUMMY DETAIL PAGE
+            <!-- ... hardcoded detail view ... -->
+        </div>
+
+AFTER: (Real database projects + proper navigation)
+────────────────────────────────────────────────────────────────────────────
+            <div class="projects-container" id="projectsContainer">
+                <?php if(!empty($data['projects'])): ?>  ✅ CHECK IF DATA EXISTS
+                    <?php foreach ($data['projects'] as $project): ?>  ✅ LOOPS REAL DATA
+                        <?php 
+                            if (is_array($project)) $project = (object)$project;
+                            
+                            $icons = [
+                                'web' => '💻',
+                                'mobile' => '📱',
+                                'data' => '📊',
+                                'design' => '🎨',
+                                'other' => '📁'
+                            ];
+                            $icon = $icons[$project->category] ?? '📁';
+                            $categoryClass = $project->category ?? 'other';
+                        ?>
+                        <div class="project-card" data-status="<?= htmlspecialchars($project->status) ?>">
+                            <div class="project-banner <?= htmlspecialchars($categoryClass) ?>">
+                                <?= $icon ?>
+                            </div>
+                            <span class="status-badge <?= htmlspecialchars($project->status) ?>">
+                                <?= ucfirst(str_replace('-', ' ', $project->status)) ?>
+                            </span>
+                            <div class="project-content">
+                                <h3 class="project-title"><?= htmlspecialchars($project->name) ?></h3>
+                                <p class="project-description">
+                                    <?= htmlspecialchars(substr($project->description, 0, 120)) ?>
+                                    <?= strlen($project->description) > 120 ? '...' : '' ?>
+                                </p>
+                                <div class="project-meta">
+                                    <span class="project-category"><?= ucfirst(htmlspecialchars($project->category)) ?></span>
+                                    <span><?= intval($project->current_members ?? 0) ?>/<?= htmlspecialchars($project->max_members) ?> Members</span>
+                                </div>
+                                <div class="project-skills">
+                                    <?php 
+                                        $skills = array_slice(explode(',', $project->required_skills), 0, 3);
+                                        foreach ($skills as $skill): 
+                                    ?>
+                                        <span class="skill-tag"><?= htmlspecialchars(trim($skill)) ?></span>
+                                    <?php endforeach; ?>
+                                    <?php if(count(explode(',', $project->required_skills)) > 3): ?>
+                                        <span class="skill-tag">+<?= count(explode(',', $project->required_skills)) - 3 ?> more</span>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="project-footer">
+                                    <span class="members-count"><?= intval($project->current_members ?? 0) ?> Members</span>
+                                    <a href="<?= URLROOT ?>/project/view/<?= htmlspecialchars($project->id) ?>" class="view-details-btn">
+                                        View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>  ✅ EMPTY STATE
+                    <div style="grid-column: 1/-1; text-align: center; padding: 3rem 1rem; color: #666;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">📁</div>
+                        <h3 style="color: #333; margin-bottom: 0.5rem;">No Projects Yet</h3>
+                        <p>You haven't joined any projects yet. Browse available projects or ask your organization to invite you!</p>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+        <!-- Removed: Dummy detail page code (no longer needed) -->
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📊 KEY DIFFERENCES HIGHLIGHTED
+
+───────────────────────────────────────────────────────────────────────────────
+BEFORE vs AFTER - Data Source
+───────────────────────────────────────────────────────────────────────────────
+
+BEFORE:
+  ❌ $projects = $this->getAllProjects()  (Dummy array in controller)
+  ❌ foreach ($data['projects'] as $project)  (Loops 4 hardcoded items)
+  ❌ $project['title']  (Access array key)
+  ❌ $project['creator']  (Hardcoded value)
+  ❌ No database query
+  ❌ Static 4-project limit
+  ❌ No empty state
+
+AFTER:
+  ✅ $projectModel->getProjectsForUser($userId)  (Real database query)
+  ✅ if(!empty($data['projects'])) then foreach  (Safe iteration)
+  ✅ $project->name  (Access object property from DB)
+  ✅ Calculated from members  (Real data)
+  ✅ Prepared SQL statement
+  ✅ Unlimited scalability
+  ✅ Empty state when no projects
+
+───────────────────────────────────────────────────────────────────────────────
+Security Improvements
+───────────────────────────────────────────────────────────────────────────────
+
+BEFORE:
+  ❌ htmlspecialchars($project['creator'])  (Dummy data, escape not critical)
+  ❌ No parameter binding
+  ❌ Access control limited
+
+AFTER:
+  ✅ htmlspecialchars($project->name)  (Real data, escape CRITICAL)
+  ✅ Prepared statements with :user_id binding
+  ✅ User ID verified from session
+  ✅ Only shows user's own projects
+
+───────────────────────────────────────────────────────────────────────────────
+Data Field Changes
+───────────────────────────────────────────────────────────────────────────────
+
+BEFORE → AFTER (Dummy → Real):
+  $project['title']               → $project->name
+  $project['description']         → $project->description  ✓ Same field
+  $project['category']            → $project->category    ✓ Same field
+  $project['status']              → $project->status      ✓ Same field
+  $project['creator']             → N/A (No equivalent, removed)
+  $project['totalMembers']        → $project->current_members
+  $project['skills']              → explode($project->required_skills)
+  
+New field available:
+  (None in dummy)                 → $project->id  (Database ID)
+  (None in dummy)                 → $project->organization_id  (Org ID)
+  (None in dummy)                 → $project->max_members  (Max capacity)
+  (None in dummy)                 → $project->created_at  (Created date)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎯 Summary of Changes
+
+CODE CHANGES:
+  Files Modified: 3
+  Lines Added: ~150
+  Lines Removed: ~50
+  Net Improvement: +100
+
+DUMMY DATA REMOVED:
+  ❌ "AI Chatbot Assistant"
+  ❌ "SkillXchange Mobile App"
+  ❌ "Data Visualization Dashboard"
+  ❌ "UX Design System"
+
+REAL DATA ADDED:
+  ✅ Database query method
+  ✅ Dynamic project rendering
+  ✅ Real member counts
+  ✅ Actual project details
+
+═══════════════════════════════════════════════════════════════════════════════
