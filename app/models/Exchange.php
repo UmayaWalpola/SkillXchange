@@ -154,12 +154,12 @@ class Exchange extends Database {
         $this->db->query("
             SELECT 
                 e.*,
-                sender.name as sender_name,
+                sender.username as sender_name,
                 sender.email as sender_email,
-                sender.avatar as sender_avatar,
-                receiver.name as receiver_name,
+                sender.profile_picture as sender_avatar,
+                receiver.username as receiver_name,
                 receiver.email as receiver_email,
-                receiver.avatar as receiver_avatar
+                receiver.profile_picture as receiver_avatar
             FROM exchanges e
             INNER JOIN users sender ON e.sender_id = sender.id
             INNER JOIN users receiver ON e.receiver_id = receiver.id
@@ -184,7 +184,7 @@ class Exchange extends Database {
                 END as partner_id,
                 CASE 
                     WHEN e.sender_id = :user_id THEN receiver.name
-                    ELSE sender.name
+                    ELSE sender.username
                 END as partner_name,
                 CASE 
                     WHEN e.sender_id = :user_id THEN receiver.email
@@ -192,7 +192,7 @@ class Exchange extends Database {
                 END as partner_email,
                 CASE 
                     WHEN e.sender_id = :user_id THEN receiver.avatar
-                    ELSE sender.avatar
+                    ELSE sender.profile_picture
                 END as partner_avatar
             FROM exchanges e
             INNER JOIN users sender ON e.sender_id = sender.id

@@ -7,120 +7,346 @@ class SkillMatch extends Database {
     public function __construct() {
         $this->db = new Database;
     }
+/**
+ * Get ALL matches with compatibility scoring
+ * Returns array grouped by match percentage
+ */
+// In: app/models/SkillMatch.php
 
-    /**
-     * Get users who want to LEARN skills that the current user TEACHES
-     * These are people the current user can teach
-     */
-    public function getTeachMatches($userId) {
-        $this->db->query("
-            SELECT DISTINCT
-                u.id,
-                u.username,
-                u.email,
-                u.profile_picture,
-                us_learner.skill_name,
-                us_learner.proficiency_level AS learner_level,
-                us_teacher.proficiency_level AS teacher_level
-            FROM users u
-            INNER JOIN user_skills us_learner 
-                ON u.id = us_learner.user_id
-                AND us_learner.skill_type = 'learn'
-            INNER JOIN user_skills us_teacher
-                ON us_teacher.user_id = :current_user_id
-                AND us_teacher.skill_type = 'teach'
-                AND us_teacher.skill_name = us_learner.skill_name
-            WHERE u.id != :current_user_id
-            AND u.id NOT IN (
-                SELECT receiver_id FROM exchanges 
-                WHERE sender_id = :current_user_id AND status IN ('accepted', 'pending')
-                UNION
-                SELECT sender_id FROM exchanges 
-                WHERE receiver_id = :current_user_id AND status IN ('accepted', 'pending')
-            )
-            ORDER BY 
-                CASE us_learner.proficiency_level
-                    WHEN 'beginner' THEN 1
-                    WHEN 'intermediate' THEN 2
-                    WHEN 'advanced' THEN 3
-                END ASC
-        ");
-        $this->db->bind(':current_user_id', $userId);
-        $results = $this->db->resultSet();
+public function getAllMatchesWithScores($userId) {
+    // Get all potential matches with their skill overlaps
+    $this->db->query("
+        SELECT 
+            u.id,
+            u.username,
+            u.email,
+            u.profile_picture,
+            -- Skills I can teach them
+            GROUP_CONCAT(DISTINCT 
+                CASE 
+                    WHEN my_teach.skill_name IS NOT NULL 
+                    THEN CONCAT(my_teach.skill_name, ':', my_teach.proficiency_level, ':', their_learn.proficiency_level)
+                END
+            ) AS i_teach_them,
+            -- Skills they can teach me
+            GROUP_CONCAT(DISTINCT 
+                CASE 
+                    WHEN their_teach.skill_name IS NOT NULL 
+                    THEN CONCAT(their_teach.skill_name, ':', their_teach.proficiency_level, ':', my_learn.proficiency_level)
+                END
+            ) AS they_teach_me
+        FROM users u
+        -- Skills I teach that they want to learn
+        LEFT JOIN user_skills their_learn 
+            ON their_learn.user_id = u.id 
+            AND their_learn.skill_type = 'learn'
+        LEFT JOIN user_skills my_teach
+            ON my_teach.user_id = :current_user_id
+            AND my_teach.skill_type = 'teach'
+            AND my_teach.skill_name = their_learn.skill_name
+        -- Skills they teach that I want to learn
+        LEFT JOIN user_skills my_learn
+            ON my_learn.user_id = :current_user_id
+            AND my_learn.skill_type = 'learn'
+        LEFT JOIN user_skills their_teach
+            ON their_teach.user_id = u.id
+            AND their_teach.skill_type = 'teach'
+            AND their_teach.skill_name = my_learn.skill_name
+        WHERE u.id != :current_user_id
+        -- Exclude existing connections
+        AND u.id NOT IN (
+            SELECT receiver_id FROM exchanges 
+            WHERE sender_id = :current_user_id AND status IN ('accepted', 'pending')
+            UNION
+            SELECT sender_id FROM exchanges 
+            WHERE receiver_id = :current_user_id AND status IN ('accepted', 'pending')
+        )
+        GROUP BY u.id, u.username, u.email, u.profile_picture
+        HAVING i_teach_them IS NOT NULL OR they_teach_me IS NOT NULL
+    ");
+    
+    $this->db->bind(':current_user_id', $userId);
+    $results = $this->db->resultSet();
 
-        $matches = [];
-        foreach ($results as $row) {
-            $displayName = $row->username ?? '';
-            $matches[] = [
-                'id' => $row->id,
-                'name' => $displayName,
-                'email' => $row->email,
-                'avatar' => $row->profile_picture ?? strtoupper(substr($displayName, 0, 2)),
-                'skill' => 'Wants to learn ' . ucwords(str_replace('-', ' ', $row->skill_name ?? '')),
-                'learner_level' => ucfirst($row->learner_level ?? ''),
-                'teacher_level' => ucfirst($row->teacher_level ?? '')
-            ];
+    // 🔍 DEBUG: Add this right here
+    echo "<pre style='background: lightgreen; padding: 20px;'>";
+    echo "USER ID: " . $userId . "\n";
+    echo "RAW DATABASE RESULTS: " . count($results) . " rows\n\n";
+    print_r($results);
+    echo "</pre>";
+    // 🔍 END DEBUG
+
+    // Process results and calculate match scores
+    $matches = [
+        'perfect' => [],  // 100% - Mutual matches
+        'great' => [],    // 75% - Multiple skills OR high proficiency
+        'good' => [],     // 50% - Single skill match
+    ];
+
+    foreach ($results as $row) {
+        $match = $this->processMatch($row);
+        
+        // 🔍 DEBUG: Add this too
+        echo "<pre style='background: lightcoral; padding: 20px;'>";
+        echo "PROCESSED MATCH:\n";
+        print_r($match);
+        echo "SCORE: " . $this->calculateMatchScore($match) . "\n";
+        echo "</pre>";
+        // 🔍 END DEBUG
+        
+        // Calculate match score
+        $score = $this->calculateMatchScore($match);
+        
+        if ($score >= 100) {
+            $matches['perfect'][] = $match;
+        } elseif ($score >= 75) {
+            $matches['great'][] = $match;
+        } elseif ($score >= 50) {
+            $matches['good'][] = $match;
         }
-
-        return $matches;
     }
 
-    /**
-     * Get users who TEACH skills that the current user wants to LEARN
-     * These are people the current user can learn from
+    return $matches;
+}
+
+/**
+ * Process raw database row into structured match data
+ */
+private function processMatch($row) {
+    $match = [
+        'id' => $row->id,
+        'name' => $row->username ?? '',
+        'email' => $row->email,
+        'avatar' => $row->profile_picture ?? strtoupper(substr($row->username ?? 'U', 0, 2)),
+        'i_teach' => [],
+        'they_teach' => [],
+        'is_mutual' => false,
+        'total_skills' => 0
+    ];
+
+    // Parse skills I can teach them
+    if (!empty($row->i_teach_them)) {
+        $skills = explode(',', $row->i_teach_them);
+        foreach ($skills as $skill) {
+            if (empty($skill)) continue;
+            $parts = explode(':', $skill);
+            if (count($parts) >= 3) {
+                $match['i_teach'][] = [
+                    'name' => $parts[0],
+                    'display_name' => ucwords(str_replace('-', ' ', $parts[0])),
+                    'my_level' => ucfirst($parts[1]),
+                    'their_level' => ucfirst($parts[2])
+                ];
+            }
+        }
+    }
+
+    // Parse skills they can teach me
+    if (!empty($row->they_teach_me)) {
+        $skills = explode(',', $row->they_teach_me);
+        foreach ($skills as $skill) {
+            if (empty($skill)) continue;
+            $parts = explode(':', $skill);
+            if (count($parts) >= 3) {
+                $match['they_teach'][] = [
+                    'name' => $parts[0],
+                    'display_name' => ucwords(str_replace('-', ' ', $parts[0])),
+                    'their_level' => ucfirst($parts[1]),
+                    'my_level' => ucfirst($parts[2])
+                ];
+            }
+        }
+    }
+
+    // Determine if mutual
+    $match['is_mutual'] = !empty($match['i_teach']) && !empty($match['they_teach']);
+    $match['total_skills'] = count($match['i_teach']) + count($match['they_teach']);
+
+    return $match;
+}
+
+/**
+ * Calculate match score (0-100+)
+ */
+private function calculateMatchScore($match) {
+    $score = 0;
+
+    // Base points for any match
+    $score += 30;
+
+    // MUTUAL MATCH BONUS (70 points) - THIS IS KEY!
+    if ($match['is_mutual']) {
+        $score += 70;
+    }
+
+    // Multiple skills bonus (up to 20 points)
+    if ($match['total_skills'] >= 4) {
+        $score += 20;
+    } elseif ($match['total_skills'] >= 3) {
+        $score += 15;
+    } elseif ($match['total_skills'] >= 2) {
+        $score += 10;
+    }
+
+    // Proficiency level bonus (up to 10 points)
+    // Check if any skills have advanced-beginner pairing (great for teaching)
+    foreach ($match['i_teach'] as $skill) {
+        if ($skill['my_level'] === 'Advanced' && $skill['their_level'] === 'Beginner') {
+            $score += 5;
+            break;
+        }
+    }
+    foreach ($match['they_teach'] as $skill) {
+        if ($skill['their_level'] === 'Advanced' && $skill['my_level'] === 'Beginner') {
+            $score += 5;
+            break;
+        }
+    }
+
+    return $score;
+}
+
+/**
+     * Get user's skills for filter dropdown
      */
-    public function getLearnMatches($userId) {
+    public function getUserSkillsForFilter($userId) {
         $this->db->query("
-            SELECT DISTINCT
-                u.id,
-                u.username,
-                u.email,
-                u.profile_picture,
-                us_teacher.skill_name,
-                us_teacher.proficiency_level AS teacher_level,
-                us_learner.proficiency_level AS learner_level
-            FROM users u
-            INNER JOIN user_skills us_teacher
-                ON u.id = us_teacher.user_id
-                AND us_teacher.skill_type = 'teach'
-            INNER JOIN user_skills us_learner
-                ON us_learner.user_id = :current_user_id
-                AND us_learner.skill_type = 'learn'
-                AND us_learner.skill_name = us_teacher.skill_name
-            WHERE u.id != :current_user_id
-            AND u.id NOT IN (
-                SELECT receiver_id FROM exchanges 
-                WHERE sender_id = :current_user_id AND status IN ('accepted', 'pending')
-                UNION
-                SELECT sender_id FROM exchanges 
-                WHERE receiver_id = :current_user_id AND status IN ('accepted', 'pending')
-            )
-            ORDER BY 
-                CASE us_teacher.proficiency_level
-                    WHEN 'advanced' THEN 1
-                    WHEN 'intermediate' THEN 2
-                    WHEN 'beginner' THEN 3
-                END ASC
+            SELECT DISTINCT skill_name, skill_type
+            FROM user_skills
+            WHERE user_id = :user_id
+            ORDER BY skill_type DESC, skill_name ASC
         ");
-        $this->db->bind(':current_user_id', $userId);
+        
+        $this->db->bind(':user_id', $userId);
         $results = $this->db->resultSet();
 
-        $matches = [];
-        foreach ($results as $row) {
-            $displayName = $row->username ?? '';
-            $matches[] = [
-                'id' => $row->id,
-                'name' => $displayName,
-                'email' => $row->email,
-                'avatar' => $row->profile_picture ?? strtoupper(substr($displayName, 0, 2)),
-                'skill' => 'Teaches ' . ucwords(str_replace('-', ' ', $row->skill_name ?? '')),
-                'teacher_level' => ucfirst($row->teacher_level ?? ''),
-                'learner_level' => ucfirst($row->learner_level ?? '')
-            ];
+        $skills = ['teaches' => [], 'learns' => []];
+        
+        foreach ($results as $skill) {
+            $displayName = ucwords(str_replace('-', ' ', $skill->skill_name));
+            if ($skill->skill_type === 'teach') {
+                $skills['teaches'][] = ['name' => $skill->skill_name, 'display' => $displayName];
+            } else {
+                $skills['learns'][] = ['name' => $skill->skill_name, 'display' => $displayName];
+            }
         }
 
-        return $matches;
+        return $skills;
     }
+    // In: app/models/SkillMatch.php
+// Replace your getTeachMatches() method with this:
+
+public function getTeachMatches($userId) {
+    $this->db->query("
+        SELECT DISTINCT
+            u.id,
+            u.username,
+            u.email,
+            u.profile_picture,
+            us_learner.skill_name,
+            us_learner.proficiency_level AS learner_level,
+            us_teacher.proficiency_level AS teacher_level
+        FROM users u
+        INNER JOIN user_skills us_learner 
+            ON u.id = us_learner.user_id
+            AND us_learner.skill_type = 'learn'
+        INNER JOIN user_skills us_teacher
+            ON us_teacher.user_id = :current_user_id
+            AND us_teacher.skill_type = 'teach'
+            AND us_teacher.skill_name = us_learner.skill_name
+        WHERE u.id != :current_user_id
+        AND u.id NOT IN (
+            SELECT receiver_id FROM exchanges 
+            WHERE sender_id = :current_user_id AND status IN ('accepted', 'pending')
+            UNION
+            SELECT sender_id FROM exchanges 
+            WHERE receiver_id = :current_user_id AND status IN ('accepted', 'pending')
+        )
+        ORDER BY 
+            CASE us_learner.proficiency_level
+                WHEN 'beginner' THEN 1
+                WHEN 'intermediate' THEN 2
+                WHEN 'advanced' THEN 3
+            END ASC
+    ");
+    
+    $this->db->bind(':current_user_id', $userId);
+    $results = $this->db->resultSet();
+
+    $matches = [];
+    foreach ($results as $row) {
+        $displayName = $row->username ?? '';
+        $rawSkillName = $row->skill_name ?? '';
+        $matches[] = [
+            'id' => $row->id,
+            'name' => $displayName,
+            'email' => $row->email,
+            'avatar' => $row->profile_picture ?? strtoupper(substr($displayName, 0, 2)),
+            'skill' => 'Wants to learn ' . ucwords(str_replace('-', ' ', $rawSkillName)),
+            'skill_name' => $rawSkillName,
+            'learner_level' => ucfirst($row->learner_level ?? ''),
+            'teacher_level' => ucfirst($row->teacher_level ?? '')
+        ];
+    }
+
+    return $matches;
+}
+
+   public function getLearnMatches($userId) {
+    $this->db->query("
+        SELECT DISTINCT
+            u.id,
+            u.username,
+            u.email,
+            u.profile_picture,
+            us_teacher.skill_name,
+            us_teacher.proficiency_level AS teacher_level,
+            us_learner.proficiency_level AS learner_level
+        FROM users u
+        INNER JOIN user_skills us_teacher
+            ON u.id = us_teacher.user_id
+            AND us_teacher.skill_type = 'teach'
+        INNER JOIN user_skills us_learner
+            ON us_learner.user_id = :current_user_id
+            AND us_learner.skill_type = 'learn'
+            AND us_learner.skill_name = us_teacher.skill_name
+        WHERE u.id != :current_user_id
+        AND u.id NOT IN (
+            SELECT receiver_id FROM exchanges 
+            WHERE sender_id = :current_user_id AND status IN ('accepted', 'pending')
+            UNION
+            SELECT sender_id FROM exchanges 
+            WHERE receiver_id = :current_user_id AND status IN ('accepted', 'pending')
+        )
+        ORDER BY 
+            CASE us_teacher.proficiency_level
+                WHEN 'advanced' THEN 1
+                WHEN 'intermediate' THEN 2
+                WHEN 'beginner' THEN 3
+            END ASC
+    ");
+    
+    $this->db->bind(':current_user_id', $userId);
+    $results = $this->db->resultSet();
+
+    $matches = [];
+    foreach ($results as $row) {
+        $displayName = $row->username ?? '';
+        $skillName = $row->skill_name ?? '';
+        $matches[] = [
+            'id' => $row->id,
+            'name' => $displayName,
+            'email' => $row->email,
+            'avatar' => $row->profile_picture ?? strtoupper(substr($displayName, 0, 2)),
+            'skill' => 'Teaches ' . ucwords(str_replace('-', ' ', $skillName)),
+            'skill_name' => $skillName,
+            'teacher_level' => ucfirst($row->teacher_level ?? ''),
+            'learner_level' => ucfirst($row->learner_level ?? '')
+        ];
+    }
+
+    return $matches;
+}
 
     /**
      * Get mutual matches (users where both can teach AND learn from each other)

@@ -79,33 +79,71 @@ class UserdashboardController extends Controller {
         $this->view('users/chats', $data);
     }
 
-    public function matches() {
-        $userId = $this->checkAuth();
-        
-        // Load the SkillMatch model
-        $skillMatchModel = $this->model('SkillMatch');
-        
-        // Get real matches from database
-        $teachMatches = $skillMatchModel->getTeachMatches($userId);
-        $learnMatches = $skillMatchModel->getLearnMatches($userId);
-        $mutualMatches = $skillMatchModel->getMutualMatches($userId);
-        $matchStats = $skillMatchModel->getMatchStats($userId);
-        
-        $user = $this->getUserData($userId);
-        
-        $data = [
-            'title' => 'Matches',
-            'user' => $user,
-            'page' => 'matches',
-            'teachMatches' => $teachMatches,
-            'learnMatches' => $learnMatches,
-            'mutualMatches' => $mutualMatches,
-            'matchStats' => $matchStats
-        ];
-        
-        $this->view('users/matches', $data);
-    }
+   // In: app/controllers/UserDashboardController.php
+// In the matches() method
 
+public function matches() {
+    $userId = $this->checkAuth();
+    
+    $skillMatchModel = $this->model('SkillMatch');
+    
+    // 🔍 TEST THE SIMPLE QUERIES
+    echo "<pre style='background: lightblue; padding: 20px;'>";
+    echo "USER ID: " . $userId . "\n\n";
+    
+    $teachMatches = $skillMatchModel->getTeachMatches($userId);
+    echo "TEACH MATCHES: " . count($teachMatches) . "\n";
+    print_r($teachMatches);
+    
+    echo "\n\n";
+    
+    $learnMatches = $skillMatchModel->getLearnMatches($userId);
+    echo "LEARN MATCHES: " . count($learnMatches) . "\n";
+    print_r($learnMatches);
+    
+    echo "</pre>";
+    exit;
+}
+
+/**
+ * Handle accept/reject connection requests
+ */
+public function handleRequest() {
+    header('Content-Type: application/json');
+    
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        echo json_encode(['success' => false, 'message' => 'Invalid request method']);
+        exit;
+    }
+    
+    $currentUserId = $this->checkAuth();
+    $exchangeId = $_POST['exchange_id'] ?? null;
+    $action = $_POST['action'] ?? null;
+    
+    if (!$exchangeId || !$action) {
+        echo json_encode(['success' => false, 'message' => 'Missing required parameters']);
+        exit;
+    }
+    
+    $exchangeModel = $this->model('Exchange');
+    
+    if ($action === 'accept') {
+        $result = $exchangeModel->acceptExchange($exchangeId, $currentUserId);
+        $message = $result ? 'Connection request accepted!' : 'Failed to accept request';
+    } elseif ($action === 'reject') {
+        $result = $exchangeModel->rejectExchange($exchangeId, $currentUserId);
+        $message = $result ? 'Connection request rejected' : 'Failed to reject request';
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Invalid action']);
+        exit;
+    }
+    
+    echo json_encode([
+        'success' => $result,
+        'message' => $message
+    ]);
+    exit;
+}
     public function viewProfile($userId = null) {
         $currentUserId = $this->checkAuth();
         
