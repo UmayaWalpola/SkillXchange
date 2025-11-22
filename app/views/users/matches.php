@@ -36,7 +36,6 @@
             <?php if (!empty($data['pendingRequests'])): ?>
             <div class="connection-requests-section">
                 <h2 class="section-title">
-                    <span class="title-icon">📬</span>
                     Connection Requests
                     <span class="badge-count"><?= count($data['pendingRequests']); ?></span>
                 </h2>
@@ -117,7 +116,6 @@
             <?php if (!empty($data['perfectMatches'])): ?>
             <div class="match-tier-section" data-tier="perfect">
                 <h2 class="tier-title">
-                    <span class="tier-icon">🌟</span>
                     PERFECT MATCHES (100%)
                     <span class="tier-count">(<?= count($data['perfectMatches']); ?> found)</span>
                 </h2>
@@ -189,7 +187,7 @@
     </span>
     
     <?php if(isset($match['connection_status']) && $match['connection_status'] === 'pending'): ?>
-        <span class="badge badge-warning">⏳ Request Pending</span>
+        <span class="badge badge-warning">Request Pending</span>
     <?php elseif(isset($match['connection_status']) && $match['connection_status'] === 'connected'): ?>
         <span class="badge badge-success">✓ Connected</span>
     <?php else: ?>
@@ -299,7 +297,6 @@
             <?php if (!empty($data['goodMatches'])): ?>
             <div class="match-tier-section" data-tier="good">
                 <h2 class="tier-title">
-                    <span class="tier-icon">✨</span>
                     GOOD MATCHES (50%)
                     <span class="tier-count">(<?= count($data['goodMatches']); ?> found)</span>
                 </h2>
@@ -313,7 +310,7 @@
                                  array_column($match['i_teach'], 'name'),
                                  array_column($match['they_teach'], 'name')
                              ))); ?>">
-                            <div class="match-badge-overlay">✨ Good</div>
+                            <div class="match-badge-overlay">Good</div>
                             <div class="match-header">
                                 <div class="match-avatar">
                                     <?= htmlspecialchars($match['avatar']); ?>
@@ -369,7 +366,7 @@
     </span>
     
     <?php if(isset($match['connection_status']) && $match['connection_status'] === 'pending'): ?>
-        <span class="badge badge-warning">⏳ Request Pending</span>
+        <span class="badge badge-warning"> Request Pending</span>
     <?php elseif(isset($match['connection_status']) && $match['connection_status'] === 'connected'): ?>
         <span class="badge badge-success">✓ Connected</span>
     <?php else: ?>
