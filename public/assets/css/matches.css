@@ -1,9 +1,6 @@
 
 
 /* Enhanced Matches Page Styling */
-/* ========================================
-   MATCHES PAGE - TIERED DISCOVERY SYSTEM
-   ======================================== */
 
 /* Page Foundation */
 .matches-page {
@@ -796,7 +793,22 @@
         margin-left: 0;
     }
 }
+.badge {
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
 
+.badge-warning {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.badge-success {
+    background-color: #28a745;
+    color: #fff;
+}
 /* Loading Animation */
 @keyframes pulse {
     0%, 100% { opacity: 1; }

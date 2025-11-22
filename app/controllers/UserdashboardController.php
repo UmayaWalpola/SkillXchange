@@ -79,31 +79,56 @@ class UserdashboardController extends Controller {
         $this->view('users/chats', $data);
     }
 
-   // In: app/controllers/UserDashboardController.php
-// In the matches() method
 
 public function matches() {
     $userId = $this->checkAuth();
     
     $skillMatchModel = $this->model('SkillMatch');
+    $exchangeModel = $this->model('Exchange');
     
-    // 🔍 TEST THE SIMPLE QUERIES
-    echo "<pre style='background: lightblue; padding: 20px;'>";
-    echo "USER ID: " . $userId . "\n\n";
+    $allMatches = $skillMatchModel->getAllMatchesWithScores($userId);
     
-    $teachMatches = $skillMatchModel->getTeachMatches($userId);
-    echo "TEACH MATCHES: " . count($teachMatches) . "\n";
-    print_r($teachMatches);
+
+    // Get pending connection requests
+    $pendingRequests = $exchangeModel->getExchangeRequests($userId);
+
+    $formattedRequests = [];
+    foreach ($pendingRequests as $request) {
+        $formattedRequests[] = [
+            'exchange_id' => $request->id,
+            'sender_id' => $request->sender_id,
+            'sender_name' => $request->sender_name,
+            'sender_email' => $request->sender_email,
+            'sender_avatar' => $request->sender_avatar ?? strtoupper(substr($request->sender_name, 0, 2)),
+            'skill_offered' => $request->skill_offered,
+            'skill_wanted' => $request->skill_wanted,
+            'time_ago' => $this->timeAgo($request->created_at)
+        ];
+    }   
+
     
-    echo "\n\n";
+    $userSkillsData = $skillMatchModel->getUserSkillsForFilter($userId);
+    $user = $this->getUserData($userId);
     
-    $learnMatches = $skillMatchModel->getLearnMatches($userId);
-    echo "LEARN MATCHES: " . count($learnMatches) . "\n";
-    print_r($learnMatches);
+    $data = [
+        'title' => 'Matches',
+        'user' => $user,
+        'page' => 'matches',
+       'perfectMatches' => $allMatches['perfect'],
+        'greatMatches' => $allMatches['great'],
+        'goodMatches' => $allMatches['good'],
+        'matchStats' => [
+            'perfect_count' => count($allMatches['perfect']),
+            'great_count' => count($allMatches['great']),
+            'good_count' => count($allMatches['good']),
+            'total_count' => count($allMatches['perfect']) + count($allMatches['great']) + count($allMatches['good'])
+        ],
+        'userSkills' => $userSkillsData,
+        'pendingRequests' => $formattedRequests
+    ];
     
-    echo "</pre>";
-    exit;
-}
+    $this->view('users/matches', $data);
+} 
 
 /**
  * Handle accept/reject connection requests

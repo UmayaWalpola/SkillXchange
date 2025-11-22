@@ -184,13 +184,20 @@
                             </div>
                             
                             <div class="match-footer">
-                                <span class="compatibility-score">
-                                     <?= $match['total_skills']; ?> skill<?= $match['total_skills'] > 1 ? 's' : ''; ?> matched
-                                </span>
-                                <button class="btn-connect" onclick="event.stopPropagation(); connectWithUser(<?= $match['id']; ?>, '<?= htmlspecialchars($match['name']); ?>')">
-                                    Connect
-                                </button>
-                            </div>
+    <span class="compatibility-score">
+         <?= $match['total_skills']; ?> skill<?= $match['total_skills'] > 1 ? 's' : ''; ?> matched
+    </span>
+    
+    <?php if(isset($match['connection_status']) && $match['connection_status'] === 'pending'): ?>
+        <span class="badge badge-warning">⏳ Request Pending</span>
+    <?php elseif(isset($match['connection_status']) && $match['connection_status'] === 'connected'): ?>
+        <span class="badge badge-success">✓ Connected</span>
+    <?php else: ?>
+        <button class="btn-connect" onclick="event.stopPropagation(); connectWithUser(<?= $match['id']; ?>, '<?= htmlspecialchars($match['name']); ?>')">
+            Connect
+        </button>
+    <?php endif; ?>
+</div>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -268,13 +275,20 @@
                             </div>
                             
                             <div class="match-footer">
-                                <span class="compatibility-score">
-                                     <?= $match['total_skills']; ?> skill<?= $match['total_skills'] > 1 ? 's' : ''; ?> matched
-                                </span>
-                                <button class="btn-connect" onclick="event.stopPropagation(); connectWithUser(<?= $match['id']; ?>, '<?= htmlspecialchars($match['name']); ?>')">
-                                    Connect
-                                </button>
-                            </div>
+    <span class="compatibility-score">
+         <?= $match['total_skills']; ?> skill<?= $match['total_skills'] > 1 ? 's' : ''; ?> matched
+    </span>
+    
+    <?php if(isset($match['connection_status']) && $match['connection_status'] === 'pending'): ?>
+        <span class="badge badge-warning">⏳ Request Pending</span>
+    <?php elseif(isset($match['connection_status']) && $match['connection_status'] === 'connected'): ?>
+        <span class="badge badge-success">✓ Connected</span>
+    <?php else: ?>
+        <button class="btn-connect" onclick="event.stopPropagation(); connectWithUser(<?= $match['id']; ?>, '<?= htmlspecialchars($match['name']); ?>')">
+            Connect
+        </button>
+    <?php endif; ?>
+</div>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -350,13 +364,20 @@
                             </div>
                             
                             <div class="match-footer">
-                                <span class="compatibility-score">
-                                     <?= $match['total_skills']; ?> skill<?= $match['total_skills'] > 1 ? 's' : ''; ?> matched
-                                </span>
-                                <button class="btn-connect" onclick="event.stopPropagation(); connectWithUser(<?= $match['id']; ?>, '<?= htmlspecialchars($match['name']); ?>')">
-                                    Connect
-                                </button>
-                            </div>
+    <span class="compatibility-score">
+         <?= $match['total_skills']; ?> skill<?= $match['total_skills'] > 1 ? 's' : ''; ?> matched
+    </span>
+    
+    <?php if(isset($match['connection_status']) && $match['connection_status'] === 'pending'): ?>
+        <span class="badge badge-warning">⏳ Request Pending</span>
+    <?php elseif(isset($match['connection_status']) && $match['connection_status'] === 'connected'): ?>
+        <span class="badge badge-success">✓ Connected</span>
+    <?php else: ?>
+        <button class="btn-connect" onclick="event.stopPropagation(); connectWithUser(<?= $match['id']; ?>, '<?= htmlspecialchars($match['name']); ?>')">
+            Connect
+        </button>
+    <?php endif; ?>
+</div>
                         </div>
                     <?php endforeach; ?>
                 </div>
