@@ -87,6 +87,69 @@
     gap: 2rem;
 }
 
+.progress-overview-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    gap: 1.5rem;
+}
+
+.progress-bar-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.progress-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    color: #4b5563;
+}
+
+.progress-container {
+    width: 100%;
+    background: #e5e7eb;
+    border-radius: 999px;
+    overflow: hidden;
+    height: 12px;
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #0ea5e9);
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.45);
+}
+
+.progress-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+}
+
+.progress-metric-card {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 0.9rem 1rem;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.progress-metric-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6b7280;
+    margin-bottom: 0.35rem;
+}
+
+.progress-metric-value {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #111827;
+}
+
 .card {
     background: white;
     border-radius: 10px;
@@ -447,6 +510,41 @@
 
         <!-- Content Sections -->
         <div class="content-sections">
+
+            <!-- Project Progress Section -->
+            <div class="card">
+                <h2 class="card-title">📈 Project Progress</h2>
+                <?php $progress = $progress ?? ['total_tasks' => 0, 'completed_tasks' => 0, 'progress_percent' => 0, 'active_members' => (int)($project->current_members ?? 0)]; ?>
+                <?php $percent = max(0, min(100, (float)($progress['progress_percent'] ?? 0))); ?>
+                <div class="progress-overview-grid">
+                    <div class="progress-bar-wrapper">
+                        <div class="progress-label-row">
+                            <span>Overall completion</span>
+                            <span><strong><?= $percent ?></strong>%</span>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: <?= $percent ?>%"></div>
+                        </div>
+                        <div style="margin-top:0.25rem;font-size:0.85rem;color:#6b7280;">
+                            <?= (int)($progress['completed_tasks'] ?? 0) ?> of <?= (int)($progress['total_tasks'] ?? 0) ?> tasks completed
+                        </div>
+                    </div>
+                    <div class="progress-metrics-grid">
+                        <div class="progress-metric-card">
+                            <div class="progress-metric-label">Total Tasks</div>
+                            <div class="progress-metric-value"><?= (int)($progress['total_tasks'] ?? 0) ?></div>
+                        </div>
+                        <div class="progress-metric-card">
+                            <div class="progress-metric-label">Completed Tasks</div>
+                            <div class="progress-metric-value"><?= (int)($progress['completed_tasks'] ?? 0) ?></div>
+                        </div>
+                        <div class="progress-metric-card">
+                            <div class="progress-metric-label">Active Members</div>
+                            <div class="progress-metric-value"><?= (int)($progress['active_members'] ?? ($project->current_members ?? 0)) ?></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- About Section -->
             <div class="card">

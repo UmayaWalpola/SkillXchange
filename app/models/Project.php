@@ -38,6 +38,13 @@ class Project {
         return $this->db->single();
     }
 
+    // Get active members with basic profile info for chats
+    public function getProjectMembers($projectId) {
+        $this->db->query("SELECT u.id, u.username, u.profile_picture FROM project_members pm JOIN users u ON pm.user_id = u.id WHERE pm.project_id = :project_id AND pm.status = 'active' ORDER BY u.username ASC");
+        $this->db->bind(':project_id', $projectId);
+        return $this->db->resultSet();
+    }
+
     public function updateProject($data) {
         $this->db->query("UPDATE projects SET name = :name, description = :description, category = :category, status = :status, required_skills = :required_skills, max_members = :max_members, start_date = :start_date, end_date = :end_date, updated_at = CURRENT_TIMESTAMP WHERE id = :id AND organization_id = :org_id");
         $this->db->bind(':id', $data['id']);
@@ -448,6 +455,64 @@ class Project {
             ORDER BY p.created_at DESC"
         );
         return $this->db->resultSet();
+    }
+
+    /* ============================================================
+       PROJECT PROGRESS (Tasks + Members)
+    ============================================================ */
+
+    /**
+     * Get aggregated progress metrics for a project.
+     * Returns associative array:
+     *  - total_tasks
+     *  - completed_tasks
+     *  - progress_percent (0-100 float)
+     *  - active_members
+     */
+    public function getProjectProgress($projectId)
+    {
+        $projectId = (int)$projectId;
+        if ($projectId <= 0) {
+            return [
+                'total_tasks' => 0,
+                'completed_tasks' => 0,
+                'progress_percent' => 0,
+                'active_members' => 0
+            ];
+        }
+
+        // Total & completed tasks
+        $this->db->query("SELECT 
+                COUNT(*) AS total_tasks,
+                SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) AS completed_tasks
+            FROM project_tasks
+            WHERE project_id = :project_id");
+        $this->db->bind(':project_id', $projectId);
+        $taskRow = $this->db->single();
+
+        $totalTasks = (int)($taskRow->total_tasks ?? 0);
+        $completedTasks = (int)($taskRow->completed_tasks ?? 0);
+
+        // Active members
+        $this->db->query("SELECT COUNT(*) AS active_members
+            FROM project_members
+            WHERE project_id = :project_id AND status = 'active'");
+        $this->db->bind(':project_id', $projectId);
+        $memberRow = $this->db->single();
+
+        $activeMembers = (int)($memberRow->active_members ?? 0);
+
+        $progressPercent = 0;
+        if ($totalTasks > 0) {
+            $progressPercent = round(($completedTasks / $totalTasks) * 100, 1);
+        }
+
+        return [
+            'total_tasks' => $totalTasks,
+            'completed_tasks' => $completedTasks,
+            'progress_percent' => $progressPercent,
+            'active_members' => $activeMembers
+        ];
     }
 
 }

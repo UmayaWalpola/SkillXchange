@@ -5,6 +5,7 @@ class TaskController extends Controller {
     
     private $taskModel;
     private $projectModel;
+    private $notificationModel;
 
     public function __construct() {
         if (!isset($_SESSION['user_id'])) {
@@ -14,6 +15,7 @@ class TaskController extends Controller {
 
         $this->taskModel = $this->model('Task');
         $this->projectModel = $this->model('Project');
+        $this->notificationModel = $this->model('Notification');
     }
 
      /* ============================================================
@@ -125,6 +127,18 @@ class TaskController extends Controller {
 
             $taskId = $this->taskModel->createTask($taskData);
             if ($taskId) {
+                // Notify assigned user about new task
+                if (!empty($taskData['assigned_to'])) {
+                    $msg = "You have been assigned the task: {$taskData['title']}";
+                    $this->notificationModel->createNotification([
+                        'user_id' => $taskData['assigned_to'],
+                        'type' => 'task_assigned',
+                        'message' => $msg,
+                        'project_id' => $projectId,
+                        'task_id' => $taskId
+                    ]);
+                }
+
                 $_SESSION['success'] = 'Task created successfully!';
                 header('Location: ' . URLROOT . '/tasks/project/' . $projectId);
                 exit();
@@ -199,6 +213,19 @@ class TaskController extends Controller {
             ];
 
             if ($this->taskModel->updateTask($taskId, $updateData)) {
+                // Notify assigned user and team about task update
+                $assignedId = $updateData['assigned_to'] ?: $task->assigned_to;
+                $msg = "Task '{$updateData['title']}' was updated (details/priority/deadline).";
+                if ($assignedId) {
+                    $this->notificationModel->createNotification([
+                        'user_id' => $assignedId,
+                        'type' => 'task_update',
+                        'message' => $msg,
+                        'project_id' => $task->project_id,
+                        'task_id' => $taskId
+                    ]);
+                }
+
                 $_SESSION['success'] = 'Task updated successfully!';
                 header('Location: ' . URLROOT . '/tasks/project/' . $task->project_id);
                 exit();
@@ -246,6 +273,18 @@ class TaskController extends Controller {
         }
 
         if ($this->taskModel->updateTaskStatus($taskId, $status)) {
+            // Notify assignee about status change (org-side move)
+            if ($task->assigned_to) {
+                $msg = "Status of task '{$task->title}' changed to " . ucfirst(str_replace('-', ' ', $status));
+                $this->notificationModel->createNotification([
+                    'user_id' => $task->assigned_to,
+                    'type' => 'task_update',
+                    'message' => $msg,
+                    'project_id' => $task->project_id,
+                    'task_id' => $taskId
+                ]);
+            }
+
             $_SESSION['success'] = 'Task status updated!';
             echo json_encode(['success' => true, 'message' => 'Task status updated']);
             return;
@@ -331,9 +370,44 @@ class TaskController extends Controller {
         $count = 0;
         foreach ($dueTomorrow as $task) {
             $this->taskModel->addHistory($task->id, $task->assigned_to, 'deadline_reminder_24h');
+            if ($task->assigned_to) {
+                $msg = "Task {$task->title} is due tomorrow";
+                $this->notificationModel->createNotification([
+                    'user_id' => $task->assigned_to,
+                    'type' => 'deadline_due_soon',
+                    'message' => $msg,
+                    'project_id' => $task->project_id,
+                    'task_id' => $task->id
+                ]);
+            }
             $count++;
         }
         echo 'Reminders generated for ' . $count . ' tasks due tomorrow.';
+    }
+
+    // Cron-style manual checks for deadlines
+    public function checkDeadlines() {
+        $this->sendDeadlineReminder();
+
+        // Due today
+        $this->taskModel->db->query("SELECT * FROM project_tasks WHERE deadline = CURDATE() AND status <> 'done'");
+        $dueToday = $this->taskModel->db->resultSet();
+        $todayCount = 0;
+        foreach ($dueToday as $task) {
+            if ($task->assigned_to) {
+                $msg = "Task {$task->title} is due today";
+                $this->notificationModel->createNotification([
+                    'user_id' => $task->assigned_to,
+                    'type' => 'deadline_due_today',
+                    'message' => $msg,
+                    'project_id' => $task->project_id,
+                    'task_id' => $task->id
+                ]);
+                $todayCount++;
+            }
+        }
+
+        echo 'Due-tomorrow and due-today checks completed.';
     }
 
     /* ============================================================

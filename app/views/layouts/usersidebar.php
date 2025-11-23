@@ -8,10 +8,6 @@
         <span class="icon"></span>
         <span>Notifications</span>
     </a>
-    <a href="<?= URLROOT ?>/userdashboard/chats" class="sidebar-item <?= (isset($page) && $page == 'chats') ? 'active' : '' ?>">
-        <span class="icon"></span>
-        <span>Chats</span>
-    </a>
     <a href="<?= URLROOT ?>/userdashboard/matches" class="sidebar-item <?= (isset($page) && $page == 'matches') ? 'active' : '' ?>">
         <span class="icon"></span>
         <span>Your Matches</span>

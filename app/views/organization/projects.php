@@ -111,6 +111,7 @@
                                 </span>
                                 <div class="project-actions">
                                     <button class="action-btn members-btn" onclick="manageMembers(<?= $project->id ?>)">👥 Members</button>
+                                    <button class="action-btn chat-open-btn" onclick="openChat(<?= $project->id ?>)">💬 Chat</button>
                                     <button class="action-btn edit-btn" onclick="editProject(<?= $project->id ?>)">Edit</button>
                                     <button class="action-btn delete-btn"
                                         data-project-id="<?= $project->id ?>"
@@ -148,6 +149,10 @@ function manageMembers(id) {
 
 function editProject(id) {
     window.location.href = URLROOT + '/organization/editProject/' + id;
+}
+
+function openChat(id) {
+    window.location.href = URLROOT + '/chat/index/' + id;
 }
 
 function deleteProject(btn, id, name) {

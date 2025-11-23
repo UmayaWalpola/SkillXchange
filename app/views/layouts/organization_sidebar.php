@@ -23,10 +23,6 @@
             <a href="<?= URLROOT ?>/organization/applications" class="sidebar-item <?= (strpos($_SERVER['REQUEST_URI'], '/applications') !== false) ? 'active' : '' ?>">
                 <span>Applications</span>
             </a>
-            
-            <a href="<?= URLROOT ?>/organization/chats" class="sidebar-item <?= (strpos($_SERVER['REQUEST_URI'], '/chats') !== false) ? 'active' : '' ?>">
-                <span>Chats</span>
-            </a>
         </nav>
     </div>
 

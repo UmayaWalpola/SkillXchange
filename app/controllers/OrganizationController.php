@@ -5,6 +5,7 @@ class OrganizationController extends Controller {
     
     private $projectModel;
     private $taskModel;
+    private $notificationModel;
 
     public function __construct() {
 
@@ -16,6 +17,7 @@ class OrganizationController extends Controller {
 
         $this->projectModel = $this->model('Project');
         $this->taskModel = $this->model('Task');
+        $this->notificationModel = $this->model('Notification');
     }
 
     /* ============================================================
