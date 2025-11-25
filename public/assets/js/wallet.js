@@ -1,140 +1,207 @@
-        // Sample data storage
-        let balance = 150;
-        let totalSent = 75;
-        let totalReceived = 225;
-        let sentTransactions = [
-            { receiver: "John Doe", amount: 25, timestamp: "2 hours ago", id: 1 },
-            { receiver: "Jane Smith", amount: 50, timestamp: "1 day ago", id: 2 }
-        ];
-        let receivedTransactions = [
-            { sender: "Alice Johnson", amount: 100, timestamp: "3 hours ago", id: 1 },
-            { sender: "Bob Wilson", amount: 125, timestamp: "2 days ago", id: 2 }
-        ];
+/**
+ * Handles wallet operations with better UX and error handling
+ */
+// Real-time balance validation
+document.getElementById('amount').addEventListener('input', function() {
+    const amount = parseFloat(this.value) || 0;
+    const currentBalance = parseFloat(document.getElementById('currentBalance').textContent.replace(',', ''));
+    
+    if (amount > currentBalance) {
+        this.setCustomValidity('Amount exceeds your current balance');
+        this.classList.add('invalid');
+    } else if (amount > 10000) {
+        this.setCustomValidity('Maximum 10,000 BuckX per transaction');
+        this.classList.add('invalid');
+    } else {
+        this.setCustomValidity('');
+        this.classList.remove('invalid');
+    }
+});
 
-        // Update display function
-        /*function updateDisplay() {
-            // Update stats
-            document.getElementById('balanceAmount').textContent = balance;
-            document.getElementById('totalSent').textContent = totalSent;
-            document.getElementById('totalReceived').textContent = totalReceived;
-            
-            // Update counts
-            document.getElementById('sentCount').textContent = sentTransactions.length;
-            document.getElementById('receivedCount').textContent = receivedTransactions.length;
+// Form validation before submission
+document.getElementById('transferForm')?.addEventListener('submit', function(e) {
+    const recipientId = document.getElementById('recipient_id').value;
+    const amount = parseFloat(document.getElementById('amount').value) || 0;
+    const currentBalance = parseFloat(document.getElementById('currentBalance').textContent.replace(',', ''));
+    
+    if (!recipientId) {
+        e.preventDefault();
+        alert('❌ Please select a recipient');
+        return false;
+    }
+    
+    if (amount > currentBalance) {
+        e.preventDefault();
+        alert('❌ Insufficient balance! You cannot send more than your current balance.');
+        return false;
+    }
+    
+    if (amount <= 0) {
+        e.preventDefault();
+        alert('❌ Please enter a valid amount greater than 0');
+        return false;
+    }
+});
 
-            // Update sent transactions
-            const sentList = document.getElementById('sentTransactions');
-            sentList.innerHTML = sentTransactions.map(tx => 
-                `<div class="transaction-item">
-                    <div class="transaction-info">
-                        <div class="transaction-user">${tx.receiver}</div>
-                        <div class="transaction-time">${tx.timestamp}</div>
-                    </div>
-                    <div class="transaction-amount sent">-${tx.amount} BuckX</div>
-                </div>`
-            ).join('');
+document.addEventListener('DOMContentLoaded', function() {
+    
 
-            // Update received transactions
-            const receivedList = document.getElementById('receivedTransactions');
-            receivedList.innerHTML = receivedTransactions.map(tx => 
-                `<div class="transaction-item">
-                    <div class="transaction-info">
-                        <div class="transaction-user">${tx.sender}</div>
-                        <div class="transaction-time">${tx.timestamp}</div>
-                    </div>
-                    <div class="transaction-amount received">+${tx.amount} BuckX</div>
-                </div>`
-            ).join('');
-        }*/
+    // Initialize
+    initializeWallet();
+    
+    function initializeWallet() {
+        // Check for notifications periodically
+        checkNotifications();
+        setInterval(checkNotifications, 30000); // Every 30 seconds
+        
+        // Update balance periodically
+        setInterval(updateBalance, 60000); // Every minute
+    }
+    
 
-        // Handle form submission
-        document.getElementById('transferForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const recipient = document.getElementById('recipient').value;
-            const amount = parseInt(document.getElementById('amount').value);
-            const note = document.getElementById('note').value;
-
-            if (amount > balance) {
-                alert('&#10060; Insufficient balance! Please enter a smaller amount.');
-                return;
-            }
-
-            if (amount <= 0) {
-                alert('&#10060; Please enter a valid amount.');
-                return;
-            }
-
-            // Add loading state
-            const submitBtn = this.querySelector('.send-btn');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<span>&#9203;</span><span>Sending...</span>';
-            submitBtn.disabled = true;
-
-            // Simulate API call delay
-            setTimeout(() => {
-                // Update balance and totals
-                balance -= amount;
-                totalSent += amount;
-
-                // Add to sent transactions
-                sentTransactions.unshift({
-                    receiver: recipient,
-                    amount: amount,
-                    timestamp: "Just now",
-                    id: Date.now()
-                });
-
-                // Keep only last 10 transactions
-                if (sentTransactions.length > 10) {
-                    sentTransactions = sentTransactions.slice(0, 10);
+    // Check for new notifications
+    function checkNotifications() {
+        fetch(getBaseUrl() + '/wallet/getNotifications')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.notifications.length > 0) {
+                    const unread = data.notifications.filter(n => !n.is_read);
+                    if (unread.length > 0) {
+                        showNotificationBadge(unread.length);
+                    }
                 }
+            })
+            .catch(error => console.error('Error fetching notifications:', error));
+    }
+    
 
-                // Reset form
-                this.reset();
-                
-                // Reset button
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-
-                // Update display
-                updateDisplay();
-
-                // Success message
-                alert(`&#9989; Successfully sent ${amount} BuckX to ${recipient}!`);
-            }, 1500);
-        });
-
-        // Initialize display
-        updateDisplay();
-
-        // Add real-time updates simulation
-        setInterval(() => {
-            // Randomly receive money (simulation)
-            if (Math.random() < 0.1) { // 10% chance every 30 seconds
-                const senders = ['Mike Johnson', 'Sarah Davis', 'Tom Brown', 'Lisa White'];
-                const amounts = [10, 15, 20, 25, 30, 50];
-                
-                const sender = senders[Math.floor(Math.random() * senders.length)];
-                const amount = amounts[Math.floor(Math.random() * amounts.length)];
-                
-                balance += amount;
-                totalReceived += amount;
-                
-                receivedTransactions.unshift({
-                    sender: sender,
-                    amount: amount,
-                    timestamp: "Just now",
-                    id: Date.now()
-                });
-                
-                if (receivedTransactions.length > 10) {
-                    receivedTransactions = receivedTransactions.slice(0, 10);
+    // Update balance display
+    function updateBalance() {
+        fetch(getBaseUrl() + '/wallet/getCurrentBalance')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const balanceElement = document.getElementById('currentBalance');
+                    if (balanceElement) {
+                        balanceElement.textContent = data.balance;
+                        
+                        // Update header balance if exists
+                        const headerBalance = document.querySelector('.header-balance');
+                        if (headerBalance) {
+                            headerBalance.textContent = data.balance + ' BuckX';
+                        }
+                    }
                 }
-                
-                updateDisplay();
-                
-                // Show notification
-                alert(`&#127881; You received ${amount} BuckX from ${sender}!`);
-            }
-        }, 30000); // Check every 30 seconds
+            })
+            .catch(error => console.error('Error updating balance:', error));
+    }
+    
+
+    // Show notification badge
+    function showNotificationBadge(count) {
+        const badge = document.querySelector('.notification-badge');
+        if (badge) {
+            badge.textContent = count;
+            badge.style.display = 'block';
+        }
+    }
+    
+
+    // Get base URL helper
+    function getBaseUrl() {
+        return window.location.origin;
+    }
+    
+
+    // Format number with commas
+    function formatNumber(num) {
+        return parseFloat(num).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+    }
+    
+
+    // Show toast notification
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <span class="toast-icon">${getToastIcon(type)}</span>
+            <span class="toast-message">${message}</span>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Animate in
+        setTimeout(() => toast.classList.add('show'), 100);
+        
+        // Remove after 5 seconds
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
+    }
+    
+    function getToastIcon(type) {
+        const icons = {
+            success: '\u2705',
+            error: '\u274C',
+            warning: '\u26A0\uFE0F',
+            info: '\u2139\uFE0F'
+        };
+        return icons[type] || icons.info;
+    }
+});
+
+
+// Toast Styles (injected dynamically)
+const toastStyles = document.createElement('style');
+toastStyles.textContent = `
+    .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: white;
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        z-index: 10000;
+        transform: translateX(400px);
+        opacity: 0;
+        transition: all 0.3s ease;
+        max-width: 400px;
+        border-left: 4px solid #3b82f6;
+    }
+    
+    .toast.show {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    
+    .toast-success {
+        border-left-color: #22c55e;
+        background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    }
+    
+    .toast-error {
+        border-left-color: #dc2626;
+        background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    }
+    
+    .toast-warning {
+        border-left-color: #f59e0b;
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    }
+    
+    .toast-icon {
+        font-size: 1.5rem;
+    }
+    
+    .toast-message {
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: #1f2937;
+    }
+`;
+document.head.appendChild(toastStyles);

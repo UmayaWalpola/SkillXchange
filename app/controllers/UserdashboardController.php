@@ -165,39 +165,11 @@ class UserdashboardController extends Controller {
     }
 
     public function wallet() {
-        $userId = $this->checkAuth();
-        
-        $user = $this->getUserData($userId);
-        
-        $sentTransactions = [
-            ['receiver' => 'John Doe', 'amount' => 50, 'timestamp' => '2 hours ago'],
-            ['receiver' => 'Jane Smith', 'amount' => 30, 'timestamp' => '1 day ago'],
-            ['receiver' => 'Bob Wilson', 'amount' => 20, 'timestamp' => '3 days ago']
-        ];
-        
-        $receivedTransactions = [
-            ['sender' => 'Alice Brown', 'amount' => 75, 'timestamp' => '1 hour ago'],
-            ['sender' => 'Mike Johnson', 'amount' => 45, 'timestamp' => '2 days ago'],
-            ['sender' => 'Sarah Davis', 'amount' => 60, 'timestamp' => '4 days ago']
-        ];
-        
-        $totalSent = array_sum(array_column($sentTransactions, 'amount'));
-        $totalReceived = array_sum(array_column($receivedTransactions, 'amount'));
-        $balance = 250;
-        
-        $data = [
-            'title' => 'Wallet',
-            'user' => $user,
-            'page' => 'wallet',
-            'balance' => $balance,
-            'totalSent' => $totalSent,
-            'totalReceived' => $totalReceived,
-            'sentTransactions' => $sentTransactions,
-            'receivedTransactions' => $receivedTransactions
-        ];
-        
-        $this->view('users/wallet', $data);
+        require_once '../app/controllers/WalletController.php';
+        $walletController = new WalletController();
+        return $walletController->index();
     }
+
 
     private function getUserData($userId) {
         return [

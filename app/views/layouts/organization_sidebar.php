@@ -1,17 +1,4 @@
-<link rel="stylesheet" href="<?= URLROOT; ?>/assets/css/global.css">
-<link rel="stylesheet" href="<?= URLROOT; ?>/assets/css/organizations.css">
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Organization Sidebar</title>
-</head>
-<body>
-    <div>
-        <!-- Organization Sidebar -->
-        <nav class="sidebar">
+<nav class="sidebar">
             <a href="<?= URLROOT ?>/organization/profile" class="sidebar-item <?= (strpos($_SERVER['REQUEST_URI'], '/profile') !== false) ? 'active' : '' ?>">
                 <span>Profile</span>
             </a>
@@ -27,9 +14,8 @@
             <a href="<?= URLROOT ?>/organization/chats" class="sidebar-item <?= (strpos($_SERVER['REQUEST_URI'], '/chats') !== false) ? 'active' : '' ?>">
                 <span>Chats</span>
             </a>
-        </nav>
-    </div>
 
-    <script src="<?= URLROOT ?>/assets/js/organizations.js" defer></script>
-</body>
-</html>
+            <a href="<?= URLROOT ?>/organization/wallet" class="sidebar-item <?= (strpos($_SERVER['REQUEST_URI'], '/wallet') !== false) ? 'active' : '' ?>">
+                <span>Wallet</span>
+            </a>
+</nav>
