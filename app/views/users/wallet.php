@@ -40,7 +40,7 @@
             <span class="section-icon">💸</span>
             <div>
                 <div class="section-title">Send BuckX</div>
-                <div style="color: #666; font-size: 14px; margin-top: 4px;">Transfer money to another user</div>
+                <div style="color: #666; margin-top: 4px;">Transfer money to another user</div>
             </div>
         </div>
         

@@ -47,6 +47,144 @@
             gap: 16px;
         }
 
+        .notif-bell {
+            position: relative;
+            margin-right: 8px;
+        }
+
+        .notif-bell-button {
+            width: 36px;
+            height: 36px;
+            border-radius: 999px;
+            border: 1px solid rgba(156,163,175,0.7);
+            background: #020617;
+            color: #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            box-shadow: 0 4px 12px rgba(15,23,42,0.7);
+            transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+        }
+
+        .notif-bell-button:hover {
+            background: #111827;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(15,23,42,0.9);
+        }
+
+        .notif-badge {
+            position: absolute;
+            top: -4px;
+            right: -2px;
+            min-width: 16px;
+            height: 16px;
+            padding: 0 4px;
+            border-radius: 999px;
+            background: #2563eb;
+            color: #e5e7eb;
+            font-size: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 0 2px #020617;
+        }
+
+        .notif-dropdown {
+            position: absolute;
+            top: 115%;
+            right: 0;
+            width: 320px;
+            max-height: 420px;
+            overflow: hidden;
+            background: #020617;
+            border-radius: 14px;
+            border: 1px solid rgba(31,41,55,0.95);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.85);
+            display: none;
+            z-index: 1500;
+        }
+
+        .notif-dropdown.show {
+            display: block;
+        }
+
+        .notif-header {
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(31,41,55,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .notif-header-title {
+            color: #e5e7eb;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .notif-header-link {
+            color: #60a5fa;
+            font-size: 0.8rem;
+            text-decoration: none;
+        }
+
+        .notif-list {
+            max-height: 340px;
+            overflow-y: auto;
+        }
+
+        .notif-item {
+            padding: 10px 14px;
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid rgba(31,41,55,0.7);
+            background: #020617;
+        }
+
+        .notif-item.unread {
+            background: #0b1120;
+        }
+
+        .notif-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .notif-icon.info { background: rgba(37,99,235,0.18); color: #60a5fa; }
+        .notif-icon.success { background: rgba(22,163,74,0.2); color: #4ade80; }
+        .notif-icon.danger { background: rgba(220,38,38,0.25); color: #fecaca; }
+        .notif-icon.warning { background: rgba(234,179,8,0.25); color: #facc15; }
+
+        .notif-body {
+            flex: 1;
+        }
+
+        .notif-text {
+            color: #e5e7eb;
+            font-size: 0.83rem;
+            margin-bottom: 4px;
+        }
+
+        .notif-meta {
+            color: #6b7280;
+            font-size: 0.75rem;
+        }
+
+        .notif-empty {
+            padding: 16px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.85rem;
+        }
+
         .user-dropdown {
             position: relative;
             display: flex;
@@ -220,6 +358,10 @@
 </script>
 
 <?php
+if (!class_exists('Notification')) {
+    require_once dirname(__DIR__, 2) . '/models/Notification.php';
+}
+
 $user = null;
 if (isset($_SESSION['user_id'])) {
     // Minimal inline user fetch to avoid changing controllers
@@ -230,6 +372,20 @@ if (isset($_SESSION['user_id'])) {
         $user = $db->single();
     } catch (Exception $e) {
         $user = null;
+    }
+}
+
+$notifModel = null;
+$notifUnreadCount = 0;
+$notifLatest = [];
+if ($user) {
+    try {
+        $notifModel = new Notification();
+        $notifUnreadCount = $notifModel->getUnreadCount($user->id);
+        $notifLatest = $notifModel->getUserNotifications($user->id, 10);
+    } catch (Exception $e) {
+        $notifUnreadCount = 0;
+        $notifLatest = [];
     }
 }
 
@@ -253,6 +409,45 @@ function sx_get_role_label($user) {
 
         <div class="auth-section">
             <?php if ($user): ?>
+                <div class="notif-bell" id="sxNotifBell">
+                    <button type="button" class="notif-bell-button" id="sxNotifTrigger">🔔</button>
+                    <?php if ($notifUnreadCount > 0): ?>
+                        <div class="notif-badge"><?= $notifUnreadCount > 9 ? '9+' : $notifUnreadCount; ?></div>
+                    <?php endif; ?>
+                    <div class="notif-dropdown" id="sxNotifDropdown">
+                        <div class="notif-header">
+                            <span class="notif-header-title">Notifications</span>
+                            <a href="<?= URLROOT ?>/notifications" class="notif-header-link">View all</a>
+                        </div>
+                        <div class="notif-list">
+                            <?php if (!empty($notifLatest)): ?>
+                                <?php foreach ($notifLatest as $n): ?>
+                                    <?php
+                                        $iconClass = 'info';
+                                        $iconSymbol = '🔧';
+                                        if ($n->type === 'application_accepted') { $iconClass = 'success'; $iconSymbol = '🎉'; }
+                                        elseif ($n->type === 'application_rejected') { $iconClass = 'danger'; $iconSymbol = '❌'; }
+                                        elseif ($n->type === 'project_invite') { $iconClass = 'info'; $iconSymbol = '📨'; }
+                                        elseif ($n->type === 'deadline_warning') { $iconClass = 'danger'; $iconSymbol = '⚠'; }
+                                        elseif ($n->type === 'deadline_due_today') { $iconClass = 'warning'; $iconSymbol = '📅'; }
+                                        elseif ($n->type === 'deadline_due_soon') { $iconClass = 'warning'; $iconSymbol = '⏳'; }
+                                        elseif ($n->type === 'task_assigned') { $iconClass = 'info'; $iconSymbol = '📌'; }
+                                        elseif ($n->type === 'task_update') { $iconClass = 'info'; $iconSymbol = '🔧'; }
+                                    ?>
+                                    <a href="<?= URLROOT ?>/notifications/read/<?= $n->id ?>" class="notif-item <?= $n->is_read ? '' : 'unread' ?>" style="text-decoration:none;">
+                                        <div class="notif-icon <?= $iconClass ?>"><?= $iconSymbol ?></div>
+                                        <div class="notif-body">
+                                            <div class="notif-text"><?= htmlspecialchars($n->message) ?></div>
+                                            <div class="notif-meta"><?= date('M d, Y H:i', strtotime($n->created_at)) ?></div>
+                                        </div>
+                                    </a>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div class="notif-empty">No notifications yet.</div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
                 <div class="user-dropdown" id="sxUserDropdown">
                     <button type="button" class="user-trigger" id="sxUserTrigger">
                         <div class="user-avatar">
@@ -296,15 +491,28 @@ function sx_get_role_label($user) {
 document.addEventListener('DOMContentLoaded', function () {
     var trigger = document.getElementById('sxUserTrigger');
     var menu = document.getElementById('sxUserMenu');
-    if (!trigger || !menu) return;
+    var notifTrigger = document.getElementById('sxNotifTrigger');
+    var notifDropdown = document.getElementById('sxNotifDropdown');
 
-    trigger.addEventListener('click', function (e) {
-        e.stopPropagation();
-        menu.classList.toggle('show');
-    });
+    if (trigger && menu) {
+        trigger.addEventListener('click', function (e) {
+            e.stopPropagation();
+            menu.classList.toggle('show');
+            if (notifDropdown) notifDropdown.classList.remove('show');
+        });
+    }
+
+    if (notifTrigger && notifDropdown) {
+        notifTrigger.addEventListener('click', function (e) {
+            e.stopPropagation();
+            notifDropdown.classList.toggle('show');
+            if (menu) menu.classList.remove('show');
+        });
+    }
 
     document.addEventListener('click', function () {
-        menu.classList.remove('show');
+        if (menu) menu.classList.remove('show');
+        if (notifDropdown) notifDropdown.classList.remove('show');
     });
 });
 </script>

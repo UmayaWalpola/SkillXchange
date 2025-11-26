@@ -73,9 +73,14 @@
                                 </div>
                                 <div class="project-footer">
                                     <span class="members-count"><?= intval($project->current_members ?? 0) ?> Members</span>
-                                    <a href="<?= URLROOT ?>/project/detail/<?= htmlspecialchars($project->id) ?>" class="view-details-btn">
-                                        View Details
-                                    </a>
+                                    <div style="display:flex; gap:8px;">
+                                        <a href="<?= URLROOT ?>/project/detail/<?= htmlspecialchars($project->id) ?>" class="view-details-btn">
+                                            View Details
+                                        </a>
+                                        <a href="<?= URLROOT ?>/chat/index/<?= htmlspecialchars($project->id) ?>" class="view-details-btn" style="background:#0ea5e9;border-color:#0ea5e9;">
+                                            💬 Open Chat
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>

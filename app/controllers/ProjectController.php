@@ -107,12 +107,22 @@ class ProjectController extends Controller
         // Get team members
         $members = $this->projectModel->getMembersByProject($id);
 
+        // Progress overview (tasks + members)
+        $progress = $this->projectModel->getProjectProgress($id);
+
+        // Load task model for statistics
+        $taskModel = $this->model('Task');
+        $taskStats = $taskModel->getTaskStats($id);
+
         $data = [
             'title' => $project->name,
             'project' => $project,
             'application' => $application,
             'is_member' => $is_member,
-            'members' => $members ?? []
+            'members' => $members ?? [],
+            'progress' => $progress,
+            'taskModel' => $taskModel,
+            'taskStats' => $taskStats
         ];
 
         parent::view('projects/view', $data);

@@ -25,13 +25,13 @@
             <?php if ($overdueCount || $dueTodayCount || $dueTomorrowCount): ?>
                 <div class="alert" style="background:#0f172a;color:#e5e7eb;border-radius:10px;padding:12px 16px;margin-bottom:16px;border:1px solid #1f2937;display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
                     <?php if ($overdueCount): ?>
-                        <span style="background:#b91c1c;color:#fee2e2;border-radius:999px;padding:4px 10px;font-size:0.85rem;">⚠ You have <?= $overdueCount ?> overdue task<?= $overdueCount>1?'s':''; ?></span>
+                                    <span style="background:#b91c1c;color:#fee2e2;border-radius:999px;padding:4px 10px;">⚠ You have <?= $overdueCount ?> overdue task<?= $overdueCount>1?'s':''; ?></span>
                     <?php endif; ?>
                     <?php if ($dueTodayCount): ?>
-                        <span style="background:#f97316;color:#fff7ed;border-radius:999px;padding:4px 10px;font-size:0.85rem;">⌛ <?= $dueTodayCount ?> task<?= $dueTodayCount>1?'s':''; ?> due today</span>
+                                    <span style="background:#f97316;color:#fff7ed;border-radius:999px;padding:4px 10px;">⌛ <?= $dueTodayCount ?> task<?= $dueTodayCount>1?'s':''; ?> due today</span>
                     <?php endif; ?>
                     <?php if ($dueTomorrowCount): ?>
-                        <span style="background:#0ea5e9;color:#e0f2fe;border-radius:999px;padding:4px 10px;font-size:0.85rem;">📅 <?= $dueTomorrowCount ?> task<?= $dueTomorrowCount>1?'s':''; ?> due in 24 hours</span>
+                                    <span style="background:#0ea5e9;color:#e0f2fe;border-radius:999px;padding:4px 10px;">📅 <?= $dueTomorrowCount ?> task<?= $dueTomorrowCount>1?'s':''; ?> due in 24 hours</span>
                     <?php endif; ?>
                 </div>
             <?php endif; ?>

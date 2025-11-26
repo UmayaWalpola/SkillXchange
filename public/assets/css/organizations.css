@@ -183,7 +183,7 @@
 .projects-container,
 .applications-container,
 .chats-container {
-    max-width: 1400px;
+    max-width: 1500px;
     margin: 0 auto;
     padding: 40px;
 }
@@ -1421,7 +1421,7 @@
 .projects-container,
 .applications-container,
 .chats-container {
-    max-width: 1400px;
+    max-width: 1500px;
     margin: 0 auto;
     padding: 40px;
 }
@@ -2354,6 +2354,53 @@
     box-shadow: 0 6px 16px rgba(101, 131, 150, 0.2);
 }
 
+/* ===== PROGRESS DASHBOARD ENHANCEMENTS ===== */
+.progress-overview-container .metric-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.progress-overview-container .metric-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(101, 131, 150, 0.15);
+}
+
+.member-performance-card {
+    transition: all 0.3s ease;
+}
+
+.member-performance-card:hover {
+    box-shadow: 0 6px 16px rgba(101, 131, 150, 0.12);
+    transform: translateY(-2px);
+    border-color: var(--primary-blue);
+}
+
+/* Action button enhancements */
+.members-btn,
+.chat-open-btn {
+    background: var(--blue-bg);
+    color: var(--primary-blue);
+    border: 2px solid var(--blue-bg);
+}
+
+.members-btn:hover,
+.chat-open-btn:hover {
+    background: var(--primary-blue);
+    color: white;
+    border-color: var(--primary-blue);
+}
+
+.delete-btn {
+    background: #fee2e2;
+    color: #ef4444;
+    border: 2px solid #fee2e2;
+}
+
+.delete-btn:hover {
+    background: #ef4444;
+    color: white;
+    border-color: #ef4444;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1024px) {
     .site-main {
@@ -2725,6 +2772,54 @@
     display: flex;
     gap: 8px;
 }
+    .chat-open-btn {
+        background: #0ea5e9;
+        border-color: #0ea5e9;
+        color: #ffffff;
+    }
+    .chat-open-btn:hover {
+        background: #0284c7;
+        border-color: #0284c7;
+    }
+    .chat-message-row {
+        display: flex;
+        margin-bottom: 8px;
+    }
+    .chat-message-row.mine {
+        justify-content: flex-end;
+    }
+    .chat-message-row.theirs {
+        justify-content: flex-start;
+    }
+    .chat-bubble {
+        max-width: 70%;
+        padding: 8px 12px;
+        border-radius: 12px;
+        box-shadow: 0 2px 6px rgba(15,23,42,0.25);
+        font-size: 0.9rem;
+    }
+    .chat-bubble.mine {
+        background: #1d4ed8;
+        color: #e5e7eb;
+        border-bottom-right-radius: 4px;
+    }
+    .chat-bubble.theirs {
+        background: #f3f4f6;
+        color: #111827;
+        border-bottom-left-radius: 4px;
+    }
+    .chat-bubble-header {
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+    .chat-bubble-body {
+        line-height: 1.4;
+    }
+    .chat-bubble-meta {
+        margin-top: 4px;
+        font-size: 0.8rem;
+        color: #9ca3af;
+    }
 
 .role-select {
     flex: 1;
@@ -3036,5 +3131,129 @@
 @media (max-width: 768px) {
     .detail-section.inline {
         grid-template-columns: 1fr;
+    }
+}
+
+/* ===== PROJECT PROGRESS OVERVIEW STYLES ===== */
+.progress-overview-container {
+    padding: 30px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 30px;
+}
+
+.project-progress-section {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 2px solid #f3f4f6;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.progress-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #6b7280;
+}
+
+.progress-percentage {
+    font-size: 16px;
+    font-weight: 700;
+    color: #667eea;
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 10px;
+    background: #e5e7eb;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    border-radius: 5px;
+    transition: width 0.4s ease;
+}
+
+.progress-metrics-mini {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.metric-mini {
+    font-size: 13px;
+    color: #6b7280;
+    background: #f9fafb;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.metric-mini.overdue {
+    background: #fee2e2;
+    color: #ef4444;
+    font-weight: 600;
+}
+
+/* Member Task Performance Cards */
+.member-performance-card {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 15px;
+    background: #f9fafb;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.member-performance-card:hover {
+    background: #f3f4f6;
+    transform: translateX(5px);
+}
+
+.member-performance-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e5e7eb;
+}
+
+.member-performance-avatar-initial {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #667eea;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+/* Responsive Progress Overview */
+@media (max-width: 768px) {
+    .progress-overview-container {
+        padding: 20px;
+    }
+    
+    .progress-metrics-mini {
+        gap: 8px;
+    }
+    
+    .metric-mini {
+        font-size: 12px;
+        padding: 4px 8px;
     }
 }

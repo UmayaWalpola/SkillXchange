@@ -3,9 +3,27 @@
 
 class Task {
     private $db;
+    private static $metricsCache = [];
+    private static $cacheTimeout = 300; // 5 minutes cache
 
     public function __construct() {
         $this->db = new Database();
+    }
+
+    // Clear cache for a specific project
+    private function clearProjectCache($projectId) {
+        if (isset(self::$metricsCache[$projectId])) {
+            unset(self::$metricsCache[$projectId]);
+        }
+    }
+
+    // Check if cache is valid
+    private function isCacheValid($projectId) {
+        if (!isset(self::$metricsCache[$projectId])) {
+            return false;
+        }
+        $cacheAge = time() - self::$metricsCache[$projectId]['timestamp'];
+        return $cacheAge < self::$cacheTimeout;
     }
 
     /* ============================================================
@@ -17,14 +35,16 @@ class Task {
         $this->db->query("INSERT INTO project_tasks (project_id, assigned_to, title, description, status, priority, deadline) VALUES (:project_id, :assigned_to, :title, :description, :status, :priority, :deadline)");
         $this->db->bind(':project_id', $data['project_id']);
         $this->db->bind(':assigned_to', $data['assigned_to'] ?? null);
-        $this->db->bind(':title', $data['title']);
+        $this->db->bind(':title', $data['task_name'] ?? $data['title'] ?? '');
         $this->db->bind(':description', $data['description'] ?? null);
         $this->db->bind(':status', $data['status'] ?? 'todo');
         $this->db->bind(':priority', $data['priority'] ?? 'medium');
-        $this->db->bind(':deadline', $data['deadline'] ?? null);
+        $this->db->bind(':deadline', $data['due_date'] ?? $data['deadline'] ?? null);
         
         if ($this->db->execute()) {
             $taskId = $this->db->lastInsertId();
+            // Clear cache for this project
+            $this->clearProjectCache($data['project_id']);
             // Log history
             $this->logHistory($taskId, $data['created_by'] ?? null, 'created');
             return $taskId;
@@ -54,11 +74,11 @@ class Task {
     public function updateTask($taskId, $data) {
         $this->db->query("UPDATE project_tasks SET title = :title, description = :description, assigned_to = :assigned_to, priority = :priority, deadline = :deadline, updated_at = CURRENT_TIMESTAMP WHERE id = :id");
         $this->db->bind(':id', $taskId);
-        $this->db->bind(':title', $data['title']);
+        $this->db->bind(':title', $data['task_name'] ?? $data['title'] ?? '');
         $this->db->bind(':description', $data['description'] ?? null);
         $this->db->bind(':assigned_to', $data['assigned_to'] ?? null);
         $this->db->bind(':priority', $data['priority'] ?? 'medium');
-        $this->db->bind(':deadline', $data['deadline'] ?? null);
+        $this->db->bind(':deadline', $data['due_date'] ?? $data['deadline'] ?? null);
         
         if ($this->db->execute()) {
             $this->logHistory($taskId, $data['updated_by'] ?? null, 'updated');
@@ -74,11 +94,18 @@ class Task {
             return false;
         }
 
+        // Get project ID to clear cache
+        $projectId = $this->getProjectIdForTask($taskId);
+
         $this->db->query("UPDATE project_tasks SET status = :status, updated_at = CURRENT_TIMESTAMP WHERE id = :id");
         $this->db->bind(':status', $status);
         $this->db->bind(':id', $taskId);
         
         if ($this->db->execute()) {
+            // Clear cache for this project
+            if ($projectId) {
+                $this->clearProjectCache($projectId);
+            }
             $action = 'marked_' . str_replace('-', '_', $status);
             $this->logHistory($taskId, null, $action);
             return true;
@@ -87,9 +114,20 @@ class Task {
     }
 
     public function deleteTask($taskId) {
+        // Get project ID to clear cache
+        $projectId = $this->getProjectIdForTask($taskId);
+        
         $this->db->query("DELETE FROM project_tasks WHERE id = :id");
         $this->db->bind(':id', $taskId);
-        return $this->db->execute();
+        
+        if ($this->db->execute()) {
+            // Clear cache for this project
+            if ($projectId) {
+                $this->clearProjectCache($projectId);
+            }
+            return true;
+        }
+        return false;
     }
 
     public function assignTask($taskId, $userId) {
@@ -110,6 +148,156 @@ class Task {
 
     public function getTaskAssignees($projectId) {
         $this->db->query("SELECT DISTINCT assigned_to, u.id, u.username, u.profile_picture FROM project_tasks pt JOIN users u ON pt.assigned_to = u.id WHERE pt.project_id = :project_id AND pt.assigned_to IS NOT NULL");
+        $this->db->bind(':project_id', $projectId);
+        return $this->db->resultSet();
+    }
+
+    /* ============================================================
+       PROJECT PROGRESS METRICS (for Organization Dashboard)
+    ============================================================ */
+
+    // Get comprehensive project metrics (with caching)
+    public function getProjectMetrics($projectId) {
+        // Check cache first
+        if ($this->isCacheValid($projectId)) {
+            return self::$metricsCache[$projectId]['data'];
+        }
+
+        // Get task counts by status
+        $this->db->query("
+            SELECT 
+                COUNT(*) as total_tasks,
+                SUM(CASE WHEN status = 'todo' THEN 1 ELSE 0 END) as todo_tasks,
+                SUM(CASE WHEN status = 'in-progress' THEN 1 ELSE 0 END) as in_progress_tasks,
+                SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as completed_tasks,
+                0 as on_hold_tasks,
+                SUM(CASE WHEN deadline IS NOT NULL AND deadline < CURDATE() AND status != 'done' THEN 1 ELSE 0 END) as overdue_tasks,
+                COUNT(DISTINCT assigned_to) as active_members
+            FROM project_tasks 
+            WHERE project_id = :project_id
+        ");
+        $this->db->bind(':project_id', $projectId);
+        $metrics = $this->db->single();
+
+        // Calculate completion percentage
+        if ($metrics && $metrics->total_tasks > 0) {
+            $metrics->completion_percentage = round(($metrics->completed_tasks / $metrics->total_tasks) * 100, 1);
+        } else {
+            $metrics->completion_percentage = 0;
+        }
+
+        // Cache the result
+        self::$metricsCache[$projectId] = [
+            'data' => $metrics,
+            'timestamp' => time()
+        ];
+
+        return $metrics;
+    }
+
+    // Get task breakdown by status (detailed)
+    public function getTaskStatusCounts($projectId) {
+        $this->db->query("
+            SELECT 
+                status,
+                COUNT(*) as count
+            FROM project_tasks 
+            WHERE project_id = :project_id
+            GROUP BY status
+        ");
+        $this->db->bind(':project_id', $projectId);
+        return $this->db->resultSet();
+    }
+
+    // Get member task breakdown with progress
+    public function getMemberTaskBreakdown($projectId) {
+        $this->db->query("
+            SELECT 
+                u.id as user_id,
+                u.username,
+                u.profile_picture,
+                pm.role,
+                COUNT(pt.id) as total_tasks,
+                SUM(CASE WHEN pt.status = 'done' THEN 1 ELSE 0 END) as completed_tasks,
+                SUM(CASE WHEN pt.status = 'in-progress' THEN 1 ELSE 0 END) as in_progress_tasks,
+                SUM(CASE WHEN pt.status = 'todo' THEN 1 ELSE 0 END) as pending_tasks,
+                SUM(CASE WHEN pt.deadline IS NOT NULL AND pt.deadline < CURDATE() AND pt.status != 'done' THEN 1 ELSE 0 END) as overdue_tasks
+            FROM project_members pm
+            INNER JOIN users u ON pm.user_id = u.id
+            LEFT JOIN project_tasks pt ON pt.assigned_to = u.id AND pt.project_id = :project_id
+            WHERE pm.project_id = :project_id AND pm.status = 'active'
+            GROUP BY u.id, u.username, u.profile_picture, pm.role
+            ORDER BY completed_tasks DESC, total_tasks DESC
+        ");
+        $this->db->bind(':project_id', $projectId);
+        $members = $this->db->resultSet();
+
+        // Calculate completion percentage for each member
+        if ($members) {
+            foreach ($members as $member) {
+                if ($member->total_tasks > 0) {
+                    $member->completion_percentage = round(($member->completed_tasks / $member->total_tasks) * 100, 1);
+                } else {
+                    $member->completion_percentage = 0;
+                }
+            }
+        }
+
+        return $members;
+    }
+
+    // Get overdue tasks with details
+    public function getOverdueTasksByProject($projectId) {
+        $this->db->query("
+            SELECT 
+                pt.*,
+                u.username,
+                u.profile_picture,
+                DATEDIFF(CURDATE(), pt.deadline) as days_overdue
+            FROM project_tasks pt
+            LEFT JOIN users u ON pt.assigned_to = u.id
+            WHERE pt.project_id = :project_id 
+            AND pt.deadline IS NOT NULL 
+            AND pt.deadline < CURDATE() 
+            AND pt.status != 'done'
+            ORDER BY pt.deadline ASC
+        ");
+        $this->db->bind(':project_id', $projectId);
+        return $this->db->resultSet();
+    }
+
+    // Get recent task activity
+    public function getRecentTaskActivity($projectId, $limit = 10) {
+        $this->db->query("
+            SELECT 
+                th.*,
+                pt.title as task_name,
+                u.username,
+                u.profile_picture
+            FROM task_history th
+            INNER JOIN project_tasks pt ON th.task_id = pt.id
+            LEFT JOIN users u ON th.user_id = u.id
+            WHERE pt.project_id = :project_id
+            ORDER BY th.timestamp DESC
+            LIMIT :limit
+        ");
+        $this->db->bind(':project_id', $projectId);
+        $this->db->bind(':limit', $limit);
+        return $this->db->resultSet();
+    }
+
+    // Get task distribution by priority
+    public function getTaskPriorityDistribution($projectId) {
+        $this->db->query("
+            SELECT 
+                priority,
+                COUNT(*) as count,
+                SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as completed_count
+            FROM project_tasks 
+            WHERE project_id = :project_id
+            GROUP BY priority
+            ORDER BY FIELD(priority, 'high', 'medium', 'low')
+        ");
         $this->db->bind(':project_id', $projectId);
         return $this->db->resultSet();
     }

@@ -105,12 +105,38 @@
                                 <?php endif; ?>
                             </div>
 
+                            <!-- Project Progress Metrics -->
+                            <?php if(isset($project->metrics) && $project->metrics): 
+                                $metrics = $project->metrics;
+                                $totalTasks = (int)($metrics->total_tasks ?? 0);
+                                $completedTasks = (int)($metrics->completed_tasks ?? 0);
+                                $overdueTasks = (int)($metrics->overdue_tasks ?? 0);
+                                $completionPct = $metrics->completion_percentage ?? 0;
+                            ?>
+                            <div class="project-progress-section">
+                                <div class="progress-header">
+                                    <span class="progress-label">Progress</span>
+                                    <span class="progress-percentage"><?= number_format($completionPct, 1) ?>%</span>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar-fill" style="width: <?= $completionPct ?>%"></div>
+                                </div>
+                                <div class="progress-metrics-mini">
+                                    <span class="metric-mini">✅ <?= $completedTasks ?>/<?= $totalTasks ?> Tasks</span>
+                                    <?php if($overdueTasks > 0): ?>
+                                        <span class="metric-mini overdue">⚠️ <?= $overdueTasks ?> Overdue</span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+
                             <div class="project-footer">
                                 <span class="project-date">
                                     Created: <?= date('M d, Y', strtotime($project->created_at)) ?>
                                 </span>
                                 <div class="project-actions">
                                     <button class="action-btn members-btn" onclick="manageMembers(<?= $project->id ?>)">👥 Members</button>
+                                    <button class="action-btn chat-open-btn" onclick="openChat(<?= $project->id ?>)">💬 Chat</button>
                                     <button class="action-btn edit-btn" onclick="editProject(<?= $project->id ?>)">Edit</button>
                                     <button class="action-btn delete-btn"
                                         data-project-id="<?= $project->id ?>"
@@ -148,6 +174,10 @@ function manageMembers(id) {
 
 function editProject(id) {
     window.location.href = URLROOT + '/organization/editProject/' + id;
+}
+
+function openChat(id) {
+    window.location.href = URLROOT + '/chat/index/' + id;
 }
 
 function deleteProject(btn, id, name) {

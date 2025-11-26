@@ -5,6 +5,7 @@ class OrganizationController extends Controller {
     
     private $projectModel;
     private $taskModel;
+    private $notificationModel;
 
     public function __construct() {
 
@@ -16,6 +17,7 @@ class OrganizationController extends Controller {
 
         $this->projectModel = $this->model('Project');
         $this->taskModel = $this->model('Task');
+        $this->notificationModel = $this->model('Notification');
     }
 
     /* ============================================================
@@ -77,6 +79,13 @@ class OrganizationController extends Controller {
     public function projects() {
 
         $projects = $this->projectModel->getProjectsByOrganization($_SESSION['user_id']);
+
+        // Add progress metrics for each project
+        if ($projects) {
+            foreach ($projects as $project) {
+                $project->metrics = $this->taskModel->getProjectMetrics($project->id);
+            }
+        }
 
         $data = [
             'title' => 'My Projects',
@@ -345,11 +354,24 @@ class OrganizationController extends Controller {
         // Get all active members for this project
         $members = $this->projectModel->getMembersByProject($projectId);
 
+        // Get comprehensive progress metrics
+        $projectMetrics = $this->taskModel->getProjectMetrics($projectId);
+        $memberBreakdown = $this->taskModel->getMemberTaskBreakdown($projectId);
+        $overdueTasks = $this->taskModel->getOverdueTasksByProject($projectId);
+        $recentActivity = $this->taskModel->getRecentTaskActivity($projectId, 5);
+        $priorityDistribution = $this->taskModel->getTaskPriorityDistribution($projectId);
+
         $data = [
             'title' => 'Manage Members - ' . $project->name,
             'project' => $project,
             'members' => $members,
-            'projectId' => $projectId
+            'projectId' => $projectId,
+            'taskModel' => $this->taskModel,
+            'projectMetrics' => $projectMetrics,
+            'memberBreakdown' => $memberBreakdown,
+            'overdueTasks' => $overdueTasks,
+            'recentActivity' => $recentActivity,
+            'priorityDistribution' => $priorityDistribution
         ];
 
         $this->view('organization/members', $data);
