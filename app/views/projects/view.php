@@ -155,6 +155,69 @@
     color: #111827;
 }
 
+.progress-overview-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    gap: 1.5rem;
+}
+
+.progress-bar-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.progress-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    color: #4b5563;
+}
+
+.progress-container {
+    width: 100%;
+    background: #e5e7eb;
+    border-radius: 999px;
+    overflow: hidden;
+    height: 12px;
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #0ea5e9);
+    box-shadow: 0 1px 3px rgba(37, 99, 235, 0.45);
+}
+
+.progress-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+}
+
+.progress-metric-card {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 0.9rem 1rem;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.progress-metric-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6b7280;
+    margin-bottom: 0.35rem;
+}
+
+.progress-metric-value {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #111827;
+}
+
 .card {
     background: white;
     border-radius: 10px;
@@ -614,7 +677,7 @@
                         foreach ($members as $member) {
                             $memberTasks = $taskModel->getTasksByMember($project->id, $member->user_id);
                             $memberTaskCount = count($memberTasks);
-                            $memberCompleted = count(array_filter($memberTasks, fn($t) => $t->status === 'completed'));
+                            $memberCompleted = count(array_filter($memberTasks, fn($t) => $t->status === 'done'));
                             $memberPercent = $memberTaskCount > 0 ? round(($memberCompleted / $memberTaskCount) * 100) : 0;
                             
                             if ($memberTaskCount > 0):

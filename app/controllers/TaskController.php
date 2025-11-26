@@ -192,7 +192,11 @@ class TaskController extends Controller {
             if ($taskId) {
                 // Notify assigned user about new task
                 if (!empty($taskData['assigned_to'])) {
+<<<<<<< HEAD
                     $msg = "You have been assigned the task: {$taskData['task_name']}";
+=======
+                    $msg = "You have been assigned the task: {$taskData['title']}";
+>>>>>>> dc8d8d6d35a9005a610d0a7b06967ac0ededd82d
                     $this->notificationModel->createNotification([
                         'user_id' => $taskData['assigned_to'],
                         'type' => 'task_assigned',
