@@ -6,7 +6,7 @@
     <title>SkillXchange - Teach. Learn. Collaborate.</title>
     <link rel="stylesheet" href="<?= URLROOT; ?>/assets/css/global.css">
     <link rel="stylesheet" href="<?= URLROOT; ?>/assets/css/homepage.css">
-    <link rel="stylesheet" href="<?= URLROOT ?>/public/assets/css/auth.css">
+    <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/auth.css">
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
 </head>
 <body>
