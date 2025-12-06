@@ -19,3 +19,7 @@
 
 
     <script src="<?= URLROOT ?>/assets/js/profile.js" defer></script>
+
+    
+</body>
+</html>
