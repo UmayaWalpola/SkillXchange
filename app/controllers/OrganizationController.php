@@ -748,6 +748,12 @@ class OrganizationController extends Controller {
         exit();
     }
 
+    public function wallet() {
+        require_once '../app/controllers/WalletController.php';
+        $walletController = new WalletController();
+        return $walletController->index();
+    }
+
 }
 
 ?>
