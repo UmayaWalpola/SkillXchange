@@ -3,6 +3,7 @@
 
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/organizations.css">
+<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/reporting.css">
 
 <main class="site-main">
     <div class="chats-container">
@@ -87,6 +88,18 @@ function renderMessages(payload) {
         meta.className = 'chat-bubble-meta';
         meta.textContent = m.created_at;
 
+        // Add report button for messages from other users
+        if (!isMine) {
+            const reportBtn = document.createElement('button');
+            reportBtn.className = 'report-btn-small report-content-btn';
+            reportBtn.setAttribute('data-content-type', 'chat_message');
+            reportBtn.setAttribute('data-content-id', m.id);
+            reportBtn.title = 'Report this message';
+            reportBtn.style.marginTop = '0.5rem';
+            reportBtn.innerHTML = '<span>⚠</span>';
+            bubble.appendChild(reportBtn);
+        }
+
         bubble.appendChild(header);
         bubble.appendChild(body);
         bubble.appendChild(meta);
@@ -152,6 +165,11 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(fetchMessages, 2000);
     fetchMessages();
 });
+
+// Define URLROOT for reporting system
+window.URLROOT = '<?= URLROOT ?>';
 </script>
+
+<script src="<?= URLROOT ?>/assets/js/reporting.js"></script>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>

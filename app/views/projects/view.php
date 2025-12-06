@@ -2,6 +2,7 @@
 <?php require_once "../app/views/layouts/usersidebar.php"; ?>
 
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
+<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/reporting.css">
 
 <style>
 .project-detail-wrapper {
@@ -759,6 +760,15 @@
                             <div class="member-avatar"><?= $initials ?></div>
                             <div class="member-name"><?= htmlspecialchars(trim($fullName)) ?: 'Team Member' ?></div>
                             <div class="member-role"><?= htmlspecialchars($member->role ?? 'Member') ?></div>
+                            <?php if (isset($_SESSION['user_id']) && $_SESSION['user_id'] != $member->user_id): ?>
+                            <button class="report-btn-small report-project-member-btn" 
+                                    data-user-id="<?= $member->user_id ?>" 
+                                    data-project-id="<?= $project->id ?>"
+                                    title="Report this member" 
+                                    style="margin-top: 0.5rem;">
+                                <span>⚠</span>
+                            </button>
+                            <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -993,6 +1003,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+// Define URLROOT for reporting system
+window.URLROOT = '<?= URLROOT ?>';
 </script>
+
+<script src="<?= URLROOT ?>/assets/js/reporting.js"></script>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>

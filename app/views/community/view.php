@@ -1,6 +1,7 @@
 <?php require_once "../app/views/layouts/header_user.php"; ?>
 
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
+<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/reporting.css">
 
 <main class="site-main">
 
@@ -41,7 +42,17 @@
                 <div class="card post-card skill-card" data-skill="post">
                     <div class="card-body">
                         <p><?= htmlspecialchars($post->content) ?></p>
-                        <small>by <?= $post->user_name ?> at <?= date('d M Y H:i', strtotime($post->created_at)) ?></small>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                            <small>by <?= $post->user_name ?> at <?= date('d M Y H:i', strtotime($post->created_at)) ?></small>
+                            <?php if (isset($_SESSION['user_id']) && $_SESSION['user_id'] != $post->user_id): ?>
+                            <button class="report-btn-small report-content-btn" 
+                                    data-content-type="post" 
+                                    data-content-id="<?= $post->id ?>"
+                                    title="Report this post">
+                                <span>⚠</span>
+                            </button>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -52,7 +63,9 @@
 
 </main>
 
+<script>window.URLROOT = '<?= URLROOT ?>';</script>
 <script src="<?= URLROOT ?>/assets/js/main.js" defer></script>
+<script src="<?= URLROOT ?>/assets/js/reporting.js"></script>
 
 <?php require_once "../app/views/layouts/footer.php"; ?>
 

@@ -4,6 +4,7 @@
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/profile.css">
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/view_profile.css">
+<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/reporting.css">
 
 <main class="site-main">
 <div class="dashboard-container">
@@ -51,6 +52,10 @@
                     </button>
                     <button class="btn-action btn-secondary" onclick="sendMessage()">
                         Send Message
+                    </button>
+                    <button class="report-btn report-user-btn" data-user-id="<?= $data['user']['id'] ?? '' ?>">
+                        <span class="report-btn-icon">⚠</span>
+                        Report Profile
                     </button>
                 </div>
             </div>
@@ -167,6 +172,11 @@
 </div>
 </main>
 
+<script>
+// Define URLROOT for reporting system
+window.URLROOT = '<?= URLROOT ?>';
+</script>
 <script src="<?= URLROOT ?>/assets/js/view_profile.js"></script>
+<script src="<?= URLROOT ?>/assets/js/reporting.js"></script>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>
