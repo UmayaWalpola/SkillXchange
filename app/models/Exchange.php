@@ -15,12 +15,12 @@ class Exchange extends Database {
         // Check if exchange already exists
         $this->db->query("
             SELECT id FROM exchanges 
-            WHERE (sender_id = :sender_id AND receiver_id = :receiver_id)
-               OR (sender_id = :receiver_id AND receiver_id = :sender_id)
+            WHERE (requester_id = :requester_id AND receiver_id = :receiver_id)
+               OR (requester_id = :receiver_id AND receiver_id = :requester_id)
             LIMIT 1
         ");
         
-        $this->db->bind(':sender_id', $senderId);
+        $this->db->bind(':requester_id', $senderId);
         $this->db->bind(':receiver_id', $receiverId);
         
         if ($this->db->single()) {
@@ -37,14 +37,14 @@ class Exchange extends Database {
         // Create new exchange request
         $this->db->query("
             INSERT INTO exchanges (
-                sender_id, 
+                requester_id, 
                 receiver_id, 
                 skill_offered, 
                 skill_wanted, 
                 status, 
                 created_at
             ) VALUES (
-                :sender_id, 
+                :requester_id, 
                 :receiver_id, 
                 :skill_offered, 
                 :skill_wanted, 
@@ -53,7 +53,7 @@ class Exchange extends Database {
             )
         ");
         
-        $this->db->bind(':sender_id', $senderId);
+        $this->db->bind(':requester_id', $senderId);
         $this->db->bind(':receiver_id', $receiverId);
         $this->db->bind(':skill_offered', $skillOffered);
         $this->db->bind(':skill_wanted', $skillWanted);
@@ -161,7 +161,7 @@ class Exchange extends Database {
                 receiver.email as receiver_email,
                 receiver.profile_picture as receiver_avatar
             FROM exchanges e
-            INNER JOIN users sender ON e.sender_id = sender.id
+            INNER JOIN users sender ON e.requester_id = sender.id
             INNER JOIN users receiver ON e.receiver_id = receiver.id
             WHERE e.receiver_id = :user_id AND e.status = 'pending'
             ORDER BY e.created_at DESC
@@ -179,25 +179,25 @@ class Exchange extends Database {
             SELECT 
                 e.*,
                 CASE 
-                    WHEN e.sender_id = :user_id THEN receiver.id
+                    WHEN e.requester_id = :user_id THEN receiver.id
                     ELSE sender.id
                 END as partner_id,
                 CASE 
-                    WHEN e.sender_id = :user_id THEN receiver.name
+                    WHEN e.requester_id = :user_id THEN receiver.name
                     ELSE sender.username
                 END as partner_name,
                 CASE 
-                    WHEN e.sender_id = :user_id THEN receiver.email
+                    WHEN e.requester_id = :user_id THEN receiver.email
                     ELSE sender.email
                 END as partner_email,
                 CASE 
-                    WHEN e.sender_id = :user_id THEN receiver.avatar
+                    WHEN e.requester_id = :user_id THEN receiver.avatar
                     ELSE sender.profile_picture
                 END as partner_avatar
             FROM exchanges e
-            INNER JOIN users sender ON e.sender_id = sender.id
+            INNER JOIN users sender ON e.requester_id = sender.id
             INNER JOIN users receiver ON e.receiver_id = receiver.id
-            WHERE (e.sender_id = :user_id OR e.receiver_id = :user_id)
+            WHERE (e.requester_id = :user_id OR e.receiver_id = :user_id)
                 AND e.status = 'accepted'
             ORDER BY e.updated_at DESC
         ");
@@ -251,7 +251,7 @@ class Exchange extends Database {
     public function cancelExchange($exchangeId, $userId) {
         $this->db->query("
             DELETE FROM exchanges 
-            WHERE id = :exchange_id AND sender_id = :user_id AND status = 'pending'
+            WHERE id = :exchange_id AND requester_id = :user_id AND status = 'pending'
         ");
         
         $this->db->bind(':exchange_id', $exchangeId);
@@ -266,7 +266,7 @@ class Exchange extends Database {
     private function createAcceptanceNotification($exchangeId) {
         // Get exchange details
         $this->db->query("
-            SELECT e.sender_id, u.name as receiver_name
+            SELECT e.requester_id, u.name as receiver_name
             FROM exchanges e
             INNER JOIN users u ON e.receiver_id = u.id
             WHERE e.id = :exchange_id
@@ -295,7 +295,7 @@ class Exchange extends Database {
             )
         ");
         
-        $this->db->bind(':user_id', $exchange->sender_id);
+        $this->db->bind(':user_id', $exchange->requester_id);
         $this->db->bind(':message', $exchange->receiver_name . ' accepted your connection request');
         $this->db->bind(':exchange_id', $exchangeId);
         
@@ -308,8 +308,8 @@ class Exchange extends Database {
     public function connectionExists($userId1, $userId2) {
         $this->db->query("
             SELECT id FROM exchanges 
-            WHERE ((sender_id = :user_id1 AND receiver_id = :user_id2)
-                OR (sender_id = :user_id2 AND receiver_id = :user_id1))
+            WHERE ((requester_id = :user_id1 AND receiver_id = :user_id2)
+                OR (requester_id = :user_id2 AND receiver_id = :user_id1))
             AND status IN ('pending', 'accepted')
             LIMIT 1
         ");

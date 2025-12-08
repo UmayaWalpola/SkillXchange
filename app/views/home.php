@@ -14,7 +14,7 @@ include __DIR__ . '/layouts/header.php';
         </div>
         <div class="organization-cta fade-in animate-delay-2" style="margin-top:1.5rem;">
           <p class="organization-question" style="color:var(--primary-blue);">Are you an organization looking for the right skills for your projects?</p>
-          <a class="btn-primary" href="/organizations.php">Join as an Organization</a>
+          <a class="btn-primary" href="<?= URLROOT ?>/auth/register?type=organization">Join as an Organization</a>
         </div>
       </div>
 
@@ -67,7 +67,7 @@ include __DIR__ . '/layouts/header.php';
       <h2 class="skills-title fade-in">Explore Skills</h2>
       <p class="skills-subtitle fade-in animate-delay-1">Discover and master in-demand skills through hands-on collaboration</p>
 
-      <div class="skills-grid">
+      <div id="skillsGrid" class="skills-grid">
         <div class="skill-card fade-in animate-delay-1" data-skill="webdev">
           <div class="skill-icon">💻</div>
           <h3 class="skill-name">Web Development</h3>
@@ -106,10 +106,74 @@ include __DIR__ . '/layouts/header.php';
       </div>
 
       <div class="explore-more-container">
-        <a class="explore-more-btn" href="/skills.php">More</a>
+        <button id="loadMoreSkillsBtn" type="button" class="explore-more-btn">More</button>
+        <span id="skillsLoading" style="display:none; margin-left: 1rem; color: var(--primary-blue);">Loading...</span>
       </div>
     </div>
   </section>
+
+  <script>
+    (function() {
+      const URLROOT = '<?= URLROOT ?>';
+      let skillsOffset = 4; // First 4 skills already shown
+      
+      const loadMoreBtn = document.getElementById('loadMoreSkillsBtn');
+      const skillsGrid = document.getElementById('skillsGrid');
+      const loadingSpan = document.getElementById('skillsLoading');
+      
+      if (!loadMoreBtn || !skillsGrid) return;
+      
+      loadMoreBtn.addEventListener('click', function() {
+        // Disable button and show loading
+        loadMoreBtn.disabled = true;
+        loadingSpan.style.display = 'inline';
+        
+        // Fetch more skills
+        fetch(URLROOT + '/skills/loadMore?offset=' + skillsOffset)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Network response was not ok');
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (data.success) {
+              // Append new skills to grid
+              skillsGrid.insertAdjacentHTML('beforeend', data.html);
+              
+              // Update offset
+              skillsOffset = data.nextOffset;
+              
+              // Trigger fade-in animation for new cards
+              const newCards = skillsGrid.querySelectorAll('.skill-card.fade-in');
+              newCards.forEach(card => {
+                card.style.animationPlayState = 'running';
+              });
+              
+              // Check if there are more skills
+              if (!data.hasMore) {
+                loadMoreBtn.textContent = 'No more skills';
+                loadMoreBtn.disabled = true;
+              } else {
+                loadMoreBtn.disabled = false;
+              }
+            } else {
+              console.error('Error loading skills:', data.message || 'Unknown error');
+              alert('Failed to load more skills. Please try again.');
+              loadMoreBtn.disabled = false;
+            }
+          })
+          .catch(error => {
+            console.error('Error fetching skills:', error);
+            alert('An error occurred while loading skills. Please try again.');
+            loadMoreBtn.disabled = false;
+          })
+          .finally(() => {
+            loadingSpan.style.display = 'none';
+          });
+      });
+    })();
+  </script>
 
   <!-- Process Section -->
   <section class="process-section" id="how">

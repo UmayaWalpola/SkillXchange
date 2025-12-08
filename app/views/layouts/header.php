@@ -18,7 +18,6 @@
         <div class="nav-menu">
             <a href="#how" class="nav-link">How it Works</a>
             <a href="#explore" class="nav-link">Explore Skills</a>
-            <a href="#projects" class="nav-link">Projects</a>
             <a href="#contact" class="nav-link">Contact</a>
         </div>
         <div class="auth-section">

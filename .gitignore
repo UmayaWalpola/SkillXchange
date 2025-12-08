@@ -1,0 +1,31 @@
+MERGE_SUMMARY.md
+
+# Database migration files
+database/migrations/2025_11_20_000000_create_notifications_table.sql
+database/migrations/2025_11_20_010000_create_project_chat_messages.sql
+database/migrations/2025_11_20_add_project_app_columns.sql
+database/migrations/alter_project_applications.sql
+database/migrations/create_content_reports_table.sql
+database/migrations/create_task_management_tables.sql
+database/migrations/create_user_reports.sql
+database/migrations/create_wallet_system.sql
+database/migrations/setup_reporting_system.sql
+
+# Documentation files
+MVC_STRUCTURE.md
+REPORTING_IMPLEMENTATION_SUMMARY.md
+REPORTING_QUICK_REFERENCE.md
+REPORTING_SYSTEM.md
+SETUP_INSTRUCTIONS.txt
+TESTING_GUIDE.md
+
+# Test data
+insert-test-data.sql
+
+# Document files
+*.doc
+*.docx
+*.pdf
+*.txt
+*.odt
+*.rtf

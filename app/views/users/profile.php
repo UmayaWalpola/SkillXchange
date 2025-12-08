@@ -14,12 +14,12 @@
             <div class="profile-header">
                 <button class="edit-profile-btn">Edit details</button>
                 <div class="profile-info">
-                    <div class="profile-avatar"><?= strtoupper(substr($user['name'], 0, 2)); ?></div>
+                    <div class="profile-avatar"><?= strtoupper(substr($data['user']['name'], 0, 2)); ?></div>
                     <div class="profile-details">
-                        <h1><?= htmlspecialchars($user['name']); ?></h1>
-                        <p class="profile-username">@<?= htmlspecialchars($user['username']); ?></p>
+                        <h1><?= htmlspecialchars($data['user']['name']); ?></h1>
+                        <p class="profile-username">@<?= htmlspecialchars($data['user']['username']); ?></p>
                         <p class="profile-bio">
-                            <?= htmlspecialchars($user['bio']); ?>
+                            <?= htmlspecialchars($data['user']['bio']); ?>
                         </p>
                     </div>
                 </div>
