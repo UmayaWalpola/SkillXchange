@@ -1,5 +1,5 @@
 <?php require_once "../app/views/layouts/header_user.php"; ?>
-<?php require_once "../app/views/layouts/usersidebar.php"; ?>
+<?php require_once "../app/views/layouts/organization_sidebar.php"; ?>
 
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/wallet.css">
@@ -39,13 +39,16 @@
     <!-- Top Statistics Row -->
     <div class="stats-row">
         <div class="stat-card balance-card">
-            <div class="stat-icon"> &#x1F4B0;</div>
+            <div class="stat-icon">&#x1F4B0;</div>
             <div class="stat-value" id="currentBalance"><?= $data['balance'] ?></div>
             <div class="stat-label">Current BuckX Balance</div>
+            <a href="<?= URLROOT ?>/wallet/purchaseBuckx" class="btn-primary" style="margin-top: 1rem; padding: 0.7rem 1.5rem; font-size: 0.95rem;">
+            💳 More BuckX
+            </a>
         </div>
         
         <div class="stat-card sent-card">
-            <div class="stat-icon">&#x1F4E4;</div>
+            <div class="stat-icon"> &#x1F4E4;</div>
             <div class="stat-value"><?= $data['totalSent'] ?></div>
             <div class="stat-label">Total Sent BuckX</div>
         </div>
@@ -62,7 +65,7 @@
         <div class="section-header">
             <div>
                 <div class="section-title">Send BuckX</div>
-                <div class="section-subtitle">Transfer BuckX to your matches</div>
+                <div class="section-subtitle">Transfer BuckX to your project contributors</div>
             </div>
         </div>
         
@@ -71,14 +74,14 @@
                 <span class="notice-icon">&#x2139;&#xFE0F;</span>
                 <div class="notice-content">
                     <h3>No Users Available</h3>
-                    <p>There are no other users in the system yet.</p>
+                    <p>There are no users in the system yet.</p>
                 </div>
             </div>
         <?php else: ?>
             <form class="transfer-form" id="transferForm" method="POST" action="<?= URLROOT ?>/wallet/confirmTransfer">
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="recipient_id">Select Recipient</label>
+                        <label for="recipient_id">Select User</label>
                         <select id="recipient_id" 
                                 name="recipient_id" 
                                 required
@@ -113,13 +116,13 @@
                     <input type="text" 
                            id="note" 
                            name="note" 
-                           placeholder="e.g., Payment for lesson, Project completion, etc."
+                           placeholder="e.g., Payment for project work, Performance bonus, etc."
                            maxlength="255">
-                    <div class="field-hint">This reason will be visible to the recipient and logged</div>
+                    <div class="field-hint">This reason will be visible to the recipient</div>
                 </div>
                 
                 <button type="submit" class="send-btn">
-                    <span>Review Transfer</span>
+                <span>Review Transfer</span>
                 </button>
             </form>
         <?php endif; ?>
@@ -146,8 +149,13 @@
                         <div class="transaction-item">
                             <div class="transaction-info">
                                 <div class="transaction-user">
-                                    <span class="user-icon">&#x1F464;</span>
+                                    <span class="user-icon">
+                                        <?= ($tx->receiver_role === 'organization') ? '&#x1F465;' : '&#x1F464;' ?>
+                                    </span>
                                     <?= htmlspecialchars($tx->receiver) ?>
+                                    <?php if ($tx->receiver_role === 'organization'): ?>
+                                        <span class="role-badge">ORG</span>
+                                    <?php endif; ?>
                                 </div>
                                 <?php if (!empty($tx->note)): ?>
                                     <div class="transaction-note">
@@ -186,8 +194,13 @@
                         <div class="transaction-item">
                             <div class="transaction-info">
                                 <div class="transaction-user">
-                                    <span class="user-icon">&#x1F464;</span>
+                                    <span class="user-icon">
+                                        <?= ($tx->sender_role === 'organization') ? '&#x1F465;' : '&#x1F464;' ?>
+                                    </span>
                                     <?= htmlspecialchars($tx->sender) ?>
+                                    <?php if ($tx->sender_role === 'organization'): ?>
+                                        <span class="role-badge">ORG</span>
+                                    <?php endif; ?>
                                 </div>
                                 <?php if (!empty($tx->note)): ?>
                                     <div class="transaction-note">
@@ -214,4 +227,5 @@
 </main>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>
+
 <script src="<?= URLROOT ?>/assets/js/wallet.js"></script>

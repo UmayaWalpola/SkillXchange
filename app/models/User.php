@@ -15,12 +15,14 @@ class User extends Database {
 
     // 🔹 Register Individual
     public function registerIndividual($name, $email, $password) {
+
         $sql = "INSERT INTO users (username, email, password, role, profile_completed)
                 VALUES (:name, :email, :password, 'individual', 0)";
         $stmt = $this->connect()->prepare($sql);
         $stmt->bindValue(':name', $name);
         $stmt->bindValue(':email', $email);
         $stmt->bindValue(':password', password_hash($password, PASSWORD_BCRYPT));
+        
         
         if ($stmt->execute()) {
             $userId = $this->connect()->lastInsertId();
