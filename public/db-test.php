@@ -1,13 +1,18 @@
 
 <?php
-require_once '../app/config/config.php';
-require_once '../core/Database.php';
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-try {
-    $db = new Database();
-    $conn = $db->connect();
-    echo "✅ Database connected successfully!<br>";
-    echo "Connected to: " . DB_NAME;
-} catch (Exception $e) {
-    echo "❌ Database connection failed: " . $e->getMessage();
+require_once __DIR__ . '/../app/config/config.php';
+
+
+echo "Config loaded<br>";
+
+$conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
+
+if ($conn->connect_error) {
+    die('DB Connection Failed: ' . $conn->connect_error);
 }
+
+echo "DB Connected!";
+
