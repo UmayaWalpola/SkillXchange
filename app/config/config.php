@@ -18,6 +18,7 @@ if (file_exists(__DIR__ . '/db.local.php')) {
     require __DIR__ . '/db.php';
 }
 
+
 // Start session for authentication
 if (session_status() === PHP_SESSION_NONE) {
     session_start();

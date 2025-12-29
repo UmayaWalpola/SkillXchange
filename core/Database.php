@@ -9,20 +9,18 @@ class Database {
     private $stmt;
 
     public function __construct() {
-    $dsn = 'mysql:host=' . $this->host . ';port=3306;dbname=' . $this->dbname;
-
-    $options = [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ
-    ];
-
-    try {
-        $this->dbh = new PDO($dsn, $this->user, $this->pass, $options);
-    } catch (PDOException $e) {
-        die('Database Connection Error: ' . $e->getMessage());
+        $dsn = 'mysql:host=' . $this->host . ';dbname=' . $this->dbname;
+        $options = [
+            PDO::ATTR_PERSISTENT => true, 
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ  // ← This fixes the array issue!
+        ];
+        try {
+            $this->dbh = new PDO($dsn, $this->user, $this->pass, $options);
+        } catch (PDOException $e) {
+            die('Database Connection Error: ' . $e->getMessage());
+        }
     }
-}
-
 
     // Add connect method for User model compatibility
     public function connect() {
