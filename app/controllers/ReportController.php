@@ -3,10 +3,13 @@
 class ReportController extends Controller
 {
     private $db;
+    private $notificationModel; // 1. Add property for Notification Model
 
     public function __construct()
     {
         $this->db = new Database();
+        // 2. Load the Notification Model
+        $this->notificationModel = $this->model('Notification');
     }
 
     /**
@@ -384,7 +387,7 @@ class ReportController extends Controller
     }
 
     /**
-     * Update report status
+     * Update report status AND notify user
      * POST /report/updateStatus
      */
     public function updateStatus()
@@ -403,38 +406,146 @@ class ReportController extends Controller
 
         $reportId = filter_var($_POST['report_id'] ?? 0, FILTER_VALIDATE_INT);
         $reportType = trim($_POST['report_type'] ?? '');
-        $newStatus = trim($_POST['status'] ?? '');
+        $action = trim($_POST['status'] ?? ''); 
 
-        if (!$reportId || !$reportType || !in_array($newStatus, ['pending', 'reviewed', 'resolved', 'dismissed'])) {
-            echo json_encode(['success' => false, 'message' => 'Invalid parameters.']);
-            exit;
-        }
-
-        // Update the appropriate table based on report type
+        // 1. Identify the Table and get the Offender's ID
+        // We need to know WHO we are warning/banning!
         $table = '';
-        switch ($reportType) {
-            case 'content':
-                $table = 'content_reports';
-                break;
-            case 'user':
-                $table = 'reports';
-                break;
-            case 'project_member':
-                $table = 'user_reports';
-                break;
-            default:
-                echo json_encode(['success' => false, 'message' => 'Invalid report type.']);
-                exit;
+        $offenderId = null;
+        $offenderName = 'User';
+
+        if ($reportType === 'user') {
+            $table = 'reports';
+            // Fetch the reported user's ID
+            $this->db->query("SELECT reported_user_id FROM reports WHERE id = :id");
+            $this->db->bind(':id', $reportId);
+            $report = $this->db->single();
+            if ($report) $offenderId = $report->reported_user_id;
+
+        } elseif ($reportType === 'content') {
+            $table = 'content_reports';
+            // For content, we need to join with the content table to find the author
+            // This is complex, so for now let's assume we fetch it via a separate query if needed.
+            // Simplified for learning: We will focus on User Reports for notifications.
+        } elseif ($reportType === 'project_member') {
+            $table = 'user_reports';
+            // Fetch the reported user's ID from project member reports
+            $this->db->query("SELECT reported_user_id FROM user_reports WHERE id = :id");
+            $this->db->bind(':id', $reportId);
+            $report = $this->db->single();
+            if ($report) $offenderId = $report->reported_user_id;
         }
 
-        $this->db->query("UPDATE $table SET status = :status WHERE id = :id");
-        $this->db->bind(':status', $newStatus);
-        $this->db->bind(':id', $reportId);
+        // 2. Handle The Logic
+        $newStatus = $action;
+        $notificationMessage = "";
+        $notificationType = "";
 
-        if ($this->db->execute()) {
-            echo json_encode(['success' => true, 'message' => 'Report status updated successfully.']);
+        if ($action === 'banned') {
+            if ($offenderId) {
+                // Update User Table to SUSPENDED
+                $this->db->query("UPDATE users SET status = 'suspended', suspended_until = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE id = :uid");
+                $this->db->bind(':uid', $offenderId);
+                $this->db->execute();
+
+                // Prepare Notification (They will see this if they ever get unbanned or via email)
+                $notificationType = 'account_ban';
+                $notificationMessage = "Your account has been suspended due to severe policy violations.";
+            }
+            $newStatus = 'resolved';
+        } 
+        elseif ($action === 'warned') {
+            if ($offenderId) {
+                // Prepare Warning Notification
+                $notificationType = 'system_warning';
+                $notificationMessage = "⚠️ Official Warning: Your recent activity violated our community guidelines. Please review our rules to avoid suspension.";
+            }
+            $newStatus = 'warned';
+        }
+
+        elseif ($action === 'content_removed') {
+            if ($reportType === 'content') {
+                // 1. Fetch the content first (to get the author ID for notification)
+                $authorId = null;
+                $contentTable = '';
+                
+                // We need to know if it's a 'post' or 'chat_message'
+                // For this example, we'll query the content_reports table to find out the specific subtype
+                $this->db->query("SELECT content_type, content_id FROM content_reports WHERE id = :id");
+                $this->db->bind(':id', $reportId);
+                $cr = $this->db->single();
+
+                if ($cr) {
+                    if ($cr->content_type === 'post') {
+                        $contentTable = 'posts';
+                        // Get Author ID before deleting
+                        $this->db->query("SELECT user_id FROM posts WHERE id = :id");
+                        $this->db->bind(':id', $cr->content_id);
+                        $post = $this->db->single();
+                        if ($post) $authorId = $post->user_id;
+                    } 
+                    // Add chat_message logic here if needed later
+                }
+
+                // 2. Delete the Content
+                if ($contentTable && $cr->content_id) {
+                    $this->db->query("DELETE FROM $contentTable WHERE id = :id");
+                    $this->db->bind(':id', $cr->content_id);
+                    $this->db->execute();
+                }
+
+                // 3. Notify the Author
+                if ($authorId) {
+                    $notificationType = 'system_warning'; // Or create a new type 'content_removed'
+                    $notificationMessage = "Your content was removed because it violated our community guidelines.";
+                    
+                    $this->notificationModel->createNotification([
+                        'user_id' => $authorId,
+                        'type' => $notificationType,
+                        'message' => $notificationMessage,
+                        'project_id' => null,
+                        'task_id' => null,
+                        'is_read' => 0
+                    ]);
+                }
+                
+                $newStatus = 'resolved';
+            }
+        }
+        
+        elseif ($action === 'resolved') {
+             // Optional: You could notify them that "No action was taken" or just leave it silent.
+             $newStatus = 'resolved';
+        }
+        elseif ($action === 'dismissed') {
+             $newStatus = 'dismissed';
+        }
+
+        // 3. Send the Notification (If message is set and we found the user)
+        if ($offenderId && !empty($notificationMessage)) {
+            $this->notificationModel->createNotification([
+                'user_id' => $offenderId,
+                'type' => $notificationType,
+                'message' => $notificationMessage,
+                'project_id' => null,
+                'task_id' => null,
+                'is_read' => 0
+            ]);
+        }
+
+        // 4. Update the Report Status in DB
+        if ($table) {
+            $this->db->query("UPDATE $table SET status = :status WHERE id = :id");
+            $this->db->bind(':status', $newStatus);
+            $this->db->bind(':id', $reportId);
+
+            if ($this->db->execute()) {
+                echo json_encode(['success' => true, 'message' => 'Action completed & user notified.']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Database error.']);
+            }
         } else {
-            echo json_encode(['success' => false, 'message' => 'Failed to update report status.']);
+            echo json_encode(['success' => false, 'message' => 'Invalid report type.']);
         }
     }
 }

@@ -173,7 +173,23 @@ class AuthController extends Controller {
 
             $user = $this->userModel->login($email, $password);
 
-            if ($user) {
+            // 1. Check for Suspension String (Special return value we created)
+            if (is_string($user) && strpos($user, 'suspended|') === 0) {
+                // Extract the date
+                $parts = explode('|', $user);
+                $endDate = $parts[1];
+                $formattedDate = date('F j, Y, g:i a', strtotime($endDate));
+                
+                $data = [
+                    'error' => "Your account is suspended until $formattedDate.",
+                    'email' => $email
+                ];
+                $this->view('auth/signin', $data);
+                return;
+            }
+
+            // 2. Standard Login Success
+            if (is_array($user)) {
                 // Set session variables
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];
@@ -217,6 +233,7 @@ class AuthController extends Controller {
                     exit;
                 }
             } else {
+                // 3. Login Failed (Wrong password)
                 $data = [
                     'error' => 'Invalid email or password.',
                     'email' => $email

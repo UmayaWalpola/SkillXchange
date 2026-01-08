@@ -131,7 +131,7 @@ function viewCommunity(community) {
                                     <button class="post-action" onclick="viewComments(${post.id})">
                                         💬 ${(post.replies || []).length} Comments
                                     </button>
-                                    ${post.authorId !== currentUser.id ? `<button class="report-btn-small report-content-btn" data-content-type="post" data-content-id="${post.id}" title="Report this post"><span>⚠</span></button>` : ''}
+                                    ${post.authorId !== currentUser.id ? `<button class="btn-report" onclick="openReportModal('content', {contentType: 'post', contentId: ${post.id}})" title="Report this post">🚩</button>` : ''}
                                 </div>
                                 
                                 <!-- Comments Section -->

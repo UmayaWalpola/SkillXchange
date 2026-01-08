@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 16, 2025 at 11:09 AM
+-- Generation Time: Dec 18, 2025 at 05:02 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -88,6 +88,13 @@ CREATE TABLE `content_reports` (
   `status` enum('pending','reviewed','dismissed') DEFAULT 'pending',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `content_reports`
+--
+
+INSERT INTO `content_reports` (`id`, `reporter_id`, `content_type`, `content_id`, `reason`, `description`, `status`, `created_at`) VALUES
+(1, 37, 'post', 1, 'Inappropriate content', NULL, 'pending', '2025-12-18 15:54:21');
 
 -- --------------------------------------------------------
 
@@ -310,9 +317,16 @@ CREATE TABLE `reports` (
   `reporter_user_id` int(11) NOT NULL,
   `reason` varchar(255) NOT NULL,
   `description` text DEFAULT NULL,
-  `status` enum('pending','reviewed','resolved','dismissed') DEFAULT 'pending',
+  `status` enum('pending','reviewed','resolved','dismissed','warned') DEFAULT 'pending',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `reports`
+--
+
+INSERT INTO `reports` (`id`, `reported_user_id`, `reporter_user_id`, `reason`, `description`, `status`, `created_at`) VALUES
+(1, 41, 37, 'Spam content', 'This user keeps posting the same message.', 'pending', '2025-12-18 09:02:57');
 
 -- --------------------------------------------------------
 
@@ -376,25 +390,27 @@ CREATE TABLE `users` (
   `org_cert` varchar(255) DEFAULT NULL,
   `profile_completed` tinyint(1) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `status` enum('active','suspended') DEFAULT 'active'
+  `status` enum('active','suspended','banned') DEFAULT 'active',
+  `suspension_end_date` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `email`, `profile_picture`, `bio`, `password`, `role`, `org_cert`, `profile_completed`, `created_at`, `status`) VALUES
-(37, 'Pretty Software', 'ps@gmail.com', NULL, NULL, '$2y$10$6EnmKXj0bXGFv2IE90VKbOmYXq52Y6GQ3753ahq6BVzTFD3DuYlk.', 'organization', '../public/uploads/org_certs/org_691aff1615f5b6.93674405.jpg', 0, '2025-11-17 10:55:18', 'active'),
-(41, 'Devinda', 'Devinda@gmail.com', 'uploads/profile_pictures/user_41_691b012e89fbb.jpg', NULL, '$2y$10$VriGWUViBKQxUGM11kjR/ek7bmdgOV.4N0OlnkJ8CfN76sUd6VY3i', 'individual', NULL, 1, '2025-11-17 11:03:28', 'active'),
-(43, 'BlueWave Innovations', 'contact@bluewave.lk', NULL, NULL, '$2y$10$ghjV3bBSWrq2maR/6Tx9RedRRdYLQcMGrO1InhfKmdN.uyYpMJfZS', 'organization', '../public/uploads/org_certs/org_691e0c3b1ade60.91308093.jpg', 0, '2025-11-19 18:28:11', 'active'),
-(44, 'CodeCraft Labs', 'hello@codecraftlabs.com', NULL, NULL, '$2y$10$LxN1R/2Cm04hsCY1cV7YbOnkvrLV3KDMfZE9FdVvy6oLvXN7JbJ.6', 'organization', '../public/uploads/org_certs/org_691e0c5d2881a7.91665818.jpg', 0, '2025-11-19 18:28:45', 'active'),
-(45, 'Ayesh Fernando', 'ayesh.fernando98@gmail.com', 'uploads/profile_pictures/user_45_691e108948f56.jpg', NULL, '$2y$10$nZXUR5RIq3cYVTJkN8a9QeZK9xoInhzzamzoqomT4E.xY3dwhAdDm', 'individual', NULL, 1, '2025-11-19 18:29:17', 'active'),
-(46, 'Dilini Perera', 'dilini.perera21@yahoo.com', 'uploads/profile_pictures/user_46_691e112a42bb9.jpg', NULL, '$2y$10$9u516LmKJEIWwSj6rEgtQuvPGbaKtHnccEBPIYc9Rq.YO2kG54HMq', 'individual', NULL, 1, '2025-11-19 18:29:47', 'active'),
-(47, 'Ravindu Silva', 'ravindu.silva.dev@gmail.com', 'uploads/profile_pictures/user_47_691e115dd8246.jpg', NULL, '$2y$10$QpHVaqmxco0zSKoZLaQQPeMwPvllkJC4.HygUdZyX8vU3PBt2OfMC', 'individual', NULL, 1, '2025-11-19 18:30:41', 'active'),
-(48, 'Tharushi Wickramasin', 'tharushi.wickrama@gmail.com', 'uploads/profile_pictures/user_48_691e122f790bc.jpg', NULL, '$2y$10$Wv.F41j5KD6YZifiJvcu2uP.ClSyYmaLDgdjCsL.bVIZE/6YqQEUC', 'individual', NULL, 1, '2025-11-19 18:31:13', 'active'),
-(49, 'Nimesh Jayawardena', 'nimesh.jayawardena01@gmail.com', NULL, NULL, '$2y$10$R2m9TcftwQ//8VN7QySd6ud8G2jlWel.YkiiJ8r0PSpc8Fo6wzgeK', 'individual', NULL, 1, '2025-11-19 18:31:39', 'active'),
-(50, 'Kithsara Silva', 'kithsarasilva02@gmail.com', 'uploads/profile_pictures/user_50_6926ed4a9d055.jpg', NULL, '$2y$10$SrSdM.0gJWgltZfEYuPf4.EFWRd7mwEmu0izOFHcKl8.tB/zzenUi', 'individual', NULL, 1, '2025-11-26 12:02:27', 'active'),
-(51, 'Kithsara Devinda', 'kithsaradevinda@gmail.com', 'uploads/profile_pictures/user_51_6927067b1d216.jpg', NULL, '$2y$10$CH1MfWc7yz2Otq3FSQn.MeqsMijcT7sjMYYQfD4UbGkAfQJNu1urW', 'individual', NULL, 1, '2025-11-26 13:53:32', 'active');
+INSERT INTO `users` (`id`, `username`, `email`, `profile_picture`, `bio`, `password`, `role`, `org_cert`, `profile_completed`, `created_at`, `status`, `suspension_end_date`) VALUES
+(7, 'admin', 'admin@skillxchange.com', NULL, NULL, '$2y$10$o9a..F1tmQQAVJ9IbEhDjuEW4PkRfHr8Vbza/.Z84PtZmJ0qx2Hsu', 'admin', NULL, 1, '2025-10-21 11:47:00', 'active', NULL),
+(37, 'Pretty Software', 'ps@gmail.com', NULL, NULL, '$2y$10$6EnmKXj0bXGFv2IE90VKbOmYXq52Y6GQ3753ahq6BVzTFD3DuYlk.', 'organization', '../public/uploads/org_certs/org_691aff1615f5b6.93674405.jpg', 0, '2025-11-17 10:55:18', 'active', NULL),
+(41, 'Devinda', 'Devinda@gmail.com', 'uploads/profile_pictures/user_41_691b012e89fbb.jpg', NULL, '$2y$10$VriGWUViBKQxUGM11kjR/ek7bmdgOV.4N0OlnkJ8CfN76sUd6VY3i', 'individual', NULL, 1, '2025-11-17 11:03:28', 'active', NULL),
+(43, 'BlueWave Innovations', 'contact@bluewave.lk', NULL, NULL, '$2y$10$ghjV3bBSWrq2maR/6Tx9RedRRdYLQcMGrO1InhfKmdN.uyYpMJfZS', 'organization', '../public/uploads/org_certs/org_691e0c3b1ade60.91308093.jpg', 0, '2025-11-19 18:28:11', 'active', NULL),
+(44, 'CodeCraft Labs', 'hello@codecraftlabs.com', NULL, NULL, '$2y$10$LxN1R/2Cm04hsCY1cV7YbOnkvrLV3KDMfZE9FdVvy6oLvXN7JbJ.6', 'organization', '../public/uploads/org_certs/org_691e0c5d2881a7.91665818.jpg', 0, '2025-11-19 18:28:45', 'active', NULL),
+(45, 'Ayesh Fernando', 'ayesh.fernando98@gmail.com', 'uploads/profile_pictures/user_45_691e108948f56.jpg', NULL, '$2y$10$nZXUR5RIq3cYVTJkN8a9QeZK9xoInhzzamzoqomT4E.xY3dwhAdDm', 'individual', NULL, 1, '2025-11-19 18:29:17', 'active', NULL),
+(46, 'Dilini Perera', 'dilini.perera21@yahoo.com', 'uploads/profile_pictures/user_46_691e112a42bb9.jpg', NULL, '$2y$10$9u516LmKJEIWwSj6rEgtQuvPGbaKtHnccEBPIYc9Rq.YO2kG54HMq', 'individual', NULL, 1, '2025-11-19 18:29:47', 'active', NULL),
+(47, 'Ravindu Silva', 'ravindu.silva.dev@gmail.com', 'uploads/profile_pictures/user_47_691e115dd8246.jpg', NULL, '$2y$10$QpHVaqmxco0zSKoZLaQQPeMwPvllkJC4.HygUdZyX8vU3PBt2OfMC', 'individual', NULL, 1, '2025-11-19 18:30:41', 'active', NULL),
+(48, 'Tharushi Wickramasin', 'tharushi.wickrama@gmail.com', 'uploads/profile_pictures/user_48_691e122f790bc.jpg', NULL, '$2y$10$Wv.F41j5KD6YZifiJvcu2uP.ClSyYmaLDgdjCsL.bVIZE/6YqQEUC', 'individual', NULL, 1, '2025-11-19 18:31:13', 'active', NULL),
+(49, 'Nimesh Jayawardena', 'nimesh.jayawardena01@gmail.com', NULL, NULL, '$2y$10$R2m9TcftwQ//8VN7QySd6ud8G2jlWel.YkiiJ8r0PSpc8Fo6wzgeK', 'individual', NULL, 1, '2025-11-19 18:31:39', 'active', NULL),
+(50, 'Kithsara Silva', 'kithsarasilva02@gmail.com', 'uploads/profile_pictures/user_50_6926ed4a9d055.jpg', NULL, '$2y$10$SrSdM.0gJWgltZfEYuPf4.EFWRd7mwEmu0izOFHcKl8.tB/zzenUi', 'individual', NULL, 1, '2025-11-26 12:02:27', 'active', NULL),
+(51, 'Kithsara Devinda', 'kithsaradevinda@gmail.com', 'uploads/profile_pictures/user_51_6927067b1d216.jpg', NULL, '$2y$10$CH1MfWc7yz2Otq3FSQn.MeqsMijcT7sjMYYQfD4UbGkAfQJNu1urW', 'individual', NULL, 1, '2025-11-26 13:53:32', 'active', NULL);
 
 -- --------------------------------------------------------
 
@@ -880,7 +896,7 @@ ALTER TABLE `community_members`
 -- AUTO_INCREMENT for table `content_reports`
 --
 ALTER TABLE `content_reports`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `exchanges`
@@ -910,7 +926,7 @@ ALTER TABLE `projects`
 -- AUTO_INCREMENT for table `project_applications`
 --
 ALTER TABLE `project_applications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT for table `project_chat_messages`
@@ -934,7 +950,7 @@ ALTER TABLE `project_tasks`
 -- AUTO_INCREMENT for table `reports`
 --
 ALTER TABLE `reports`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `skills`

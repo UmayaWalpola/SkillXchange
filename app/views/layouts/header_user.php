@@ -433,6 +433,8 @@ function sx_get_role_label($user) {
                                         elseif ($n->type === 'deadline_due_soon') { $iconClass = 'warning'; $iconSymbol = '⏳'; }
                                         elseif ($n->type === 'task_assigned') { $iconClass = 'info'; $iconSymbol = '📌'; }
                                         elseif ($n->type === 'task_update') { $iconClass = 'info'; $iconSymbol = '🔧'; }
+                                        elseif ($n->type === 'system_warning') { $iconClass = 'warning'; $iconSymbol = '⚠️'; }
+                                        elseif ($n->type === 'account_ban') { $iconClass = 'danger'; $iconSymbol = '🚫'; }
                                     ?>
                                     <a href="<?= URLROOT ?>/notifications/read/<?= $n->id ?>" class="notif-item <?= $n->is_read ? '' : 'unread' ?>" style="text-decoration:none;">
                                         <div class="notif-icon <?= $iconClass ?>"><?= $iconSymbol ?></div>
