@@ -10,11 +10,8 @@ class WalletController extends Controller {
         $this->notificationModel = $this->model('WalletNotification');
     }
 
-    /**
-     * Show wallet page with balance and transactions
-     */
+    //Show wallet page with balance and transactions
     public function index() {
-        // Check if user is logged in
         if (!isset($_SESSION['user_id'])) {
             header('Location: ' . URLROOT . '/auth/signin');
             exit;
@@ -23,25 +20,18 @@ class WalletController extends Controller {
         $userId = $_SESSION['user_id'];
         $userRole = $_SESSION['role'];
 
-        // Ensure wallet exists
         $this->walletModel->ensureWalletExists($userId, $userRole);
 
-        // Get wallet data using model
         $balance = $this->walletModel->getBalance($userId);
         $transactions = $this->walletModel->getTransactions($userId);
         $totalSent = $this->walletModel->getTotalSent($userId);
         $totalReceived = $this->walletModel->getTotalReceived($userId);
         
-        // Get notifications
         $unreadNotifications = $this->notificationModel->getUnreadCount($userId);
-        
-        // Get allowed recipients
         $allowedRecipients = $this->walletModel->getAllowedRecipients($userId, $userRole);
         
-        // Check for low balance
         $this->notificationModel->checkLowBalance($userId, $balance);
 
-        // Prepare data for view
         $data = [
             'balance' => number_format($balance, 2),
             'totalSent' => number_format($totalSent, 2),
@@ -54,7 +44,6 @@ class WalletController extends Controller {
             'userRole' => $userRole
         ];
 
-        // Load appropriate view based on user role
         if ($userRole === 'organization') {
             $this->view('organization/wallet', $data);
         } else {
@@ -62,9 +51,7 @@ class WalletController extends Controller {
         }
     }
 
-    /**
-     * Show transfer confirmation page
-     */
+    //Show transfer confirmation page
     public function confirmTransfer() {
         if (!isset($_SESSION['user_id'])) {
             header('Location: ' . URLROOT . '/auth/signin');
@@ -80,7 +67,6 @@ class WalletController extends Controller {
         $amount = floatval($_POST['amount'] ?? 0);
         $note = trim($_POST['note'] ?? '');
 
-        // Validate inputs
         $errors = $this->validateTransferInputs($recipientId, $amount);
         
         if (!empty($errors)) {
@@ -89,8 +75,6 @@ class WalletController extends Controller {
             exit;
         }
 
-        // Get recipient details using User model (if it exists)
-        // For now, we'll get it from wallet model
         $userModel = $this->model('User');
         $recipientUser = $userModel->getUserById($recipientId);
         
@@ -100,10 +84,8 @@ class WalletController extends Controller {
             exit;
         }
 
-        // Get sender balance
         $senderBalance = $this->walletModel->getBalance($_SESSION['user_id']);
 
-        // Prepare confirmation data
         $data = [
             'recipient' => $recipientUser,
             'amount' => $amount,
@@ -113,7 +95,6 @@ class WalletController extends Controller {
             'userRole' => $_SESSION['role']
         ];
 
-        // Load appropriate confirmation view
         if ($_SESSION['role'] === 'organization') {
             $this->view('organization/confirm_transfer', $data);
         } else {
@@ -121,9 +102,8 @@ class WalletController extends Controller {
         }
     }
 
-    /**
-     * Process transfer after confirmation (AJAX)
-     */
+    //Process transfer after confirmation (AJAX)
+
     public function processTransfer() {
         header('Content-Type: application/json');
 
@@ -141,7 +121,6 @@ class WalletController extends Controller {
         $amount = floatval($_POST['amount'] ?? 0);
         $note = trim($_POST['note'] ?? '');
 
-        // Validate
         $errors = $this->validateTransferInputs($recipientId, $amount);
         
         if (!empty($errors)) {
@@ -149,16 +128,13 @@ class WalletController extends Controller {
             exit;
         }
 
-        // Transfer money using model
         $result = $this->walletModel->transferMoney($_SESSION['user_id'], $recipientId, $amount, $note);
 
         if ($result['success']) {
-            // Get sender and receiver details
             $userModel = $this->model('User');
             $sender = $userModel->getUserById($_SESSION['user_id']);
             $receiver = $userModel->getUserById($recipientId);
 
-            // Create notifications
             $this->notificationModel->create(
                 $_SESSION['user_id'],
                 $result['transaction_id'],
@@ -175,7 +151,6 @@ class WalletController extends Controller {
                 "You received {$amount} BuckX from {$sender->username}" . ($note ? " - Reason: {$note}" : "")
             );
 
-            // Check low balance
             $this->notificationModel->checkLowBalance($_SESSION['user_id'], $result['new_balance']);
         }
 
@@ -183,9 +158,7 @@ class WalletController extends Controller {
         exit;
     }
 
-    /**
-     * Show purchase BuckX page (Organizations only)
-     */
+    //Show purchase BuckX page - STRIPE VERSION (Organizations only)
     public function purchaseBuckx() {
         if (!isset($_SESSION['user_id'])) {
             header('Location: ' . URLROOT . '/auth/signin');
@@ -198,68 +171,224 @@ class WalletController extends Controller {
             exit;
         }
 
-        $data = ['userRole' => $_SESSION['role']];
+        // Get current balance
+        $currentBalance = $this->walletModel->getBalance($_SESSION['user_id']);
+        
+        // Get packages using Wallet model
+        $packages = $this->walletModel->getActivePackages();
+
+        if (!$packages) {
+            $packages = [];
+        }
+
+        $data = [
+            'userRole' => $_SESSION['role'],
+            'currentBalance' => number_format($currentBalance, 2),
+            'packages' => $packages
+        ];
+
         $this->view('organization/purchase_buckx', $data);
     }
 
-    /**
-     * Process BuckX purchase
-     */
-    public function processPurchase() {
+    //Create Stripe checkout session (AJAX)
+    public function createCheckoutSession() {
+        header('Content-Type: application/json');
+
         if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'organization') {
-            $_SESSION['error'] = 'Access denied';
-            header('Location: ' . URLROOT . '/wallet');
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
             exit;
         }
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: ' . URLROOT . '/wallet/purchaseBuckx');
+            echo json_encode(['success' => false, 'message' => 'Invalid request']);
             exit;
         }
 
-        $buckxAmount = intval($_POST['buckx_amount'] ?? 0);
-        $cardHolder = trim($_POST['card_holder'] ?? '');
-        $cardNumber = str_replace(' ', '', trim($_POST['card_number'] ?? ''));
-        $expiryDate = trim($_POST['expiry_date'] ?? '');
-        $cvv = trim($_POST['cvv'] ?? '');
+        $packageId = intval($_POST['package_id'] ?? 0);
+        $userId = $_SESSION['user_id'];
 
-        // Validate
-        $errors = $this->validatePurchaseInputs($buckxAmount, $cardHolder, $cardNumber, $expiryDate, $cvv);
+        // Get package - works with your existing Wallet model
+        $packages = $this->walletModel->getActivePackages();
+        $package = null;
 
-        if (!empty($errors)) {
-            $_SESSION['error'] = implode('<br>', $errors);
-            header('Location: ' . URLROOT . '/wallet/purchaseBuckx');
+        foreach ($packages as $pkg) {
+            if ($pkg['package_id'] == $packageId) {
+                $package = (object) $pkg; // Convert array to object for consistency
+                break;
+            }
+        }
+
+        if (!$package) {
+            echo json_encode(['success' => false, 'message' => 'Invalid package']);
             exit;
         }
 
-        $priceLKR = $buckxAmount * 100;
-        $orgId = $_SESSION['user_id'];
+        // Load BuckxPurchase model using the model() method
+        $purchaseModel = $this->model('BuckxPurchase');
 
-        // Create purchase using model
-        $result = $this->walletModel->createPurchase($orgId, $buckxAmount, $priceLKR, 'card');
+        // Create purchase record
+        $purchaseId = $purchaseModel->createPurchase(
+            $userId,
+            $package->package_id,
+            $package->buckx_amount,
+            $package->price_lkr
+        );
+
+        if (!$purchaseId) {
+            echo json_encode(['success' => false, 'message' => 'Failed to create purchase record']);
+            exit;
+        }
+
+        $purchaseModel->logPaymentEvent($userId, $purchaseId, 'purchase_initiated');
+
+        // Load Stripe service
+        require_once __DIR__ . '/../services/StripePaymentService.php';
+        $stripeService = new StripePaymentService();
+        
+        $successUrl = URLROOT . '/wallet/handlePaymentSuccess?session_id={CHECKOUT_SESSION_ID}';
+        $cancelUrl = URLROOT . '/wallet/handlePaymentCancel?purchase_id=' . $purchaseId;
+        
+        $metadata = [
+            'purchase_id' => $purchaseId,
+            'user_id' => $userId,
+            'package_name' => $package->package_name,
+            'buckx_amount' => $package->buckx_amount,
+            'description' => "Purchase {$package->buckx_amount} BuckX"
+        ];
+
+        $result = $stripeService->createCheckoutSession(
+            $package->price_lkr,
+            'LKR',
+            $successUrl,
+            $cancelUrl,
+            $metadata
+        );
 
         if ($result['success']) {
-            // Create notification
-            $this->notificationModel->create(
-                $orgId,
-                $result['purchase_id'],
-                'purchase',
-                'BuckX Purchase Successful! 🎉',
-                "You successfully purchased {$buckxAmount} BuckX for LKR " . number_format($priceLKR, 2)
-            );
+            $purchaseModel->updateStripeSession($purchaseId, $result['session_id']);
+            
+            $purchaseModel->logPaymentEvent($userId, $purchaseId, 'checkout_session_created', [
+                'session_id' => $result['session_id']
+            ]);
 
-            $_SESSION['success'] = $result['message'] . " Your wallet has been credited.";
+            echo json_encode([
+                'success' => true,
+                'checkout_url' => $result['checkout_url'],
+                'session_id' => $result['session_id']
+            ]);
         } else {
-            $_SESSION['error'] = $result['message'];
+            $purchaseModel->failPurchase($purchaseId);
+            
+            $purchaseModel->logPaymentEvent($userId, $purchaseId, 'checkout_session_failed', [
+                'error' => $result['message']
+            ]);
+
+            echo json_encode([
+                'success' => false,
+                'message' => $result['message']
+            ]);
         }
 
-        header('Location: ' . URLROOT . '/wallet');
         exit;
     }
 
-    /**
-     * Get wallet notifications (AJAX)
-     */
+    //Handle successful payment (callback from Stripe)
+    public function handlePaymentSuccess() {
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: ' . URLROOT . '/auth/signin');
+            exit;
+        }
+
+        $sessionId = $_GET['session_id'] ?? null;
+
+        if (!$sessionId) {
+            $_SESSION['error'] = 'Invalid payment session';
+            header('Location: ' . URLROOT . '/wallet/purchaseBuckx');
+            exit;
+        }
+
+        require_once __DIR__ . '/../services/StripePaymentService.php';
+        $stripeService = new StripePaymentService();
+        
+        $result = $stripeService->retrieveSession($sessionId);
+
+        if (!$result['success'] || $result['session']['payment_status'] !== 'paid') {
+            $_SESSION['error'] = 'Payment verification failed. Please contact support.';
+            header('Location: ' . URLROOT . '/wallet/purchaseBuckx');
+            exit;
+        }
+
+        $session = $result['session'];
+        
+        // Load BuckxPurchase model using the model() method
+        $purchaseModel = $this->model('BuckxPurchase');
+        $purchase = $purchaseModel->getPurchaseBySessionId($sessionId);
+
+        if (!$purchase) {
+            $_SESSION['error'] = 'Purchase record not found';
+            header('Location: ' . URLROOT . '/wallet/purchaseBuckx');
+            exit;
+        }
+
+        if ($purchase['org_id'] != $_SESSION['user_id']) {
+            $_SESSION['error'] = 'Unauthorized access';
+            header('Location: ' . URLROOT . '/wallet/purchaseBuckx');
+            exit;
+        }
+
+        // Already completed?
+        if ($purchase['status'] === 'completed') {
+            $_SESSION['success'] = 'Payment already processed. Check your wallet.';
+            header('Location: ' . URLROOT . '/wallet');
+            exit;
+        }
+
+        // Complete the purchase
+        $paymentIntentId = $session['payment_intent'] ?? $sessionId;
+        $purchaseModel->completePurchase($purchase['id'], $paymentIntentId);
+
+        // Add BuckX to wallet
+        $purchaseModel->addBuckxToWallet($purchase['org_id'], $purchase['buckx_amount']);
+
+        $purchaseModel->logPaymentEvent($purchase['org_id'], $purchase['id'], 'payment_completed', [
+            'payment_intent' => $paymentIntentId,
+            'amount_paid' => $purchase['price_lkr']
+        ]);
+
+        // Success message
+        $_SESSION['payment_success'] = [
+            'buckx_amount' => $purchase['buckx_amount'],
+            'amount_paid' => $purchase['price_lkr'],
+            'transaction_id' => $paymentIntentId
+        ];
+
+        header('Location: ' . URLROOT . '/wallet/purchaseBuckx');
+        exit;
+    }
+
+    //Handle cancelled payment
+    public function handlePaymentCancel() {
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: ' . URLROOT . '/auth/signin');
+            exit;
+        }
+
+        $purchaseId = $_GET['purchase_id'] ?? null;
+
+        if ($purchaseId) {
+            // Load BuckxPurchase model using the model() method
+            $purchaseModel = $this->model('BuckxPurchase');
+            $purchaseModel->failPurchase($purchaseId);
+            
+            $purchaseModel->logPaymentEvent($_SESSION['user_id'], $purchaseId, 'payment_cancelled');
+        }
+
+        $_SESSION['error'] = 'Payment cancelled. No charges were made.';
+        header('Location: ' . URLROOT . '/wallet/purchaseBuckx');
+        exit;
+    }
+
+    //Get wallet notifications (AJAX)
     public function getNotifications() {
         header('Content-Type: application/json');
 
@@ -277,9 +406,7 @@ class WalletController extends Controller {
         exit;
     }
 
-    /**
-     * Mark notification as read (AJAX)
-     */
+    //Mark notification as read (AJAX)
     public function markNotificationRead() {
         header('Content-Type: application/json');
 
@@ -309,9 +436,7 @@ class WalletController extends Controller {
         exit;
     }
 
-    /**
-     * Get current balance (AJAX)
-     */
+    //Get current balance (AJAX)
     public function getCurrentBalance() {
         header('Content-Type: application/json');
 
@@ -330,10 +455,7 @@ class WalletController extends Controller {
         exit;
     }
 
-    // ============================================
     // VALIDATION HELPERS
-    // ============================================
-
     private function validateTransferInputs($recipientId, $amount) {
         $errors = [];
         
@@ -349,32 +471,6 @@ class WalletController extends Controller {
             $errors[] = 'Amount cannot exceed 1000 BuckX per transaction';
         }
         
-        return $errors;
-    }
-
-    private function validatePurchaseInputs($amount, $cardHolder, $cardNumber, $expiryDate, $cvv) {
-        $errors = [];
-        
-        if ($amount < 100) {
-            $errors[] = 'Minimum purchase is 100 BuckX';
-        }
-        
-        if (empty($cardHolder)) {
-            $errors[] = 'Cardholder name is required';
-        }
-        
-        if (strlen($cardNumber) < 13 || strlen($cardNumber) > 19) {
-            $errors[] = 'Invalid card number';
-        }
-        
-        if (empty($expiryDate) || !preg_match('/^\d{2}\/\d{2}$/', $expiryDate)) {
-            $errors[] = 'Invalid expiry date format';
-        }
-        
-        if (strlen($cvv) !== 3 && strlen($cvv) !== 4) {
-            $errors[] = 'Invalid CVV';
-        }
-
         return $errors;
     }
 }
