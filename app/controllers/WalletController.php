@@ -84,6 +84,10 @@ class WalletController extends Controller {
             exit;
         }
 
+        if (is_array($recipientUser)) {
+        $recipientUser = (object) $recipientUser;
+        }
+        
         $senderBalance = $this->walletModel->getBalance($_SESSION['user_id']);
 
         $data = [
@@ -105,58 +109,64 @@ class WalletController extends Controller {
     //Process transfer after confirmation (AJAX)
 
     public function processTransfer() {
-        header('Content-Type: application/json');
-
-        if (!isset($_SESSION['user_id'])) {
-            echo json_encode(['success' => false, 'message' => 'Not logged in']);
-            exit;
-        }
-
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(['success' => false, 'message' => 'Invalid request']);
-            exit;
-        }
-
-        $recipientId = intval($_POST['recipient_id'] ?? 0);
-        $amount = floatval($_POST['amount'] ?? 0);
-        $note = trim($_POST['note'] ?? '');
-
-        $errors = $this->validateTransferInputs($recipientId, $amount);
-        
-        if (!empty($errors)) {
-            echo json_encode(['success' => false, 'message' => implode('<br>', $errors)]);
-            exit;
-        }
-
-        $result = $this->walletModel->transferMoney($_SESSION['user_id'], $recipientId, $amount, $note);
-
-        if ($result['success']) {
-            $userModel = $this->model('User');
-            $sender = $userModel->getUserById($_SESSION['user_id']);
-            $receiver = $userModel->getUserById($recipientId);
-
-            $this->notificationModel->create(
-                $_SESSION['user_id'],
-                $result['transaction_id'],
-                'sent',
-                'BuckX Sent Successfully ✅',
-                "You sent {$amount} BuckX to {$receiver->username}" . ($note ? " - Reason: {$note}" : "")
-            );
-
-            $this->notificationModel->create(
-                $recipientId,
-                $result['transaction_id'],
-                'received',
-                'BuckX Received! 💰',
-                "You received {$amount} BuckX from {$sender->username}" . ($note ? " - Reason: {$note}" : "")
-            );
-
-            $this->notificationModel->checkLowBalance($_SESSION['user_id'], $result['new_balance']);
-        }
-
-        echo json_encode($result);
+    if (!isset($_SESSION['user_id'])) {
+        header('Location: ' . URLROOT . '/auth/signin');
         exit;
     }
+
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        $_SESSION['error'] = 'Invalid request';
+        header('Location: ' . URLROOT . '/wallet');
+        exit;
+    }
+
+    $recipientId = intval($_POST['recipient_id'] ?? 0);
+    $amount = floatval($_POST['amount'] ?? 0);
+    $note = trim($_POST['note'] ?? '');
+
+    $errors = $this->validateTransferInputs($recipientId, $amount);
+    
+    if (!empty($errors)) {
+        $_SESSION['error'] = implode('<br>', $errors);
+        header('Location: ' . URLROOT . '/wallet');
+        exit;
+    }
+
+    $result = $this->walletModel->transferMoney($_SESSION['user_id'], $recipientId, $amount, $note);
+
+    if ($result['success']) {
+        $userModel = $this->model('User');
+        $sender = $userModel->getUserById($_SESSION['user_id']);
+        $receiver = $userModel->getUserById($recipientId);
+
+        $this->notificationModel->create(
+            $_SESSION['user_id'],
+            $result['transaction_id'],
+            'sent',
+            'BuckX Sent Successfully ✅',
+            "You sent {$amount} BuckX to {$receiver->username}" . ($note ? " - Reason: {$note}" : "")
+        );
+
+        $this->notificationModel->create(
+            $recipientId,
+            $result['transaction_id'],
+            'received',
+            'BuckX Received! 💰',
+            "You received {$amount} BuckX from {$sender->username}" . ($note ? " - Reason: {$note}" : "")
+        );
+
+        $this->notificationModel->checkLowBalance($_SESSION['user_id'], $result['new_balance']);
+        
+        // ✅ Set success message and redirect
+        $_SESSION['success'] = $result['message'];
+    } else {
+        // ✅ Set error message and redirect
+        $_SESSION['error'] = $result['message'];
+    }
+    
+    header('Location: ' . URLROOT . '/wallet');
+    exit;
+}
 
     //Show purchase BuckX page - STRIPE VERSION (Organizations only)
     public function purchaseBuckx() {
@@ -385,54 +395,6 @@ class WalletController extends Controller {
 
         $_SESSION['error'] = 'Payment cancelled. No charges were made.';
         header('Location: ' . URLROOT . '/wallet/purchaseBuckx');
-        exit;
-    }
-
-    //Get wallet notifications (AJAX)
-    public function getNotifications() {
-        header('Content-Type: application/json');
-
-        if (!isset($_SESSION['user_id'])) {
-            echo json_encode(['success' => false, 'message' => 'Not logged in']);
-            exit;
-        }
-
-        $notifications = $this->notificationModel->getUserNotifications($_SESSION['user_id']);
-        
-        echo json_encode([
-            'success' => true,
-            'notifications' => $notifications
-        ]);
-        exit;
-    }
-
-    //Mark notification as read (AJAX)
-    public function markNotificationRead() {
-        header('Content-Type: application/json');
-
-        if (!isset($_SESSION['user_id'])) {
-            echo json_encode(['success' => false, 'message' => 'Not logged in']);
-            exit;
-        }
-
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(['success' => false, 'message' => 'Invalid request']);
-            exit;
-        }
-
-        $notificationId = intval($_POST['notification_id'] ?? 0);
-        
-        if ($notificationId <= 0) {
-            echo json_encode(['success' => false, 'message' => 'Invalid notification ID']);
-            exit;
-        }
-
-        $success = $this->notificationModel->markAsRead($notificationId, $_SESSION['user_id']);
-        
-        echo json_encode([
-            'success' => $success,
-            'message' => $success ? 'Notification marked as read' : 'Failed to update notification'
-        ]);
         exit;
     }
 
