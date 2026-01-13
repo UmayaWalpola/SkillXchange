@@ -2,7 +2,7 @@
 <?php require_once "../app/views/layouts/usersidebar.php"; ?>
 
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
-<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/quiz.css">
+<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/take_quiz.css">
 
 <main class="site-main">
 <div class="dashboard-container">
