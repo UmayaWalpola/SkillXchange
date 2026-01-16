@@ -1,16 +1,18 @@
 /**
  * Handles wallet operations with better UX and error handling
  */
+
 // Real-time balance validation
-document.getElementById('amount').addEventListener('input', function() {
+document.getElementById('amount')?.addEventListener('input', function() {
     const amount = parseFloat(this.value) || 0;
-    const currentBalance = parseFloat(document.getElementById('currentBalance').textContent.replace(',', ''));
+    const currentBalanceText = document.getElementById('currentBalance')?.textContent || '0';
+    const currentBalance = parseFloat(currentBalanceText.replace(/,/g, ''));
     
     if (amount > currentBalance) {
         this.setCustomValidity('Amount exceeds your current balance');
         this.classList.add('invalid');
-    } else if (amount > 10000) {
-        this.setCustomValidity('Maximum 10,000 BuckX per transaction');
+    } else if (amount > 1000) {
+        this.setCustomValidity('Maximum 1,000 BuckX per transaction');
         this.classList.add('invalid');
     } else {
         this.setCustomValidity('');
@@ -20,9 +22,11 @@ document.getElementById('amount').addEventListener('input', function() {
 
 // Form validation before submission
 document.getElementById('transferForm')?.addEventListener('submit', function(e) {
-    const recipientId = document.getElementById('recipient_id').value;
-    const amount = parseFloat(document.getElementById('amount').value) || 0;
-    const currentBalance = parseFloat(document.getElementById('currentBalance').textContent.replace(',', ''));
+    const recipientId = document.getElementById('recipient_id')?.value;
+    const amountInput = document.getElementById('amount')?.value;
+    const amount = parseFloat(amountInput) || 0;
+    const currentBalanceText = document.getElementById('currentBalance')?.textContent || '0';
+    const currentBalance = parseFloat(currentBalanceText.replace(/,/g, ''));
     
     if (!recipientId) {
         e.preventDefault();
@@ -43,114 +47,60 @@ document.getElementById('transferForm')?.addEventListener('submit', function(e) 
     }
 });
 
+// Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
-    
-
-    // Initialize
     initializeWallet();
     
     function initializeWallet() {
-        // Check for notifications periodically
-        checkNotifications();
-        setInterval(checkNotifications, 30000); // Every 30 seconds
-        
-        // Update balance periodically
-        setInterval(updateBalance, 60000); // Every minute
+        // Update balance every minute
+        setInterval(updateBalance, 60000);
     }
     
-
-    // Check for new notifications
-    function checkNotifications() {
-        fetch(getBaseUrl() + '/wallet/getNotifications')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.notifications.length > 0) {
-                    const unread = data.notifications.filter(n => !n.is_read);
-                    if (unread.length > 0) {
-                        showNotificationBadge(unread.length);
-                    }
-                }
-            })
-            .catch(error => console.error('Error fetching notifications:', error));
-    }
-    
-
     // Update balance display
     function updateBalance() {
-        fetch(getBaseUrl() + '/wallet/getCurrentBalance')
-            .then(response => response.json())
-            .then(data => {
+        const baseUrl = getBaseUrl();
+        
+        fetch(baseUrl + '/wallet/getCurrentBalance')
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
                 if (data.success) {
                     const balanceElement = document.getElementById('currentBalance');
                     if (balanceElement) {
                         balanceElement.textContent = data.balance;
-                        
-                        // Update header balance if exists
-                        const headerBalance = document.querySelector('.header-balance');
-                        if (headerBalance) {
-                            headerBalance.textContent = data.balance + ' BuckX';
-                        }
+                    }
+                    
+                    // Update header balance if exists
+                    const headerBalance = document.querySelector('.header-balance');
+                    if (headerBalance) {
+                        headerBalance.textContent = data.balance + ' BuckX';
                     }
                 }
             })
-            .catch(error => console.error('Error updating balance:', error));
+            .catch(function(error) {
+                console.error('Error updating balance:', error);
+            });
     }
     
-
-    // Show notification badge
-    function showNotificationBadge(count) {
-        const badge = document.querySelector('.notification-badge');
-        if (badge) {
-            badge.textContent = count;
-            badge.style.display = 'block';
-        }
-    }
-    
-
     // Get base URL helper
     function getBaseUrl() {
-        return window.location.origin;
-    }
-    
-
-    // Format number with commas
-    function formatNumber(num) {
-        return parseFloat(num).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
-    }
-    
-
-    // Show toast notification
-    function showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
-        toast.innerHTML = `
-            <span class="toast-icon">${getToastIcon(type)}</span>
-            <span class="toast-message">${message}</span>
-        `;
+        const path = window.location.pathname;
+        const pathParts = path.split('/');
         
-        document.body.appendChild(toast);
+        // Find 'public' in the path
+        const publicIndex = pathParts.indexOf('public');
         
-        // Animate in
-        setTimeout(() => toast.classList.add('show'), 100);
+        if (publicIndex !== -1) {
+            // Build URL up to 'public'
+            const basePath = pathParts.slice(0, publicIndex + 1).join('/');
+            return window.location.origin + basePath;
+        }
         
-        // Remove after 5 seconds
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => toast.remove(), 300);
-        }, 5000);
-    }
-    
-    function getToastIcon(type) {
-        const icons = {
-            success: '\u2705',
-            error: '\u274C',
-            warning: '\u26A0\uFE0F',
-            info: '\u2139\uFE0F'
-        };
-        return icons[type] || icons.info;
+        // Fallback
+        return window.location.origin + '/SkillXchange/public';
     }
 });
-
 
 // Toast Styles (injected dynamically)
 const toastStyles = document.createElement('style');
