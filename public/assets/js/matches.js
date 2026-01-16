@@ -105,6 +105,8 @@ async function connectWithUser(userId, userName) {
     button.textContent = 'Connecting...';
     
     try {
+        console.log('Sending connection request to user:', userId);
+        
         const response = await fetch(`${URLROOT}/userdashboard/connect`, {
             method: 'POST',
             headers: {
@@ -113,11 +115,20 @@ async function connectWithUser(userId, userName) {
             body: `user_id=${userId}`
         });
         
-        if (!response.ok) {
-            throw new Error(`Server error: ${response.status}`);
-        }
+        console.log('=== RAW RESPONSE START ===');
+        const rawText = await response.text();
+        console.log(rawText);
+        console.log('=== RAW RESPONSE END ===');
         
-        const data = await response.json();
+        // Try to parse as JSON
+        let data;
+        try {
+            data = JSON.parse(rawText);
+        } catch (jsonError) {
+            console.error('JSON PARSE ERROR:', jsonError);
+            console.log('Response was NOT JSON. It was:', rawText.substring(0, 500));
+            throw new Error('Server returned invalid response. Please check console for details.');
+        }
         
         if (data.success) {
             showNotification('success', `Connection request sent to ${userName}!`);
@@ -139,6 +150,7 @@ async function connectWithUser(userId, userName) {
         button.disabled = false;
         button.textContent = originalText;
     }
+
 }
 
 /**

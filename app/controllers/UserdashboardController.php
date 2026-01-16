@@ -63,21 +63,81 @@ class UserdashboardController extends Controller {
         $this->view('users/notifications', $data);
     }
 
-    public function chats() {
-        $userId = $this->checkAuth();
+public function chats() {
+    $userId = $this->checkAuth();
+    
+    $user = $this->getUserData($userId);
+    $chats = $this->getActiveChats($userId);
+    
+    $data = [
+        'title' => 'Chats',
+        'user' => $user,
+        'page' => 'chats',
+        'chats' => $chats
+    ];
+    
+    $this->view('users/chats', $data);
+}
+
+private function getActiveChats($userId) {
+    try {
+        $this->db->query("
+            SELECT 
+                c.id as chat_id,
+                CASE 
+                    WHEN c.user1_id = :user_id THEN c.user2_id
+                    ELSE c.user1_id
+                END as partner_id,
+                CASE 
+                    WHEN c.user1_id = :user_id THEN u2.username
+                    ELSE u1.username
+                END as partner_name,
+                CASE 
+                    WHEN c.user1_id = :user_id THEN u2.profile_picture
+                    ELSE u1.profile_picture
+                END as partner_avatar,
+                cm.message as last_message,
+                cm.created_at as last_message_time,
+                (SELECT COUNT(*) FROM chat_messages 
+                 WHERE chat_id = c.id 
+                 AND sender_id != :user_id 
+                 AND read_status = 0) as unread_count
+            FROM chats c
+            INNER JOIN users u1 ON c.user1_id = u1.id
+            INNER JOIN users u2 ON c.user2_id = u2.id
+            LEFT JOIN chat_messages cm ON c.id = cm.chat_id
+            WHERE (c.user1_id = :user_id OR c.user2_id = :user_id)
+            AND cm.id = (
+                SELECT MAX(id) FROM chat_messages WHERE chat_id = c.id
+            )
+            ORDER BY cm.created_at DESC
+        ");
         
-        $user = $this->getUserData($userId);
-        $chats = $this->getChats($userId);
+        $this->db->bind(':user_id', $userId);
+        $results = $this->db->resultSet();
         
-        $data = [
-            'title' => 'Chats',
-            'user' => $user,
-            'page' => 'chats',
-            'chats' => $chats
-        ];
+        $chats = [];
+        foreach ($results as $row) {
+            $chats[] = [
+                'id' => $row->chat_id,
+                'partner_id' => $row->partner_id,
+                'name' => $row->partner_name,
+                'avatar' => $row->partner_avatar ?? strtoupper(substr($row->partner_name, 0, 2)),
+                'lastMessage' => $row->last_message ?? 'No messages yet',
+                'time' => $this->timeAgo($row->last_message_time ?? date('Y-m-d H:i:s')),
+                'unread' => $row->unread_count > 0,
+                'unreadCount' => $row->unread_count ?? 0,
+                'online' => false // You can add online status later
+            ];
+        }
         
-        $this->view('users/chats', $data);
+        return $chats;
+        
+    } catch (Exception $e) {
+        error_log("getActiveChats error: " . $e->getMessage());
+        return [];
     }
+}
 
 
 public function matches() {

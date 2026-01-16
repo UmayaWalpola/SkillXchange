@@ -209,25 +209,68 @@ class Exchange extends Database {
     /**
      * Accept an exchange request
      */
-    public function acceptExchange($exchangeId, $userId) {
-        // Verify user is the receiver
-        $this->db->query("
-            UPDATE exchanges 
-            SET status = 'accepted', updated_at = NOW()
-            WHERE id = :exchange_id AND receiver_id = :user_id
-        ");
-        
-        $this->db->bind(':exchange_id', $exchangeId);
-        $this->db->bind(':user_id', $userId);
-        
-        if ($this->db->execute()) {
-            // Create notification for sender
-            $this->createAcceptanceNotification($exchangeId);
-            return true;
-        }
-        
+public function acceptExchange($exchangeId, $userId) {
+    // Verify user is the receiver
+    $this->db->query("
+        SELECT * FROM exchanges 
+        WHERE id = :exchange_id AND receiver_id = :user_id
+    ");
+    $this->db->bind(':exchange_id', $exchangeId);
+    $this->db->bind(':user_id', $userId);
+    $exchange = $this->db->single();
+    
+    if (!$exchange) {
         return false;
     }
+    
+    // Update status to accepted
+    $this->db->query("
+        UPDATE exchanges 
+        SET status = 'accepted', updated_at = NOW()
+        WHERE id = :exchange_id
+    ");
+    $this->db->bind(':exchange_id', $exchangeId);
+    
+    if ($this->db->execute()) {
+        // Create chat between the two users
+        $this->createChatForExchange($exchange->requester_id, $exchange->receiver_id);
+        
+        // Create notification for sender
+        $this->createAcceptanceNotification($exchangeId);
+        return true;
+    }
+    
+    return false;
+}
+
+/**
+ * Create a chat when exchange is accepted
+ */
+private function createChatForExchange($userId1, $userId2) {
+    // Check if chat already exists
+    $this->db->query("
+        SELECT id FROM chats 
+        WHERE (user1_id = :user1 AND user2_id = :user2)
+           OR (user1_id = :user2 AND user2_id = :user1)
+        LIMIT 1
+    ");
+    $this->db->bind(':user1', $userId1);
+    $this->db->bind(':user2', $userId2);
+    
+    if ($this->db->single()) {
+        return; // Chat already exists
+    }
+    
+    // Create new chat
+    $this->db->query("
+        INSERT INTO chats (user1_id, user2_id, created_at)
+        VALUES (:user1, :user2, NOW())
+    ");
+    $this->db->bind(':user1', $userId1);
+    $this->db->bind(':user2', $userId2);
+    
+    return $this->db->execute();
+}
     
     /**
      * Reject an exchange request
