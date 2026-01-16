@@ -12,14 +12,13 @@
             <div class="profile-avatar">
                 <span id="orgInitial">
                     <?php 
-                    // Get first letter of organization name from session or data
-                    $orgName = isset($data['organization']->name) ? $data['organization']->name : $_SESSION['username'];
+                    $orgName = htmlspecialchars($data['organization']->username ?? $_SESSION['username']);
                     echo strtoupper(substr($orgName, 0, 1));
                     ?>
                 </span>
             </div>
             <div class="profile-info">
-                <h1 id="orgName"><?= htmlspecialchars($orgName) ?></h1>
+                <h1 id="orgName"><?= htmlspecialchars($data['organization']->username ?? $_SESSION['username']) ?></h1>
                 <p class="org-type">Organization Account</p>
             </div>
             <button class="edit-btn" onclick="enableEdit()">Edit Profile</button>
@@ -34,34 +33,34 @@
                     <div class="info-item">
                         <label>Organization Name</label>
                         <input type="text" id="inputOrgName" name="org_name" class="info-input" 
-                               value="<?= isset($data['organization']->name) ? htmlspecialchars($data['organization']->name) : htmlspecialchars($_SESSION['username']) ?>" 
+                               value="<?= htmlspecialchars($data['organization']->username ?? $_SESSION['username']) ?>" 
                                disabled>
                     </div>
 
                     <div class="info-item">
                         <label>Email</label>
                         <input type="email" id="inputEmail" name="email" class="info-input" 
-                               value="<?= isset($data['organization']->email) ? htmlspecialchars($data['organization']->email) : '' ?>" 
+                               value="<?= htmlspecialchars($data['organization']->email ?? '') ?>" 
                                disabled>
                     </div>
 
                     <div class="info-item">
                         <label>Phone</label>
                         <input type="tel" id="inputPhone" name="phone" class="info-input" 
-                               value="<?= isset($data['organization']->phone) ? htmlspecialchars($data['organization']->phone) : '' ?>" 
+                               value="<?= htmlspecialchars($data['organization']->phone ?? '') ?>" 
                                disabled>
                     </div>
 
                     <div class="info-item">
                         <label>Website</label>
                         <input type="url" id="inputWebsite" name="website" class="info-input" 
-                               value="<?= isset($data['organization']->website) ? htmlspecialchars($data['organization']->website) : '' ?>" 
+                               value="<?= htmlspecialchars($data['organization']->website ?? '') ?>" 
                                disabled>
                     </div>
 
                     <div class="info-item full-width">
                         <label>Description</label>
-                        <textarea id="inputDescription" name="description" class="info-textarea" rows="4" disabled><?= isset($data['organization']->description) ? htmlspecialchars($data['organization']->description) : '' ?></textarea>
+                        <textarea id="inputDescription" name="description" class="info-textarea" rows="4" disabled><?= htmlspecialchars($data['organization']->bio ?? '') ?></textarea>
                     </div>
                 </div>
             </div>
@@ -73,28 +72,28 @@
                     <div class="info-item">
                         <label>Address</label>
                         <input type="text" id="inputAddress" name="address" class="info-input" 
-                               value="<?= isset($data['organization']->address) ? htmlspecialchars($data['organization']->address) : '' ?>" 
+                               value="<?= htmlspecialchars($data['organization']->address ?? '') ?>" 
                                disabled>
                     </div>
 
                     <div class="info-item">
                         <label>City</label>
                         <input type="text" id="inputCity" name="city" class="info-input" 
-                               value="<?= isset($data['organization']->city) ? htmlspecialchars($data['organization']->city) : '' ?>" 
+                               value="<?= htmlspecialchars($data['organization']->city ?? '') ?>" 
                                disabled>
                     </div>
 
                     <div class="info-item">
                         <label>Country</label>
                         <input type="text" id="inputCountry" name="country" class="info-input" 
-                               value="<?= isset($data['organization']->country) ? htmlspecialchars($data['organization']->country) : '' ?>" 
+                               value="<?= htmlspecialchars($data['organization']->country ?? '') ?>" 
                                disabled>
                     </div>
 
                     <div class="info-item">
                         <label>Postal Code</label>
                         <input type="text" id="inputPostal" name="postal_code" class="info-input" 
-                               value="<?= isset($data['organization']->postal_code) ? htmlspecialchars($data['organization']->postal_code) : '' ?>" 
+                               value="<?= htmlspecialchars($data['organization']->postal_code ?? '') ?>" 
                                disabled>
                     </div>
                 </div>
@@ -107,21 +106,21 @@
                     <div class="info-item">
                         <label>LinkedIn</label>
                         <input type="url" id="inputLinkedin" name="linkedin" class="info-input" 
-                               value="<?= isset($data['organization']->linkedin) ? htmlspecialchars($data['organization']->linkedin) : '' ?>" 
+                               value="<?= htmlspecialchars($data['organization']->linkedin ?? '') ?>" 
                                disabled>
                     </div>
 
                     <div class="info-item">
                         <label>Twitter</label>
                         <input type="url" id="inputTwitter" name="twitter" class="info-input" 
-                               value="<?= isset($data['organization']->twitter) ? htmlspecialchars($data['organization']->twitter) : '' ?>" 
+                               value="<?= htmlspecialchars($data['organization']->twitter ?? '') ?>" 
                                disabled>
                     </div>
 
                     <div class="info-item">
                         <label>GitHub</label>
                         <input type="url" id="inputGithub" name="github" class="info-input" 
-                               value="<?= isset($data['organization']->github) ? htmlspecialchars($data['organization']->github) : '' ?>" 
+                               value="<?= htmlspecialchars($data['organization']->github ?? '') ?>" 
                                disabled>
                     </div>
                 </div>
@@ -212,13 +211,22 @@ function saveProfile() {
         }
     });
     
+    console.log('Sending profile update request...');
+    const url = '<?= URLROOT ?>/organization/updateProfile';
+    console.log('URL:', url);
+    
     // Send AJAX request
-    fetch('<?= URLROOT ?>/organization/updateProfile', {
+    fetch(url, {
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        return response.json();
+    })
     .then(data => {
+        console.log('Response data:', data);
         if(data.success) {
             alert('Profile updated successfully!');
             
@@ -234,12 +242,12 @@ function saveProfile() {
             document.getElementById('orgName').textContent = newOrgName;
             document.getElementById('orgInitial').textContent = newOrgName.charAt(0).toUpperCase();
         } else {
-            alert('Failed to update profile: ' + data.message);
+            alert('Failed to update profile: ' + (data.message || 'Unknown error'));
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while updating profile');
+        alert('An error occurred while updating profile: ' + error.message);
     });
 }
 

@@ -44,7 +44,11 @@ elseif($user['role'] == 'manager') $badgeClass = 'badge-primary';
 elseif($user['role'] == 'community_admin') $badgeClass = 'badge-success';
 ?>
                                         <span class="badge <?= $badgeClass ?>">
+<<<<<<< HEAD
                                         <?= htmlspecialchars(str_replace('', ' ', ucwords($user['role'], ''))) ?>
+=======
+                                        <?= htmlspecialchars(str_replace('_', ' ', ucwords($user['role'], '_'))) ?>
+>>>>>>> origin/feature/manager
                                         </span>
                                         </td>
                                         <td><?= date('M d, Y', strtotime($user['created_at'])) ?></td>

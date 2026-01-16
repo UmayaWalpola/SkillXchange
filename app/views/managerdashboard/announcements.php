@@ -104,19 +104,31 @@ document.getElementById('addAnnouncementForm').addEventListener('submit', functi
 });
 
 function deleteAnnouncement(announcementId, title) {
+<<<<<<< HEAD
     if (confirm(Are you sure you want to delete "${title}"? This action cannot be undone.)) {
+=======
+    if (confirm(`Are you sure you want to delete "${title}"? This action cannot be undone.`)) {
+>>>>>>> origin/feature/manager
         fetch('<?= URLROOT ?>/managerdashboard/deleteAnnouncement', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
+<<<<<<< HEAD
             body: announcement_id=${announcementId}
+=======
+            body: `announcement_id=${announcementId}`
+>>>>>>> origin/feature/manager
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 alert(data.message);
+<<<<<<< HEAD
                 document.querySelector(div[data-announcement-id="${announcementId}"]).remove();
+=======
+                document.querySelector(`div[data-announcement-id="${announcementId}"]`).remove();
+>>>>>>> origin/feature/manager
             } else {
                 alert('Error deleting announcement');
             }

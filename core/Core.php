@@ -1,50 +1,62 @@
 <?php
-class Core {
+class Core
+{
     protected $currentController = 'PagesController';
     protected $currentMethod = 'index';
     protected $params = [];
 
-    public function __construct() {
+    public function __construct()
+    {
         $url = $this->getUrl();
 
-        // Controller - check if it exists with "Controller" suffix
-        if (isset($url[0])) {
-            $controllerName = ucwords($url[0]) . 'Controller';
-            $controllerFile = '../app/controllers/' . $controllerName . '.php';
-            
-            if (file_exists($controllerFile)) {
+        /* -------------------------------
+           1. CONTROLLER RESOLUTION
+        -------------------------------- */
+        if (!empty($url[0])) {
+            // Example: /Project → ProjectController.php
+            $controllerName = ucfirst($url[0]) . 'Controller';
+            $controllerPath = '../app/controllers/' . $controllerName . '.php';
+
+            if (file_exists($controllerPath)) {
                 $this->currentController = $controllerName;
                 unset($url[0]);
             }
         }
 
-        // Require the controller file
         require_once '../app/controllers/' . $this->currentController . '.php';
-        
-        // Instantiate controller
+
         $this->currentController = new $this->currentController;
 
-        // Method - check if method exists in controller
-        if (isset($url[1]) && method_exists($this->currentController, $url[1])) {
-            $this->currentMethod = $url[1];
-            unset($url[1]);
+        /* -------------------------------
+           2. METHOD RESOLUTION
+        -------------------------------- */
+        if (!empty($url[1])) {
+            if (method_exists($this->currentController, $url[1])) {
+                $this->currentMethod = $url[1];
+                unset($url[1]);
+            }
         }
 
-        // Params - get remaining URL segments as parameters
+        /* -------------------------------
+           3. PARAMETERS
+        -------------------------------- */
         $this->params = $url ? array_values($url) : [];
 
-        // Call controller method with parameters
+        /* -------------------------------
+           4. RUN
+        -------------------------------- */
         call_user_func_array([$this->currentController, $this->currentMethod], $this->params);
     }
 
-    public function getUrl() {
+    /* -------------------------------
+       URL PARSER
+    -------------------------------- */
+    public function getUrl()
+    {
         if (isset($_GET['url'])) {
             $url = rtrim($_GET['url'], '/');
-            $url = filter_var($url, FILTER_SANITIZE_URL);
-            return explode('/', $url);
+            return explode('/', filter_var($url, FILTER_SANITIZE_URL));
         }
         return [];
     }
 }
-
-

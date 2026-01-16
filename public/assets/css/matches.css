@@ -4,13 +4,15 @@
 
 .matches-page {
     padding: 2rem;
-    max-width: 1600px;
+    max-width: 1400px;
     margin: 0 auto;
     animation: fadeIn 0.4s ease-out;
+    background: var(--white-bg);
+    min-height: 100vh;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
+    from { opacity: 0; transform: translateY(30px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
@@ -19,19 +21,19 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 1rem;
+    gap: 1.5rem;
     flex-wrap: wrap;
     padding: 1rem;
-    background: var(--blue-bg);
-    border-radius: 12px;
-    margin-top: 1.5rem;
+    background: var(--white-bg);
+    border-radius: 10px;
+    margin-top: 1rem;
     border: 2px solid var(--accent-blue);
 }
 
 .summary-item {
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: var(--dark-bg);
-    opacity: 0.8;
+    font-weight: 500;
 }
 
 .summary-item strong {
@@ -41,38 +43,64 @@
     margin-right: 0.25rem;
 }
 
-.summary-item.perfect { color: var(--primary-blue); font-weight: 600; }
-.summary-item.great { color: var(--accent-blue); font-weight: 600; }
-.summary-item.good { color: var(--dark-bg); opacity: 0.6; font-weight: 600; }
+.summary-item.perfect { 
+    color: var(--primary-blue);
+    font-weight: 600;
+}
+.summary-item.perfect strong { 
+    color: var(--primary-blue);
+}
+
+.summary-item.great { 
+    color: var(--accent-blue);
+    font-weight: 600;
+}
+.summary-item.great strong { 
+    color: var(--accent-blue);
+}
+
+.summary-item.good { 
+    color: var(--dark-bg);
+    opacity: 0.7;
+    font-weight: 600;
+}
+.summary-item.good strong { 
+    color: var(--dark-bg);
+}
 
 .summary-divider {
     color: var(--primary-blue);
-    opacity: 0.4;
+    opacity: 0.3;
     font-size: 1.2rem;
 }
 
 /* Connection Requests Section */
 .connection-requests-section {
-    background: linear-gradient(135deg, var(--blue-bg) 0%, var(--white-bg) 100%);
-    border: 2px solid var(--accent-blue);
-    border-radius: 16px;
+    background: var(--white-bg);
+    border: 2px solid var(--blue-bg);
+    border-radius: 12px;
     padding: 2rem;
-    margin-bottom: 2.5rem;
-    box-shadow: 0 4px 16px rgba(101, 131, 150, 0.15);
+    margin-bottom: 2rem;
+    transition: all 0.3s ease;
+}
+
+.connection-requests-section:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(101, 131, 150, 0.15);
 }
 
 .section-title {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     color: var(--dark-bg);
     margin-bottom: 1.5rem;
     font-weight: 600;
 }
 
 .title-icon {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
 }
 
 /* Badge count - uses global badge styling as base */
@@ -607,25 +635,28 @@
 /* No Matches State */
 .no-matches-state {
     text-align: center;
-    padding: 4rem 2rem;
-    color: var(--dark-bg);
-    opacity: 0.5;
+    padding: 3rem 2rem;
+    background: var(--blue-bg);
+    border: 2px solid var(--accent-blue);
+    border-radius: 12px;
+    margin: 2rem 0;
 }
 
 .empty-illustration {
-    font-size: 5rem;
-    margin-bottom: 1.5rem;
-    opacity: 0.6;
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
 }
 
 .no-matches-state h2 {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
     color: var(--dark-bg);
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
 }
 
 .no-matches-state p {
-    font-size: 1.1rem;
+    font-size: 1rem;
     margin-bottom: 0.5rem;
     color: var(--dark-bg);
     opacity: 0.7;
@@ -633,18 +664,18 @@
 
 .no-matches-state small {
     color: var(--dark-bg);
-    opacity: 0.5;
-    font-size: 0.95rem;
+    opacity: 0.6;
+    font-size: 0.9rem;
 }
 
 /* Filtered Empty State */
 .no-matches-filtered {
     text-align: center;
-    padding: 3rem 2rem;
+    padding: 2.5rem 2rem;
     margin: 2rem 0;
     background: var(--blue-bg);
-    border-radius: 16px;
-    border: 2px dashed var(--accent-blue);
+    border-radius: 12px;
+    border: 2px dashed var(--primary-blue);
 }
 
 .no-matches-filtered .empty-illustration {

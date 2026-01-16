@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporting System Demo - SkillXchange</title>
+    <link rel="stylesheet" href="../assets/css/global.css">
+    <link rel="stylesheet" href="../assets/css/reporting.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f5f7fa;
+            padding: 2rem;
+        }
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .demo-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .demo-header h1 {
+            color: #658396;
+            margin-bottom: 0.5rem;
+        }
+        .demo-section {
+            margin-bottom: 3rem;
+        }
+        .demo-section h2 {
+            color: #12120D;
+            margin-bottom: 1.5rem;
+            padding-left: 1rem;
+            border-left: 4px solid #658396;
+        }
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .demo-card {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .demo-card:hover {
+            border-color: #658396;
+            box-shadow: 0 4px 12px rgba(101, 131, 150, 0.2);
+        }
+        .demo-card h3 {
+            color: #658396;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .demo-card p {
+            color: #6b7280;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+        .user-profile-demo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .avatar-demo {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #658396, #9cc7df);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .post-demo {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .post-author {
+            font-weight: 600;
+            color: #12120D;
+        }
+        .post-time {
+            font-size: 0.85rem;
+            color: #9ca3af;
+        }
+        .message-demo {
+            background: white;
+            border-left: 3px solid #658396;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 6px;
+        }
+        .success-badge {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .info-box {
+            background: #d5eaf6;
+            border: 2px solid #9cc7df;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .info-box h3 {
+            color: #658396;
+            margin-bottom: 0.75rem;
+        }
+        .info-box ul {
+            margin: 0;
+            padding-left: 1.5rem;
+        }
+        .info-box li {
+            color: #374151;
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>🛡️ SkillXchange Reporting System Demo</h1>
+            <p style="color: #6b7280; font-size: 1.1rem;">Test all reporting features below</p>
+            <span class="success-badge">✓ All features working</span>
+        </div>
+
+        <div class="info-box">
+            <h3>📋 How to Test</h3>
+            <ul>
+                <li>Click any <strong>Report</strong> button below</li>
+                <li>A modal will open with a form</li>
+                <li>Select a reason and add optional description</li>
+                <li>Click <strong>Submit Report</strong></li>
+                <li>You'll see a success notification</li>
+                <li>Try reporting the same content twice (should fail - duplicate prevention)</li>
+            </ul>
+        </div>
+
+        <!-- User Profile Reporting -->
+        <div class="demo-section">
+            <h2>👤 Report User Profiles</h2>
+            <div class="demo-grid">
+                <div class="demo-card">
+                    <div class="user-profile-demo">
+                        <div class="avatar-demo">JD</div>
+                        <div>
+                            <h4 style="margin: 0; color: #12120D;">John Doe</h4>
+                            <p style="margin: 0; color: #9ca3af; font-size: 0.9rem;">@johndoe</p>
+                        </div>
+                    </div>
+                    <p>Web Developer | 150 connections</p>
+                    <button class="report-btn report-user-btn" data-user-id="123">
+                        <span class="report-btn-icon">⚠</span>
+                        Report Profile
+                    </button>
+                </div>
+
+                <div class="demo-card">
+                    <div class="user-profile-demo">
+                        <div class="avatar-demo">JS</div>
+                        <div>
+                            <h4 style="margin: 0; color: #12120D;">Jane Smith</h4>
+                            <p style="margin: 0; color: #9ca3af; font-size: 0.9rem;">@janesmith</p>
+                        </div>
+                    </div>
+                    <p>UI/UX Designer | 89 connections</p>
+                    <button class="report-btn report-user-btn" data-user-id="456">
+                        <span class="report-btn-icon">⚠</span>
+                        Report Profile
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Reporting (Posts) -->
+        <div class="demo-section">
+            <h2>💬 Report Community Posts</h2>
+            <div class="demo-grid">
+                <div class="demo-card">
+                    <h3>📌 Sample Community Post</h3>
+                    <div class="post-demo">
+                        <div class="post-header">
+                            <div>
+                                <div class="post-author">Alex Johnson</div>
+                                <div class="post-time">2 hours ago</div>
+                            </div>
+                            <button class="report-btn-small report-content-btn" 
+                                    data-content-type="post" 
+                                    data-content-id="789"
+                                    title="Report this post">
+                                <span>⚠</span>
+                            </button>
+                        </div>
+                        <p style="margin: 0;">Check out my new portfolio website! Looking for feedback from the community. #webdev #portfolio</p>
+                    </div>
+                </div>
+
+                <div class="demo-card">
+                    <h3>📌 Another Post Example</h3>
+                    <div class="post-demo">
+                        <div class="post-header">
+                            <div>
+                                <div class="post-author">Sarah Lee</div>
+                                <div class="post-time">5 hours ago</div>
+                            </div>
+                            <button class="report-btn-small report-content-btn" 
+                                    data-content-type="post" 
+                                    data-content-id="790"
+                                    title="Report this post">
+                                <span>⚠</span>
+                            </button>
+                        </div>
+                        <p style="margin: 0;">Just completed a 30-day coding challenge! Learned so much about React and Node.js. Who wants to collaborate on a project?</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Member Reporting -->
+        <div class="demo-section">
+            <h2>👥 Report Project Members</h2>
+            <div class="demo-grid">
+                <div class="demo-card">
+                    <h3>🚀 Project: Mobile App Development</h3>
+                    <div style="background: white; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div class="avatar-demo" style="width: 40px; height: 40px; font-size: 16px;">MK</div>
+                                <div>
+                                    <div style="font-weight: 600; color: #12120D;">Mike Chen</div>
+                                    <div style="font-size: 0.85rem; color: #9ca3af;">Frontend Developer</div>
+                                </div>
+                            </div>
+                            <button class="report-btn-small report-project-member-btn" 
+                                    data-user-id="111" 
+                                    data-project-id="50"
+                                    title="Report this member">
+                                <span>⚠</span>
+                            </button>
+                        </div>
+                    </div>
+                    <p style="font-size: 0.9rem; color: #6b7280;">Report inappropriate behavior within project context</p>
+                </div>
+
+                <div class="demo-card">
+                    <h3>🚀 Project: E-commerce Platform</h3>
+                    <div style="background: white; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div class="avatar-demo" style="width: 40px; height: 40px; font-size: 16px;">ER</div>
+                                <div>
+                                    <div style="font-weight: 600; color: #12120D;">Emily Rodriguez</div>
+                                    <div style="font-size: 0.85rem; color: #9ca3af;">Backend Developer</div>
+                                </div>
+                            </div>
+                            <button class="report-btn-small report-project-member-btn" 
+                                    data-user-id="222" 
+                                    data-project-id="51"
+                                    title="Report this member">
+                                <span>⚠</span>
+                            </button>
+                        </div>
+                    </div>
+                    <p style="font-size: 0.9rem; color: #6b7280;">Report team member issues specific to this project</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Message Reporting -->
+        <div class="demo-section">
+            <h2>💬 Report Chat Messages</h2>
+            <div class="demo-grid">
+                <div class="demo-card">
+                    <h3>💬 Project Chat Messages</h3>
+                    <div class="message-demo">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                            <div style="font-weight: 600; color: #658396;">David Park</div>
+                            <button class="report-btn-small report-content-btn" 
+                                    data-content-type="chat_message" 
+                                    data-content-id="901"
+                                    title="Report this message">
+                                <span>⚠</span>
+                            </button>
+                        </div>
+                        <p style="margin: 0; color: #374151;">Hey team, I've pushed the latest changes to the dev branch. Please review when you get a chance!</p>
+                        <div style="font-size: 0.8rem; color: #9ca3af; margin-top: 0.5rem;">10:30 AM</div>
+                    </div>
+
+                    <div class="message-demo">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                            <div style="font-weight: 600; color: #658396;">Lisa Wong</div>
+                            <button class="report-btn-small report-content-btn" 
+                                    data-content-type="chat_message" 
+                                    data-content-id="902"
+                                    title="Report this message">
+                                <span>⚠</span>
+                            </button>
+                        </div>
+                        <p style="margin: 0; color: #374151;">Great work everyone! The UI is looking much better now. Let's schedule a meeting to discuss the next sprint.</p>
+                        <div style="font-size: 0.8rem; color: #9ca3af; margin-top: 0.5rem;">11:15 AM</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box" style="background: #fef3c7; border-color: #fbbf24;">
+            <h3 style="color: #d97706;">⚡ Testing Notes</h3>
+            <ul>
+                <li><strong>Login Required:</strong> You must be logged in to submit reports</li>
+                <li><strong>Duplicate Prevention:</strong> Try reporting the same item twice - second attempt will fail</li>
+                <li><strong>Self-Reporting:</strong> The system prevents users from reporting their own content</li>
+                <li><strong>Database:</strong> All reports are stored in their respective tables (reports, user_reports, content_reports)</li>
+                <li><strong>Status Tracking:</strong> Reports start with status "pending" for admin review</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Define URLROOT - update this to match your actual URL root
+        window.URLROOT = '<?php echo defined("URLROOT") ? URLROOT : "http://localhost/SkillXchange/public"; ?>';
+        
+        // For demo purposes without PHP
+        if (typeof window.URLROOT === 'undefined' || window.URLROOT.includes('<?php')) {
+            window.URLROOT = 'http://localhost/SkillXchange/public';
+        }
+        
+        console.log('URLROOT:', window.URLROOT);
+    </script>
+    <script src="../assets/js/reporting.js"></script>
+</body>
+</html>

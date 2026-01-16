@@ -4,127 +4,281 @@
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/organizations.css">
 
+<?php
+// app/views/organization/applications.php
+// Expects: $applications (array), $stats (object)
+?>
+
 <main class="site-main">
-    <div class="applications-container">
-        
-        <!-- Page Header -->
+    <div class="container org-dashboard">
         <div class="page-header">
             <h1>Project Applications</h1>
-            <p>Review and manage applications from users wanting to join your projects</p>
+            <p>Manage and review all project applications</p>
         </div>
 
-        <!-- Stats Bar -->
-        <div class="stats-bar">
-            <div class="stat-item">
-                <span class="stat-number" id="totalApplications">0</span>
-                <span class="stat-label">Total</span>
+        <!-- Stats Boxes -->
+        <div class="stats-grid">
+            <div class="stat-box total">
+                <div class="stat-number"><?= $stats->total ?? 0 ?></div>
+                <div class="stat-label">📥 Total</div>
             </div>
-            <div class="stat-item">
-                <span class="stat-number pending" id="pendingApplications">0</span>
-                <span class="stat-label">Pending</span>
+            <div class="stat-box pending">
+                <div class="stat-number"><?= $stats->pending ?? 0 ?></div>
+                <div class="stat-label">⏳ Pending</div>
             </div>
-            <div class="stat-item">
-                <span class="stat-number accepted" id="acceptedApplications">0</span>
-                <span class="stat-label">Accepted</span>
+            <div class="stat-box accepted">
+                <div class="stat-number"><?= $stats->accepted ?? 0 ?></div>
+                <div class="stat-label">✅ Accepted</div>
             </div>
-            <div class="stat-item">
-                <span class="stat-number rejected" id="rejectedApplications">0</span>
-                <span class="stat-label">Rejected</span>
+            <div class="stat-box rejected">
+                <div class="stat-number"><?= $stats->rejected ?? 0 ?></div>
+                <div class="stat-label">❌ Rejected</div>
             </div>
         </div>
 
-        <!-- Filters -->
-        <div class="filters-section">
-            <select class="filter-select" id="statusFilter">
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="accepted">Accepted</option>
-                <option value="rejected">Rejected</option>
-            </select>
-
-            <select class="filter-select" id="projectFilter">
-                <option value="all">All Projects</option>
-                <!-- Projects will be loaded dynamically -->
-            </select>
-
-            <input type="date" class="filter-select" id="dateFilter">
-        </div>
-
-        <!-- Applications List -->
-        <div class="applications-list" id="applicationsList">
-            <?php if(!empty($data['applications'])): ?>
-                <?php foreach($data['applications'] as $application): ?>
-                    <div class="application-card" data-status="<?= $application['status'] ?>">
-                        <div class="application-header">
-                            <div class="applicant-info">
-                                <div class="applicant-avatar">
-                                    <?= strtoupper(substr($application['user_name'], 0, 1)) ?>
-                                </div>
-                                <div>
-                                    <h3 class="applicant-name"><?= htmlspecialchars($application['user_name']) ?></h3>
-                                    <p class="applicant-title"><?= htmlspecialchars($application['user_title']) ?></p>
-                                </div>
-                            </div>
-                            <span class="status-badge <?= $application['status'] ?>">
-                                <?= ucfirst($application['status']) ?>
-                            </span>
-                        </div>
-
-                        <div class="application-body">
-                            <div class="project-info">
-                                <span class="project-label">Applied for:</span>
-                                <span class="project-name"><?= htmlspecialchars($application['project_name']) ?></span>
-                            </div>
-
-                            <div class="application-message">
-                                <h4>Application Message</h4>
-                                <p><?= nl2br(htmlspecialchars($application['message'])) ?></p>
-                            </div>
-
-                            <div class="applicant-skills">
-                                <?php 
-                                $skills = explode(',', $application['user_skills']);
-                                foreach($skills as $skill): 
-                                ?>
-                                    <span class="skill-tag"><?= trim($skill) ?></span>
-                                <?php endforeach; ?>
-                            </div>
-
-                            <div class="application-meta">
-                                <span class="meta-item">
-                                    📅 Applied: <?= date('M d, Y', strtotime($application['applied_at'])) ?>
-                                </span>
-                                <span class="meta-item">⭐ Rating: <?= $application['user_rating'] ?>/5</span>
-                                <span class="meta-item">📊 Completed Projects: <?= $application['completed_projects'] ?></span>
-                            </div>
-                        </div>
-
-                        <div class="application-actions">
-                            <button class="action-btn view-profile-btn" onclick="viewProfile(<?= $application['user_id'] ?>)">
-                                View Profile
-                            </button>
-                            <?php if($application['status'] == 'pending'): ?>
-                                <button class="action-btn reject-btn" onclick="handleApplication(<?= $application['id'] ?>, 'reject')">
-                                    Reject
-                                </button>
-                                <button class="action-btn accept-btn" onclick="handleApplication(<?= $application['id'] ?>, 'accept')">
-                                    Accept
-                                </button>
-                            <?php endif; ?>
-                        </div>
+        <!-- Pending Applications -->
+        <div class="applications-section">
+            <h2 class="section-title">⏳ Pending Applications</h2>
+            <div class="applications-list">
+                <?php 
+                    $pendingApps = array_filter($applications, function($app) { 
+                        return $app->status === 'pending'; 
+                    });
+                    if (empty($pendingApps)): 
+                ?>
+                    <div class="card empty-card">
+                        <div class="card-body">No pending applications.</div>
                     </div>
-                <?php endforeach; ?>
-            <?php else: ?>
-                <!-- Empty State -->
-                <div class="empty-state">
-                    <h3>No Applications Yet</h3>
-                    <p>When users apply to your projects, they'll appear here</p>
-                </div>
-            <?php endif; ?>
+                <?php else: ?>
+                    <?php foreach ($pendingApps as $app): ?>
+                        <div class="card application-card">
+                            <div class="card-left">
+                                <?php if (!empty($app->profile_picture)): ?>
+                                    <img src="<?= URLROOT . '/' . $app->profile_picture ?>" alt="avatar" class="avatar" />
+                                <?php else: ?>
+                                    <div class="avatar-initial"><?= strtoupper(substr($app->user_name ?? 'U',0,1)) ?></div>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="card-body">
+                                <div class="card-top">
+                                    <div class="app-user">
+                                        <strong><?= htmlspecialchars($app->user_name) ?></strong>
+                                        <small class="muted">(<?= htmlspecialchars($app->user_email) ?>)</small>
+                                    </div>
+                                    <div class="app-meta">
+                                        <span class="icon">⭐</span> Rating: <?= $app->user_rating ?? '0' ?>
+                                        &nbsp;•&nbsp; <span class="icon">👥</span> Completed: <?= $app->completed_projects ?? 0 ?>
+                                        &nbsp;•&nbsp; <small class="muted"><?= date('M d, Y H:i', strtotime($app->applied_at)) ?></small>
+                                    </div>
+                                </div>
+
+                                <div class="app-skills">
+                                    <?php if (!empty($app->user_skills)): ?>
+                                        <?php foreach (explode(',', $app->user_skills) as $sk): ?>
+                                            <span class="skill-tag"><?= htmlspecialchars(trim($sk)) ?></span>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </div>
+
+                                <!-- Detailed Application Info -->
+                                <div class="app-details">
+                                    <?php if (!empty($app->experience)): ?>
+                                    <div class="detail-section">
+                                        <strong>📚 Relevant Experience:</strong>
+                                        <p><?= nl2br(htmlspecialchars($app->experience)) ?></p>
+                                    </div>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($app->skills)): ?>
+                                    <div class="detail-section">
+                                        <strong>🛠️ Skills Match:</strong>
+                                        <p><?= nl2br(htmlspecialchars($app->skills)) ?></p>
+                                    </div>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($app->contribution)): ?>
+                                    <div class="detail-section">
+                                        <strong>💡 How They'll Contribute:</strong>
+                                        <p><?= nl2br(htmlspecialchars($app->contribution)) ?></p>
+                                    </div>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($app->motivation)): ?>
+                                    <div class="detail-section">
+                                        <strong>🎯 Motivation:</strong>
+                                        <p><?= nl2br(htmlspecialchars($app->motivation)) ?></p>
+                                    </div>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($app->commitment) || !empty($app->duration)): ?>
+                                    <div class="detail-section inline">
+                                        <?php if (!empty($app->commitment)): ?>
+                                        <div class="inline-item">
+                                            <strong>⏱️ Time Commitment:</strong>
+                                            <p><?= htmlspecialchars($app->commitment) ?></p>
+                                        </div>
+                                        <?php endif; ?>
+                                        <?php if (!empty($app->duration)): ?>
+                                        <div class="inline-item">
+                                            <strong>📅 Duration:</strong>
+                                            <p><?= htmlspecialchars($app->duration) ?></p>
+                                        </div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($app->portfolio)): ?>
+                                    <div class="detail-section">
+                                        <strong>🔗 Portfolio:</strong>
+                                        <p><a href="<?= htmlspecialchars($app->portfolio) ?>" target="_blank" class="portfolio-link"><?= htmlspecialchars($app->portfolio) ?></a></p>
+                                    </div>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div class="app-message" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                                    <strong>Additional Notes:</strong>
+                                    <p><?= nl2br(htmlspecialchars($app->message ?? 'No additional notes')) ?></p>
+                                </div>
+
+                                <div class="app-footer">
+                                    <div class="project-name">Project: <strong><?= htmlspecialchars($app->project_name) ?></strong></div>
+                                    <div class="status-actions">
+                                        <a href="<?= URLROOT . '/organization/handleApplication/' . $app->id . '/accept' ?>" class="btn btn-success confirm-action" data-confirm="Accept applicant?">Accept</a>
+                                        <a href="<?= URLROOT . '/organization/handleApplication/' . $app->id . '/reject' ?>" class="btn btn-danger confirm-action" data-confirm="Reject applicant?" style="margin-left:6px;">Reject</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Accepted Applications -->
+        <div class="applications-section">
+            <h2 class="section-title">✅ Accepted Applications</h2>
+            <div class="applications-list">
+                <?php 
+                    $acceptedApps = array_filter($applications, function($app) { 
+                        return $app->status === 'accepted'; 
+                    });
+                    if (empty($acceptedApps)): 
+                ?>
+                    <div class="card empty-card">
+                        <div class="card-body">No accepted applications yet.</div>
+                    </div>
+                <?php else: ?>
+                    <?php foreach ($acceptedApps as $app): ?>
+                        <div class="card application-card">
+                            <div class="card-left">
+                                <?php if (!empty($app->profile_picture)): ?>
+                                    <img src="<?= URLROOT . '/' . $app->profile_picture ?>" alt="avatar" class="avatar" />
+                                <?php else: ?>
+                                    <div class="avatar-initial"><?= strtoupper(substr($app->user_name ?? 'U',0,1)) ?></div>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="card-body">
+                                <div class="card-top">
+                                    <div class="app-user">
+                                        <strong><?= htmlspecialchars($app->user_name) ?></strong>
+                                        <small class="muted">(<?= htmlspecialchars($app->user_email) ?>)</small>
+                                    </div>
+                                    <div class="app-meta">
+                                        <span class="icon">⭐</span> Rating: <?= $app->user_rating ?? '0' ?>
+                                        &nbsp;•&nbsp; <span class="icon">👥</span> Completed: <?= $app->completed_projects ?? 0 ?>
+                                        &nbsp;•&nbsp; <small class="muted"><?= date('M d, Y H:i', strtotime($app->applied_at)) ?></small>
+                                    </div>
+                                </div>
+
+                                <div class="app-skills">
+                                    <?php if (!empty($app->user_skills)): ?>
+                                        <?php foreach (explode(',', $app->user_skills) as $sk): ?>
+                                            <span class="skill-tag"><?= htmlspecialchars(trim($sk)) ?></span>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div class="app-message">
+                                    <strong>Message:</strong>
+                                    <p><?= nl2br(htmlspecialchars($app->message ?? '')) ?></p>
+                                </div>
+
+                                <div class="app-footer">
+                                    <div class="project-name">Project: <strong><?= htmlspecialchars($app->project_name) ?></strong></div>
+                                    <span class="status-badge accepted">Accepted</span>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Rejected Applications -->
+        <div class="applications-section">
+            <h2 class="section-title">❌ Rejected Applications</h2>
+            <div class="applications-list">
+                <?php 
+                    $rejectedApps = array_filter($applications, function($app) { 
+                        return $app->status === 'rejected'; 
+                    });
+                    if (empty($rejectedApps)): 
+                ?>
+                    <div class="card empty-card">
+                        <div class="card-body">No rejected applications.</div>
+                    </div>
+                <?php else: ?>
+                    <?php foreach ($rejectedApps as $app): ?>
+                        <div class="card application-card">
+                            <div class="card-left">
+                                <?php if (!empty($app->profile_picture)): ?>
+                                    <img src="<?= URLROOT . '/' . $app->profile_picture ?>" alt="avatar" class="avatar" />
+                                <?php else: ?>
+                                    <div class="avatar-initial"><?= strtoupper(substr($app->user_name ?? 'U',0,1)) ?></div>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="card-body">
+                                <div class="card-top">
+                                    <div class="app-user">
+                                        <strong><?= htmlspecialchars($app->user_name) ?></strong>
+                                        <small class="muted">(<?= htmlspecialchars($app->user_email) ?>)</small>
+                                    </div>
+                                    <div class="app-meta">
+                                        <span class="icon">⭐</span> Rating: <?= $app->user_rating ?? '0' ?>
+                                        &nbsp;•&nbsp; <span class="icon">👥</span> Completed: <?= $app->completed_projects ?? 0 ?>
+                                        &nbsp;•&nbsp; <small class="muted"><?= date('M d, Y H:i', strtotime($app->applied_at)) ?></small>
+                                    </div>
+                                </div>
+
+                                <div class="app-skills">
+                                    <?php if (!empty($app->user_skills)): ?>
+                                        <?php foreach (explode(',', $app->user_skills) as $sk): ?>
+                                            <span class="skill-tag"><?= htmlspecialchars(trim($sk)) ?></span>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div class="app-message">
+                                    <strong>Message:</strong>
+                                    <p><?= nl2br(htmlspecialchars($app->message ?? '')) ?></p>
+                                </div>
+
+                                <div class="app-footer">
+                                    <div class="project-name">Project: <strong><?= htmlspecialchars($app->project_name) ?></strong></div>
+                                    <span class="status-badge rejected">Rejected</span>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 </main>
 
-<script src="<?= URLROOT ?>/assets/js/organizations.js" defer></script>
+<script src="<?= URLROOT ?>/js/project_applications.js"></script>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>

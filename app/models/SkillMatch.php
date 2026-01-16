@@ -38,15 +38,9 @@ public function getAllMatchesWithScores($userId) {
             CASE 
                 WHEN EXISTS (
                     SELECT 1 FROM exchanges 
-                    WHERE ((sender_id = :current_user_id AND receiver_id = u.id)
-                        OR (sender_id = u.id AND receiver_id = :current_user_id))
-                    AND status = 'pending'
-                ) THEN 'pending'
-                WHEN EXISTS (
-                    SELECT 1 FROM exchanges 
-                    WHERE ((sender_id = :current_user_id AND receiver_id = u.id)
-                        OR (sender_id = u.id AND receiver_id = :current_user_id))
-                    AND status = 'accepted'
+                    WHERE ((requester_id = :current_user_id AND receiver_id = u.id)
+                        OR (requester_id = u.id AND receiver_id = :current_user_id))
+                    AND status = 'active'
                 ) THEN 'connected'
                 ELSE 'available'
             END AS connection_status

@@ -8,6 +8,9 @@
 <div class="dashboard-container">
     <div class="dashboard-main">
         
+        <!-- Link Reporting CSS -->
+<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/reporting.css">
+
         <!-- Communities List Page -->
         <div id="communitiesListPage" class="communities-page">
             <div class="page-header">
@@ -57,8 +60,10 @@
 window.communitiesData = <?= json_encode($data['communities']); ?>;
 window.currentUserId = <?= $_SESSION['user_id'] ?? 1; ?>;
 window.currentUserName = '<?= $data['user']['name'] ?? 'You'; ?>';
+window.URLROOT = '<?= URLROOT ?>';
 </script>
 
 <script src="<?= URLROOT ?>/assets/js/community_forum.js"></script>
+<script src="<?= URLROOT ?>/assets/js/reporting.js"></script>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>

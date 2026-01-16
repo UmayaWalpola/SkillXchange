@@ -18,4 +18,5 @@
             <a href="<?= URLROOT ?>/organization/wallet" class="sidebar-item <?= (strpos($_SERVER['REQUEST_URI'], '/wallet') !== false) ? 'active' : '' ?>">
                 <span>Wallet</span>
             </a>
-</nav>
+        </nav>
+    </div>

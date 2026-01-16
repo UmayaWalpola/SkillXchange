@@ -360,14 +360,27 @@ public function handleRequest() {
     public function projects() {
         $userId = $this->checkAuth();
         
+        $projectModel = $this->model('Project');
+        $projects = $projectModel->getProjectsForUser($userId);
+        
+        // Debug: Log what we're getting
+        error_log('DEBUG: User ID = ' . $userId);
+        error_log('DEBUG: Projects returned: ' . count($projects ?? []));
+        
+        // If no projects found, show all active projects (for testing/browse)
+        if (empty($projects)) {
+            error_log('DEBUG: No projects found for user, loading all active projects');
+            $projects = $projectModel->getAllActiveProjects();
+            error_log('DEBUG: Loaded ' . count($projects ?? []) . ' active projects');
+        }
+        
         $user = $this->getUserData($userId);
-        $projects = $this->getAllProjects();
         
         $data = [
             'title' => 'Projects',
             'user' => $user,
             'page' => 'projects',
-            'projects' => $projects
+            'projects' => $projects ?? []
         ];
         
         $this->view('users/projects', $data);
@@ -541,54 +554,143 @@ public function handleRequest() {
     // ============================================
 
     private function getUserData($userId) {
-        return [
-            'id' => $userId,
-            'name' => 'Sarah Johnson',
-            'username' => 'sarahjohnson',
-            'email' => 'sarah@example.com',
-            'bio' => 'Passionate educator and developer.',
-            'avatar' => 'SJ',
-            'connections' => 87,
-            'skills_taught' => 24,
-            'skills_learning' => 12,
-            'rating' => 4.8,
-            'reviews_count' => 24
-        ];
+        try {
+            // Get user basic info
+            $this->db->query("
+                SELECT u.id, u.username, u.email, u.bio, u.profile_picture,
+                       COALESCE(us.connections_count, 0) as connections,
+                       COALESCE(us.skills_taught_count, 0) as skills_taught,
+                       COALESCE(us.skills_learning_count, 0) as skills_learning,
+                       COALESCE(us.hours_exchanged, 0) as hours_exchanged
+                FROM users u
+                LEFT JOIN user_stats us ON u.id = us.user_id
+                WHERE u.id = :user_id
+            ");
+            
+            $this->db->bind(':user_id', $userId);
+            $user = $this->db->single();
+            
+            if (!$user) {
+                throw new Exception('User not found');
+            }
+            
+            // Calculate average rating
+            $this->db->query("
+                SELECT AVG(rating) as avg_rating, COUNT(*) as review_count
+                FROM user_feedback
+                WHERE user_id = :user_id
+            ");
+            $this->db->bind(':user_id', $userId);
+            $feedback = $this->db->single();
+            
+            return [
+                'id' => $user->id,
+                'name' => $user->username, // Use username as display name
+                'username' => $user->username,
+                'email' => $user->email,
+                'bio' => $user->bio ?? 'No bio yet.',
+                'avatar' => strtoupper(substr($user->username, 0, 2)),
+                'profile_picture' => $user->profile_picture,
+                'connections' => $user->connections,
+                'skills_taught' => $user->skills_taught,
+                'skills_learning' => $user->skills_learning,
+                'hours_exchanged' => $user->hours_exchanged,
+                'rating' => $feedback->avg_rating ? round($feedback->avg_rating, 1) : 0,
+                'reviews_count' => $feedback->review_count
+            ];
+            
+        } catch (Exception $e) {
+            error_log("getUserData error: " . $e->getMessage());
+            // Return fallback data
+            return [
+                'id' => $userId,
+                'name' => 'User',
+                'username' => 'user',
+                'email' => '',
+                'bio' => 'No bio yet.',
+                'avatar' => 'U',
+                'profile_picture' => null,
+                'connections' => 0,
+                'skills_taught' => 0,
+                'skills_learning' => 0,
+                'hours_exchanged' => 0,
+                'rating' => 0,
+                'reviews_count' => 0
+            ];
+        }
     }
 
     private function getUserSkills($userId) {
-        return [
-            'teaches' => [
-                ['name' => 'Web Development', 'level' => 'Advanced'],
-                ['name' => 'UI/UX Design', 'level' => 'Intermediate'],
-                ['name' => 'JavaScript', 'level' => 'Advanced'],
-                ['name' => 'React', 'level' => 'Intermediate']
-            ],
-            'learns' => [
-                ['name' => 'Data Science', 'level' => 'Beginner'],
-                ['name' => 'Machine Learning', 'level' => 'Beginner'],
-                ['name' => 'Python', 'level' => 'Intermediate']
-            ]
-        ];
+        return $this->getUserSkillsFromDB($userId);
     }
 
     private function getUserProjects($userId) {
-        return [
-            'completed' => [
-                ['title' => 'E-commerce Redesign', 'description' => 'Improved conversion by 25%.'],
-                ['title' => 'Portfolio Website', 'description' => 'Built responsive portfolio site.']
-            ],
-            'in_progress' => [
-                ['title' => 'AI Chatbot', 'description' => 'Building an NLP chatbot.']
-            ]
-        ];
+        try {
+            $this->db->query("
+                SELECT p.id, p.name as title, p.description, p.status
+                FROM project_members pm
+                INNER JOIN projects p ON pm.project_id = p.id
+                WHERE pm.user_id = :user_id AND pm.status = 'active'
+                ORDER BY pm.joined_at DESC
+            ");
+            
+            $this->db->bind(':user_id', $userId);
+            $results = $this->db->resultSet();
+            
+            $projects = ['completed' => [], 'in_progress' => []];
+            
+            foreach ($results as $project) {
+                $projectData = [
+                    'title' => $project->title,
+                    'description' => substr($project->description, 0, 100) . '...'
+                ];
+                
+                if ($project->status === 'completed') {
+                    $projects['completed'][] = $projectData;
+                } else {
+                    $projects['in_progress'][] = $projectData;
+                }
+            }
+            
+            return $projects;
+            
+        } catch (Exception $e) {
+            error_log("getUserProjects error: " . $e->getMessage());
+            return ['completed' => [], 'in_progress' => []];
+        }
     }
 
     private function getUserFeedback($userId) {
-        return [
-            ['reviewer_name' => 'Alex Chen', 'date' => '2 weeks ago', 'rating' => 5, 'comment' => 'Excellent mentor!'],
-            ['reviewer_name' => 'Maria Garcia', 'date' => '1 month ago', 'rating' => 5, 'comment' => 'Great teacher!']
-        ];
+        try {
+            $this->db->query("
+                SELECT uf.rating, uf.comment, uf.created_at,
+                       u.username as reviewer_name
+                FROM user_feedback uf
+                INNER JOIN users u ON uf.reviewer_id = u.id
+                WHERE uf.user_id = :user_id
+                ORDER BY uf.created_at DESC
+                LIMIT 10
+            ");
+            
+            $this->db->bind(':user_id', $userId);
+            $results = $this->db->resultSet();
+            
+            $feedback = [];
+            foreach ($results as $item) {
+                $feedback[] = [
+                    'reviewer_name' => $item->reviewer_name,
+                    'date' => $this->timeAgo($item->created_at),
+                    'rating' => $item->rating,
+                    'comment' => $item->comment
+                ];
+            }
+            
+            return $feedback;
+            
+        } catch (Exception $e) {
+            error_log("getUserFeedback error: " . $e->getMessage());
+            return [];
+        }
     }
 
     private function getNotifications($userId) {
@@ -647,10 +749,69 @@ public function handleRequest() {
     }
 
     private function getAllCommunities() {
-        return [
-            ['id' => 1, 'name' => 'Web Development', 'icon' => '🌐', 'members' => 1250],
-            ['id' => 2, 'name' => 'Data Science & AI', 'icon' => '🤖', 'members' => 856]
-        ];
+        try {
+            $this->db->query("
+                SELECT 
+                    c.id,
+                    c.name,
+                    c.description,
+                    c.privacy,
+                    c.status,
+                    COUNT(DISTINCT cm.id) as members,
+                    COUNT(DISTINCT p.id) as totalPosts
+                FROM communities c
+                LEFT JOIN community_members cm ON c.id = cm.community_id
+                LEFT JOIN posts p ON c.id = p.community_id
+                WHERE c.status = 'active'
+                GROUP BY c.id, c.name, c.description, c.privacy, c.status
+                ORDER BY members DESC
+            ");
+            
+            $results = $this->db->resultSet();
+            
+            $communities = [];
+            $icons = ['🌐', '🤖', '💻', '📊', '🎨', '📱', '🔧', '📚'];
+            
+            foreach ($results as $index => $community) {
+                $communities[] = [
+                    'id' => $community->id,
+                    'name' => $community->name,
+                    'description' => $community->description ?? 'Join this community',
+                    'icon' => $icons[$index % count($icons)],
+                    'members' => $community->members ?? 0,
+                    'totalPosts' => $community->totalPosts ?? 0,
+                    'privacy' => $community->privacy,
+                    'status' => $community->status
+                ];
+            }
+            
+            return $communities;
+            
+        } catch (Exception $e) {
+            error_log("getAllCommunities error: " . $e->getMessage());
+            return [
+                [
+                    'id' => 1, 
+                    'name' => 'Web Development', 
+                    'description' => 'A community for web developers',
+                    'icon' => '🌐', 
+                    'members' => 1250,
+                    'totalPosts' => 320,
+                    'privacy' => 'public',
+                    'status' => 'active'
+                ],
+                [
+                    'id' => 2, 
+                    'name' => 'Data Science & AI', 
+                    'description' => 'Learn and share data science knowledge',
+                    'icon' => '🤖', 
+                    'members' => 856,
+                    'totalPosts' => 215,
+                    'privacy' => 'public',
+                    'status' => 'active'
+                ]
+            ];
+        }
     }
 
     private function getAllProjects() {

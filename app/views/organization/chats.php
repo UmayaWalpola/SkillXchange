@@ -3,110 +3,173 @@
 
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/organizations.css">
+<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/reporting.css">
 
 <main class="site-main">
     <div class="chats-container">
-        
-        <!-- Page Header -->
         <div class="page-header">
             <h1>Project Chats</h1>
             <p>Communicate with your project teams</p>
         </div>
 
-        <!-- Chat Layout -->
         <div class="chat-layout">
-            <!-- Projects Sidebar -->
-            <div class="projects-sidebar">
-                <div class="sidebar-header">
-                    <h3>Your Projects</h3>
-                    <input type="text" class="search-input" placeholder="Search..." id="projectSearch">
-                </div>
-
-                <div class="projects-list" id="projectsList">
-                    <?php if(!empty($data['projects'])): ?>
-                        <?php foreach($data['projects'] as $index => $project): ?>
-                            <div class="project-item <?= $index === 0 ? 'active' : '' ?>" 
-                                 onclick="selectProject(<?= $project['id'] ?>)">
-                                <div class="project-avatar <?= $project['category'] ?>">
-                                    <?php 
-                                        $icons = [
-                                            'web' => '💻',
-                                            'mobile' => '📱',
-                                            'data' => '📊',
-                                            'design' => '🎨'
-                                        ];
-                                        echo $icons[$project['category']] ?? '💻';
-                                    ?>
-                                </div>
-                                <div class="project-details">
-                                    <h4 class="project-name"><?= htmlspecialchars($project['name']) ?></h4>
-                                    <p class="last-message"><?= htmlspecialchars($project['last_message'] ?? 'No messages yet') ?></p>
-                                </div>
-                                <?php if($project['unread_count'] > 0): ?>
-                                    <div class="project-badge"><?= $project['unread_count'] ?></div>
-                                <?php endif; ?>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <!-- Chat Area -->
-            <div class="chat-area">
-                <?php if(!empty($data['projects'])): ?>
-                    <!-- Chat Header -->
+            <div class="chat-area" style="flex:1;">
+                <?php if (!empty($data['project'])): ?>
                     <div class="chat-header">
                         <div class="chat-project-info">
                             <div class="project-avatar web">💻</div>
                             <div>
-                                <h3 class="chat-project-name" id="chatProjectName">Select a project</h3>
-                                <p class="members-count" id="membersCount">0 members online</p>
+                                <h3 class="chat-project-name" id="chatProjectName"><?= htmlspecialchars($data['project']->name) ?></h3>
+                                <p class="members-count" id="membersCount"><?= count($data['members'] ?? []) ?> members</p>
                             </div>
                         </div>
-                        <div class="chat-actions">
-                            <button class="icon-btn" title="Project Details" onclick="showProjectDetails()">ℹ️</button>
-                            <button class="icon-btn" title="Members" onclick="toggleMembers()">👥</button>
-                        </div>
                     </div>
 
-                    <!-- Messages Area -->
                     <div class="messages-area" id="messagesArea">
-                        <!-- Messages will be loaded dynamically via JavaScript -->
+                        <div class="empty-state" id="emptyState">No messages yet — start the conversation!</div>
                     </div>
 
-                    <!-- Message Input -->
                     <div class="message-input-container">
-                        <button class="attachment-btn" title="Attach file">📎</button>
-                        <input type="text" class="message-input" placeholder="Type your message..." id="messageInput">
-                        <button class="send-btn" onclick="sendMessage()">Send</button>
+                        <textarea id="chatInput" class="message-input" rows="2" placeholder="Type your message..."></textarea>
+                        <button id="sendBtn" class="send-btn">Send</button>
                     </div>
+                    <div id="typingIndicator" class="text-muted" style="margin-top:4px;font-size:0.8rem;display:none;">Someone is typing…</div>
                 <?php else: ?>
-                    <!-- Empty State -->
                     <div class="chat-empty-state">
                         <h3>No Projects Yet</h3>
                         <p>Create a project to start chatting with your team</p>
-                        <button class="create-btn" onclick="window.location.href='<?= URLROOT ?>/organization/projects'">
-                            Create Project
-                        </button>
+                        <button class="create-btn" onclick="window.location.href='<?= URLROOT ?>/organization/projects'">Create Project</button>
                     </div>
                 <?php endif; ?>
-            </div>
-
-            <!-- Members Sidebar (Optional - can be toggled) -->
-            <div class="members-sidebar" id="membersSidebar" style="display: none;">
-                <div class="sidebar-header">
-                    <h3>Project Members</h3>
-                    <button class="close-btn" onclick="toggleMembers()">&times;</button>
-                </div>
-
-                <div class="members-list" id="membersList">
-                    <!-- Members will be loaded dynamically -->
-                </div>
             </div>
         </div>
     </div>
 </main>
 
-<script src="<?= URLROOT ?>/assets/js/organizations.js" defer></script>
+<script>
+const CHAT_PROJECT_ID = <?= isset($data['projectId']) ? (int)$data['projectId'] : 0 ?>;
+let lastMessageCount = 0;
+let typingTimeout = null;
+
+function renderMessages(payload) {
+    const area = document.getElementById('messagesArea');
+    const emptyState = document.getElementById('emptyState');
+    if (!area) return;
+
+    const messages = payload.messages || [];
+    const currentUserId = payload.current_user_id;
+
+    area.innerHTML = '';
+    if (messages.length === 0) {
+        if (emptyState) emptyState.style.display = 'block';
+        area.appendChild(emptyState);
+        return;
+    }
+
+    if (emptyState) emptyState.style.display = 'none';
+
+    messages.forEach(m => {
+        const isMine = (parseInt(m.sender_id, 10) === parseInt(currentUserId, 10));
+        const wrapper = document.createElement('div');
+        wrapper.className = 'chat-message-row ' + (isMine ? 'mine' : 'theirs');
+
+        const bubble = document.createElement('div');
+        bubble.className = 'chat-bubble ' + (isMine ? 'mine' : 'theirs');
+
+        const header = document.createElement('div');
+        header.className = 'chat-bubble-header';
+        header.textContent = m.sender_name;
+
+        const body = document.createElement('div');
+        body.className = 'chat-bubble-body';
+        body.textContent = m.message;
+
+        const meta = document.createElement('div');
+        meta.className = 'chat-bubble-meta';
+        meta.textContent = m.created_at;
+
+        // Add report button for messages from other users
+        if (!isMine) {
+            const reportBtn = document.createElement('button');
+            reportBtn.className = 'report-btn-small report-content-btn';
+            reportBtn.setAttribute('data-content-type', 'chat_message');
+            reportBtn.setAttribute('data-content-id', m.id);
+            reportBtn.title = 'Report this message';
+            reportBtn.style.marginTop = '0.5rem';
+            reportBtn.innerHTML = '<span>⚠</span>';
+            bubble.appendChild(reportBtn);
+        }
+
+        bubble.appendChild(header);
+        bubble.appendChild(body);
+        bubble.appendChild(meta);
+        wrapper.appendChild(bubble);
+        area.appendChild(wrapper);
+    });
+
+    area.scrollTop = area.scrollHeight;
+}
+
+function fetchMessages() {
+    if (!CHAT_PROJECT_ID) return;
+    fetch(`${window.URLROOT}/chat/fetchMessages?project_id=${CHAT_PROJECT_ID}`, { credentials: 'same-origin' })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+            renderMessages(data);
+        })
+        .catch(() => {});
+}
+
+function sendMessage() {
+    const input = document.getElementById('chatInput');
+    if (!input) return;
+    const msg = input.value.trim();
+    if (!msg || !CHAT_PROJECT_ID) return;
+
+    fetch(`${window.URLROOT}/chat/sendMessage`, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `project_id=${encodeURIComponent(CHAT_PROJECT_ID)}&message=${encodeURIComponent(msg)}`
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) return;
+        input.value = '';
+        fetchMessages();
+    })
+    .catch(() => {});
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('sendBtn');
+    const input = document.getElementById('chatInput');
+    if (btn) btn.addEventListener('click', sendMessage);
+    if (input) {
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        input.addEventListener('input', () => {
+            const ind = document.getElementById('typingIndicator');
+            if (!ind) return;
+            ind.style.display = 'block';
+            if (typingTimeout) clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => { ind.style.display = 'none'; }, 1000);
+        });
+    }
+
+    setInterval(fetchMessages, 2000);
+    fetchMessages();
+});
+
+// Define URLROOT for reporting system
+window.URLROOT = '<?= URLROOT ?>';
+</script>
+
+<script src="<?= URLROOT ?>/assets/js/reporting.js"></script>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>

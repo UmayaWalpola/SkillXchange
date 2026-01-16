@@ -109,7 +109,11 @@ function markAsReviewed(feedbackId) {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
+<<<<<<< HEAD
             body: feedback_id=${feedbackId}
+=======
+            body: `feedback_id=${feedbackId}`
+>>>>>>> origin/feature/manager
         })
         .then(response => response.json())
         .then(data => {

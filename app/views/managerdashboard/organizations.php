@@ -82,7 +82,11 @@
 <script>
 function viewOrganization(orgId) {
     // Get organization data from the table row
+<<<<<<< HEAD
     const row = document.querySelector(tr[data-org-id="${orgId}"]);
+=======
+    const row = document.querySelector(`tr[data-org-id="${orgId}"]`);
+>>>>>>> origin/feature/manager
     const cells = row.getElementsByTagName('td');
     
     const orgDetails = `
@@ -104,21 +108,33 @@ function closeViewModal() {
 }
 
 function removeOrganization(orgId, orgName) {
+<<<<<<< HEAD
     if (confirm(Are you sure you want to remove "${orgName}"? This action cannot be undone.)) {
+=======
+    if (confirm(`Are you sure you want to remove "${orgName}"? This action cannot be undone.`)) {
+>>>>>>> origin/feature/manager
         // TODO: Implement actual AJAX call to remove organization
         fetch('<?= URLROOT ?>/managerdashboard/removeOrganization', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
+<<<<<<< HEAD
             body: org_id=${orgId}
+=======
+            body: `org_id=${orgId}`
+>>>>>>> origin/feature/manager
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 alert(data.message);
                 // Remove the row from table
+<<<<<<< HEAD
                 document.querySelector(tr[data-org-id="${orgId}"]).remove();
+=======
+                document.querySelector(`tr[data-org-id="${orgId}"]`).remove();
+>>>>>>> origin/feature/manager
             } else {
                 alert('Error removing organization');
             }
