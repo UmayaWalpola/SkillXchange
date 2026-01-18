@@ -39,7 +39,7 @@
             $completionPct = $metrics->completion_percentage ?? 0;
         ?>
         <div class="progress-overview-container" style="margin-bottom:30px;background:#ffffff;border:2px solid var(--blue-bg);border-radius:16px;padding:35px;">
-            <h2 style="font-size:22px;margin-bottom:25px;color:var(--dark-bg);font-weight:600;padding-bottom:15px;border-bottom:2px solid var(--blue-bg);">📊 Project Progress Overview</h2>
+            <h2 style="font-size:22px;margin-bottom:25px;color:var(--dark-bg);font-weight:600;padding-bottom:15px;border-bottom:2px solid var(--blue-bg);display:flex;align-items:center;gap:10px;"><i class="ph ph-chart-bar" style="font-size:24px;color:var(--primary-blue);"></i> Project Progress Overview</h2>
             
             <!-- Main Metrics Grid -->
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-bottom:25px;">
@@ -52,42 +52,42 @@
                 
                 <!-- Total Tasks Card -->
                 <div style="background:white;border:2px solid var(--blue-bg);border-radius:12px;padding:25px;transition:all 0.3s ease;">
-                    <div style="font-size:14px;color:#666;margin-bottom:8px;font-weight:600;">📋 Total Tasks</div>
+                    <div style="font-size:14px;color:#666;margin-bottom:8px;font-weight:600;display:flex;align-items:center;gap:6px;"><i class="ph ph-clipboard-text" style="font-size:18px;"></i> Total Tasks</div>
                     <div style="font-size:36px;font-weight:700;color:var(--dark-bg);margin-bottom:5px;"><?= $totalTasks ?></div>
                     <div style="font-size:13px;color:#666;">All assigned tasks</div>
                 </div>
                 
                 <!-- To-Do Tasks Card -->
                 <div style="background:white;border:2px solid var(--blue-bg);border-radius:12px;padding:25px;transition:all 0.3s ease;">
-                    <div style="font-size:14px;color:#666;margin-bottom:8px;font-weight:600;">📌 To-Do</div>
+                    <div style="font-size:14px;color:#666;margin-bottom:8px;font-weight:600;display:flex;align-items:center;gap:6px;"><i class="ph ph-circle-dashed" style="font-size:18px;"></i> To-Do</div>
                     <div style="font-size:36px;font-weight:700;color:#f59e0b;margin-bottom:5px;"><?= $todoTasks ?></div>
                     <div style="font-size:13px;color:#666;">Pending tasks</div>
                 </div>
                 
                 <!-- In Progress Card -->
                 <div style="background:white;border:2px solid var(--blue-bg);border-radius:12px;padding:25px;transition:all 0.3s ease;">
-                    <div style="font-size:14px;color:#666;margin-bottom:8px;font-weight:600;">🔄 In Progress</div>
+                    <div style="font-size:14px;color:#666;margin-bottom:8px;font-weight:600;display:flex;align-items:center;gap:6px;"><i class="ph ph-spinner" style="font-size:18px;"></i> In Progress</div>
                     <div style="font-size:36px;font-weight:700;color:var(--primary-blue);margin-bottom:5px;"><?= $inProgressTasks ?></div>
                     <div style="font-size:13px;color:#666;">Active work</div>
                 </div>
                 
                 <!-- Completed Card -->
                 <div style="background:white;border:2px solid var(--blue-bg);border-radius:12px;padding:25px;transition:all 0.3s ease;">
-                    <div style="font-size:14px;color:#666;margin-bottom:8px;font-weight:600;">✅ Completed</div>
+                    <div style="font-size:14px;color:#666;margin-bottom:8px;font-weight:600;display:flex;align-items:center;gap:6px;"><i class="ph ph-check-circle" style="font-size:18px;"></i> Completed</div>
                     <div style="font-size:36px;font-weight:700;color:#10b981;margin-bottom:5px;"><?= $completedTasks ?></div>
                     <div style="font-size:13px;color:#666;">Finished tasks</div>
                 </div>
                 
                 <!-- Overdue Card -->
                 <div style="background:white;border:2px solid <?= $overdueTasks > 0 ? '#ef4444' : 'var(--blue-bg)' ?>;border-radius:12px;padding:25px;transition:all 0.3s ease;<?= $overdueTasks > 0 ? 'background:#fee2e2;' : '' ?>">
-                    <div style="font-size:14px;color:#666;margin-bottom:8px;font-weight:600;">⚠️ Overdue</div>
+                    <div style="font-size:14px;color:#666;margin-bottom:8px;font-weight:600;display:flex;align-items:center;gap:6px;"><i class="ph ph-warning" style="font-size:18px;"></i> Overdue</div>
                     <div style="font-size:36px;font-weight:700;color:#ef4444;margin-bottom:5px;"><?= $overdueTasks ?></div>
                     <div style="font-size:13px;color:#666;">Needs attention</div>
                 </div>
                 
                 <!-- Active Members Card -->
                 <div style="background:white;border:2px solid var(--blue-bg);border-radius:12px;padding:25px;transition:all 0.3s ease;">
-                    <div style="font-size:14px;color:#666;margin-bottom:8px;font-weight:600;">👥 Active Members</div>
+                    <div style="font-size:14px;color:#666;margin-bottom:8px;font-weight:600;display:flex;align-items:center;gap:6px;"><i class="ph ph-users" style="font-size:18px;"></i> Active Members</div>
                     <div style="font-size:36px;font-weight:700;color:var(--primary-blue);margin-bottom:5px;"><?= $activeMembers ?></div>
                     <div style="font-size:13px;color:#666;">Team members</div>
                 </div>
@@ -97,7 +97,7 @@
             <?php if(isset($data['memberBreakdown']) && !empty($data['memberBreakdown'])): ?>
             <div style="background:white;border:2px solid var(--blue-bg);border-radius:12px;padding:25px;margin-bottom:25px;">
                 <h3 style="font-size:18px;margin-bottom:20px;color:var(--dark-bg);font-weight:600;display:flex;align-items:center;gap:10px;">
-                    <span style="background:linear-gradient(135deg,var(--primary-blue),var(--accent-blue));color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">👤</span>
+                    <span style="background:linear-gradient(135deg,var(--primary-blue),var(--accent-blue));color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;"><i class="ph-bold ph-user"></i></span>
                     Member Task Performance
                 </h3>
                 <div style="display:grid;gap:15px;">
@@ -123,10 +123,10 @@
                             </div>
                             
                             <div style="display:flex;align-items:center;gap:15px;margin-bottom:10px;">
-                                <span style="font-size:13px;color:#666;font-weight:500;">📋 <?= $memberTotal ?> tasks</span>
-                                <span style="font-size:13px;color:#10b981;font-weight:500;">✓ <?= $memberCompleted ?> done</span>
+                                <span style="font-size:13px;color:#666;font-weight:500;display:flex;align-items:center;gap:4px;"><i class="ph ph-list-bullets" style="font-size:14px;"></i> <?= $memberTotal ?> tasks</span>
+                                <span style="font-size:13px;color:#10b981;font-weight:500;display:flex;align-items:center;gap:4px;"><i class="ph ph-check" style="font-size:14px;"></i> <?= $memberCompleted ?> done</span>
                                 <?php if($memberOverdue > 0): ?>
-                                    <span style="font-size:13px;color:#ef4444;font-weight:600;">⚠️ <?= $memberOverdue ?> overdue</span>
+                                    <span style="font-size:13px;color:#ef4444;font-weight:600;display:flex;align-items:center;gap:4px;"><i class="ph ph-warning-circle" style="font-size:14px;"></i> <?= $memberOverdue ?> overdue</span>
                                 <?php endif; ?>
                             </div>
                             
@@ -149,7 +149,7 @@
             <?php if($overdueTasks > 0 && isset($data['overdueTasks']) && !empty($data['overdueTasks'])): ?>
             <div style="background:#fee2e2;border:2px solid #ef4444;border-radius:12px;padding:25px;box-shadow:0 4px 12px rgba(239,68,68,0.15);">
                 <h3 style="font-size:18px;margin-bottom:20px;color:#ef4444;font-weight:600;display:flex;align-items:center;gap:10px;">
-                    <span style="background:#ef4444;color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">⚠️</span>
+                    <span style="background:#ef4444;color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;"><i class="ph-bold ph-warning"></i></span>
                     Overdue Tasks (<?= $overdueTasks ?>)
                 </h3>
                 <div style="display:grid;gap:12px;">
@@ -191,7 +191,7 @@
             <?php if(empty($data['members'])): ?>
                 <div class="card empty-card">
                     <div class="card-body">
-                        <div class="empty-icon">👥</div>
+                        <div class="empty-icon"><i class="ph ph-users" style="font-size:64px;color:#9ca3af;"></i></div>
                         <h3>No Members Yet</h3>
                         <p>Once you accept project applications, members will appear here for role assignment.</p>
                     </div>
@@ -337,8 +337,8 @@
                                                         <?php endif; ?>
                                                         
                                                         <?php if (!empty($task->due_date)): ?>
-                                                            <span style="background:<?= $isOverdue ? '#fee2e2' : '#e0e7ff' ?>;color:<?= $isOverdue ? '#991b1b' : '#4338ca' ?>;padding:2px 6px;border-radius:4px;font-size:11px;">
-                                                                <?= $isOverdue ? '⚠️' : '📅' ?> <?= date('M d', strtotime($task->due_date)) ?>
+                                                            <span style="background:<?= $isOverdue ? '#fee2e2' : '#e0e7ff' ?>;color:<?= $isOverdue ? '#991b1b' : '#4338ca' ?>;padding:2px 6px;border-radius:4px;font-size:11px;display:flex;align-items:center;gap:3px;">
+                                                                <i class="ph <?= $isOverdue ? 'ph-warning-circle' : 'ph-calendar' ?>" style="font-size:12px;"></i> <?= date('M d', strtotime($task->due_date)) ?>
                                                             </span>
                                                         <?php endif; ?>
                                                     </div>
@@ -379,8 +379,8 @@
                                                         <?php endif; ?>
                                                         
                                                         <?php if (!empty($task->due_date)): ?>
-                                                            <span style="background:<?= $isOverdue ? '#fee2e2' : '#e0e7ff' ?>;color:<?= $isOverdue ? '#991b1b' : '#4338ca' ?>;padding:2px 6px;border-radius:4px;font-size:11px;">
-                                                                <?= $isOverdue ? '⚠️' : '📅' ?> <?= date('M d', strtotime($task->due_date)) ?>
+                                                            <span style="background:<?= $isOverdue ? '#fee2e2' : '#e0e7ff' ?>;color:<?= $isOverdue ? '#991b1b' : '#4338ca' ?>;padding:2px 6px;border-radius:4px;font-size:11px;display:flex;align-items:center;gap:3px;">
+                                                                <i class="ph <?= $isOverdue ? 'ph-warning-circle' : 'ph-calendar' ?>" style="font-size:12px;"></i> <?= date('M d', strtotime($task->due_date)) ?>
                                                             </span>
                                                         <?php endif; ?>
                                                     </div>
