@@ -76,19 +76,19 @@
             <?php endif; ?>
         </div>
 
-        <form id="confirmTransferForm" method="POST">
+        <form id="confirmTransferForm" method="POST" action="<?= URLROOT ?>/wallet/processTransfer">
             <input type="hidden" name="recipient_id" value="<?= $data['recipient']->id ?>">
             <input type="hidden" name="amount" value="<?= $data['amount'] ?>">
             <input type="hidden" name="note" value="<?= htmlspecialchars($data['note']) ?>">
-            
-            <div class="action-buttons">
-                <button type="button" class="btn btn-cancel" onclick="window.location.href='<?= URLROOT ?>/wallet'">
-                 Cancel Transfer
-                </button>
-                <button type="submit" class="btn btn-confirm">
-                 Confirm & Send
-                </button>
-            </div>
+    
+        <div class="action-buttons">
+            <button type="button" class="btn btn-cancel" onclick="window.location.href='<?= URLROOT ?>/wallet'">
+            Cancel Transfer
+            </button>
+            <button type="submit" class="btn btn-confirm">
+            Confirm & Send
+            </button>
+        </div>
         </form>
     </div>
 
@@ -98,4 +98,3 @@
 </main>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>
-<script src="<?= URLROOT ?>/assets/js/confirm_transfer.js"></script>

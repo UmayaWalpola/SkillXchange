@@ -7,14 +7,20 @@ define('APPROOT', dirname(dirname(__FILE__)) . '/app');
 define('BASE_URL', 'http://localhost/SkillXchange/public');
 define('URLROOT', 'http://localhost/SkillXchange/public');
 
+
 // Site name (for reference in headers, titles, etc.)
 define('SITENAME', 'SkillXchange');
 
 // Database configuration
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_NAME', 'skillxchange');
+if (file_exists(__DIR__ . '/db.local.php')) {
+    require __DIR__ . '/db.local.php';
+} else {
+    define('DB_HOST', 'localhost');
+    define('DB_USER', 'root');
+    define('DB_PASS', '');
+    define('DB_NAME', 'skillxchange');
+}
+
 
 // Start session for authentication
 if (session_status() === PHP_SESSION_NONE) {

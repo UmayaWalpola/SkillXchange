@@ -1,5 +1,6 @@
 
 /* Enhanced Matches Page Styling */
+/* This file extends global.css - uses CSS variables and inherits base styles */
 
 .matches-page {
     padding: 2rem;
@@ -15,31 +16,7 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Header Section */
-.page-header {
-    margin-bottom: 2rem;
-    text-align: center;
-    padding: 2rem;
-    background: var(--blue-bg);
-    border: 2px solid var(--primary-blue);
-    border-radius: 12px;
-    position: relative;
-}
-
-.page-header h1 {
-    font-size: 2rem;
-    color: var(--dark-bg);
-    margin-bottom: 0.5rem;
-    font-weight: 700;
-}
-
-.page-header > p {
-    color: var(--dark-bg);
-    opacity: 0.7;
-    font-size: 1rem;
-    margin-bottom: 1rem;
-}
-
+/* Match Summary - extends page-header from global.css */
 .match-summary {
     display: flex;
     justify-content: center;
@@ -126,6 +103,7 @@
     font-size: 1.5rem;
 }
 
+/* Badge count - uses global badge styling as base */
 .badge-count {
     background: var(--primary-blue);
     color: var(--white-bg);
@@ -192,6 +170,7 @@
     margin-bottom: 0.5rem;
 }
 
+/* Skill badges - specific to matches page */
 .skill-badge {
     padding: 0.35rem 0.85rem;
     border-radius: 8px;
@@ -223,6 +202,7 @@
     gap: 0.75rem;
 }
 
+/* Request action buttons - extend global button styles */
 .btn-accept {
     padding: 0.75rem 1.75rem;
     background: linear-gradient(135deg, var(--primary-blue), var(--accent-blue));
@@ -306,6 +286,7 @@
     box-shadow: 0 0 0 4px rgba(101, 131, 150, 0.1);
 }
 
+/* Clear filters button - extends global button styling */
 .btn-clear-filters {
     padding: 0.75rem 1.5rem;
     background: var(--blue-bg);
@@ -614,6 +595,7 @@
     font-weight: 500;
 }
 
+/* Connect button - extends global .btn-primary styling */
 .btn-connect {
     padding: 0.65rem 1.75rem;
     background: linear-gradient(135deg, var(--primary-blue), var(--accent-blue));
@@ -642,25 +624,6 @@
 .btn-disabled:hover {
     transform: none;
     box-shadow: none;
-}
-
-/* Status Badges */
-.badge {
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 0.875rem;
-    font-weight: 600;
-    text-align: center;
-}
-
-.badge-warning {
-    background-color: var(--accent-blue);
-    color: var(--dark-bg);
-}
-
-.badge-success {
-    background-color: var(--primary-blue);
-    color: var(--white-bg);
 }
 
 /* Hidden State */
@@ -811,10 +774,7 @@
         padding: 1rem;
     }
     
-    .page-header h1 {
-        font-size: 2rem;
-    }
-    
+    /* Use global page-header styles on mobile */
     .match-summary {
         flex-direction: column;
         gap: 0.75rem;
@@ -862,11 +822,6 @@
 }
 
 /* Loading Animation */
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
-
 .match-card.loading {
     animation: pulse 1.5s ease-in-out infinite;
     pointer-events: none;

@@ -1,16 +1,14 @@
 <?php
 
-class Wallet extends Database {  // Match her style: extend Database
+class Wallet {
     
     private $db;
     
     public function __construct() {
-        $this->db = new Database;  // Match her style: no parentheses
+        $this->db = new Database();
     }
 
-    /**
-     * Ensure wallet exists for user
-     */
+    //Ensure wallet exists for user
     public function ensureWalletExists($userId, $userRole) {
         $this->db->query("SELECT id, balance FROM wallets WHERE user_id = :user_id");
         $this->db->bind(':user_id', $userId);
@@ -35,9 +33,7 @@ class Wallet extends Database {  // Match her style: extend Database
         return floatval($wallet->balance);
     }
 
-    /**
-     * Get user balance
-     */
+    //Get user balance
     public function getBalance($userId) {
         $this->db->query("SELECT balance FROM wallets WHERE user_id = :user_id");
         $this->db->bind(':user_id', $userId);
@@ -45,9 +41,7 @@ class Wallet extends Database {  // Match her style: extend Database
         return $result ? floatval($result->balance) : 0;
     }
 
-    /**
-     * Get total sent amount
-     */
+    //Get total sent amount
     public function getTotalSent($userId) {
         $this->db->query("
             SELECT COALESCE(SUM(amount), 0) as total 
@@ -59,9 +53,7 @@ class Wallet extends Database {  // Match her style: extend Database
         return floatval($result->total);
     }
 
-    /**
-     * Get total received amount
-     */
+    //Get total received amount
     public function getTotalReceived($userId) {
         $this->db->query("
             SELECT COALESCE(SUM(amount), 0) as total 
@@ -73,9 +65,7 @@ class Wallet extends Database {  // Match her style: extend Database
         return floatval($result->total);
     }
 
-    /**
-     * Get user transactions (sent and received)
-     */
+    //Get user transactions (sent and received)
     public function getTransactions($userId) {
         // Sent transactions
         $this->db->query("
@@ -110,9 +100,7 @@ class Wallet extends Database {  // Match her style: extend Database
         return ['sent' => $sent, 'received' => $received];
     }
 
-    /**
-     * Get allowed recipients for a user
-     */
+    //Get allowed recipients for a user
     public function getAllowedRecipients($userId, $userRole) {
         if ($userRole === 'organization') {
             $this->db->query("
@@ -138,9 +126,7 @@ class Wallet extends Database {  // Match her style: extend Database
         return $recipients ?? [];
     }
 
-    /**
-     * Transfer money between users
-     */
+    //Transfer money between users
     public function transferMoney($senderId, $receiverId, $amount, $note = '') {
         try {
             // Get receiver details
@@ -208,9 +194,7 @@ class Wallet extends Database {  // Match her style: extend Database
         }
     }
 
-    /**
-     * Create BuckX purchase record
-     */
+    //Create BuckX purchase record
     public function createPurchase($orgId, $buckxAmount, $priceLKR, $paymentMethod = 'card') {
         try {
             $this->db->query("START TRANSACTION");
@@ -260,9 +244,7 @@ class Wallet extends Database {  // Match her style: extend Database
         }
     }
 
-    /**
-     * Get purchase by ID
-     */
+    //Get purchase by ID
     public function getPurchaseById($purchaseId, $orgId) {
         $this->db->query("SELECT * FROM buckx_purchases WHERE id = :id AND org_id = :org_id");
         $this->db->bind(':id', $purchaseId);
@@ -270,13 +252,25 @@ class Wallet extends Database {  // Match her style: extend Database
         return $this->db->single();
     }
 
-    // ============================================
-    // PRIVATE HELPER METHODS
-    // ============================================
+    //Get all active BuckX packages
+    public function getActivePackages() {
+    $this->db->query("SELECT * FROM buckx_packages WHERE is_active = TRUE ORDER BY buckx_amount ASC");
+    $results = $this->db->resultSet();
+    
+    // Convert objects to arrays for the view
+    $packages = [];
+    if ($results) {
+        foreach ($results as $package) {
+            $packages[] = (array) $package;
+        }
+    }
+    
+    return $packages;
+}
 
-    /**
-     * Update balance (private helper)
-     */
+    // PRIVATE HELPER METHODS
+    //Update balance (private helper)
+
     private function updateBalance($userId, $amount, $operation = 'add') {
         if ($operation === 'add') {
             $this->db->query("UPDATE wallets SET balance = balance + :amount WHERE user_id = :user_id");
@@ -289,9 +283,7 @@ class Wallet extends Database {  // Match her style: extend Database
         return $this->db->execute();
     }
 
-    /**
-     * Get user by ID (private helper)
-     */
+    //Get user by ID (private helper)
     private function getUserById($userId) {
         $this->db->query("SELECT id, username, email, role FROM users WHERE id = :id");
         $this->db->bind(':id', $userId);

@@ -29,3 +29,8 @@ insert-test-data.sql
 *.txt
 *.odt
 *.rtf
+app/config/db.local.php
+.DS_Store
+public/uploads/
+
+
