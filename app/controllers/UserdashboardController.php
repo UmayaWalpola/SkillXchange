@@ -148,7 +148,6 @@ public function matches() {
     
     $allMatches = $skillMatchModel->getAllMatchesWithScores($userId);
     
-
     // Get pending connection requests
     $pendingRequests = $exchangeModel->getExchangeRequests($userId);
 
@@ -156,7 +155,7 @@ public function matches() {
     foreach ($pendingRequests as $request) {
         $formattedRequests[] = [
             'exchange_id' => $request->id,
-            'sender_id' => $request->sender_id,
+            'sender_id' => $request->requester_id,  // FIXED: was sender_id, should be requester_id
             'sender_name' => $request->sender_name,
             'sender_email' => $request->sender_email,
             'sender_avatar' => $request->sender_avatar ?? strtoupper(substr($request->sender_name, 0, 2)),
@@ -165,7 +164,6 @@ public function matches() {
             'time_ago' => $this->timeAgo($request->created_at)
         ];
     }   
-
     
     $userSkillsData = $skillMatchModel->getUserSkillsForFilter($userId);
     $user = $this->getUserData($userId);
@@ -174,7 +172,7 @@ public function matches() {
         'title' => 'Matches',
         'user' => $user,
         'page' => 'matches',
-       'perfectMatches' => $allMatches['perfect'],
+        'perfectMatches' => $allMatches['perfect'],
         'greatMatches' => $allMatches['great'],
         'goodMatches' => $allMatches['good'],
         'matchStats' => [
@@ -188,7 +186,7 @@ public function matches() {
     ];
     
     $this->view('users/matches', $data);
-} 
+}
 
 /**
  * Handle accept/reject connection requests

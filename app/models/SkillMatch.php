@@ -7,12 +7,11 @@ class SkillMatch extends Database {
     public function __construct() {
         $this->db = new Database;
     }
+
 /**
  * Get ALL matches with compatibility scoring
  * Returns array grouped by match percentage
  */
-// In: app/models/SkillMatch.php
-
 public function getAllMatchesWithScores($userId) {
     $this->db->query("
         SELECT 
@@ -34,8 +33,14 @@ public function getAllMatchesWithScores($userId) {
                     THEN CONCAT(their_teach.skill_name, ':', their_teach.proficiency_level, ':', my_learn.proficiency_level)
                 END
             ) AS they_teach_me,
-            -- Check connection status
+            -- Check connection status (FIXED: requester_id/receiver_id and 'active')
             CASE 
+                WHEN EXISTS (
+                    SELECT 1 FROM exchanges 
+                    WHERE ((requester_id = :current_user_id AND receiver_id = u.id)
+                        OR (requester_id = u.id AND receiver_id = :current_user_id))
+                    AND status = 'pending'
+                ) THEN 'pending'
                 WHEN EXISTS (
                     SELECT 1 FROM exchanges 
                     WHERE ((requester_id = :current_user_id AND receiver_id = u.id)
@@ -62,7 +67,6 @@ public function getAllMatchesWithScores($userId) {
             AND their_teach.skill_type = 'teach'
             AND their_teach.skill_name = my_learn.skill_name
         WHERE u.id != :current_user_id
-        -- REMOVED THE FILTER - now we show all matches with status
         GROUP BY u.id, u.username, u.email, u.profile_picture
         HAVING i_teach_them IS NOT NULL OR they_teach_me IS NOT NULL
     ");
@@ -94,8 +98,6 @@ public function getAllMatchesWithScores($userId) {
             $matches['good'][] = $match;
         }
     }
-
-return $matches;
 
     return $matches;
 }
@@ -200,32 +202,32 @@ private function calculateMatchScore($match) {
 }
 
 /**
-     * Get user's skills for filter dropdown
-     */
-    public function getUserSkillsForFilter($userId) {
-        $this->db->query("
-            SELECT DISTINCT skill_name, skill_type
-            FROM user_skills
-            WHERE user_id = :user_id
-            ORDER BY skill_type DESC, skill_name ASC
-        ");
-        
-        $this->db->bind(':user_id', $userId);
-        $results = $this->db->resultSet();
+ * Get user's skills for filter dropdown
+ */
+public function getUserSkillsForFilter($userId) {
+    $this->db->query("
+        SELECT DISTINCT skill_name, skill_type
+        FROM user_skills
+        WHERE user_id = :user_id
+        ORDER BY skill_type DESC, skill_name ASC
+    ");
+    
+    $this->db->bind(':user_id', $userId);
+    $results = $this->db->resultSet();
 
-        $skills = ['teaches' => [], 'learns' => []];
-        
-        foreach ($results as $skill) {
-            $displayName = ucwords(str_replace('-', ' ', $skill->skill_name));
-            if ($skill->skill_type === 'teach') {
-                $skills['teaches'][] = ['name' => $skill->skill_name, 'display' => $displayName];
-            } else {
-                $skills['learns'][] = ['name' => $skill->skill_name, 'display' => $displayName];
-            }
+    $skills = ['teaches' => [], 'learns' => []];
+    
+    foreach ($results as $skill) {
+        $displayName = ucwords(str_replace('-', ' ', $skill->skill_name));
+        if ($skill->skill_type === 'teach') {
+            $skills['teaches'][] = ['name' => $skill->skill_name, 'display' => $displayName];
+        } else {
+            $skills['learns'][] = ['name' => $skill->skill_name, 'display' => $displayName];
         }
-
-        return $skills;
     }
+
+    return $skills;
+}
 
 public function getTeachMatches($userId) {
     $this->db->query("
@@ -237,19 +239,19 @@ public function getTeachMatches($userId) {
             us_learner.skill_name,
             us_learner.proficiency_level AS learner_level,
             us_teacher.proficiency_level AS teacher_level,
-            -- ADD COMMA HERE ↑ (line 8)
+            -- FIXED: requester_id/receiver_id and 'active' instead of sender_id/'accepted'
             CASE 
                 WHEN EXISTS (
                     SELECT 1 FROM exchanges 
-                    WHERE ((sender_id = :current_user_id AND receiver_id = u.id)
-                        OR (sender_id = u.id AND receiver_id = :current_user_id))
+                    WHERE ((requester_id = :current_user_id AND receiver_id = u.id)
+                        OR (requester_id = u.id AND receiver_id = :current_user_id))
                     AND status = 'pending'
                 ) THEN 'pending'
                 WHEN EXISTS (
                     SELECT 1 FROM exchanges 
-                    WHERE ((sender_id = :current_user_id AND receiver_id = u.id)
-                        OR (sender_id = u.id AND receiver_id = :current_user_id))
-                    AND status = 'accepted'
+                    WHERE ((requester_id = :current_user_id AND receiver_id = u.id)
+                        OR (requester_id = u.id AND receiver_id = :current_user_id))
+                    AND status = 'active'
                 ) THEN 'connected'
                 ELSE 'available'
             END AS connection_status
@@ -307,18 +309,19 @@ public function getLearnMatches($userId) {
             us_teacher.skill_name,
             us_teacher.proficiency_level AS teacher_level,
             us_learner.proficiency_level AS learner_level,
+            -- FIXED: requester_id/receiver_id and 'active' status
             CASE 
                 WHEN EXISTS (
                     SELECT 1 FROM exchanges 
-                    WHERE ((sender_id = :current_user_id AND receiver_id = u.id)
-                        OR (sender_id = u.id AND receiver_id = :current_user_id))
+                    WHERE ((requester_id = :current_user_id AND receiver_id = u.id)
+                        OR (requester_id = u.id AND receiver_id = :current_user_id))
                     AND status = 'pending'
                 ) THEN 'pending'
                 WHEN EXISTS (
                     SELECT 1 FROM exchanges 
-                    WHERE ((sender_id = :current_user_id AND receiver_id = u.id)
-                        OR (sender_id = u.id AND receiver_id = :current_user_id))
-                    AND status = 'accepted'
+                    WHERE ((requester_id = :current_user_id AND receiver_id = u.id)
+                        OR (requester_id = u.id AND receiver_id = :current_user_id))
+                    AND status = 'active'
                 ) THEN 'connected'
                 ELSE 'available'
             END AS connection_status
@@ -362,167 +365,167 @@ public function getLearnMatches($userId) {
 
     return $matches;
 }
-    /**
-     * Get mutual matches (users where both can teach AND learn from each other)
-     * This is the most valuable type of match
-     */
-    public function getMutualMatches($userId) {
-        $this->db->query("
-            SELECT DISTINCT
-                u.id,
-                u.username,
-                u.email,
-                u.profile_picture,
-                teach_match.skill_name AS you_teach,
-                teach_match.proficiency_level AS you_teach_level,
-                learn_match.skill_name AS you_learn,
-                learn_match.proficiency_level AS they_teach_level
-            FROM users u
-            INNER JOIN user_skills teach_match
-                ON teach_match.user_id = :current_user_id
-                AND teach_match.skill_type = 'teach'
-            INNER JOIN user_skills their_learn
-                ON their_learn.user_id = u.id
-                AND their_learn.skill_type = 'learn'
-                AND their_learn.skill_name = teach_match.skill_name
-            INNER JOIN user_skills learn_match
-                ON learn_match.user_id = :current_user_id
-                AND learn_match.skill_type = 'learn'
-            INNER JOIN user_skills their_teach
-                ON their_teach.user_id = u.id
-                AND their_teach.skill_type = 'teach'
-                AND their_teach.skill_name = learn_match.skill_name
-            WHERE u.id != :current_user_id
-            AND u.id NOT IN (
-                SELECT receiver_id FROM exchanges 
-                WHERE sender_id = :current_user_id AND status IN ('accepted', 'pending')
-                UNION
-                SELECT sender_id FROM exchanges 
-                WHERE receiver_id = :current_user_id AND status IN ('accepted', 'pending')
-            )
-        ");
-        $this->db->bind(':current_user_id', $userId);
-        $results = $this->db->resultSet();
 
-        $matches = [];
-        foreach ($results as $row) {
-            $displayName = $row->username ?? '';
-            $matches[] = [
-                'id' => $row->id,
-                'name' => $displayName,
-                'email' => $row->email,
-                'avatar' => $row->profile_picture ?? strtoupper(substr($displayName, 0, 2)),
-                'you_teach' => ucwords(str_replace('-', ' ', $row->you_teach ?? '')),
-                'you_learn' => ucwords(str_replace('-', ' ', $row->you_learn ?? '')),
-                'mutual' => true
-            ];
-        }
+/**
+ * Get mutual matches (users where both can teach AND learn from each other)
+ */
+public function getMutualMatches($userId) {
+    $this->db->query("
+        SELECT DISTINCT
+            u.id,
+            u.username,
+            u.email,
+            u.profile_picture,
+            teach_match.skill_name AS you_teach,
+            teach_match.proficiency_level AS you_teach_level,
+            learn_match.skill_name AS you_learn,
+            learn_match.proficiency_level AS they_teach_level
+        FROM users u
+        INNER JOIN user_skills teach_match
+            ON teach_match.user_id = :current_user_id
+            AND teach_match.skill_type = 'teach'
+        INNER JOIN user_skills their_learn
+            ON their_learn.user_id = u.id
+            AND their_learn.skill_type = 'learn'
+            AND their_learn.skill_name = teach_match.skill_name
+        INNER JOIN user_skills learn_match
+            ON learn_match.user_id = :current_user_id
+            AND learn_match.skill_type = 'learn'
+        INNER JOIN user_skills their_teach
+            ON their_teach.user_id = u.id
+            AND their_teach.skill_type = 'teach'
+            AND their_teach.skill_name = learn_match.skill_name
+        WHERE u.id != :current_user_id
+        AND u.id NOT IN (
+            SELECT receiver_id FROM exchanges 
+            WHERE requester_id = :current_user_id AND status IN ('active', 'pending')
+            UNION
+            SELECT requester_id FROM exchanges 
+            WHERE receiver_id = :current_user_id AND status IN ('active', 'pending')
+        )
+    ");
+    $this->db->bind(':current_user_id', $userId);
+    $results = $this->db->resultSet();
 
-        return $matches;
-    }
-
-    /**
-     * Get match statistics for the current user
-     */
-    public function getMatchStats($userId) {
-        // Count teach matches
-        $this->db->query("
-            SELECT COUNT(DISTINCT u.id) AS count
-            FROM users u
-            INNER JOIN user_skills us_learner 
-                ON u.id = us_learner.user_id
-                AND us_learner.skill_type = 'learn'
-            INNER JOIN user_skills us_teacher
-                ON us_teacher.user_id = :user_id
-                AND us_teacher.skill_type = 'teach'
-                AND us_teacher.skill_name = us_learner.skill_name
-            WHERE u.id != :user_id
-        ");
-        $this->db->bind(':user_id', $userId);
-        $teachCount = $this->db->single()->count ?? 0;
-
-        // Count learn matches
-        $this->db->query("
-            SELECT COUNT(DISTINCT u.id) AS count
-            FROM users u
-            INNER JOIN user_skills us_teacher
-                ON u.id = us_teacher.user_id
-                AND us_teacher.skill_type = 'teach'
-            INNER JOIN user_skills us_learner
-                ON us_learner.user_id = :user_id
-                AND us_learner.skill_type = 'learn'
-                AND us_learner.skill_name = us_teacher.skill_name
-            WHERE u.id != :user_id
-        ");
-        $this->db->bind(':user_id', $userId);
-        $learnCount = $this->db->single()->count ?? 0;
-
-        return [
-            'teach_matches' => $teachCount,
-            'learn_matches' => $learnCount,
-            'total_matches' => $teachCount + $learnCount
+    $matches = [];
+    foreach ($results as $row) {
+        $displayName = $row->username ?? '';
+        $matches[] = [
+            'id' => $row->id,
+            'name' => $displayName,
+            'email' => $row->email,
+            'avatar' => $row->profile_picture ?? strtoupper(substr($displayName, 0, 2)),
+            'you_teach' => ucwords(str_replace('-', ' ', $row->you_teach ?? '')),
+            'you_learn' => ucwords(str_replace('-', ' ', $row->you_learn ?? '')),
+            'mutual' => true
         ];
     }
 
-    /**
-     * Search matches by skill name
-     */
-    public function searchMatchesBySkill($userId, $skillName, $matchType = 'all') {
-        if ($matchType === 'teach') {
-            return $this->searchTeachMatches($userId, $skillName);
-        } elseif ($matchType === 'learn') {
-            return $this->searchLearnMatches($userId, $skillName);
-        } else {
-            return array_merge(
-                $this->searchTeachMatches($userId, $skillName),
-                $this->searchLearnMatches($userId, $skillName)
-            );
-        }
+    return $matches;
+}
+
+/**
+ * Get match statistics for the current user
+ */
+public function getMatchStats($userId) {
+    // Count teach matches
+    $this->db->query("
+        SELECT COUNT(DISTINCT u.id) AS count
+        FROM users u
+        INNER JOIN user_skills us_learner 
+            ON u.id = us_learner.user_id
+            AND us_learner.skill_type = 'learn'
+        INNER JOIN user_skills us_teacher
+            ON us_teacher.user_id = :user_id
+            AND us_teacher.skill_type = 'teach'
+            AND us_teacher.skill_name = us_learner.skill_name
+        WHERE u.id != :user_id
+    ");
+    $this->db->bind(':user_id', $userId);
+    $teachCount = $this->db->single()->count ?? 0;
+
+    // Count learn matches
+    $this->db->query("
+        SELECT COUNT(DISTINCT u.id) AS count
+        FROM users u
+        INNER JOIN user_skills us_teacher
+            ON u.id = us_teacher.user_id
+            AND us_teacher.skill_type = 'teach'
+        INNER JOIN user_skills us_learner
+            ON us_learner.user_id = :user_id
+            AND us_learner.skill_type = 'learn'
+            AND us_learner.skill_name = us_teacher.skill_name
+        WHERE u.id != :user_id
+    ");
+    $this->db->bind(':user_id', $userId);
+    $learnCount = $this->db->single()->count ?? 0;
+
+    return [
+        'teach_matches' => $teachCount,
+        'learn_matches' => $learnCount,
+        'total_matches' => $teachCount + $learnCount
+    ];
+}
+
+/**
+ * Search matches by skill name
+ */
+public function searchMatchesBySkill($userId, $skillName, $matchType = 'all') {
+    if ($matchType === 'teach') {
+        return $this->searchTeachMatches($userId, $skillName);
+    } elseif ($matchType === 'learn') {
+        return $this->searchLearnMatches($userId, $skillName);
+    } else {
+        return array_merge(
+            $this->searchTeachMatches($userId, $skillName),
+            $this->searchLearnMatches($userId, $skillName)
+        );
     }
+}
 
-    private function searchTeachMatches($userId, $skillName) {
-        $this->db->query("
-            SELECT DISTINCT
-                u.id,
-                u.username,
-                us_learner.skill_name
-            FROM users u
-            INNER JOIN user_skills us_learner
-                ON u.id = us_learner.user_id
-                AND us_learner.skill_type = 'learn'
-                AND us_learner.skill_name LIKE :skill_name
-            INNER JOIN user_skills us_teacher
-                ON us_teacher.user_id = :user_id
-                AND us_teacher.skill_type = 'teach'
-                AND us_teacher.skill_name = us_learner.skill_name
-            WHERE u.id != :user_id
-        ");
-        $this->db->bind(':user_id', $userId);
-        $this->db->bind(':skill_name', '%' . $skillName . '%');
+private function searchTeachMatches($userId, $skillName) {
+    $this->db->query("
+        SELECT DISTINCT
+            u.id,
+            u.username,
+            us_learner.skill_name
+        FROM users u
+        INNER JOIN user_skills us_learner
+            ON u.id = us_learner.user_id
+            AND us_learner.skill_type = 'learn'
+            AND us_learner.skill_name LIKE :skill_name
+        INNER JOIN user_skills us_teacher
+            ON us_teacher.user_id = :user_id
+            AND us_teacher.skill_type = 'teach'
+            AND us_teacher.skill_name = us_learner.skill_name
+        WHERE u.id != :user_id
+    ");
+    $this->db->bind(':user_id', $userId);
+    $this->db->bind(':skill_name', '%' . $skillName . '%');
 
-        return $this->db->resultSet();
-    }
+    return $this->db->resultSet();
+}
 
-    private function searchLearnMatches($userId, $skillName) {
-        $this->db->query("
-            SELECT DISTINCT
-                u.id,
-                u.username,
-                us_teacher.skill_name
-            FROM users u
-            INNER JOIN user_skills us_teacher
-                ON u.id = us_teacher.user_id
-                AND us_teacher.skill_type = 'teach'
-                AND us_teacher.skill_name LIKE :skill_name
-            INNER JOIN user_skills us_learner
-                ON us_learner.user_id = :user_id
-                AND us_learner.skill_type = 'learn'
-                AND us_learner.skill_name = us_teacher.skill_name
-            WHERE u.id != :user_id
-        ");
-        $this->db->bind(':user_id', $userId);
-        $this->db->bind(':skill_name', '%' . $skillName . '%');
+private function searchLearnMatches($userId, $skillName) {
+    $this->db->query("
+        SELECT DISTINCT
+            u.id,
+            u.username,
+            us_teacher.skill_name
+        FROM users u
+        INNER JOIN user_skills us_teacher
+            ON u.id = us_teacher.user_id
+            AND us_teacher.skill_type = 'teach'
+            AND us_teacher.skill_name LIKE :skill_name
+        INNER JOIN user_skills us_learner
+            ON us_learner.user_id = :user_id
+            AND us_learner.skill_type = 'learn'
+            AND us_learner.skill_name = us_teacher.skill_name
+        WHERE u.id != :user_id
+    ");
+    $this->db->bind(':user_id', $userId);
+    $this->db->bind(':skill_name', '%' . $skillName . '%');
 
-        return $this->db->resultSet();
-    }
+    return $this->db->resultSet();
+}
 }
