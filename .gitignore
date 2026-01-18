@@ -10,7 +10,7 @@ database/migrations/create_task_management_tables.sql
 database/migrations/create_user_reports.sql
 database/migrations/create_wallet_system.sql
 database/migrations/setup_reporting_system.sql
-
+DB.sql
 # Documentation files
 MVC_STRUCTURE.md
 REPORTING_IMPLEMENTATION_SUMMARY.md

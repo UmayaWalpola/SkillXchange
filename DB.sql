@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 18, 2025 at 05:02 PM
+-- Generation Time: Jan 18, 2026 at 09:27 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -85,7 +85,7 @@ CREATE TABLE `content_reports` (
   `content_id` int(11) NOT NULL,
   `reason` varchar(255) NOT NULL,
   `description` text DEFAULT NULL,
-  `status` enum('pending','reviewed','dismissed') DEFAULT 'pending',
+  `status` enum('pending','reviewed','dismissed','resolved') DEFAULT 'pending',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -926,7 +926,7 @@ ALTER TABLE `projects`
 -- AUTO_INCREMENT for table `project_applications`
 --
 ALTER TABLE `project_applications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `project_chat_messages`
