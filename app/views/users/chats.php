@@ -10,8 +10,8 @@
         
         <div class="chats-page">
             <div class="page-header">
-                <h1>Your Chat List</h1>
-                <p>Connect and communicate</p>
+                <h1>Your Chats</h1>
+                <p>Connect and communicate with your matches</p>
             </div>
 
             <div class="chats-layout">
@@ -24,14 +24,17 @@
                     <div class="conversations">
                         <?php if (!empty($data['chats'])): ?>
                             <?php foreach ($data['chats'] as $chat): ?>
-                                <?php 
-                                // Convert chat data to JSON for JavaScript
-                                $chatJson = htmlspecialchars(json_encode($chat), ENT_QUOTES, 'UTF-8');
-                                ?>
-                                <div class="chat-item <?= $chat['unread'] ? 'unread' : ''; ?>" 
-                                     data-chat-id="<?= $chat['id']; ?>" 
-                                     onclick='openChat(<?= $chatJson ?>)'>
-                                    <div class="chat-avatar"><?= strtoupper(substr($chat['name'], 0, 2)); ?></div>
+                                <div class="chat-item <?= $chat['unread'] ? 'unread' : ''; ?> <?= isset($data['partnerId']) && $chat['partner_id'] == $data['partnerId'] ? 'active' : ''; ?>" 
+                                     data-chat-id="<?= $chat['id']; ?>"
+                                     data-partner-id="<?= $chat['partner_id']; ?>"
+                                     onclick="openChatWindow(<?= $chat['partner_id']; ?>)">
+                                    <div class="chat-avatar">
+                                        <?php if (!empty($chat['avatar']) && strpos($chat['avatar'], 'uploads/') === 0): ?>
+                                            <img src="<?= URLROOT ?>/<?= htmlspecialchars($chat['avatar']) ?>" alt="Avatar">
+                                        <?php else: ?>
+                                            <?= htmlspecialchars($chat['avatar']); ?>
+                                        <?php endif; ?>
+                                    </div>
                                     <div class="chat-info">
                                         <div class="chat-header-row">
                                             <h3 class="chat-name"><?= htmlspecialchars($chat['name']); ?></h3>
@@ -49,7 +52,7 @@
                         <?php else: ?>
                             <div class="no-chats">
                                 <p>No conversations yet</p>
-                                <small>Start chatting with your matches!</small>
+                                <small>Connect with matches to start chatting!</small>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -57,10 +60,64 @@
 
                 <!-- Chat Window -->
                 <div class="chat-window" id="chatWindow">
-                    <div class="empty-state">
-                        <h2>Select a conversation</h2>
-                        <p>Choose a chat from the list to start messaging</p>
-                    </div>
+                    <?php if (isset($data['partnerId'])): ?>
+                        <!-- Active Chat -->
+                        <div class="chat-header">
+                            <div class="chat-partner-info">
+                                <div class="partner-avatar">
+                                    <?php if (!empty($data['partnerAvatar']) && strpos($data['partnerAvatar'], 'uploads/') === 0): ?>
+                                        <img src="<?= URLROOT ?>/<?= htmlspecialchars($data['partnerAvatar']) ?>" alt="Avatar">
+                                    <?php else: ?>
+                                        <?= htmlspecialchars($data['partnerAvatar']); ?>
+                                    <?php endif; ?>
+                                </div>
+                                <div>
+                                    <h3><?= htmlspecialchars($data['partnerName']); ?></h3>
+                                    <span class="status-online">Active</span>
+                                </div>
+                            </div>
+                            <div class="chat-actions">
+                                <button class="btn-icon" onclick="viewPartnerProfile(<?= $data['partnerId']; ?>)" title="View Profile">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="messages-container" id="messagesContainer">
+                            <!-- Messages will be loaded here by JavaScript -->
+                            <div class="loading-messages">Loading messages...</div>
+                        </div>
+
+                        <div class="message-input-container">
+                            <form id="messageForm" onsubmit="sendMessage(event)">
+                                <input type="hidden" id="chatId" value="<?= $data['chatId']; ?>">
+                                <input type="text" 
+                                       id="messageInput" 
+                                       placeholder="Type a message..." 
+                                       autocomplete="off"
+                                       required>
+                                <button type="submit" class="btn-send">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                    </svg>
+                                    Send
+                                </button>
+                            </form>
+                        </div>
+                    <?php else: ?>
+                        <!-- Empty State -->
+                        <div class="empty-state">
+                            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            <h2>Select a conversation</h2>
+                            <p>Choose a chat from the list to start messaging</p>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -69,6 +126,11 @@
 </div>
 </main>
 
+<script>
+    const URLROOT = '<?= URLROOT ?>';
+    const CURRENT_CHAT_ID = <?= isset($data['chatId']) ? $data['chatId'] : 'null' ?>;
+    const CURRENT_USER_ID = <?= $_SESSION['user_id'] ?>;
+</script>
 <script src="<?= URLROOT ?>/assets/js/chats.js"></script>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>

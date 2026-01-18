@@ -97,7 +97,7 @@ private function getActiveChats($userId) {
                     ELSE u1.profile_picture
                 END as partner_avatar,
                 cm.message as last_message,
-                cm.created_at as last_message_time,
+                COALESCE(cm.created_at, c.created_at) as last_message_time,
                 (SELECT COUNT(*) FROM chat_messages 
                  WHERE chat_id = c.id 
                  AND sender_id != :user_id 
@@ -105,12 +105,17 @@ private function getActiveChats($userId) {
             FROM chats c
             INNER JOIN users u1 ON c.user1_id = u1.id
             INNER JOIN users u2 ON c.user2_id = u2.id
-            LEFT JOIN chat_messages cm ON c.id = cm.chat_id
+            LEFT JOIN (
+                SELECT chat_id, message, created_at
+                FROM chat_messages cm1
+                WHERE id = (
+                    SELECT MAX(id) 
+                    FROM chat_messages cm2 
+                    WHERE cm2.chat_id = cm1.chat_id
+                )
+            ) cm ON c.id = cm.chat_id
             WHERE (c.user1_id = :user_id OR c.user2_id = :user_id)
-            AND cm.id = (
-                SELECT MAX(id) FROM chat_messages WHERE chat_id = c.id
-            )
-            ORDER BY cm.created_at DESC
+            ORDER BY last_message_time DESC
         ");
         
         $this->db->bind(':user_id', $userId);
@@ -124,10 +129,10 @@ private function getActiveChats($userId) {
                 'name' => $row->partner_name,
                 'avatar' => $row->partner_avatar ?? strtoupper(substr($row->partner_name, 0, 2)),
                 'lastMessage' => $row->last_message ?? 'No messages yet',
-                'time' => $this->timeAgo($row->last_message_time ?? date('Y-m-d H:i:s')),
+                'time' => $this->timeAgo($row->last_message_time),
                 'unread' => $row->unread_count > 0,
                 'unreadCount' => $row->unread_count ?? 0,
-                'online' => false // You can add online status later
+                'online' => false
             ];
         }
         

@@ -3,7 +3,7 @@
 
 class ChatController extends Controller
 {
-    private $projectModel;
+    private $db;
 
     public function __construct()
     {
@@ -11,10 +11,308 @@ class ChatController extends Controller
             header('Location: ' . URLROOT . '/auth/signin');
             exit();
         }
-        $this->projectModel = $this->model('Project');
+        $this->db = new Database();
     }
 
-    // /chat/index/{projectId}
+    /**
+     * User-to-User Chat - Main View
+     * URL: /chat/user/{partnerId}
+     */
+    public function user($partnerId = null)
+    {
+        $userId = $_SESSION['user_id'];
+        
+        if (!$partnerId) {
+            // Redirect to chats list if no partner specified
+            header('Location: ' . URLROOT . '/userdashboard/chats');
+            exit();
+        }
+
+        // Verify partner exists
+        $this->db->query("SELECT id, username, profile_picture FROM users WHERE id = :partner_id");
+        $this->db->bind(':partner_id', $partnerId);
+        $partner = $this->db->single();
+
+        if (!$partner) {
+            $_SESSION['error'] = 'User not found.';
+            header('Location: ' . URLROOT . '/userdashboard/chats');
+            exit();
+        }
+
+        // Verify connection exists (users must be connected to chat)
+        $this->db->query("
+            SELECT id FROM exchanges 
+            WHERE ((requester_id = :user_id AND receiver_id = :partner_id)
+                OR (requester_id = :partner_id AND receiver_id = :user_id))
+            AND status = 'active'
+            LIMIT 1
+        ");
+        $this->db->bind(':user_id', $userId);
+        $this->db->bind(':partner_id', $partnerId);
+        
+        if (!$this->db->single()) {
+            $_SESSION['error'] = 'You must be connected with this user to chat.';
+            header('Location: ' . URLROOT . '/userdashboard/matches');
+            exit();
+        }
+
+        // Get or create chat
+        $chatId = $this->getOrCreateChat($userId, $partnerId);
+
+        // Get all chats for sidebar
+        $allChats = $this->getUserChats($userId);
+
+        $data = [
+            'chatId' => $chatId,
+            'partnerId' => $partnerId,
+            'partnerName' => $partner->username,
+            'partnerAvatar' => $partner->profile_picture ?? strtoupper(substr($partner->username, 0, 2)),
+            'allChats' => $allChats,
+            'currentUserId' => $userId
+        ];
+
+        $this->view('users/chats', $data);
+    }
+
+    /**
+     * Get or create a chat between two users
+     */
+    private function getOrCreateChat($userId1, $userId2)
+    {
+        // Check if chat exists
+        $this->db->query("
+            SELECT id FROM chats 
+            WHERE (user1_id = :user1 AND user2_id = :user2)
+               OR (user1_id = :user2 AND user2_id = :user1)
+            LIMIT 1
+        ");
+        $this->db->bind(':user1', $userId1);
+        $this->db->bind(':user2', $userId2);
+        
+        $chat = $this->db->single();
+        
+        if ($chat) {
+            return $chat->id;
+        }
+
+        // Create new chat
+        $this->db->query("
+            INSERT INTO chats (user1_id, user2_id, created_at)
+            VALUES (:user1, :user2, NOW())
+        ");
+        $this->db->bind(':user1', $userId1);
+        $this->db->bind(':user2', $userId2);
+        $this->db->execute();
+
+        return $this->db->lastInsertId();
+    }
+
+    /**
+     * Get all user's chats for sidebar
+     */
+    private function getUserChats($userId)
+    {
+        $this->db->query("
+            SELECT 
+                c.id as chat_id,
+                CASE 
+                    WHEN c.user1_id = :user_id THEN c.user2_id
+                    ELSE c.user1_id
+                END as partner_id,
+                CASE 
+                    WHEN c.user1_id = :user_id THEN u2.username
+                    ELSE u1.username
+                END as partner_name,
+                CASE 
+                    WHEN c.user1_id = :user_id THEN u2.profile_picture
+                    ELSE u1.profile_picture
+                END as partner_avatar,
+                cm.message as last_message,
+                cm.created_at as last_message_time,
+                (SELECT COUNT(*) FROM chat_messages 
+                 WHERE chat_id = c.id 
+                 AND sender_id != :user_id 
+                 AND read_status = 0) as unread_count
+            FROM chats c
+            INNER JOIN users u1 ON c.user1_id = u1.id
+            INNER JOIN users u2 ON c.user2_id = u2.id
+            LEFT JOIN (
+                SELECT chat_id, message, created_at
+                FROM chat_messages cm1
+                WHERE id = (
+                    SELECT MAX(id) 
+                    FROM chat_messages cm2 
+                    WHERE cm2.chat_id = cm1.chat_id
+                )
+            ) cm ON c.id = cm.chat_id
+            WHERE c.user1_id = :user_id OR c.user2_id = :user_id
+            ORDER BY cm.created_at DESC
+        ");
+        
+        $this->db->bind(':user_id', $userId);
+        $results = $this->db->resultSet();
+
+        $chats = [];
+        foreach ($results as $row) {
+            $chats[] = [
+                'id' => $row->chat_id,
+                'partner_id' => $row->partner_id,
+                'name' => $row->partner_name,
+                'avatar' => $row->partner_avatar ?? strtoupper(substr($row->partner_name, 0, 2)),
+                'lastMessage' => $row->last_message ?? 'No messages yet',
+                'time' => $this->timeAgo($row->last_message_time ?? date('Y-m-d H:i:s')),
+                'unread' => $row->unread_count > 0,
+                'unreadCount' => $row->unread_count ?? 0
+            ];
+        }
+
+        return $chats;
+    }
+
+    /**
+     * Fetch messages for a chat
+     * GET /chat/fetchUserMessages?chat_id=X
+     */
+    public function fetchUserMessages()
+    {
+        header('Content-Type: application/json');
+
+        $chatId = isset($_GET['chat_id']) ? (int)$_GET['chat_id'] : 0;
+        if ($chatId <= 0) {
+            echo json_encode(['success' => false, 'message' => 'Invalid chat ID.']);
+            return;
+        }
+
+        $userId = $_SESSION['user_id'];
+
+        // Verify user is part of this chat
+        $this->db->query("
+            SELECT * FROM chats 
+            WHERE id = :chat_id 
+            AND (user1_id = :user_id OR user2_id = :user_id)
+        ");
+        $this->db->bind(':chat_id', $chatId);
+        $this->db->bind(':user_id', $userId);
+        
+        if (!$this->db->single()) {
+            echo json_encode(['success' => false, 'message' => 'Access denied.']);
+            return;
+        }
+
+        // Get messages
+        $this->db->query("
+            SELECT 
+                m.id, 
+                m.message, 
+                m.created_at, 
+                m.sender_id,
+                u.username AS sender_name, 
+                u.profile_picture AS sender_profile_pic
+            FROM chat_messages m
+            JOIN users u ON m.sender_id = u.id
+            WHERE m.chat_id = :chat_id
+            ORDER BY m.created_at ASC, m.id ASC
+        ");
+        $this->db->bind(':chat_id', $chatId);
+        $messages = $this->db->resultSet();
+
+        // Mark messages as read
+        $this->markMessagesAsRead($chatId, $userId);
+
+        echo json_encode([
+            'success' => true,
+            'messages' => $messages,
+            'current_user_id' => $userId
+        ]);
+    }
+
+    /**
+     * Send a message
+     * POST /chat/sendUserMessage
+     */
+    public function sendUserMessage()
+    {
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+            return;
+        }
+
+        $chatId = isset($_POST['chat_id']) ? (int)$_POST['chat_id'] : 0;
+        $message = trim($_POST['message'] ?? '');
+
+        if ($chatId <= 0 || $message === '') {
+            echo json_encode(['success' => false, 'message' => 'Missing chat ID or message.']);
+            return;
+        }
+
+        $userId = $_SESSION['user_id'];
+
+        // Verify user is part of this chat
+        $this->db->query("
+            SELECT * FROM chats 
+            WHERE id = :chat_id 
+            AND (user1_id = :user_id OR user2_id = :user_id)
+        ");
+        $this->db->bind(':chat_id', $chatId);
+        $this->db->bind(':user_id', $userId);
+        
+        if (!$this->db->single()) {
+            echo json_encode(['success' => false, 'message' => 'Access denied.']);
+            return;
+        }
+
+        // Insert message
+        $this->db->query("
+            INSERT INTO chat_messages (chat_id, sender_id, message, created_at) 
+            VALUES (:chat_id, :sender_id, :message, NOW())
+        ");
+        $this->db->bind(':chat_id', $chatId);
+        $this->db->bind(':sender_id', $userId);
+        $this->db->bind(':message', $message);
+        
+        if ($this->db->execute()) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Failed to send message.']);
+        }
+    }
+
+    /**
+     * Mark messages as read
+     */
+    private function markMessagesAsRead($chatId, $userId)
+    {
+        $this->db->query("
+            UPDATE chat_messages 
+            SET read_status = 1 
+            WHERE chat_id = :chat_id 
+            AND sender_id != :user_id 
+            AND read_status = 0
+        ");
+        $this->db->bind(':chat_id', $chatId);
+        $this->db->bind(':user_id', $userId);
+        $this->db->execute();
+    }
+
+    /**
+     * Time ago helper
+     */
+    private function timeAgo($timestamp)
+    {
+        $time = strtotime($timestamp);
+        $diff = time() - $time;
+        
+        if ($diff < 60) return 'just now';
+        if ($diff < 3600) return floor($diff / 60) . 'm ago';
+        if ($diff < 86400) return floor($diff / 3600) . 'h ago';
+        if ($diff < 604800) return floor($diff / 86400) . 'd ago';
+        return date('M j', $time);
+    }
+
+    // ===== PROJECT CHAT METHODS (Keep existing) =====
+    
     public function index($projectId = null)
     {
         if (!$projectId) {
@@ -22,7 +320,9 @@ class ChatController extends Controller
             exit();
         }
 
-        $project = $this->projectModel->getProjectById($projectId);
+        $projectModel = $this->model('Project');
+        $project = $projectModel->getProjectById($projectId);
+        
         if (!$project) {
             $_SESSION['error'] = 'Project not found.';
             header('Location: ' . URLROOT . '/organization/chats');
@@ -32,27 +332,24 @@ class ChatController extends Controller
         $userId = $_SESSION['user_id'];
         $role = $_SESSION['role'] ?? null;
 
-        // Security: must be owner or active member
         $isOwner = ($role === 'organization' && $project->organization_id == $userId);
-        $isMember = $this->projectModel->isUserMember($projectId, $userId);
+        $isMember = $projectModel->isUserMember($projectId, $userId);
+        
         if (!$isOwner && !$isMember) {
             $_SESSION['error'] = 'You do not have access to this project chat.';
             header('Location: ' . URLROOT . '/');
             exit();
         }
 
-        // Reuse existing organization chats page for layout
-        // The JS on that page will call fetchMessages/sendMessage
         $data = [
             'project' => $project,
             'projectId' => $projectId,
-            'members' => $this->projectModel->getProjectMembers($projectId)
+            'members' => $projectModel->getProjectMembers($projectId)
         ];
 
         $this->view('organization/chats', $data);
     }
 
-    // GET /chat/fetchMessages?project_id=..
     public function fetchMessages()
     {
         header('Content-Type: application/json');
@@ -64,29 +361,26 @@ class ChatController extends Controller
         }
 
         $userId = $_SESSION['user_id'];
-        $role = $_SESSION['role'] ?? null;
-
-        // Security: owner or member only
-        $project = $this->projectModel->getProjectById($projectId);
+        $projectModel = $this->model('Project');
+        $project = $projectModel->getProjectById($projectId);
+        
         if (!$project) {
             echo json_encode(['success' => false, 'message' => 'Project not found.']);
             return;
         }
-        $isOwner = ($role === 'organization' && $project->organization_id == $userId);
-        $isMember = $this->projectModel->isUserMember($projectId, $userId);
-        if (!$isOwner && !$isMember) {
-            echo json_encode(['success' => false, 'message' => 'Access denied.']);
-            return;
-        }
 
-        $db = new Database();
-        $db->query("SELECT m.id, m.message, m.created_at, u.username AS sender_name, u.profile_picture AS sender_profile_pic, u.id AS sender_id
-                    FROM project_chat_messages m
-                    JOIN users u ON m.sender_id = u.id
-                    WHERE m.project_id = :project_id
-                    ORDER BY m.created_at ASC, m.id ASC");
-        $db->bind(':project_id', $projectId);
-        $rows = $db->resultSet();
+        $this->db->query("
+            SELECT m.id, m.message, m.created_at, 
+                   u.username AS sender_name, 
+                   u.profile_picture AS sender_profile_pic, 
+                   u.id AS sender_id
+            FROM project_chat_messages m
+            JOIN users u ON m.sender_id = u.id
+            WHERE m.project_id = :project_id
+            ORDER BY m.created_at ASC, m.id ASC
+        ");
+        $this->db->bind(':project_id', $projectId);
+        $rows = $this->db->resultSet();
 
         echo json_encode([
             'success' => true,
@@ -95,7 +389,6 @@ class ChatController extends Controller
         ]);
     }
 
-    // POST /chat/sendMessage
     public function sendMessage()
     {
         header('Content-Type: application/json');
@@ -114,33 +407,27 @@ class ChatController extends Controller
         }
 
         $userId = $_SESSION['user_id'];
-        $role = $_SESSION['role'] ?? null;
-        $project = $this->projectModel->getProjectById($projectId);
+        $projectModel = $this->model('Project');
+        $project = $projectModel->getProjectById($projectId);
+        
         if (!$project) {
             echo json_encode(['success' => false, 'message' => 'Project not found.']);
             return;
         }
 
-        $isOwner = ($role === 'organization' && $project->organization_id == $userId);
-        $isMember = $this->projectModel->isUserMember($projectId, $userId);
-        if (!$isOwner && !$isMember) {
-            echo json_encode(['success' => false, 'message' => 'You are not a member of this project.']);
-            return;
-        }
-
-        $db = new Database();
-        $db->query("INSERT INTO project_chat_messages (project_id, sender_id, message) VALUES (:project_id, :sender_id, :message)");
-        $db->bind(':project_id', $projectId);
-        $db->bind(':sender_id', $userId);
-        $db->bind(':message', $message);
-        $ok = $db->execute();
-
-        if ($ok) {
+        $this->db->query("
+            INSERT INTO project_chat_messages (project_id, sender_id, message) 
+            VALUES (:project_id, :sender_id, :message)
+        ");
+        $this->db->bind(':project_id', $projectId);
+        $this->db->bind(':sender_id', $userId);
+        $this->db->bind(':message', $message);
+        
+        if ($this->db->execute()) {
             echo json_encode(['success' => true]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Failed to send message.']);
         }
     }
 }
-
 ?>
