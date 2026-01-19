@@ -30,7 +30,8 @@ class UserdashboardController extends Controller {
         $userSkills = $this->getUserSkills($userId);
         $userProjects = $this->getUserProjects($userId);
         $userFeedback = $this->getUserFeedback($userId);
-        
+        $matches = $this->skillMatchModel->getAllMatchesWithScores($userId);
+
         if (!is_array($userData)) {
             die("ERROR: getUserData returned: " . print_r($userData, true));
         }
@@ -151,7 +152,13 @@ public function matches() {
     $skillMatchModel = $this->model('SkillMatch');
     $exchangeModel = $this->model('Exchange');
     
+    // Get all matches with new tier system (mutual, multi, single)
     $allMatches = $skillMatchModel->getAllMatchesWithScores($userId);
+
+    // Ensure arrays exist (in case model returns empty)
+    $mutual = isset($allMatches['mutual']) && is_array($allMatches['mutual']) ? $allMatches['mutual'] : [];
+    $multi = isset($allMatches['multi']) && is_array($allMatches['multi']) ? $allMatches['multi'] : [];
+    $single = isset($allMatches['single']) && is_array($allMatches['single']) ? $allMatches['single'] : [];
     
     // Get pending connection requests
     $pendingRequests = $exchangeModel->getExchangeRequests($userId);
@@ -160,7 +167,7 @@ public function matches() {
     foreach ($pendingRequests as $request) {
         $formattedRequests[] = [
             'exchange_id' => $request->id,
-            'sender_id' => $request->requester_id,  // FIXED: was sender_id, should be requester_id
+            'sender_id' => $request->requester_id,
             'sender_name' => $request->sender_name,
             'sender_email' => $request->sender_email,
             'sender_avatar' => $request->sender_avatar ?? strtoupper(substr($request->sender_name, 0, 2)),
@@ -177,14 +184,16 @@ public function matches() {
         'title' => 'Matches',
         'user' => $user,
         'page' => 'matches',
-        'perfectMatches' => $allMatches['perfect'],
-        'greatMatches' => $allMatches['great'],
-        'goodMatches' => $allMatches['good'],
+        // Pass the three tier arrays
+        'mutual' => $mutual,
+        'multi' => $multi,
+        'single' => $single,
+        // Match statistics
         'matchStats' => [
-            'perfect_count' => count($allMatches['perfect']),
-            'great_count' => count($allMatches['great']),
-            'good_count' => count($allMatches['good']),
-            'total_count' => count($allMatches['perfect']) + count($allMatches['great']) + count($allMatches['good'])
+            'total_count' => count($mutual) + count($multi) + count($single),
+            'mutual_count' => count($mutual),
+            'multi_count' => count($multi),
+            'single_count' => count($single)
         ],
         'userSkills' => $userSkillsData,
         'pendingRequests' => $formattedRequests
@@ -192,7 +201,6 @@ public function matches() {
     
     $this->view('users/matches', $data);
 }
-
 /**
  * Handle accept/reject connection requests
  */
