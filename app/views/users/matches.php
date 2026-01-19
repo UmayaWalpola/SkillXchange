@@ -116,7 +116,7 @@
             <?php if (!empty($data['mutual'])): ?>
             <div class="match-tier-section" data-tier="mutual">
                 <h2 class="tier-title">
-                    🤝 MUTUAL MATCHES
+                     MUTUAL MATCHES
                     <span class="tier-count">(<?= count($data['mutual']); ?> found)</span>
                 </h2>
                 <p class="tier-description">You can both teach AND learn from each other - the best connections!</p>
@@ -129,7 +129,7 @@
                                  array_column($match['i_teach'], 'name'),
                                  array_column($match['they_teach'], 'name')
                              ))); ?>">
-                            <div class="match-badge-overlay">🤝 Mutual</div>
+                            <div class="match-badge-overlay">Mutual</div>
                             <div class="match-header">
                                 <div class="match-avatar">
                                     <?= htmlspecialchars($match['avatar']); ?>
@@ -177,6 +177,24 @@
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
+
+                                <?php if ($match['is_mutual']): ?>
+    <div class="mutual-chat-options">
+        <?php foreach ($match['i_teach'] as $skill): ?>
+            <button class="btn-chat-skill" 
+                    onclick="openSkillChat(<?= $match['id']; ?>, '<?= $skill['name']; ?>', 'teach')">
+                 Chat: You teach <?= $skill['display_name']; ?>
+            </button>
+        <?php endforeach; ?>
+        
+        <?php foreach ($match['they_teach'] as $skill): ?>
+            <button class="btn-chat-skill"
+                    onclick="openSkillChat(<?= $match['id']; ?>, '<?= $skill['name']; ?>', 'learn')">
+                 Chat: You learn <?= $skill['display_name']; ?>
+            </button>
+        <?php endforeach; ?>
+    </div>
+            <?php endif; ?>
                                 <?php endif; ?>
                             </div>
                             
@@ -200,6 +218,8 @@
                 </div>
             </div>
             <?php endif; ?>
+
+            
 
             <!-- MULTI-SKILL MATCHES -->
             <?php if (!empty($data['multi'])): ?>
