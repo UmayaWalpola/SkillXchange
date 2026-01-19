@@ -1,205 +1,320 @@
 <?php
-// app/models/Community.php
 
 class Community {
     private $db;
-
+    
     public function __construct() {
-        $this->db = new Database;
+        $this->db = new Database();
     }
-
-    // CREATE - Add new community
-    public function create($data) {
-        $this->db->query('INSERT INTO communities 
-            (name, description, privacy, rules, tags, status, created_by, created_at) 
-            VALUES 
-            (:name, :description, :privacy, :rules, :tags, :status, :created_by, NOW())');
-        
-        $this->db->bind(':name', $data['name']);
-        $this->db->bind(':description', $data['description']);
-        $this->db->bind(':privacy', $data['privacy']);
-        $this->db->bind(':rules', $data['rules']);
-        $this->db->bind(':tags', $data['tags']);
-        $this->db->bind(':status', $data['status']);
-        $this->db->bind(':created_by', $data['created_by']);
-
-        if($this->db->execute()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    // READ - Get all communities
-    public function getAllCommunities() {
-        $this->db->query('SELECT 
+    
+    // =============================================
+    // GET COMMUNITIES
+    // =============================================
+    
+    /**
+     * Get all communities with stats and user membership status
+     */
+    public function getAllCommunitiesForUser($userId) {
+        $this->db->query("
+            SELECT 
                 c.*,
                 COUNT(DISTINCT cm.user_id) as members,
-                COUNT(DISTINCT p.id) as posts
+                COUNT(DISTINCT cp.id) as posts,
+                CASE WHEN ucm.id IS NOT NULL THEN 1 ELSE 0 END as is_member,
+                ucm.role as user_role
             FROM communities c
             LEFT JOIN community_members cm ON c.id = cm.community_id
-            LEFT JOIN posts p ON c.id = p.community_id
+            LEFT JOIN community_posts cp ON c.id = cp.community_id
+            LEFT JOIN community_members ucm ON c.id = ucm.community_id AND ucm.user_id = :user_id
             GROUP BY c.id
-            ORDER BY c.created_at DESC');
-
+            ORDER BY c.created_at DESC
+        ");
+        
+        $this->db->bind(':user_id', $userId);
         return $this->db->resultSet();
     }
-
-    // READ - Get community by ID
-    public function getCommunityById($id) {
-        $this->db->query('SELECT 
+    
+    /**
+     * Get single community with details
+     */
+    public function getCommunityById($communityId, $userId = null) {
+        $this->db->query("
+            SELECT 
                 c.*,
+                u.username as creator_name,
                 COUNT(DISTINCT cm.user_id) as members,
-                COUNT(DISTINCT p.id) as posts
+                COUNT(DISTINCT cp.id) as posts,
+                " . ($userId ? "CASE WHEN ucm.id IS NOT NULL THEN 1 ELSE 0 END as is_member,
+                ucm.role as user_role" : "0 as is_member, NULL as user_role") . "
             FROM communities c
+            INNER JOIN users u ON c.created_by = u.id
             LEFT JOIN community_members cm ON c.id = cm.community_id
-            LEFT JOIN posts p ON c.id = p.community_id
-            WHERE c.id = :id
-            GROUP BY c.id');
+            LEFT JOIN community_posts cp ON c.id = cp.community_id
+            " . ($userId ? "LEFT JOIN community_members ucm ON c.id = ucm.community_id AND ucm.user_id = :user_id" : "") . "
+            WHERE c.id = :community_id
+            GROUP BY c.id
+        ");
         
-        $this->db->bind(':id', $id);
-
+        $this->db->bind(':community_id', $communityId);
+        if ($userId) {
+            $this->db->bind(':user_id', $userId);
+        }
+        
         return $this->db->single();
     }
-
-    // READ - Get communities by category
-   /* public function getCommunitiesByCategory($category) {
-        $this->db->query('SELECT 
-                c.*,
-                COUNT(DISTINCT cm.user_id) as members,
-                COUNT(DISTINCT p.id) as posts
-            FROM communities c
-            LEFT JOIN community_members cm ON c.id = cm.community_id
-            LEFT JOIN posts p ON c.id = p.community_id
-            WHERE c.category = :category
-            GROUP BY c.id
-            ORDER BY c.created_at DESC');
+    
+    // =============================================
+    // COMMUNITY MEMBERSHIP
+    // =============================================
+    
+    /**
+     * Join a community
+     */
+    public function joinCommunity($userId, $communityId) {
+        try {
+            $this->db->query("
+                INSERT INTO community_members (community_id, user_id, role)
+                VALUES (:community_id, :user_id, 'member')
+                ON DUPLICATE KEY UPDATE joined_at = CURRENT_TIMESTAMP
+            ");
+            
+            $this->db->bind(':community_id', $communityId);
+            $this->db->bind(':user_id', $userId);
+            
+            return $this->db->execute();
+        } catch (Exception $e) {
+            error_log("Join community error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Leave a community
+     */
+    public function leaveCommunity($userId, $communityId) {
+        // Don't allow owner to leave
+        $this->db->query("
+            SELECT role FROM community_members 
+            WHERE community_id = :community_id AND user_id = :user_id
+        ");
+        $this->db->bind(':community_id', $communityId);
+        $this->db->bind(':user_id', $userId);
+        $member = $this->db->single();
         
-        $this->db->bind(':category', $category);
-
+        if ($member && $member->role === 'owner') {
+            return false; // Owners can't leave
+        }
+        
+        $this->db->query("
+            DELETE FROM community_members 
+            WHERE community_id = :community_id AND user_id = :user_id
+        ");
+        
+        $this->db->bind(':community_id', $communityId);
+        $this->db->bind(':user_id', $userId);
+        
+        return $this->db->execute();
+    }
+    
+    /**
+     * Get community members
+     */
+    public function getCommunityMembers($communityId) {
+        $this->db->query("
+            SELECT 
+                cm.id,
+                cm.role,
+                cm.joined_at,
+                u.id as user_id,
+                u.username as name,
+                u.username,
+                u.profile_picture
+            FROM community_members cm
+            INNER JOIN users u ON cm.user_id = u.id
+            WHERE cm.community_id = :community_id
+            ORDER BY 
+                CASE cm.role
+                    WHEN 'owner' THEN 1
+                    WHEN 'moderator' THEN 2
+                    ELSE 3
+                END,
+                cm.joined_at ASC
+        ");
+        
+        $this->db->bind(':community_id', $communityId);
         return $this->db->resultSet();
-    } */
-
-    // READ - Get communities by status
-    public function getCommunitiesByStatus($status) {
-        $this->db->query('SELECT 
-                c.*,
-                COUNT(DISTINCT cm.user_id) as members,
-                COUNT(DISTINCT p.id) as posts
-            FROM communities c
-            LEFT JOIN community_members cm ON c.id = cm.community_id
-            LEFT JOIN posts p ON c.id = p.community_id
-            WHERE c.status = :status
-            GROUP BY c.id
-            ORDER BY c.created_at DESC');
+    }
+    
+    // =============================================
+    // COMMUNITY POSTS/MESSAGES
+    // =============================================
+    
+    /**
+     * Get community posts
+     */
+    public function getCommunityPosts($communityId, $limit = 50, $offset = 0) {
+        $this->db->query("
+            SELECT 
+                cp.*,
+                u.username as author_name,
+                u.username as author_username,
+                u.profile_picture as author_avatar,
+                COUNT(DISTINCT cpr.id) as reaction_count
+            FROM community_posts cp
+            INNER JOIN users u ON cp.user_id = u.id
+            LEFT JOIN community_post_reactions cpr ON cp.id = cpr.post_id
+            WHERE cp.community_id = :community_id AND cp.parent_id IS NULL
+            GROUP BY cp.id
+            ORDER BY cp.is_pinned DESC, cp.created_at DESC
+            LIMIT :limit OFFSET :offset
+        ");
         
-        $this->db->bind(':status', $status);
-
+        $this->db->bind(':community_id', $communityId);
+        $this->db->bind(':limit', $limit);
+        $this->db->bind(':offset', $offset);
+        
         return $this->db->resultSet();
     }
-
-    // UPDATE - Update community
-    public function update($data) {
-        $this->db->query('UPDATE communities 
-            SET 
-                name = :name,
-                description = :description,
-                privacy = :privacy,
-                rules = :rules,
-                tags = :tags,
-                status = :status,
-                updated_at = NOW()
-            WHERE id = :id');
+    
+    /**
+     * Create a post/message
+     */
+    public function createPost($userId, $communityId, $content, $postType = 'message') {
+        // Check if user is a member
+        if (!$this->isMember($userId, $communityId)) {
+            return false;
+        }
         
-        $this->db->bind(':id', $data['id']);
-        $this->db->bind(':name', $data['name']);
-        $this->db->bind(':description', $data['description']);
-        $this->db->bind(':privacy', $data['privacy']);
-        $this->db->bind(':rules', $data['rules']);
-        $this->db->bind(':tags', $data['tags']);
-        $this->db->bind(':status', $data['status']);
-
-        if($this->db->execute()) {
-            return true;
-        } else {
+        try {
+            $this->db->query("
+                INSERT INTO community_posts (community_id, user_id, content, post_type)
+                VALUES (:community_id, :user_id, :content, :post_type)
+            ");
+            
+            $this->db->bind(':community_id', $communityId);
+            $this->db->bind(':user_id', $userId);
+            $this->db->bind(':content', $content);
+            $this->db->bind(':post_type', $postType);
+            
+            if ($this->db->execute()) {
+                return $this->db->lastInsertId();
+            }
+            return false;
+        } catch (Exception $e) {
+            error_log("Create post error: " . $e->getMessage());
             return false;
         }
     }
-
-    // UPDATE - Update community status only
-    public function updateStatus($id, $status) {
-        $this->db->query('UPDATE communities 
-            SET status = :status, updated_at = NOW()
-            WHERE id = :id');
+    
+    /**
+     * Delete a post
+     */
+    public function deletePost($userId, $postId) {
+        // Check if user owns the post or is moderator/owner
+        $this->db->query("
+            SELECT cp.user_id, cp.community_id, cm.role
+            FROM community_posts cp
+            LEFT JOIN community_members cm ON cp.community_id = cm.community_id AND cm.user_id = :user_id
+            WHERE cp.id = :post_id
+        ");
         
-        $this->db->bind(':id', $id);
-        $this->db->bind(':status', $status);
-
-        if($this->db->execute()) {
-            return true;
-        } else {
+        $this->db->bind(':user_id', $userId);
+        $this->db->bind(':post_id', $postId);
+        $post = $this->db->single();
+        
+        if (!$post) return false;
+        
+        // Allow deletion if: owner of post, or moderator/owner of community
+        if ($post->user_id == $userId || in_array($post->role, ['owner', 'moderator'])) {
+            $this->db->query("DELETE FROM community_posts WHERE id = :post_id");
+            $this->db->bind(':post_id', $postId);
+            return $this->db->execute();
+        }
+        
+        return false;
+    }
+    
+    // =============================================
+    // HELPER METHODS
+    // =============================================
+    
+    /**
+     * Check if user is a member
+     */
+    public function isMember($userId, $communityId) {
+        $this->db->query("
+            SELECT id FROM community_members 
+            WHERE community_id = :community_id AND user_id = :user_id
+        ");
+        
+        $this->db->bind(':community_id', $communityId);
+        $this->db->bind(':user_id', $userId);
+        
+        return $this->db->single() !== false;
+    }
+    
+    /**
+     * Check if user is moderator or owner
+     */
+    public function isModerator($userId, $communityId) {
+        $this->db->query("
+            SELECT role FROM community_members 
+            WHERE community_id = :community_id AND user_id = :user_id
+        ");
+        
+        $this->db->bind(':community_id', $communityId);
+        $this->db->bind(':user_id', $userId);
+        
+        $member = $this->db->single();
+        return $member && in_array($member->role, ['owner', 'moderator']);
+    }
+    
+    /**
+     * Create a new community
+     */
+    public function createCommunity($userId, $name, $description, $about, $icon = '🌐', $category = null) {
+        try {
+            $this->db->query("START TRANSACTION");
+            
+            // Create community
+            $this->db->query("
+                INSERT INTO communities (name, description, about, icon, category, created_by)
+                VALUES (:name, :description, :about, :icon, :category, :created_by)
+            ");
+            
+            $this->db->bind(':name', $name);
+            $this->db->bind(':description', $description);
+            $this->db->bind(':about', $about);
+            $this->db->bind(':icon', $icon);
+            $this->db->bind(':category', $category);
+            $this->db->bind(':created_by', $userId);
+            
+            if (!$this->db->execute()) {
+                throw new Exception("Failed to create community");
+            }
+            
+            $communityId = $this->db->lastInsertId();
+            
+            // Add creator as owner
+            $this->db->query("
+                INSERT INTO community_members (community_id, user_id, role)
+                VALUES (:community_id, :user_id, 'owner')
+            ");
+            
+            $this->db->bind(':community_id', $communityId);
+            $this->db->bind(':user_id', $userId);
+            
+            if (!$this->db->execute()) {
+                throw new Exception("Failed to add owner");
+            }
+            
+            $this->db->query("COMMIT");
+            return $communityId;
+            
+        } catch (Exception $e) {
+            $this->db->query("ROLLBACK");
+            error_log("Create community error: " . $e->getMessage());
             return false;
         }
-    }
-
-    // DELETE - Delete community
-    public function delete($id) {
-        $this->db->query('DELETE FROM communities WHERE id = :id');
-        $this->db->bind(':id', $id);
-
-        if($this->db->execute()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    // Get dashboard statistics
-   
-// Get dashboard statistics - FIXED VERSION
-public function getStats() {
-    // Get total and active communities
-    $this->db->query('SELECT 
-        COUNT(*) as total_communities,
-        SUM(CASE WHEN status = "active" THEN 1 ELSE 0 END) as active_communities
-    FROM communities');
-    
-    $communityStats = $this->db->single();
-    
-    // Get total members
-    $this->db->query('SELECT COUNT(*) as total_members FROM community_members');
-    $memberStats = $this->db->single();
-    
-    // Get total posts
-    $this->db->query('SELECT COUNT(*) as total_posts FROM posts');
-    $postStats = $this->db->single();
-    
-    // Debug: Log the results
-    error_log("Community Stats: " . print_r($communityStats, true));
-    error_log("Member Stats: " . print_r($memberStats, true));
-    error_log("Post Stats: " . print_r($postStats, true));
-    
-    return [
-        'total_communities' => (int)($communityStats->total_communities ?? 0),
-        'active_communities' => (int)($communityStats->active_communities ?? 0),
-        'total_members' => (int)($memberStats->total_members ?? 0),
-        'total_posts' => (int)($postStats->total_posts ?? 0)
-    ];
-}
-
-    // Check if community name already exists
-    public function communityNameExists($name, $excludeId = null) {
-        if($excludeId) {
-            $this->db->query('SELECT id FROM communities WHERE name = :name AND id != :id');
-            $this->db->bind(':id', $excludeId);
-        } else {
-            $this->db->query('SELECT id FROM communities WHERE name = :name');
-        }
-        
-        $this->db->bind(':name', $name);
-        
-        $row = $this->db->single();
-        
-        return $row ? true : false;
     }
 }

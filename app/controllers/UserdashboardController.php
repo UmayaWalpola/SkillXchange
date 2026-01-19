@@ -302,63 +302,434 @@ public function handleRequest() {
         exit;
     }
 
-    public function communities() {
-        $userId = $this->checkAuth();
+   
+// Add these methods to your UserdashboardController class
+
+public function communities() {
+    $userId = $this->checkAuth();
+    $user = $this->getUserData($userId);
+    
+    $communityModel = $this->model('Community');
+    $communities = $communityModel->getAllCommunitiesForUser($userId);
+    
+    $data = [
+        'title' => 'Communities',
+        'user' => $user,
+        'page' => 'communities',
+        'communities' => $communities
+    ];
+    
+    $this->view('users/communities', $data);
+}
+
+/**
+ * View single community
+ */
+public function viewCommunity($communityId = null) {
+    $userId = $this->checkAuth();
+    $user = $this->getUserData($userId);
+    
+    if (!$communityId) {
+        header('Location: ' . URLROOT . '/userdashboard/communities');
+        exit;
+    }
+    
+    $communityModel = $this->model('Community');
+    $community = $communityModel->getCommunityById($communityId, $userId);
+    
+    if (!$community) {
+        $_SESSION['error'] = 'Community not found';
+        header('Location: ' . URLROOT . '/userdashboard/communities');
+        exit;
+    }
+    
+    $members = $communityModel->getCommunityMembers($communityId);
+    $posts = $communityModel->getCommunityPosts($communityId);
+    
+    $data = [
+        'title' => $community->name,
+        'user' => $user,
+        'page' => 'communities',
+        'community' => $community,
+        'members' => $members,
+        'posts' => $posts
+    ];
+    
+    $this->view('users/community_detail', $data);
+}
+
+/**
+ * Join community
+ */
+public function joinCommunity() {
+    header('Content-Type: application/json');
+    
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        echo json_encode(['success' => false, 'message' => 'Invalid request']);
+        exit;
+    }
+    
+    $userId = $this->checkAuth();
+    $communityId = $_POST['community_id'] ?? null;
+    
+    if (!$communityId) {
+        echo json_encode(['success' => false, 'message' => 'Community ID required']);
+        exit;
+    }
+    
+    $communityModel = $this->model('Community');
+    $result = $communityModel->joinCommunity($userId, $communityId);
+    
+    if ($result) {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Successfully joined community!'
+        ]);
+    } else {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Failed to join community'
+        ]);
+    }
+    exit;
+}
+
+/**
+ * Leave community
+ */
+public function leaveCommunity() {
+    header('Content-Type: application/json');
+    
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        echo json_encode(['success' => false, 'message' => 'Invalid request']);
+        exit;
+    }
+    
+    $userId = $this->checkAuth();
+    $communityId = $_POST['community_id'] ?? null;
+    
+    if (!$communityId) {
+        echo json_encode(['success' => false, 'message' => 'Community ID required']);
+        exit;
+    }
+    
+    $communityModel = $this->model('Community');
+    $result = $communityModel->leaveCommunity($userId, $communityId);
+    
+    if ($result) {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Successfully left community'
+        ]);
+    } else {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Failed to leave community (owners cannot leave)'
+        ]);
+    }
+    exit;
+}
+
+/**
+ * Post message to community
+ */
+public function postToCommunity() {
+    header('Content-Type: application/json');
+    
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        echo json_encode(['success' => false, 'message' => 'Invalid request']);
+        exit;
+    }
+    
+    $userId = $this->checkAuth();
+    $communityId = $_POST['community_id'] ?? null;
+    $content = trim($_POST['content'] ?? '');
+    
+    if (!$communityId || empty($content)) {
+        echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+        exit;
+    }
+    
+    $communityModel = $this->model('Community');
+    
+    // Check if user is a member
+    if (!$communityModel->isMember($userId, $communityId)) {
+        echo json_encode(['success' => false, 'message' => 'You must be a member to post']);
+        exit;
+    }
+    
+    $postId = $communityModel->createPost($userId, $communityId, $content);
+    
+    if ($postId) {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Message posted successfully',
+            'post_id' => $postId
+        ]);
+    } else {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Failed to post message'
+        ]);
+    }
+    exit;
+}
+
+/**
+ * Get community messages (AJAX)
+ */
+public function getCommunityMessages() {
+    header('Content-Type: application/json');
+    
+    $userId = $this->checkAuth();
+    $communityId = $_GET['community_id'] ?? null;
+    
+    if (!$communityId) {
+        echo json_encode(['success' => false, 'message' => 'Community ID required']);
+        exit;
+    }
+    
+    $communityModel = $this->model('Community');
+    
+    // Check if user is a member
+    if (!$communityModel->isMember($userId, $communityId)) {
+        echo json_encode(['success' => false, 'message' => 'Not a member']);
+        exit;
+    }
+    
+    $posts = $communityModel->getCommunityPosts($communityId);
+    
+    echo json_encode([
+        'success' => true,
+        'posts' => $posts
+    ]);
+    exit;
+}
+
+/**
+ * Create new community
+ */
+public function createCommunity() {
+    $userId = $this->checkAuth();
+    
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $name = trim($_POST['name'] ?? '');
+        $description = trim($_POST['description'] ?? '');
+        $about = trim($_POST['about'] ?? '');
+        $icon = $_POST['icon'] ?? '🌐';
+        $category = $_POST['category'] ?? null;
         
+        $errors = [];
+        
+        if (empty($name)) {
+            $errors[] = 'Community name is required';
+        }
+        if (empty($description)) {
+            $errors[] = 'Description is required';
+        }
+        
+        if (empty($errors)) {
+            $communityModel = $this->model('Community');
+            $communityId = $communityModel->createCommunity($userId, $name, $description, $about, $icon, $category);
+            
+            if ($communityId) {
+                $_SESSION['success'] = 'Community created successfully!';
+                header('Location: ' . URLROOT . '/userdashboard/viewCommunity/' . $communityId);
+                exit;
+            } else {
+                $errors[] = 'Failed to create community';
+            }
+        }
+        
+        // Show form with errors
         $user = $this->getUserData($userId);
-        $communities = $this->getAllCommunities();
-        
         $data = [
-            'title' => 'Communities',
+            'title' => 'Create Community',
             'user' => $user,
             'page' => 'communities',
-            'communities' => $communities
+            'errors' => $errors,
+            'old' => $_POST
         ];
         
-        $this->view('users/communities', $data);
-    }
-
-    public function quiz() {
-        $userId = $this->checkAuth();
-        
+        $this->view('users/create_community', $data);
+    } else {
+        // Show create form
         $user = $this->getUserData($userId);
-        $quizzes = $this->getAllQuizzes();
-        
         $data = [
-            'title' => 'Quiz',
+            'title' => 'Create Community',
             'user' => $user,
-            'page' => 'quiz',
-            'quizzes' => $quizzes
+            'page' => 'communities',
+            'errors' => []
         ];
         
-        $this->view('users/quiz', $data);
+        $this->view('users/create_community', $data);
     }
+}
 
-    public function takeQuiz($quizId = null) {
-        $userId = $this->checkAuth();
-        
-        if (!$quizId) {
-            header('Location: ' . URLROOT . '/userdashboard/quiz');
-            exit;
-        }
-        
-        $user = $this->getUserData($userId);
-        $quiz = $this->getQuizById($quizId);
-        
-        if (!$quiz) {
-            header('Location: ' . URLROOT . '/userdashboard/quiz');
-            exit;
-        }
-        
-        $data = [
-            'title' => $quiz['title'],
-            'user' => $user,
-            'page' => 'quiz',
-            'quiz' => $quiz
-        ];
-        
-        $this->view('users/take_quiz', $data);
+// Add these methods to your UserdashboardController class
+// Replace the existing quiz() and takeQuiz() methods
+
+public function quiz() {
+    $userId = $this->checkAuth();
+    
+    $user = $this->getUserData($userId);
+    
+    // Get quizzes from database using Quiz model
+    $quizModel = $this->model('Quiz');
+    $quizzes = $quizModel->getAllQuizzesForUser($userId);
+    
+    $data = [
+        'title' => 'Take a Quiz',
+        'user' => $user,
+        'page' => 'quiz',
+        'quizzes' => $quizzes
+    ];
+    
+    $this->view('users/quiz', $data);
+}
+
+public function takeQuiz($quizId = null) {
+    $userId = $this->checkAuth();
+    
+    if (!$quizId) {
+        header('Location: ' . URLROOT . '/userdashboard/quiz');
+        exit;
     }
+    
+    $user = $this->getUserData($userId);
+    
+    // Get quiz from database
+    $quizModel = $this->model('Quiz');
+    $quiz = $quizModel->getQuizById($quizId);
+    
+    if (!$quiz) {
+        $_SESSION['error'] = 'Quiz not found';
+        header('Location: ' . URLROOT . '/userdashboard/quiz');
+        exit;
+    }
+    
+    // Debug: Check what's in the quiz
+    error_log('Quiz data: ' . print_r($quiz, true));
+    
+    $data = [
+        'title' => $quiz['title'],
+        'user' => $user,
+        'page' => 'quiz',
+        'quiz' => $quiz
+    ];
+    
+    $this->view('users/take_quiz', $data);
+}
+
+/**
+ * Submit quiz answers
+ */
+public function submitQuiz() {
+    header('Content-Type: application/json');
+    
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        echo json_encode(['success' => false, 'message' => 'Invalid request method']);
+        exit;
+    }
+    
+    $userId = $this->checkAuth();
+    $quizId = $_POST['quiz_id'] ?? null;
+    $answersJson = $_POST['answers'] ?? null;
+    $timeTaken = $_POST['time_taken'] ?? null;
+    
+    // Debug logging
+    error_log("Submit Quiz - User ID: $userId, Quiz ID: $quizId");
+    error_log("Answers JSON: $answersJson");
+    
+    if (!$quizId || !$answersJson) {
+        echo json_encode(['success' => false, 'message' => 'Missing quiz ID or answers']);
+        exit;
+    }
+    
+    // Decode answers
+    $answers = json_decode($answersJson, true);
+    
+    if (!is_array($answers)) {
+        echo json_encode(['success' => false, 'message' => 'Invalid answers format']);
+        exit;
+    }
+    
+    try {
+        $quizModel = $this->model('Quiz');
+        $result = $quizModel->saveQuizAttempt($userId, $quizId, $answers, $timeTaken);
+        
+        error_log("Quiz submission result: " . print_r($result, true));
+        
+        echo json_encode($result);
+    } catch (Exception $e) {
+        error_log("Quiz submission error: " . $e->getMessage());
+        echo json_encode([
+            'success' => false, 
+            'message' => 'Error: ' . $e->getMessage()
+        ]);
+    }
+    
+    exit;
+}
+
+/**
+ * Toggle save quiz
+ */
+public function toggleSaveQuiz() {
+    header('Content-Type: application/json');
+    
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        echo json_encode(['success' => false, 'message' => 'Invalid request method']);
+        exit;
+    }
+    
+    $userId = $this->checkAuth();
+    $quizId = $_POST['quiz_id'] ?? null;
+    $action = $_POST['action'] ?? 'save'; // 'save' or 'unsave'
+    
+    if (!$quizId) {
+        echo json_encode(['success' => false, 'message' => 'Quiz ID required']);
+        exit;
+    }
+    
+    $quizModel = $this->model('Quiz');
+    
+    if ($action === 'save') {
+        $result = $quizModel->saveQuizForLater($userId, $quizId);
+        $message = $result ? 'Quiz saved for later' : 'Failed to save quiz';
+    } else {
+        $result = $quizModel->unsaveQuiz($userId, $quizId);
+        $message = $result ? 'Quiz removed from saved' : 'Failed to remove quiz';
+    }
+    
+    echo json_encode([
+        'success' => $result,
+        'message' => $message
+    ]);
+    exit;
+}
+
+/**
+ * View quiz results/history
+ */
+public function quizHistory() {
+    $userId = $this->checkAuth();
+    $user = $this->getUserData($userId);
+    
+    $quizModel = $this->model('Quiz');
+    $attempts = $quizModel->getUserAttempts($userId);
+    $stats = $quizModel->getUserQuizStats($userId);
+    
+    $data = [
+        'title' => 'Quiz History',
+        'user' => $user,
+        'page' => 'quiz',
+        'attempts' => $attempts,
+        'stats' => $stats
+    ];
+    
+    $this->view('users/quiz_history', $data);
+}
 
     public function projects() {
         $userId = $this->checkAuth();

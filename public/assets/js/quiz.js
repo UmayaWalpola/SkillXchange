@@ -1,4 +1,3 @@
-// Get data from HTML data attributes
 const quizDataElement = document.getElementById('quiz-data');
 const quizzes = JSON.parse(quizDataElement.dataset.quizzes);
 const urlRoot = quizDataElement.dataset.urlroot;
@@ -41,11 +40,36 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 // Functions
-function toggleSave(quizId) {
+async function toggleSave(quizId) {
     const quiz = quizzes.find(q => q.id === quizId);
-    if (quiz) {
-        quiz.status = quiz.status === 'saved' ? 'not_started' : 'saved';
-        renderQuizzes();
+    if (!quiz) return;
+    
+    const action = quiz.status === 'saved' ? 'unsave' : 'save';
+    
+    try {
+        const response = await fetch(urlRoot + '/userdashboard/toggleSaveQuiz', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `quiz_id=${quizId}&action=${action}`
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Update local state
+            quiz.status = action === 'save' ? 'saved' : 'not_started';
+            renderQuizzes();
+            
+            // Show success message (optional)
+            showNotification(result.message, 'success');
+        } else {
+            showNotification(result.message || 'Failed to update quiz', 'error');
+        }
+    } catch (error) {
+        console.error('Error toggling save:', error);
+        showNotification('An error occurred', 'error');
     }
 }
 
@@ -61,27 +85,50 @@ function getStatusText(status) {
     }
 }
 
+function getStatusIcon(status) {
+    switch (status) {
+        case 'completed': return '✓';
+        case 'saved': return '🔖';
+        default: return '○';
+    }
+}
+
 function createQuizCard(quiz) {
     const difficultyClass = `difficulty-${quiz.difficulty.toLowerCase()}`;
     const statusClass = `status-${quiz.status.replace('_', '-')}`;
     
     return `
         <div class="quiz-card">
-            ${quiz.isPremium ? '<div class="premium-badge">Premium</div>' : ''}
+            ${quiz.isPremium ? '<div class="premium-badge">👑 Premium</div>' : ''}
             <div class="quiz-card-header">
                 <div class="quiz-info">
                     <h3>${quiz.title}</h3>
-                    <span class="badge ${difficultyClass}">${quiz.difficulty}</span>
+                    <div class="quiz-meta">
+                        <span class="badge ${difficultyClass}">${quiz.difficulty}</span>
+                        <span class="quiz-questions">${quiz.questionCount} Questions</span>
+                        ${quiz.timeLimit ? `<span class="quiz-time">⏱️ ${quiz.timeLimit} min</span>` : ''}
+                    </div>
                 </div>
             </div>
             <p class="quiz-description">${quiz.description}</p>
+            ${quiz.badge ? `
+                <div class="quiz-badge-preview">
+                    <span class="badge-icon">${quiz.badge.icon}</span>
+                    <span class="badge-text">Earn: ${quiz.badge.name}</span>
+                </div>
+            ` : ''}
+            ${quiz.lastScore !== null ? `
+                <div class="quiz-last-score">
+                    Last Score: <strong>${quiz.lastScore}%</strong>
+                </div>
+            ` : ''}
             <div class="quiz-actions">
                 <div class="status-badge ${statusClass}">
-                    ${getStatusText(quiz.status)}
+                    ${getStatusIcon(quiz.status)} ${getStatusText(quiz.status)}
                 </div>
                 <div class="quiz-actions-buttons">
                     <button class="btn btn-secondary" onclick="toggleSave(${quiz.id})">
-                        ${quiz.status === 'saved' ? '✓ Saved' : 'Save'}
+                        ${quiz.status === 'saved' ? '✓ Saved' : '🔖 Save'}
                     </button>
                     ${quiz.status !== 'completed' ? 
                         `<button class="btn btn-primary" onclick="startQuiz(${quiz.id})">Start Quiz</button>` :
@@ -116,5 +163,62 @@ function renderQuizzes() {
     }
 }
 
+function showNotification(message, type = 'info') {
+    // Simple notification system
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+        color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        z-index: 9999;
+        animation: slideIn 0.3s ease-out;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
+
 // Initialize
 renderQuizzes();
+
+// Make functions globally accessible
+window.toggleSave = toggleSave;
+window.startQuiz = startQuiz;
