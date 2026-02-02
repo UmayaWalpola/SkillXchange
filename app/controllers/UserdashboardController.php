@@ -8,6 +8,7 @@ class UserdashboardController extends Controller {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
+        
         $this->db = new Database();
     }
     
@@ -566,56 +567,144 @@ public function createCommunity() {
     }
 }
 
-// Add these methods to your UserdashboardController class
-// Replace the existing quiz() and takeQuiz() methods
+// ============================================
+// QUIZ METHODS - UPDATED
+// ============================================
 
 public function quiz() {
     $userId = $this->checkAuth();
-    
     $user = $this->getUserData($userId);
     
-    // Get quizzes from database using Quiz model
+    // Load the Quiz model
     $quizModel = $this->model('Quiz');
-    $quizzes = $quizModel->getAllQuizzesForUser($userId);
+    
+    // Fetch quizzes from database
+    $dbQuizzes = $quizModel->getQuizzesForUser($userId);
+    
+    // Format for your existing JavaScript
+    $formattedQuizzes = array_map(function($quiz) {
+        // Convert object to array if needed
+        $quizArray = is_object($quiz) ? (array)$quiz : $quiz;
+        
+        return [
+            'id' => $quizArray['quiz_id'] ?? $quizArray['id'],
+            'title' => $quizArray['title'],
+            'description' => $quizArray['description'] ?? '',
+            'difficulty' => $quizArray['difficulty_level'],
+            'category' => $quizArray['category'] ?? 'General',
+            'questionCount' => $quizArray['total_questions'],
+            'timeLimit' => $quizArray['duration'],
+            'status' => $quizArray['user_status'] ?? 'not_started',
+            'lastScore' => isset($quizArray['last_score']) ? round($quizArray['last_score'], 1) : null,
+            'isPremium' => false,
+            'badge' => null
+        ];
+    }, $dbQuizzes);
     
     $data = [
-        'title' => 'Take a Quiz',
+        'title' => 'Quizzes',
         'user' => $user,
         'page' => 'quiz',
-        'quizzes' => $quizzes
+        'quizzes' => $formattedQuizzes
     ];
     
     $this->view('users/quiz', $data);
 }
 
-public function takeQuiz($quizId = null) {
-    $userId = $this->checkAuth();
+/**
+ * Save/unsave quiz (AJAX endpoint)
+ */
+public function toggleSaveQuiz() {
+    header('Content-Type: application/json');
     
-    if (!$quizId) {
+    if($_SERVER['REQUEST_METHOD'] != 'POST') {
+        echo json_encode(['success' => false, 'message' => 'Invalid request']);
+        exit;
+    }
+    
+    $userId = $this->checkAuth();
+    $quizId = $_POST['quiz_id'] ?? null;
+    $action = $_POST['action'] ?? null;
+    
+    if(!$quizId || !$action) {
+        echo json_encode(['success' => false, 'message' => 'Missing parameters']);
+        exit;
+    }
+    
+    $quizModel = $this->model('Quiz');
+    
+    if($action === 'save') {
+        $result = $quizModel->saveQuizForUser($userId, $quizId);
+        $message = 'Quiz saved for later!';
+    } else {
+        $result = $quizModel->unsaveQuizForUser($userId, $quizId);
+        $message = 'Quiz removed from saved';
+    }
+    
+    echo json_encode([
+        'success' => $result,
+        'message' => $message
+    ]);
+    exit;
+}
+
+/**
+ * Take quiz - load quiz data from database
+ */
+public function takeQuiz($quizId = null) {
+    if(!$quizId) {
         header('Location: ' . URLROOT . '/userdashboard/quiz');
         exit;
     }
     
+    $userId = $this->checkAuth();
     $user = $this->getUserData($userId);
     
-    // Get quiz from database
     $quizModel = $this->model('Quiz');
+    
+    // Get quiz from database
     $quiz = $quizModel->getQuizById($quizId);
     
-    if (!$quiz) {
-        $_SESSION['error'] = 'Quiz not found';
+    if(!$quiz || $quiz['status'] !== 'active') {
         header('Location: ' . URLROOT . '/userdashboard/quiz');
         exit;
     }
     
-    // Debug: Check what's in the quiz
-    error_log('Quiz data: ' . print_r($quiz, true));
+    // Get questions
+    $dbQuestions = $quizModel->getQuizQuestions($quizId);
+    
+    // Format quiz data for your existing view
+    $quizData = [
+        'id' => $quiz['quiz_id'] ?? $quiz['id'],
+        'title' => $quiz['title'],
+        'description' => $quiz['description'] ?? '',
+        'difficulty' => $quiz['difficulty_level'],
+        'questionCount' => $quiz['total_questions'],
+        'timeLimit' => $quiz['duration'],
+        'badge' => null,
+        'questions' => array_map(function($q) {
+            return [
+                'id' => $q['question_id'],
+                'question' => $q['question_text'],
+                'options' => [
+                    $q['option_a'] ?? '',
+                    $q['option_b'] ?? '',
+                    $q['option_c'] ?? '',
+                    $q['option_d'] ?? ''
+                ]
+            ];
+        }, $dbQuestions)
+    ];
+    
+    // Create attempt record
+    $attemptId = $quizModel->startAttempt($userId, $quizId, count($dbQuestions));
+    $quizData['attempt_id'] = $attemptId;
     
     $data = [
-        'title' => $quiz['title'],
+        'title' => 'Take Quiz - ' . $quiz['title'],
         'user' => $user,
         'page' => 'quiz',
-        'quiz' => $quiz
+        'quiz' => $quizData
     ];
     
     $this->view('users/take_quiz', $data);
@@ -627,138 +716,73 @@ public function takeQuiz($quizId = null) {
 public function submitQuiz() {
     header('Content-Type: application/json');
     
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        echo json_encode(['success' => false, 'message' => 'Invalid request method']);
+    if($_SERVER['REQUEST_METHOD'] != 'POST') {
+        echo json_encode(['success' => false, 'message' => 'Invalid request']);
         exit;
     }
     
     $userId = $this->checkAuth();
-    $quizId = $_POST['quiz_id'] ?? null;
-    $answersJson = $_POST['answers'] ?? null;
-    $timeTaken = $_POST['time_taken'] ?? null;
     
-    // Debug logging
-    error_log("Submit Quiz - User ID: $userId, Quiz ID: $quizId");
-    error_log("Answers JSON: $answersJson");
+    // Get JSON data
+    $json = file_get_contents('php://input');
+    $data = json_decode($json, true);
     
-    if (!$quizId || !$answersJson) {
-        echo json_encode(['success' => false, 'message' => 'Missing quiz ID or answers']);
-        exit;
-    }
+    $attemptId = $data['attempt_id'] ?? null;
+    $answers = $data['answers'] ?? [];
+    $timeTaken = $data['time_taken'] ?? 0;
     
-    // Decode answers
-    $answers = json_decode($answersJson, true);
-    
-    if (!is_array($answers)) {
-        echo json_encode(['success' => false, 'message' => 'Invalid answers format']);
-        exit;
-    }
-    
-    try {
-        $quizModel = $this->model('Quiz');
-        $result = $quizModel->saveQuizAttempt($userId, $quizId, $answers, $timeTaken);
-        
-        error_log("Quiz submission result: " . print_r($result, true));
-        
-        echo json_encode($result);
-    } catch (Exception $e) {
-        error_log("Quiz submission error: " . $e->getMessage());
-        echo json_encode([
-            'success' => false, 
-            'message' => 'Error: ' . $e->getMessage()
-        ]);
-    }
-    
-    exit;
-}
-
-/**
- * Toggle save quiz
- */
-public function toggleSaveQuiz() {
-    header('Content-Type: application/json');
-    
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        echo json_encode(['success' => false, 'message' => 'Invalid request method']);
-        exit;
-    }
-    
-    $userId = $this->checkAuth();
-    $quizId = $_POST['quiz_id'] ?? null;
-    $action = $_POST['action'] ?? 'save'; // 'save' or 'unsave'
-    
-    if (!$quizId) {
-        echo json_encode(['success' => false, 'message' => 'Quiz ID required']);
+    if(!$attemptId || empty($answers)) {
+        echo json_encode(['success' => false, 'message' => 'Missing data']);
         exit;
     }
     
     $quizModel = $this->model('Quiz');
     
-    if ($action === 'save') {
-        $result = $quizModel->saveQuizForLater($userId, $quizId);
-        $message = $result ? 'Quiz saved for later' : 'Failed to save quiz';
-    } else {
-        $result = $quizModel->unsaveQuiz($userId, $quizId);
-        $message = $result ? 'Quiz removed from saved' : 'Failed to remove quiz';
+    // Get quiz ID from first answer
+    $quizId = $answers[0]['quiz_id'] ?? null;
+    if (!$quizId) {
+        echo json_encode(['success' => false, 'message' => 'Quiz ID not found']);
+        exit;
     }
     
+    // Get all questions to check answers
+    $questions = $quizModel->getQuizQuestions($quizId);
+    
+    // Calculate score
+    $correctCount = 0;
+    $totalQuestions = count($answers);
+    
+    foreach($answers as $answer) {
+        $questionId = $answer['question_id'];
+        $selectedAnswer = intval($answer['selected_answer']);
+        
+        // Find the question
+        $question = array_filter($questions, function($q) use ($questionId) {
+            return $q['question_id'] == $questionId;
+        });
+        
+        $question = reset($question);
+        
+        if($question && isset($question['correct_answer'])) {
+            if(intval($question['correct_answer']) === $selectedAnswer) {
+                $correctCount++;
+            }
+        }
+    }
+    
+    // Save attempt
+    $quizModel->completeAttempt($attemptId, $correctCount, $totalQuestions, $timeTaken);
+    
+    $score = ($correctCount / $totalQuestions) * 100;
+    
     echo json_encode([
-        'success' => $result,
-        'message' => $message
+        'success' => true,
+        'score' => round($score, 2),
+        'correct' => $correctCount,
+        'total' => $totalQuestions
     ]);
     exit;
 }
-
-/**
- * View quiz results/history
- */
-public function quizHistory() {
-    $userId = $this->checkAuth();
-    $user = $this->getUserData($userId);
-    
-    $quizModel = $this->model('Quiz');
-    $attempts = $quizModel->getUserAttempts($userId);
-    $stats = $quizModel->getUserQuizStats($userId);
-    
-    $data = [
-        'title' => 'Quiz History',
-        'user' => $user,
-        'page' => 'quiz',
-        'attempts' => $attempts,
-        'stats' => $stats
-    ];
-    
-    $this->view('users/quiz_history', $data);
-}
-
-    public function projects() {
-        $userId = $this->checkAuth();
-        
-        $projectModel = $this->model('Project');
-        $projects = $projectModel->getProjectsForUser($userId);
-        
-        // Debug: Log what we're getting
-        error_log('DEBUG: User ID = ' . $userId);
-        error_log('DEBUG: Projects returned: ' . count($projects ?? []));
-        
-        // If no projects found, show all active projects (for testing/browse)
-        if (empty($projects)) {
-            error_log('DEBUG: No projects found for user, loading all active projects');
-            $projects = $projectModel->getAllActiveProjects();
-            error_log('DEBUG: Loaded ' . count($projects ?? []) . ' active projects');
-        }
-        
-        $user = $this->getUserData($userId);
-        
-        $data = [
-            'title' => 'Projects',
-            'user' => $user,
-            'page' => 'projects',
-            'projects' => $projects ?? []
-        ];
-        
-        $this->view('users/projects', $data);
-    }
 
     public function wallet() {
         require_once '../app/controllers/WalletController.php';
@@ -1105,23 +1129,6 @@ public function quizHistory() {
         ];
     }
 
-    private function getAllQuizzes() {
-        return [
-            ['id' => 1, 'title' => 'Programming Fundamentals', 'category' => 'Programming', 'difficulty' => 'Beginner', 'status' => 'not_started'],
-            ['id' => 2, 'title' => 'Frontend Development', 'category' => 'Frontend', 'difficulty' => 'Advanced', 'status' => 'completed'],
-            ['id' => 3, 'title' => 'System Design', 'category' => 'System', 'difficulty' => 'Intermediate', 'status' => 'saved']
-        ];
-    }
-
-    private function getQuizById($quizId) {
-        $quizzes = [
-            1 => ['id' => 1, 'title' => 'Programming Fundamentals', 'questions' => []],
-            2 => ['id' => 2, 'title' => 'Frontend Development', 'questions' => []]
-        ];
-        
-        return $quizzes[$quizId] ?? null;
-    }
-
     private function getAllCommunities() {
         try {
             $this->db->query("
@@ -1186,13 +1193,6 @@ public function quizHistory() {
                 ]
             ];
         }
-    }
-
-    private function getAllProjects() {
-        return [
-            ['id' => 1, 'title' => 'AI Chatbot', 'category' => 'Web Development', 'status' => 'active'],
-            ['id' => 2, 'title' => 'SkillXchange App', 'category' => 'Mobile', 'status' => 'in-progress']
-        ];
     }
 
     private function getTeachMatches($userId) {

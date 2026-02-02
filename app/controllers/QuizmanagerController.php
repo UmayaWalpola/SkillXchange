@@ -1,99 +1,166 @@
 <?php
-// app/controllers/QuizmanagerController.php
+/**
+ * QuizmanagerController - UPDATED for Database Integration
+ * Place in: app/controllers/QuizmanagerController.php
+ */
 
 class QuizmanagerController extends Controller {
+    private $quizModel;
     
     public function __construct() {
-        // TEMPORARILY DISABLED - Authentication will be added later
+        // Load Quiz model
+        require_once '../app/models/Quiz.php';
+        $this->quizModel = new Quiz();
+        
+        // Authentication check (uncomment when ready)
         /*
-        // Check if user is logged in
         if(!isset($_SESSION['user_id'])) {
             header('Location: ' . URLROOT . '/users/login');
-            exit;
-        }
-        
-        // Check if user is a manager
-        if($_SESSION['user_role'] !== 'manager') {
-            header('Location: ' . URLROOT . '/pages/index');
             exit;
         }
         */
     }
     
-    // Main dashboard page
+    /**
+     * Dashboard - shows all manager's quizzes
+     */
     public function index() {
+        // Get manager ID from session (use 1 for testing)
+        $manager_id = $_SESSION['user_id'] ?? 1;
+        
+        // Fetch quizzes from database
+        $quizzes = $this->quizModel->getQuizzesByManager($manager_id);
+        
         $data = [
             'title' => 'Quiz Manager Dashboard',
-            'active_page' => 'dashboard'
+            'quizzes' => $quizzes
         ];
         
         $this->view('quizmanager/dashboard', $data);
     }
     
-    // Show quiz builder form
+    /**
+     * Show create quiz form
+     */
     public function create() {
-        $data = [
-            'title' => 'Create New Quiz',
-            'quiz_title' => '',
-            'badge' => '',
-            'description' => '',
-            'title_err' => '',
-            'badge_err' => '',
-            'description_err' => ''
-        ];
-        
+        $data = ['title' => 'Create New Quiz'];
         $this->view('quizmanager/quiz_create', $data);
     }
     
-    // Save quiz (draft or publish)
+    /**
+     * Save quiz to database (AJAX endpoint)
+     */
     public function save() {
-        if($_SERVER['REQUEST_METHOD'] == 'POST') {
-            // Get JSON data from request
-            $json = file_get_contents('php://input');
-            $quizData = json_decode($json, true);
-            
-            // Validate basic info
-            $errors = [];
-            
-            if(empty($quizData['title'])) {
-                $errors[] = 'Quiz title is required';
-            }
-            
-            if(empty($quizData['badge'])) {
-                $errors[] = 'Difficulty level is required';
-            }
-            
-            if(empty($quizData['questions']) || count($quizData['questions']) < 1) {
-                $errors[] = 'At least one question is required';
-            }
-            
-            if(!empty($errors)) {
-                echo json_encode(['success' => false, 'errors' => $errors]);
-                exit;
-            }
-            
-            // TODO: Save to database when ready
-            // For now, just return success
-            echo json_encode([
-                'success' => true, 
-                'message' => 'Quiz saved successfully!',
-                'status' => $quizData['status']
-            ]);
-            exit;
-            
-        } else {
-            header('Location: ' . URLROOT . '/quizmanager');
+        header('Content-Type: application/json');
+        
+        if($_SERVER['REQUEST_METHOD'] != 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request']);
             exit;
         }
-    }
-    
-    // Preview quiz
-    public function preview() {
-        // TODO: Show preview of quiz
+        
+        // Get JSON data
+        $json = file_get_contents('php://input');
+        $quizData = json_decode($json, true);
+        
+        // Validate
+        if(empty($quizData['title']) || empty($quizData['questions'])) {
+            echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+            exit;
+        }
+        
+        // Prepare data for database
         $data = [
-            'title' => 'Quiz Preview'
+            'manager_id' => $_SESSION['user_id'] ?? 1, // Use session when ready
+            'title' => trim($quizData['title']),
+            'description' => trim($quizData['description'] ?? ''),
+            'difficulty' => $quizData['badge'], // 'Beginner', 'Intermediate', 'Expert'
+            'duration' => intval($quizData['duration']),
+            'category' => $quizData['category'] ?? 'General',
+            'status' => $quizData['status'], // 'draft' or 'active'
+            'questions' => $quizData['questions']
         ];
         
-        $this->view('quizmanager/quiz_preview', $data);
+        // Save to database
+        $quiz_id = $this->quizModel->createQuiz($data);
+        
+        if($quiz_id) {
+            echo json_encode([
+                'success' => true,
+                'message' => $data['status'] === 'active' ? 'Quiz published!' : 'Quiz saved as draft!',
+                'quiz_id' => $quiz_id
+            ]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Failed to save quiz']);
+        }
+        
+        exit;
+    }
+    
+    /**
+     * Get quizzes (AJAX endpoint for dashboard)
+     */
+    public function getQuizzes() {
+        header('Content-Type: application/json');
+        
+        $manager_id = $_SESSION['user_id'] ?? 1;
+        $quizzes = $this->quizModel->getQuizzesByManager($manager_id);
+        
+        echo json_encode(['success' => true, 'quizzes' => $quizzes]);
+        exit;
+    }
+    
+    /**
+     * Update quiz status (activate/pause/draft)
+     */
+    public function updateStatus() {
+        header('Content-Type: application/json');
+        
+        if($_SERVER['REQUEST_METHOD'] != 'POST') {
+            echo json_encode(['success' => false]);
+            exit;
+        }
+        
+        $quiz_id = $_POST['quiz_id'] ?? null;
+        $status = $_POST['status'] ?? null;
+        
+        if(!$quiz_id || !in_array($status, ['draft', 'active', 'paused'])) {
+            echo json_encode(['success' => false, 'message' => 'Invalid parameters']);
+            exit;
+        }
+        
+        $result = $this->quizModel->updateQuizStatus($quiz_id, $status);
+        
+        echo json_encode([
+            'success' => $result,
+            'message' => $result ? 'Status updated!' : 'Update failed'
+        ]);
+        exit;
+    }
+    
+    /**
+     * Delete quiz
+     */
+    public function delete() {
+        header('Content-Type: application/json');
+        
+        if($_SERVER['REQUEST_METHOD'] != 'POST') {
+            echo json_encode(['success' => false]);
+            exit;
+        }
+        
+        $quiz_id = $_POST['quiz_id'] ?? null;
+        
+        if(!$quiz_id) {
+            echo json_encode(['success' => false, 'message' => 'Quiz ID required']);
+            exit;
+        }
+        
+        $result = $this->quizModel->deleteQuiz($quiz_id);
+        
+        echo json_encode([
+            'success' => $result,
+            'message' => $result ? 'Quiz deleted!' : 'Delete failed'
+        ]);
+        exit;
     }
 }
