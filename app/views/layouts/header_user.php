@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="<?= URLROOT; ?>/assets/css/global.css">
     <link rel="stylesheet" href="<?= URLROOT; ?>/assets/css/profile.css">
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
     <style>
         .header {
             position: fixed;
