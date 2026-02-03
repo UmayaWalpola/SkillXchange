@@ -1,28 +1,19 @@
-/* ============================================
-   COMMUNITIES - DATABASE VERSION
-   ============================================ */
+/**
+ * Community Forum JavaScript - Complete Fixed Version
+ * Handles all community interactions for user dashboard
+ */
 
-// Get configuration from PHP
-const currentUser = {
-    id: window.currentUserId || 1,
-    name: window.currentUserName || 'You'
-};
-const urlRoot = window.urlRoot || '';
+console.log('🔄 Loading community_forum.js...');
 
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ Communities module loaded');
-    console.log('URL Root:', urlRoot);
-    console.log('Current User:', currentUser);
-    
-    if (!urlRoot) {
-        console.error('❌ ERROR: URLROOT not defined!');
-        alert('Configuration error: URLROOT is not set. Please refresh the page.');
-        return;
-    }
-    
-    console.log('✅ All checks passed. Buttons should work now.');
-});
+// Get URLROOT from window (set in view files)
+const URLROOT = window.URLROOT || '';
+
+if (!URLROOT) {
+    console.error('❌ ERROR: URLROOT not defined!');
+}
+
+console.log('✅ Community Forum JS loaded');
+console.log('URLROOT:', URLROOT);
 
 // ============================================
 // COMMUNITY ACTIONS
@@ -31,76 +22,114 @@ document.addEventListener('DOMContentLoaded', function() {
 /**
  * Join a community
  */
-async function joinCommunity(id) {
-    console.log('Joining community:', id);
+async function joinCommunity(communityId) {
+    console.log('📥 Joining community:', communityId);
     
-    if (!urlRoot) {
+    if (!URLROOT) {
         alert('Configuration error. Please refresh the page.');
         return;
     }
     
+    const button = event?.target;
+    const originalText = button?.textContent || 'Join';
+    
+    if (button) {
+        button.disabled = true;
+        button.textContent = 'Joining...';
+    }
+    
     try {
-        const response = await fetch(urlRoot + '/userdashboard/joinCommunity', {
+        const response = await fetch(URLROOT + '/userdashboard/joinCommunity', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: `community_id=${id}`
+            body: 'community_id=' + communityId
         });
         
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error('HTTP error! status: ' + response.status);
         }
         
         const result = await response.json();
-        console.log('Join result:', result);
+        console.log('✅ Join result:', result);
         
         if (result.success) {
-            showNotification(result.message, 'success');
-            setTimeout(() => location.reload(), 1000);
+            showNotification(result.message || 'Successfully joined community!', 'success');
+            setTimeout(() => window.location.reload(), 1000);
         } else {
             showNotification(result.message || 'Failed to join community', 'error');
+            if (button) {
+                button.disabled = false;
+                button.textContent = originalText;
+            }
         }
     } catch (error) {
-        console.error('Join error:', error);
+        console.error('❌ Join error:', error);
         showNotification('Network error. Please try again.', 'error');
+        if (button) {
+            button.disabled = false;
+            button.textContent = originalText;
+        }
+    }
 }
 
 /**
  * Leave a community
  */
-async function leaveCommunity(id) {
+async function leaveCommunity(communityId) {
+    console.log('📤 Leaving community:', communityId);
+    
     if (!confirm('Are you sure you want to leave this community?')) {
         return;
     }
-
-    console.log('Leaving community:', id);
+    
+    if (!URLROOT) {
+        alert('Configuration error. Please refresh the page.');
+        return;
+    }
+    
+    const button = event?.target;
+    const originalText = button?.textContent || 'Leave';
+    
+    if (button) {
+        button.disabled = true;
+        button.textContent = 'Leaving...';
+    }
     
     try {
-        const response = await fetch(urlRoot + '/userdashboard/leaveCommunity', {
+        const response = await fetch(URLROOT + '/userdashboard/leaveCommunity', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: `community_id=${id}`
+            body: 'community_id=' + communityId
         });
         
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error('HTTP error! status: ' + response.status);
         }
         
         const result = await response.json();
-        console.log('Leave result:', result);
+        console.log('✅ Leave result:', result);
         
         if (result.success) {
-            showNotification(result.message, 'success');
-            setTimeout(() => location.reload(), 1000);
+            showNotification(result.message || 'Successfully left community', 'success');
+            setTimeout(() => window.location.reload(), 1000);
         } else {
             showNotification(result.message || 'Failed to leave community', 'error');
+            if (button) {
+                button.disabled = false;
+                button.textContent = originalText;
+            }
         }
     } catch (error) {
-        console.error('Leave error:', error);
+        console.error('❌ Leave error:', error);
         showNotification('Network error. Please try again.', 'error');
+        if (button) {
+            button.disabled = false;
+            button.textContent = originalText;
+        }
     }
 }
 
@@ -108,141 +137,30 @@ async function leaveCommunity(id) {
  * View community details
  */
 function viewCommunity(communityId) {
-    console.log('Viewing community:', communityId);
-    window.location.href = urlRoot + '/userdashboard/viewCommunity/' + communityId;
-}
-
-// ============================================
-// COMMUNITY MESSAGING (for detail page)
-// ============================================
-
-/**
- * Send a message in community chat
- */
-async function sendMessage(communityId) {
-    const input = document.getElementById('messageInput');
-    const content = input?.value.trim();
+    console.log('👁️ Viewing community:', communityId);
     
-    if (!content) {
+    if (!URLROOT) {
+        alert('Configuration error. Please refresh the page.');
         return;
     }
     
-    // Disable input while sending
-    input.disabled = true;
-    const sendBtn = document.querySelector('.send-btn');
-    if (sendBtn) sendBtn.disabled = true;
-    
-    try {
-        const response = await fetch(urlRoot + '/userdashboard/postToCommunity', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `community_id=${communityId}&content=${encodeURIComponent(content)}`
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            input.value = '';
-            loadMessages(communityId);
-            showNotification('Message sent!', 'success');
-        } else {
-            showNotification(result.message || 'Failed to send message', 'error');
-        }
-    } catch (error) {
-        console.error('Send message error:', error);
-        showNotification('Failed to send message', 'error');
-    } finally {
-        input.disabled = false;
-        if (sendBtn) sendBtn.disabled = false;
-        input.focus();
-    }
-}
-
-/**
- * Load messages for a community
- */
-async function loadMessages(communityId) {
-    try {
-        const response = await fetch(urlRoot + '/userdashboard/getCommunityMessages?community_id=' + communityId);
-        const result = await response.json();
-        
-        if (result.success) {
-            renderMessages(result.posts);
-            scrollToBottom();
-        }
-    } catch (error) {
-        console.error('Load messages error:', error);
-    }
-}
-
-/**
- * Render messages in the chat
- */
-function renderMessages(posts) {
-    const messagesList = document.getElementById('messagesList');
-    if (!messagesList) return;
-    
-    messagesList.innerHTML = posts.map(post => {
-        const isOwn = post.user_id == currentUser.id;
-        const time = formatTime(post.created_at);
-        
-        return `
-            <div class="msg ${isOwn ? 'own' : ''}">
-                ${!isOwn ? `<div class="msg-author">${escapeHtml(post.author_name)}</div>` : ''}
-                <div class="msg-text">${escapeHtml(post.content)}</div>
-                <div class="msg-time">${time}</div>
-            </div>
-        `;
-    }).join('');
-}
-
-/**
- * Format timestamp for display
- */
-function formatTime(timestamp) {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now - date;
-    
-    // If today, show time
-    if (diff < 86400000 && date.getDate() === now.getDate()) {
-        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    }
-    
-    // If yesterday
-    if (diff < 172800000 && date.getDate() === now.getDate() - 1) {
-        return 'Yesterday ' + date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    }
-    
-    // Otherwise show date
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
-
-/**
- * Scroll chat to bottom
- */
-function scrollToBottom() {
-    setTimeout(() => {
-        const messagesList = document.getElementById('messagesList');
-        if (messagesList) {
-            messagesList.scrollTop = messagesList.scrollHeight;
-        }
-    }, 100);
+    window.location.href = URLROOT + '/userdashboard/viewCommunity/' + communityId;
 }
 
 // ============================================
-// UI HELPERS
+// NOTIFICATION SYSTEM
 // ============================================
 
 /**
  * Show notification toast
  */
 function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    const existing = document.querySelectorAll('.custom-notification');
+    existing.forEach(n => n.remove());
+    
     const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
+    notification.className = 'custom-notification notification-' + type;
     notification.textContent = message;
     notification.style.cssText = `
         position: fixed;
@@ -254,7 +172,7 @@ function showNotification(message, type = 'info') {
         border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         z-index: 10000;
-        animation: slideIn 0.3s ease-out;
+        animation: slideInFromRight 0.3s ease-out;
         max-width: 300px;
         font-weight: 500;
     `;
@@ -262,10 +180,14 @@ function showNotification(message, type = 'info') {
     document.body.appendChild(notification);
     
     setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease-out';
+        notification.style.animation = 'slideOutToRight 0.3s ease-out';
         setTimeout(() => notification.remove(), 300);
     }, 3000);
 }
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
 
 /**
  * Escape HTML to prevent XSS
@@ -278,15 +200,14 @@ function escapeHtml(text) {
 }
 
 // ============================================
-// STYLES
+// CSS ANIMATIONS
 // ============================================
 
-// Add notification animations
-if (!document.getElementById('notification-styles')) {
+if (!document.getElementById('community-notification-styles')) {
     const style = document.createElement('style');
-    style.id = 'notification-styles';
+    style.id = 'community-notification-styles';
     style.textContent = `
-        @keyframes slideIn {
+        @keyframes slideInFromRight {
             from {
                 transform: translateX(400px);
                 opacity: 0;
@@ -297,7 +218,7 @@ if (!document.getElementById('notification-styles')) {
             }
         }
         
-        @keyframes slideOut {
+        @keyframes slideOutToRight {
             from {
                 transform: translateX(0);
                 opacity: 1;
@@ -307,30 +228,23 @@ if (!document.getElementById('notification-styles')) {
                 opacity: 0;
             }
         }
+        
+        .custom-notification {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
     `;
     document.head.appendChild(style);
 }
 
 // ============================================
-// AUTO-REFRESH (for community detail page)
-// ============================================
-
-if (window.location.pathname.includes('viewCommunity')) {
-    const communityId = window.location.pathname.split('/').pop();
-    if (communityId && !isNaN(communityId)) {
-        console.log('Auto-refresh enabled for community:', communityId);
-        setInterval(() => {
-            loadMessages(communityId);
-        }, 10000); // Refresh every 10 seconds
-    }
-}
-
-// ============================================
-// GLOBAL EXPORTS
+// MAKE FUNCTIONS GLOBALLY ACCESSIBLE
 // ============================================
 
 window.joinCommunity = joinCommunity;
 window.leaveCommunity = leaveCommunity;
 window.viewCommunity = viewCommunity;
-window.sendMessage = sendMessage;
-window.loadMessages = loadMessages;
+window.showNotification = showNotification;
+window.escapeHtml = escapeHtml;
+
+console.log('✅ All community functions registered globally');
+console.log('Available functions:', Object.keys(window).filter(k => ['joinCommunity', 'leaveCommunity', 'viewCommunity'].includes(k)));

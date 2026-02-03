@@ -37,4 +37,5 @@
 
 <script src="<?= URLROOT ?>/assets/js/main.js" defer></script>
 
+
 <?php require_once "../app/views/layouts/footer.php"; ?>

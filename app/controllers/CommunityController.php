@@ -43,7 +43,7 @@ class CommunityController extends Controller {
             $json = file_get_contents('php://input');
             $communityData = json_decode($json, true);
 
-            // Sanitize inputs - REMOVED category
+            // Sanitize inputs
             $data = [
                 'name' => trim($communityData['name'] ?? ''),
                 'description' => trim($communityData['description'] ?? ''),
@@ -51,7 +51,7 @@ class CommunityController extends Controller {
                 'rules' => json_encode($communityData['rules'] ?? []),
                 'tags' => json_encode($communityData['tags'] ?? []),
                 'status' => trim($communityData['status'] ?? 'active'),
-                'created_by' => $_SESSION['user_id'] ?? 1, // Default to 1 for testing
+                'created_by' => $_SESSION['user_id'] ?? 1,
             ];
 
             // Validate inputs
@@ -62,8 +62,6 @@ class CommunityController extends Controller {
             } elseif(strlen($data['name']) > 100) {
                 $errors[] = 'Community name cannot exceed 100 characters';
             }
-
-            // REMOVED category validation
 
             if(empty($data['description'])) {
                 $errors[] = 'Description is required';
@@ -134,7 +132,7 @@ class CommunityController extends Controller {
                 exit;
             }
 
-            // Sanitize inputs - REMOVED category
+            // Sanitize inputs
             $data = [
                 'id' => $id,
                 'name' => trim($communityData['name'] ?? ''),
@@ -151,8 +149,6 @@ class CommunityController extends Controller {
             if(empty($data['name'])) {
                 $errors[] = 'Community name is required';
             }
-
-            // REMOVED category validation
 
             if(empty($data['description'])) {
                 $errors[] = 'Description is required';

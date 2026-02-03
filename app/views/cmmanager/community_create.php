@@ -165,5 +165,6 @@
 </script>
 <script src="<?php echo URLROOT; ?>/assets/js/communitycreate.js"></script>
 
+
 </body>
 </html>
