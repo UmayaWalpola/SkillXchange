@@ -28,28 +28,33 @@ class UserdashboardController extends Controller {
     // ============================================
 
     public function index() {
-        $userId = $this->checkAuth();
-        
-        $userData = $this->getUserData($userId);
-        $userSkills = $this->getUserSkills($userId);
-        $userProjects = $this->getUserProjects($userId);
-        $userFeedback = $this->getUserFeedback($userId);
-        
-        if (!is_array($userData)) {
-            die("ERROR: getUserData returned: " . print_r($userData, true));
-        }
-        
-        $data = [
-            'title' => 'My Profile',
-            'user' => $userData,
-            'skills' => $userSkills,
-            'projects' => $userProjects,
-            'feedback' => $userFeedback,
-            'page' => 'profile'
-        ];
-        
-        $this->view('users/profile', $data);
+    $userId = $this->checkAuth();
+    
+    $userData = $this->getUserData($userId);
+    $userSkills = $this->getUserSkills($userId);
+    $userProjects = $this->getUserProjects($userId);
+    $userFeedback = $this->getUserFeedback($userId);
+    $userBadges = $this->getUserBadges($userId); // NEW: Get user badges
+    
+    if (!is_array($userData)) {
+        die("ERROR: getUserData returned: " . print_r($userData, true));
     }
+    
+    // Add badge count to user data
+    $userData['badge_count'] = count($userBadges);
+    
+    $data = [
+        'title' => 'My Profile',
+        'user' => $userData,
+        'skills' => $userSkills,
+        'projects' => $userProjects,
+        'feedback' => $userFeedback,
+        'badges' => $userBadges, // NEW: Pass badges to view
+        'page' => 'profile'
+    ];
+    
+    $this->view('users/profile', $data);
+}
 
     public function notifications() {
         $userId = $this->checkAuth();
@@ -727,26 +732,46 @@ public function submitQuiz() {
     $json = file_get_contents('php://input');
     $data = json_decode($json, true);
     
+    // Log received data for debugging
+    error_log("Quiz submission data: " . print_r($data, true));
+    
     $attemptId = $data['attempt_id'] ?? null;
+    $quizId = $data['quiz_id'] ?? null;
     $answers = $data['answers'] ?? [];
     $timeTaken = $data['time_taken'] ?? 0;
     
-    if(!$attemptId || empty($answers)) {
-        echo json_encode(['success' => false, 'message' => 'Missing data']);
+    // Validation
+    if(!$attemptId) {
+        echo json_encode(['success' => false, 'message' => 'Attempt ID missing']);
+        exit;
+    }
+    
+    if(!$quizId) {
+        echo json_encode(['success' => false, 'message' => 'Quiz ID missing']);
+        exit;
+    }
+    
+    if(empty($answers)) {
+        echo json_encode(['success' => false, 'message' => 'No answers provided']);
         exit;
     }
     
     $quizModel = $this->model('Quiz');
     
-    // Get quiz ID from first answer
-    $quizId = $answers[0]['quiz_id'] ?? null;
-    if (!$quizId) {
-        echo json_encode(['success' => false, 'message' => 'Quiz ID not found']);
+    // Get quiz details
+    $quiz = $quizModel->getQuizById($quizId);
+    if (!$quiz) {
+        echo json_encode(['success' => false, 'message' => 'Quiz not found']);
         exit;
     }
     
-    // Get all questions to check answers
+    // Get all questions with correct answers
     $questions = $quizModel->getQuizQuestions($quizId);
+    
+    if (empty($questions)) {
+        echo json_encode(['success' => false, 'message' => 'No questions found']);
+        exit;
+    }
     
     // Calculate score
     $correctCount = 0;
@@ -756,34 +781,86 @@ public function submitQuiz() {
         $questionId = $answer['question_id'];
         $selectedAnswer = intval($answer['selected_answer']);
         
-        // Find the question
-        $question = array_filter($questions, function($q) use ($questionId) {
-            return $q['question_id'] == $questionId;
-        });
+        // Find the matching question
+        $matchedQuestion = null;
+        foreach ($questions as $q) {
+            if ($q['question_id'] == $questionId) {
+                $matchedQuestion = $q;
+                break;
+            }
+        }
         
-        $question = reset($question);
-        
-        if($question && isset($question['correct_answer'])) {
-            if(intval($question['correct_answer']) === $selectedAnswer) {
+        if ($matchedQuestion && isset($matchedQuestion['correct_answer'])) {
+            if (intval($matchedQuestion['correct_answer']) === $selectedAnswer) {
                 $correctCount++;
             }
         }
     }
     
-    // Save attempt
+    // Calculate percentage score
+    $score = ($correctCount / $totalQuestions) * 100;
+    $passed = $score >= 70; // 70% passing score
+    
+    // Save attempt to database
     $quizModel->completeAttempt($attemptId, $correctCount, $totalQuestions, $timeTaken);
     
-    $score = ($correctCount / $totalQuestions) * 100;
+    // CHECK FOR BADGE ELIGIBILITY
+    $badgeEarned = null;
     
+    if ($passed) {
+        // Check if quiz has associated badge
+        $this->db->query("
+            SELECT b.* 
+            FROM badges b
+            INNER JOIN quizzes q ON b.id = q.badge_id
+            WHERE q.id = :quiz_id
+            LIMIT 1
+        ");
+        $this->db->bind(':quiz_id', $quizId);
+        $badge = $this->db->single();
+        
+        if ($badge) {
+            // Check if user already has this badge
+            $this->db->query("
+                SELECT id FROM user_badges 
+                WHERE user_id = :user_id AND badge_id = :badge_id
+            ");
+            $this->db->bind(':user_id', $userId);
+            $this->db->bind(':badge_id', $badge->id);
+            $existingBadge = $this->db->single();
+            
+            if (!$existingBadge) {
+                // Award badge to user
+                $this->db->query("
+                    INSERT INTO user_badges (user_id, badge_id, earned_at) 
+                    VALUES (:user_id, :badge_id, NOW())
+                ");
+                $this->db->bind(':user_id', $userId);
+                $this->db->bind(':badge_id', $badge->id);
+                $this->db->execute();
+                
+                // Return badge info
+                $badgeEarned = [
+                    'id' => $badge->id,
+                    'name' => $badge->name,
+                    'description' => $badge->description,
+                    'icon' => $badge->icon
+                ];
+            }
+        }
+    }
+    
+    // Return success response
     echo json_encode([
         'success' => true,
         'score' => round($score, 2),
         'correct' => $correctCount,
-        'total' => $totalQuestions
+        'total' => $totalQuestions,
+        'passed' => $passed,
+        'badgeEarned' => $badgeEarned
     ]);
     exit;
 }
-
     public function wallet() {
         require_once '../app/controllers/WalletController.php';
         $walletController = new WalletController();
@@ -1113,7 +1190,7 @@ public function submitQuiz() {
             ]
         ];
     }
-
+    
     private function getChats($userId) {
         return [
             [
@@ -1194,7 +1271,7 @@ public function submitQuiz() {
             ];
         }
     }
-
+    
     private function getTeachMatches($userId) {
         return [
             ['id' => 101, 'name' => 'Sophia Chen', 'skill' => 'Wants to learn Web Development'],
@@ -1209,4 +1286,71 @@ public function submitQuiz() {
         ];
     }
 
+
+
+private function getUserBadges($userId) {
+    try {
+        $this->db->query("
+            SELECT 
+                b.id,
+                b.name,
+                b.description,
+                b.icon,
+                b.badge_type,
+                b.requirement_type,
+                b.requirement_value,
+                b.color,
+                ub.earned_at
+            FROM user_badges ub
+            INNER JOIN badges b ON ub.badge_id = b.id
+            WHERE ub.user_id = :user_id
+            ORDER BY ub.earned_at DESC
+        ");
+        
+        $this->db->bind(':user_id', $userId);
+        $results = $this->db->resultSet();
+        
+        $badges = [];
+        foreach ($results as $badge) {
+            $badges[] = [
+                'id' => $badge->id,
+                'name' => $badge->name,
+                'description' => $badge->description,
+                'icon' => $badge->icon,
+                'badge_type' => $badge->badge_type,
+                'color' => $badge->color ?? '#3b82f6',
+                'earned_at' => $this->timeAgo($badge->earned_at),
+                'earned_date' => date('M d, Y', strtotime($badge->earned_at))
+            ];
+        }
+        
+        return $badges;
+        
+    } catch (Exception $e) {
+        error_log("getUserBadges error: " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Get badge count for user
+ */
+private function getUserBadgeCount($userId) {
+    try {
+        $this->db->query("
+            SELECT COUNT(*) as badge_count
+            FROM user_badges
+            WHERE user_id = :user_id
+        ");
+        
+        $this->db->bind(':user_id', $userId);
+        $result = $this->db->single();
+        
+        return $result ? $result->badge_count : 0;
+        
+    } catch (Exception $e) {
+        error_log("getUserBadgeCount error: " . $e->getMessage());
+        return 0;
+    }
+}
 }
