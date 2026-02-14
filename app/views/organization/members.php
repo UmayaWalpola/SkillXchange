@@ -3,6 +3,8 @@
 
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/organizations.css">
+<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/feedback.css">
+<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/feedback.css">
 
 <main class="site-main">
     <div class="container org-dashboard">
@@ -215,10 +217,10 @@
                                 </div>
                                 <div class="member-stats">
                                     <span class="stat-item">
-                                        <span class="icon">⭐</span> Rating: <?= $member->user_rating ?? '0' ?>
+                                        <span class="icon"><i class="ph ph-star"></i></span> Rating: <?= $member->user_rating ?? '0' ?>
                                     </span>
                                     <span class="stat-item">
-                                        <span class="icon">✓</span> Completed: <?= $member->completed_projects ?? 0 ?>
+                                        <span class="icon"><i class="ph ph-check"></i></span> Completed: <?= $member->completed_projects ?? 0 ?>
                                     </span>
                                 </div>
                             </div>
@@ -264,11 +266,13 @@
 
                             <!-- Tasks Section for this Member -->
                             <div class="member-tasks-section" style="margin-top:20px;padding-top:20px;border-top:2px solid #f0f0f0;">
-                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-                                    <h4 style="margin:0;color:#1a1a1a;font-size:16px;">📋 Tasks for this Member</h4>
-                                    <button class="btn btn-primary assign-task-btn" data-member-id="<?= $member->user_id ?>" data-member-name="<?= htmlspecialchars($member->username) ?>">
-                                        ➕ Assign Task
-                                    </button>
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:10px;">
+                                    <h4 style="margin:0;color:#1a1a1a;font-size:16px;">Tasks for this Member</h4>
+                                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                                        <button class="btn btn-primary assign-task-btn" data-member-id="<?= $member->user_id ?>" data-member-name="<?= htmlspecialchars($member->username) ?>">
+                                            Assign Task
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <?php 
@@ -303,13 +307,13 @@
                                 <?php else: ?>
                                     <div class="task-summary" style="display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap;">
                                         <span class="task-stat" style="background:#fff3cd;color:#856404;padding:6px 12px;border-radius:6px;font-size:13px;">
-                                            📌 To-Do: <?= count($tasksByStatus['pending']) ?>
+                                            To-Do: <?= count($tasksByStatus['pending']) ?>
                                         </span>
                                         <span class="task-stat" style="background:#cfe2ff;color:#084298;padding:6px 12px;border-radius:6px;font-size:13px;">
-                                            🔄 In Progress: <?= count($tasksByStatus['in_progress']) ?>
+                                            In Progress: <?= count($tasksByStatus['in_progress']) ?>
                                         </span>
                                         <span class="task-stat" style="background:#d1e7dd;color:#0f5132;padding:6px 12px;border-radius:6px;font-size:13px;">
-                                            ✓ Completed: <?= $completedCount ?>
+                                            Completed: <?= $completedCount ?>
                                         </span>
                                     </div>
 
@@ -329,11 +333,11 @@
                                                     </div>
                                                     <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px;">
                                                         <?php if ($task->priority === 'high'): ?>
-                                                            <span style="background:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:4px;font-size:11px;">🔴 High</span>
+                                                            <span style="background:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:4px;font-size:11px;">High</span>
                                                         <?php elseif ($task->priority === 'medium'): ?>
-                                                            <span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:11px;">🟡 Medium</span>
+                                                            <span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:11px;">Medium</span>
                                                         <?php else: ?>
-                                                            <span style="background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:4px;font-size:11px;">🟢 Low</span>
+                                                            <span style="background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:4px;font-size:11px;">Low</span>
                                                         <?php endif; ?>
                                                         
                                                         <?php if (!empty($task->due_date)): ?>
@@ -371,11 +375,11 @@
                                                     </div>
                                                     <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px;">
                                                         <?php if ($task->priority === 'high'): ?>
-                                                            <span style="background:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:4px;font-size:11px;">🔴 High</span>
+                                                            <span style="background:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:4px;font-size:11px;">High</span>
                                                         <?php elseif ($task->priority === 'medium'): ?>
-                                                            <span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:11px;">🟡 Medium</span>
+                                                            <span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:11px;">Medium</span>
                                                         <?php else: ?>
-                                                            <span style="background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:4px;font-size:11px;">🟢 Low</span>
+                                                            <span style="background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:4px;font-size:11px;">Low</span>
                                                         <?php endif; ?>
                                                         
                                                         <?php if (!empty($task->due_date)): ?>
@@ -410,11 +414,11 @@
                                                     </div>
                                                     <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px;">
                                                         <?php if ($task->priority === 'high'): ?>
-                                                            <span style="background:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:4px;font-size:11px;">🔴 High</span>
+                                                            <span style="background:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:4px;font-size:11px;">High</span>
                                                         <?php elseif ($task->priority === 'medium'): ?>
-                                                            <span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:11px;">🟡 Medium</span>
+                                                            <span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:11px;">Medium</span>
                                                         <?php else: ?>
-                                                            <span style="background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:4px;font-size:11px;">🟢 Low</span>
+                                                            <span style="background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:4px;font-size:11px;">Low</span>
                                                         <?php endif; ?>
                                                     </div>
                                                     <select class="task-status-select" data-task-id="<?= $task->id ?>" style="width:100%;padding:4px;border-radius:4px;border:1px solid #ddd;font-size:11px;">
@@ -429,8 +433,15 @@
                                 <?php endif; ?>
                             </div>
 
-                            <!-- Owner actions: Remove / Report -->
-                            <div class="member-actions" style="margin-top:20px;">
+                            <!-- Owner actions: Remove / Report / Give Feedback -->
+                            <div class="member-actions" style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;">
+                                <button class="btn btn-feedback give-feedback-btn" 
+                                    data-user-id="<?= $member->user_id ?>" 
+                                    data-user-name="<?= htmlspecialchars($member->username) ?>" 
+                                    data-user-avatar="<?= !empty($member->profile_picture) ? URLROOT . '/' . $member->profile_picture : '' ?>" 
+                                    data-project-id="<?= $data['projectId'] ?>">
+                                    <i class="ph ph-star" style="font-size:16px;"></i> Give Feedback
+                                </button>
                                 <button class="btn btn-danger remove-member-btn" data-member-id="<?= $member->id ?>" data-user-id="<?= $member->user_id ?>" data-project-id="<?= $data['projectId'] ?>">Remove</button>
                                 <button class="btn btn-warning report-member-btn" data-member-id="<?= $member->id ?>" data-user-id="<?= $member->user_id ?>" data-project-id="<?= $data['projectId'] ?>">Report</button>
                             </div>
@@ -451,7 +462,7 @@
 <div id="taskModal" class="modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
     <div class="modal-content" style="background:white;border-radius:12px;padding:30px;max-width:500px;width:90%;max-height:90vh;overflow-y:auto;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-            <h2 style="margin:0;font-size:20px;">➕ Assign New Task</h2>
+            <h2 style="margin:0;font-size:20px;">Assign New Task</h2>
             <button id="closeModal" style="background:none;border:none;font-size:24px;cursor:pointer;color:#999;">&times;</button>
         </div>
         
@@ -478,9 +489,9 @@
                 <div class="form-group">
                     <label style="display:block;font-weight:600;margin-bottom:5px;">Priority *</label>
                     <select name="priority" id="modal_priority" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;">
-                        <option value="low">🟢 Low</option>
-                        <option value="medium" selected>🟡 Medium</option>
-                        <option value="high">🔴 High</option>
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
                     </select>
                 </div>
                 
@@ -719,5 +730,11 @@ document.querySelectorAll('.task-status-select').forEach(select => {
     });
 });
 </script>
+
+<!-- Include Feedback Modal -->
+<?php require_once "../app/views/partials/modals/feedback_modal.php"; ?>
+
+<!-- Include Feedback JavaScript -->
+<script src="<?= URLROOT ?>/assets/js/feedback.js"></script>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>
