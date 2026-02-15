@@ -62,16 +62,74 @@ class ChatController extends Controller
         // Get all chats for sidebar
         $allChats = $this->getUserChats($userId);
 
+        // NEW: Get active transaction for this chat (if any)
+        $activeTransaction = $this->getActiveTransaction($chatId, $userId);
+
+        // NEW: Get user's BuckX balance
+        $this->db->query("SELECT buckx_balance, buckx_frozen FROM users WHERE id = :user_id");
+        $this->db->bind(':user_id', $userId);
+        $userBalance = $this->db->single();
+
         $data = [
             'chatId' => $chatId,
             'partnerId' => $partnerId,
             'partnerName' => $partner->username,
             'partnerAvatar' => $partner->profile_picture ?? strtoupper(substr($partner->username, 0, 2)),
             'allChats' => $allChats,
-            'currentUserId' => $userId
+            'currentUserId' => $userId,
+            // NEW: Transaction data
+            'activeTransaction' => $activeTransaction,
+            'buckxBalance' => $userBalance ? ($userBalance->buckx_balance - $userBalance->buckx_frozen) : 0
         ];
 
         $this->view('users/chats', $data);
+    }
+
+    /**
+     * NEW: Get active transaction for a chat
+     */
+    private function getActiveTransaction($chatId, $userId)
+    {
+        $this->db->query("
+            SELECT e.*, 
+                   u1.username AS teacher_name,
+                   u2.username AS learner_name
+            FROM chat_transaction_events e
+            INNER JOIN users u1 ON e.teacher_id = u1.id
+            INNER JOIN users u2 ON e.learner_id = u2.id
+            WHERE e.chat_id = :chat_id 
+            AND e.status IN ('pending_learner', 'pending_teacher', 'active', 'teacher_completed')
+            ORDER BY e.created_at DESC
+            LIMIT 1
+        ");
+        $this->db->bind(':chat_id', $chatId);
+        $event = $this->db->single();
+
+        if (!$event) {
+            return null;
+        }
+
+        // Determine user's role
+        $userRole = ($event->teacher_id == $userId) ? 'teacher' : 'learner';
+        $isCreator = ($event->status === 'pending_learner' && $userRole === 'teacher') ||
+                     ($event->status === 'pending_teacher' && $userRole === 'learner');
+
+        return [
+            'id' => $event->id,
+            'payment_type' => $event->payment_type,
+            'amount' => $event->amount,
+            'skill_debt_hours' => $event->skill_debt_hours,
+            'skill_name' => $event->skill_name,
+            'timeframe_hours' => $event->agreed_timeframe_hours,
+            'status' => $event->status,
+            'teacher_name' => $event->teacher_name,
+            'learner_name' => $event->learner_name,
+            'expires_at' => $event->expires_at,
+            'teacher_completed_at' => $event->teacher_completed_at,
+            'user_role' => $userRole,
+            'is_creator' => $isCreator,
+            'both_agreed_at' => $event->both_agreed_at
+        ];
     }
 
     /**
@@ -219,10 +277,14 @@ class ChatController extends Controller
         // Mark messages as read
         $this->markMessagesAsRead($chatId, $userId);
 
+        // NEW: Get active transaction
+        $activeTransaction = $this->getActiveTransaction($chatId, $userId);
+
         echo json_encode([
             'success' => true,
             'messages' => $messages,
-            'current_user_id' => $userId
+            'current_user_id' => $userId,
+            'active_transaction' => $activeTransaction
         ]);
     }
 
