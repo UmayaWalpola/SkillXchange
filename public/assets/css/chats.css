@@ -1,4 +1,4 @@
-/* chats.css - Complete chat interface styling */
+/* chats.css - Complete chat interface styling with transaction UI */
 
 .chats-page {
     width: 100%;
@@ -58,8 +58,8 @@
 }
 
 .search-input:focus {
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(101, 131, 150, 0.1);
 }
 
 .conversations {
@@ -82,22 +82,21 @@
 }
 
 .chat-item.active {
-    background: #eef2ff;
-    border-left: 3px solid #6366f1;
+    background: var(--blue-bg);
+    border-left: 3px solid var(--primary-blue);
 }
 
 .chat-item.unread {
     background: #fffbeb;
 }
 
-/* FIXED: Chat Avatar with proper image containment */
 .chat-avatar {
     width: 48px;
     height: 48px;
     min-width: 48px;
     min-height: 48px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-blue) 100%);
     color: white;
     display: flex;
     align-items: center;
@@ -118,11 +117,6 @@
     top: 0;
     left: 0;
     border-radius: 50%;
-}
-
-.chat-avatar .avatar-initials {
-    z-index: 1;
-    position: relative;
 }
 
 .chat-info {
@@ -165,7 +159,7 @@
 }
 
 .unread-badge {
-    background: #6366f1;
+    background: var(--primary-blue);
     color: white;
     font-size: 11px;
     font-weight: 600;
@@ -205,14 +199,13 @@
     gap: 12px;
 }
 
-/* FIXED: Partner Avatar with proper image containment */
 .partner-avatar {
     width: 40px;
     height: 40px;
     min-width: 40px;
     min-height: 40px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-blue) 100%);
     color: white;
     display: flex;
     align-items: center;
@@ -230,11 +223,6 @@
     top: 0;
     left: 0;
     border-radius: 50%;
-}
-
-.partner-avatar .avatar-initials {
-    z-index: 1;
-    position: relative;
 }
 
 .chat-partner-info h3 {
@@ -269,8 +257,326 @@
 }
 
 .btn-icon:hover {
+    background: var(--blue-bg);
+    color: var(--primary-blue);
+}
+
+/* ============================================
+   NEW: TRANSACTION UI STYLING
+   ============================================ */
+
+/* Transaction Banner */
+.transaction-banner {
+    background: var(--blue-bg);
+    border-bottom: 2px solid var(--accent-blue);
+    padding: 16px 24px;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.transaction-pending,
+.transaction-active,
+.transaction-verification {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+.transaction-info strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--dark-bg);
+    margin-bottom: 4px;
+}
+
+.transaction-info p {
+    font-size: 13px;
+    color: var(--dark-bg);
+    opacity: 0.7;
+    margin: 0;
+}
+
+.transaction-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.transaction-status {
+    font-size: 13px;
+    color: var(--primary-blue);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* Transaction Action Buttons */
+.btn-accept {
+    padding: 8px 20px;
+    background: var(--primary-blue);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.btn-accept:hover {
+    background: var(--accent-blue);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(101, 131, 150, 0.3);
+}
+
+.btn-reject {
+    padding: 8px 20px;
+    background: white;
+    color: var(--dark-bg);
+    border: 2px solid var(--dark-bg);
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.btn-reject:hover {
+    background: var(--dark-bg);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.btn-leave {
+    padding: 8px 20px;
+    background: #fee2e2;
+    color: #991b1b;
+    border: 2px solid #ef4444;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.btn-leave:hover {
+    background: #ef4444;
+    color: white;
+    transform: translateY(-1px);
+}
+
+.btn-report {
+    padding: 8px 20px;
+    background: #fef3c7;
+    color: #92400e;
+    border: 2px solid #f59e0b;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.btn-report:hover {
+    background: #f59e0b;
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* Transaction Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-container {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--blue-bg);
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--dark-bg);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: var(--dark-bg);
+    opacity: 0.5;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.modal-close:hover {
+    opacity: 1;
+    background: var(--blue-bg);
+}
+
+.modal-body {
+    padding: 24px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--dark-bg);
+    margin-bottom: 8px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid var(--blue-bg);
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(101, 131, 150, 0.1);
+}
+
+.form-group small {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--dark-bg);
+    opacity: 0.6;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+.btn-secondary {
+    padding: 10px 24px;
+    background: #f3f4f6;
+    color: var(--dark-bg);
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
     background: #e5e7eb;
-    color: #1a1a1a;
+}
+
+.btn-primary {
+    padding: 10px 24px;
+    background: var(--primary-blue);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary:hover {
+    background: var(--accent-blue);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(101, 131, 150, 0.3);
+}
+
+.btn-danger {
+    padding: 10px 24px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 /* Messages Container */
@@ -300,14 +606,13 @@
     flex-direction: row-reverse;
 }
 
-/* FIXED: Message Avatar with proper image containment */
 .message-avatar {
     width: 32px;
     height: 32px;
     min-width: 32px;
     min-height: 32px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-blue) 100%);
     color: white;
     display: flex;
     align-items: center;
@@ -327,11 +632,6 @@
     top: 0;
     left: 0;
     border-radius: 50%;
-}
-
-.message-avatar .avatar-initials {
-    z-index: 1;
-    position: relative;
 }
 
 .message-content {
@@ -357,7 +657,7 @@
 }
 
 .own-message .message-text {
-    background: #6366f1;
+    background: var(--primary-blue);
     color: white;
 }
 
@@ -394,13 +694,13 @@
 }
 
 #messageInput:focus {
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(101, 131, 150, 0.1);
 }
 
 .btn-send {
     padding: 12px 24px;
-    background: #6366f1;
+    background: var(--primary-blue);
     color: white;
     border: none;
     border-radius: 24px;
@@ -414,7 +714,7 @@
 }
 
 .btn-send:hover {
-    background: #5558e3;
+    background: var(--accent-blue);
     transform: translateY(-1px);
 }
 
@@ -486,5 +786,21 @@
     
     .message {
         max-width: 85%;
+    }
+
+    .transaction-pending,
+    .transaction-active,
+    .transaction-verification {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .transaction-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .transaction-actions button {
+        width: 100%;
     }
 }

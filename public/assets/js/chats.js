@@ -1,4 +1,4 @@
-// chats.js - Complete user-to-user chat functionality
+// chats.js - Complete user-to-user chat functionality with transactions
 
 let messagePollingInterval = null;
 let lastMessageId = 0;
@@ -25,6 +25,11 @@ function loadMessages() {
                 // Update last message ID for polling
                 if (data.messages.length > 0) {
                     lastMessageId = data.messages[data.messages.length - 1].id;
+                }
+
+                // Update transaction banner if status changed
+                if (data.active_transaction) {
+                    updateTransactionBanner(data.active_transaction);
                 }
             } else {
                 console.error('Failed to load messages:', data.message);
@@ -99,12 +104,12 @@ function sendMessage(event) {
             input.value = '';
             loadMessages(); // Reload to show new message
         } else {
-            alert('Failed to send message: ' + (data.message || 'Unknown error'));
+            showNotification('Failed to send message: ' + (data.message || 'Unknown error'), 'error');
         }
     })
     .catch(error => {
         console.error('Error sending message:', error);
-        alert('Network error. Please try again.');
+        showNotification('Network error. Please try again.', 'error');
     });
 }
 
@@ -125,12 +130,317 @@ function pollForNewMessages() {
                     displayMessages(data.messages, data.current_user_id);
                     lastMessageId = latestId;
                 }
+
+                // Update transaction if it changed
+                if (data.active_transaction) {
+                    updateTransactionBanner(data.active_transaction);
+                }
             }
         })
         .catch(error => {
             console.error('Error polling messages:', error);
         });
 }
+
+// ============================================
+// TRANSACTION FUNCTIONS
+// ============================================
+
+/**
+ * Open transaction offer modal
+ */
+function openTransactionModal() {
+    const modal = document.getElementById('transactionModal');
+    modal.style.display = 'flex';
+    
+    // Reset form
+    document.getElementById('transactionForm').reset();
+    document.getElementById('buckxAmountGroup').style.display = 'none';
+    document.getElementById('skillxGroup').style.display = 'none';
+}
+
+/**
+ * Close transaction offer modal
+ */
+function closeTransactionModal() {
+    const modal = document.getElementById('transactionModal');
+    modal.style.display = 'none';
+}
+
+/**
+ * Handle payment type change in modal
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentType = document.getElementById('paymentType');
+    if (paymentType) {
+        paymentType.addEventListener('change', function() {
+            const buckxGroup = document.getElementById('buckxAmountGroup');
+            const skillxGroup = document.getElementById('skillxGroup');
+            
+            if (this.value === 'buckx') {
+                buckxGroup.style.display = 'block';
+                skillxGroup.style.display = 'none';
+                document.getElementById('buckxAmount').required = true;
+                document.getElementById('skillName').required = false;
+                document.getElementById('skillDebtHours').required = false;
+            } else if (this.value === 'skillx') {
+                buckxGroup.style.display = 'none';
+                skillxGroup.style.display = 'block';
+                document.getElementById('buckxAmount').required = false;
+                document.getElementById('skillName').required = true;
+                document.getElementById('skillDebtHours').required = true;
+            } else {
+                buckxGroup.style.display = 'none';
+                skillxGroup.style.display = 'none';
+            }
+        });
+    }
+
+    // Handle transaction form submission
+    const transactionForm = document.getElementById('transactionForm');
+    if (transactionForm) {
+        transactionForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            createTransactionOffer();
+        });
+    }
+
+    // Handle report form submission
+    const reportForm = document.getElementById('reportForm');
+    if (reportForm) {
+        reportForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitReport();
+        });
+    }
+});
+
+/**
+ * Create transaction offer
+ */
+function createTransactionOffer() {
+    const formData = new FormData(document.getElementById('transactionForm'));
+    formData.append('chat_id', CURRENT_CHAT_ID);
+
+    fetch(`${URLROOT}/transaction/createOffer`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message || 'Offer sent successfully!', 'success');
+            closeTransactionModal();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(data.message || 'Failed to create offer', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error creating offer:', error);
+        showNotification('Network error. Please try again.', 'error');
+    });
+}
+
+/**
+ * Respond to transaction offer (accept/reject)
+ */
+function respondToOffer(eventId, action) {
+    const confirmMsg = action === 'accept' 
+        ? 'Accept this transaction offer?' 
+        : 'Reject this offer?';
+    
+    if (!confirm(confirmMsg)) return;
+
+    const formData = new FormData();
+    formData.append('event_id', eventId);
+    formData.append('action', action);
+
+    fetch(`${URLROOT}/transaction/respondToOffer`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message, 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(data.message || 'Action failed', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error responding to offer:', error);
+        showNotification('Network error. Please try again.', 'error');
+    });
+}
+
+/**
+ * Leave lesson (terminate transaction)
+ */
+function leaveLesson(eventId) {
+    if (!confirm('Are you sure you want to leave this lesson? This will terminate the transaction and return any frozen funds.')) {
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('event_id', eventId);
+
+    fetch(`${URLROOT}/transaction/leaveLesson`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message, 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(data.message || 'Failed to leave lesson', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error leaving lesson:', error);
+        showNotification('Network error. Please try again.', 'error');
+    });
+}
+
+/**
+ * Teacher marks session as completed
+ */
+function markCompleted(eventId) {
+    if (!confirm('Mark this session as completed? The learner will then verify and payment will be processed.')) {
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('event_id', eventId);
+
+    fetch(`${URLROOT}/transaction/markCompleted`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message, 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(data.message || 'Failed to mark completed', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error marking completed:', error);
+        showNotification('Network error. Please try again.', 'error');
+    });
+}
+
+/**
+ * Learner verifies completion (agree)
+ */
+function verifyCompletion(eventId, action) {
+    if (action === 'agreed') {
+        if (!confirm('Confirm that the session was completed successfully? Payment will be transferred.')) {
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('event_id', eventId);
+        formData.append('action', 'agreed');
+
+        fetch(`${URLROOT}/transaction/verifyCompletion`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showNotification(data.message || 'Failed to verify completion', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error verifying completion:', error);
+            showNotification('Network error. Please try again.', 'error');
+        });
+    }
+}
+
+/**
+ * Open report issue modal
+ */
+function openReportModal(eventId) {
+    document.getElementById('reportEventId').value = eventId;
+    document.getElementById('reportModal').style.display = 'flex';
+}
+
+/**
+ * Close report modal
+ */
+function closeReportModal() {
+    document.getElementById('reportModal').style.display = 'none';
+    document.getElementById('reportForm').reset();
+}
+
+/**
+ * Submit report/dispute
+ */
+function submitReport() {
+    const eventId = document.getElementById('reportEventId').value;
+    const disputeReason = document.getElementById('disputeReason').value.trim();
+
+    if (!disputeReason) {
+        showNotification('Please describe the issue', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('event_id', eventId);
+    formData.append('action', 'report');
+    formData.append('dispute_reason', disputeReason);
+
+    fetch(`${URLROOT}/transaction/verifyCompletion`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message, 'success');
+            closeReportModal();
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(data.message || 'Failed to submit report', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error submitting report:', error);
+        showNotification('Network error. Please try again.', 'error');
+    });
+}
+
+/**
+ * Update transaction banner with new status
+ */
+function updateTransactionBanner(transaction) {
+    const banner = document.getElementById('transactionBanner');
+    if (!banner) return;
+
+    // Store transaction data
+    banner.dataset.transaction = JSON.stringify(transaction);
+
+    // Check if status changed - if so, reload page for full UI update
+    const currentStatus = banner.querySelector('[data-status]');
+    if (currentStatus && currentStatus.dataset.status !== transaction.status) {
+        location.reload();
+    }
+}
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
 
 /**
  * View partner's profile
@@ -214,13 +524,12 @@ function escapeHtml(text) {
 }
 
 /**
- * Show notification
+ * Show notification toast
  */
 function showNotification(message, type = 'info') {
-    const existing = document.querySelector('.notification-banner');
-    if (existing) {
-        existing.remove();
-    }
+    // Remove existing notifications
+    const existing = document.querySelectorAll('.notification-banner');
+    existing.forEach(n => n.remove());
     
     const notification = document.createElement('div');
     notification.className = `notification-banner notification-${type}`;
@@ -231,6 +540,7 @@ function showNotification(message, type = 'info') {
     
     document.body.appendChild(notification);
     
+    // Auto-remove after 5 seconds
     setTimeout(() => {
         if (notification.parentElement) {
             notification.style.opacity = '0';
@@ -239,7 +549,10 @@ function showNotification(message, type = 'info') {
     }, 5000);
 }
 
-// Initialize when page loads
+// ============================================
+// INITIALIZATION
+// ============================================
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Chats page loaded');
     console.log('Current chat ID:', CURRENT_CHAT_ID);
@@ -263,6 +576,15 @@ document.addEventListener('DOMContentLoaded', function() {
     if (messageInput) {
         messageInput.focus();
     }
+
+    // Close modals on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+            }
+        });
+    });
 });
 
 // Cleanup on page unload

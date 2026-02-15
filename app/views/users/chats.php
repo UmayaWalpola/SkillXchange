@@ -22,8 +22,8 @@
                     </div>
                     
                     <div class="conversations">
-                        <?php if (!empty($data['chats'])): ?>
-                            <?php foreach ($data['chats'] as $chat): ?>
+                        <?php if (!empty($data['allChats'])): ?>
+                            <?php foreach ($data['allChats'] as $chat): ?>
                                 <div class="chat-item <?= $chat['unread'] ? 'unread' : ''; ?> <?= isset($data['partnerId']) && $chat['partner_id'] == $data['partnerId'] ? 'active' : ''; ?>" 
                                      data-chat-id="<?= $chat['id']; ?>"
                                      data-partner-id="<?= $chat['partner_id']; ?>"
@@ -77,6 +77,16 @@
                                 </div>
                             </div>
                             <div class="chat-actions">
+                                <!-- NEW: Transaction Button -->
+                                <?php if (!isset($data['activeTransaction'])): ?>
+                                    <button class="btn-icon" onclick="openTransactionModal()" title="Create Transaction Offer">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <path d="M12 6v12M6 12h12"></path>
+                                        </svg>
+                                    </button>
+                                <?php endif; ?>
+                                
                                 <button class="btn-icon" onclick="viewPartnerProfile(<?= $data['partnerId']; ?>)" title="View Profile">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -85,6 +95,87 @@
                                 </button>
                             </div>
                         </div>
+
+                        <!-- NEW: Transaction Status Banner -->
+                        <?php if (isset($data['activeTransaction'])): ?>
+                            <div class="transaction-banner" id="transactionBanner" data-transaction='<?= json_encode($data['activeTransaction']); ?>'>
+                                <?php 
+                                $tx = $data['activeTransaction'];
+                                $status = $tx['status'];
+                                $userRole = $tx['user_role'];
+                                ?>
+                                
+                                <?php if ($status === 'pending_learner' || $status === 'pending_teacher'): ?>
+                                    <!-- Pending Offer -->
+                                    <div class="transaction-pending">
+                                        <div class="transaction-info">
+                                            <strong>Transaction Offer</strong>
+                                            <p>
+                                                <?php if ($tx['payment_type'] === 'buckx'): ?>
+                                                    <?= number_format($tx['amount'], 2); ?> BuckX
+                                                <?php else: ?>
+                                                    <?= $tx['skill_debt_hours']; ?> hours of <?= htmlspecialchars($tx['skill_name']); ?>
+                                                <?php endif; ?>
+                                                • <?= $tx['timeframe_hours']; ?> hour timeframe
+                                            </p>
+                                        </div>
+                                        <div class="transaction-actions">
+                                            <?php if ($tx['is_creator']): ?>
+                                                <span class="transaction-status">Waiting for response...</span>
+                                            <?php else: ?>
+                                                <button class="btn-accept" onclick="respondToOffer(<?= $tx['id']; ?>, 'accept')">Accept</button>
+                                                <button class="btn-reject" onclick="respondToOffer(<?= $tx['id']; ?>, 'reject')">Reject</button>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                
+                                <?php elseif ($status === 'active'): ?>
+                                    <!-- Active Session -->
+                                    <div class="transaction-active">
+                                        <div class="transaction-info">
+                                            <strong>Active Session</strong>
+                                            <p>
+                                                <?php if ($tx['payment_type'] === 'buckx'): ?>
+                                                    <?= number_format($tx['amount'], 2); ?> BuckX
+                                                <?php else: ?>
+                                                    <?= $tx['skill_debt_hours']; ?> hours
+                                                <?php endif; ?>
+                                                • Expires: <?= date('M j, g:i A', strtotime($tx['expires_at'])); ?>
+                                            </p>
+                                        </div>
+                                        <div class="transaction-actions">
+                                            <?php if ($userRole === 'teacher'): ?>
+                                                <button class="btn-primary" onclick="markCompleted(<?= $tx['id']; ?>)">Mark Completed</button>
+                                            <?php endif; ?>
+                                            <button class="btn-leave" onclick="leaveLesson(<?= $tx['id']; ?>)">Leave Lesson</button>
+                                        </div>
+                                    </div>
+                                
+                                <?php elseif ($status === 'teacher_completed'): ?>
+                                    <!-- Waiting for Learner Verification -->
+                                    <div class="transaction-verification">
+                                        <div class="transaction-info">
+                                            <strong>Session Completed</strong>
+                                            <p>
+                                                <?php if ($tx['payment_type'] === 'buckx'): ?>
+                                                    <?= number_format($tx['amount'], 2); ?> BuckX
+                                                <?php else: ?>
+                                                    <?= $tx['skill_debt_hours']; ?> hours
+                                                <?php endif; ?>
+                                            </p>
+                                        </div>
+                                        <div class="transaction-actions">
+                                            <?php if ($userRole === 'learner'): ?>
+                                                <button class="btn-accept" onclick="verifyCompletion(<?= $tx['id']; ?>, 'agreed')">Agree</button>
+                                                <button class="btn-report" onclick="openReportModal(<?= $tx['id']; ?>)">Report Issue</button>
+                                            <?php else: ?>
+                                                <span class="transaction-status">Waiting for learner verification...</span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
 
                         <div class="messages-container" id="messagesContainer">
                             <!-- Messages will be loaded here by JavaScript -->
@@ -126,10 +217,95 @@
 </div>
 </main>
 
+<!-- NEW: Transaction Offer Modal -->
+<div class="modal-overlay" id="transactionModal" style="display: none;">
+    <div class="modal-container transaction-modal">
+        <div class="modal-header">
+            <h3>Create Transaction Offer</h3>
+            <button class="modal-close" onclick="closeTransactionModal()">×</button>
+        </div>
+        
+        <form id="transactionForm" class="modal-body">
+            <div class="form-group">
+                <label>Your Role</label>
+                <select name="role" id="transactionRole" required>
+                    <option value="">Select your role</option>
+                    <option value="teacher">I'm teaching (I will receive payment)</option>
+                    <option value="learner">I'm learning (I will pay)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Payment Type</label>
+                <select name="payment_type" id="paymentType" required>
+                    <option value="">Select payment type</option>
+                    <option value="buckx">BuckX (Currency)</option>
+                    <option value="skillx">SkillX (Skill Debt)</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="buckxAmountGroup" style="display: none;">
+                <label>BuckX Amount</label>
+                <input type="number" name="amount" id="buckxAmount" step="0.01" min="0">
+                <small>Your balance: <strong><?= number_format($data['buckxBalance'], 2); ?> BuckX</strong></small>
+            </div>
+
+            <div class="form-group" id="skillxGroup" style="display: none;">
+                <label>Skill Name</label>
+                <input type="text" name="skill_name" id="skillName" placeholder="e.g., Web Development">
+                
+                <label>Hours of Skill Debt</label>
+                <input type="number" name="skill_debt_hours" id="skillDebtHours" step="0.5" min="0.5">
+                <small>How many hours the learner will owe</small>
+            </div>
+
+            <div class="form-group">
+                <label>Timeframe (Hours)</label>
+                <input type="number" name="timeframe_hours" id="timeframeHours" required min="1" value="24">
+                <small>How long until the session must be completed</small>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeTransactionModal()">Cancel</button>
+                <button type="submit" class="btn-primary">Send Offer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- NEW: Report Issue Modal -->
+<div class="modal-overlay" id="reportModal" style="display: none;">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3>Report Issue</h3>
+            <button class="modal-close" onclick="closeReportModal()">×</button>
+        </div>
+        
+        <form id="reportForm" class="modal-body">
+            <input type="hidden" id="reportEventId">
+            
+            <div class="form-group">
+                <label>Describe the issue</label>
+                <textarea name="dispute_reason" id="disputeReason" rows="4" required placeholder="Please explain what went wrong..."></textarea>
+            </div>
+
+            <p style="color: var(--dark-bg); opacity: 0.7; font-size: 0.9rem; margin: 1rem 0;">
+                Your payment will be frozen until an admin reviews this dispute.
+            </p>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeReportModal()">Cancel</button>
+                <button type="submit" class="btn-danger">Submit Report</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
     const URLROOT = '<?= URLROOT ?>';
     const CURRENT_CHAT_ID = <?= isset($data['chatId']) ? $data['chatId'] : 'null' ?>;
     const CURRENT_USER_ID = <?= $_SESSION['user_id'] ?>;
+    const PARTNER_ID = <?= isset($data['partnerId']) ? $data['partnerId'] : 'null' ?>;
 </script>
 <script src="<?= URLROOT ?>/assets/js/chats.js"></script>
 
