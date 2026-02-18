@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 18, 2026 at 09:27 AM
+-- Generation Time: Feb 18, 2026 at 01:24 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -464,10 +464,23 @@ CREATE TABLE `user_feedback` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `reviewer_id` int(11) NOT NULL,
+  `project_id` int(11) DEFAULT NULL,
+  `context_type` enum('project','session') NOT NULL DEFAULT 'project',
+  `context_id` int(11) DEFAULT NULL,
   `rating` int(11) NOT NULL,
   `comment` text DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `tags` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `user_feedback`
+--
+
+INSERT INTO `user_feedback` (`id`, `user_id`, `reviewer_id`, `project_id`, `context_type`, `context_id`, `rating`, `comment`, `tags`, `created_at`, `updated_at`) VALUES
+(1, 50, 37, 13, 'project', 13, 2, 'kkk', 'teamwork', '2026-02-17 19:30:09', '2026-02-17 19:30:09'),
+(2, 41, 37, 13, 'project', 13, 3, 'It was a pleasure working with Devinda. He communicated clearly, delivered quality work, and completed tasks on time. Very reliable and professional throughout the project.', 'quality,ontime,teamwork,communication', '2026-02-18 12:19:54', '2026-02-18 12:19:54');
 
 -- --------------------------------------------------------
 
@@ -818,7 +831,22 @@ ALTER TABLE `user_badges`
 --
 ALTER TABLE `user_feedback`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `user_id` (`user_id`);
+  ADD UNIQUE KEY `unique_feedback_context` (`user_id`,`reviewer_id`,`context_type`,`context_id`),
+  ADD UNIQUE KEY `unique_feedback_per_context` (`user_id`,`reviewer_id`,`context_type`,`context_id`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `project_id` (`project_id`),
+  ADD KEY `idx_project_feedback` (`project_id`,`created_at`),
+  ADD KEY `idx_context` (`context_type`,`context_id`),
+  ADD KEY `idx_user_feedback` (`user_id`),
+  ADD KEY `idx_reviewer_feedback` (`reviewer_id`),
+  ADD KEY `fk_feedback_context_project` (`context_id`),
+  ADD KEY `idx_context_lookup` (`context_type`,`context_id`),
+  ADD KEY `idx_user_ratings` (`user_id`,`context_type`),
+  ADD KEY `idx_reviewer_given` (`reviewer_id`,`context_type`),
+  ADD KEY `idx_feedback_user_context` (`user_id`,`context_type`,`context_id`,`created_at`),
+  ADD KEY `idx_feedback_rating` (`user_id`,`rating`),
+  ADD KEY `idx_feedback_created` (`user_id`,`created_at`),
+  ADD KEY `idx_feedback_reviewer` (`reviewer_id`,`created_at`);
 
 --
 -- Indexes for table `user_projects`
@@ -986,7 +1014,7 @@ ALTER TABLE `user_badges`
 -- AUTO_INCREMENT for table `user_feedback`
 --
 ALTER TABLE `user_feedback`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `user_projects`
@@ -1132,7 +1160,10 @@ ALTER TABLE `user_badges`
 -- Constraints for table `user_feedback`
 --
 ALTER TABLE `user_feedback`
-  ADD CONSTRAINT `user_feedback_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `fk_feedback_context_project` FOREIGN KEY (`context_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_user_feedback_project` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `user_feedback_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `user_feedback_ibfk_2` FOREIGN KEY (`reviewer_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `user_projects`

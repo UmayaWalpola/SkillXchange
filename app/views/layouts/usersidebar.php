@@ -29,4 +29,8 @@
         <span class="icon">&#x1F4B0;</span>
         <span>Wallet</span>
     </a>
+    <a href="<?= URLROOT ?>/Feedback/index" class="sidebar-item <?= (isset($page) && $page == 'feedback') ? 'active' : '' ?>">
+        <span class="icon"></span>
+        <span>My Feedback</span>
+    </a>
 </nav>

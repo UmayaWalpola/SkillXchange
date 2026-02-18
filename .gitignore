@@ -4,13 +4,24 @@ MERGE_SUMMARY.md
 database/migrations/2025_11_20_000000_create_notifications_table.sql
 database/migrations/2025_11_20_010000_create_project_chat_messages.sql
 database/migrations/2025_11_20_add_project_app_columns.sql
+database/migrations/2026_02_14_add_project_id_to_user_feedback.sql
+database/migrations/2026_02_17_add_context_support_to_feedback.sql
+database/migrations/2026_02_18_add_feedback_filtering_sorting.sql
 database/migrations/alter_project_applications.sql
 database/migrations/create_content_reports_table.sql
+database/migrations/create_feedback_reports.sql
+database/migrations/create_quiz_system_tables.sql
 database/migrations/create_task_management_tables.sql
 database/migrations/create_user_reports.sql
 database/migrations/create_wallet_system.sql
+database/migrations/FIXED_create_feedback_reports.sql
+database/migrations/QUICK_FIX_feedback_columns.sql
+database/migrations/SAFE_VERSION_feedback_columns.sql
 database/migrations/setup_reporting_system.sql
+database/migrations/add_moderator_role.sql
+database/migrations/OPTION_A_USE_MANAGER_ROLE.md
 DB.sql
+
 # Documentation files
 MVC_STRUCTURE.md
 REPORTING_IMPLEMENTATION_SUMMARY.md
@@ -18,6 +29,15 @@ REPORTING_QUICK_REFERENCE.md
 REPORTING_SYSTEM.md
 SETUP_INSTRUCTIONS.txt
 TESTING_GUIDE.md
+FEEDBACK_FILTERING_IMPLEMENTATION.md
+FEEDBACK_FIX_INSTRUCTIONS.md
+FEEDBACK_MODULE_IMPLEMENTATION.md
+FEEDBACK_REPORTING_IMPLEMENTATION_GUIDE.md
+FEEDBACK_UI_COMPLETE_GUIDE.md
+MODERATOR_ACCESS_IMPLEMENTATION_GUIDE.md
+
+# Unused moderator files (project only has admins)
+app/views/layouts/moderator_sidebar.php
 
 # Test data
 insert-test-data.sql
