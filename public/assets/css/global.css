@@ -34,6 +34,7 @@ body {
 .site-main {
   flex: 1 0 auto;
   padding-top: 100px;
+  margin-left: 250px; /* Account for fixed sidebar on admin pages */
 }
 
 h1 { font-size: 2.2rem; font-weight: 700; }
@@ -333,6 +334,138 @@ form button:hover {
   animation: fadeIn 0.5s ease-out;
 }
 
+/* Shared table, avatar and action button styles for admin pages */
+.table-container {
+  overflow: auto;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.admin-table thead {
+  background: #f8fafc;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.admin-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 700;
+  color: var(--dark-bg);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.admin-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #f0f0f0;
+  color: #374151;
+}
+
+.admin-table tbody tr:nth-child(even) {
+  background: #fafbfc;
+}
+
+.admin-table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.admin-table tbody tr:hover {
+  background: #f1f5f9;
+}
+
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-blue), var(--primary-blue));
+  color: var(--white-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.user-avatar-sm {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: var(--primary-blue);
+  color: var(--white-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.8rem;
+}
+
+.action-btn {
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-right: 0.5rem;
+  text-decoration: none;
+}
+
+.btn-view {
+  background: var(--primary-blue);
+  color: var(--white-bg);
+}
+
+.btn-view:hover {
+  background: var(--accent-blue);
+  color: var(--dark-bg);
+}
+
+.btn-suspend {
+  background: #fecaca;
+  color: #ef4444;
+}
+
+.btn-suspend:hover {
+  background: #ef4444;
+  color: var(--white-bg);
+}
+
+.btn-activate {
+  background: #dcfce7;
+  color: #22c55e;
+}
+
+.btn-activate:hover {
+  background: #22c55e;
+  color: var(--white-bg);
+}
+
+.btn-resolve {
+  background: var(--accent-blue);
+  color: var(--dark-bg);
+}
+
+.btn-resolve:hover {
+  background: var(--primary-blue);
+  color: var(--white-bg);
+}
+
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-5px); }
@@ -489,27 +622,26 @@ form button:hover {
 /* ===== Dashboard Layout ===== */
 .dashboard-container {
     display: flex;
-    margin-left: 250px; /* CHANGED: Push right of sidebar */
-    min-height: 100vh; /* CHANGED: Full viewport height */
-    flex-direction: column; /* ADDED */
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 .dashboard-main {
     flex: 1;
-    padding: 2rem;
-    padding-top: 80px; /* CHANGED: Account for fixed header */
-    background: var(--white-bg);
+    padding: 0;
+    background: #f5f7fa;
     min-height: 100vh;
 }
 
 @media (max-width: 768px) {
     .dashboard-main {
-        margin-left: 0;
+        padding: 0;
         width: 100%;
     }
     
     .dashboard-container {
         flex-direction: column;
+        margin-left: 0;
     }
 }
 

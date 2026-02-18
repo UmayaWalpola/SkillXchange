@@ -1,8 +1,8 @@
 <?php require_once "../app/views/layouts/header_user.php"; ?>
- <?php require_once "../app/views/layouts/adminsidebar.php"; ?>
-
+<?php require_once "../app/views/layouts/adminsidebar.php"; ?>
 
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
+<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/profile.css">
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/admin.css">
 
 <main class="site-main">
@@ -10,180 +10,192 @@
     <div class="dashboard-main">
         <div class="admin-content">
             <!-- Dashboard Header -->
-            <div class="admin-header">
-                <h1>Admin Dashboard</h1>
-                <p class="admin-subtitle">Manage your Skillxchange platform</p>
+            <div class="profile-header">
+                <div class="profile-info">
+                    <div class="profile-avatar">AD</div>
+                    <div class="profile-details">
+                        <h1>Admin Dashboard</h1>
+                        <p class="profile-bio">Manage your Skillxchange platform</p>
+                    </div>
+                </div>
             </div>
 
             <!-- Stats Overview -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-icon">👥</div>
                     <div class="stat-info">
                         <span class="stat-number"><?= number_format($data['stats']['total_users']) ?></span>
                         <span class="stat-label">Total Users</span>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">🔄</div>
                     <div class="stat-info">
-                        <span class="stat-number"><?= number_format($data['stats']['active_exchanges']) ?></span>
-                        <span class="stat-label">Active Exchanges</span>
+                        <span class="stat-number"><?= number_format($data['stats']['active_users']) ?></span>
+                        <span class="stat-label">Active Users</span>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">✅</div>
                     <div class="stat-info">
-                        <span class="stat-number"><?= number_format($data['stats']['completed_exchanges']) ?></span>
-                        <span class="stat-label">Completed</span>
+                        <span class="stat-number"><?= number_format($data['stats']['pending_reports']) ?></span>
+                        <span class="stat-label">Pending Reports</span>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">💡</div>
                     <div class="stat-info">
-                        <span class="stat-number"><?= number_format($data['stats']['total_skills']) ?></span>
-                        <span class="stat-label">Total Skills</span>
+                        <span class="stat-number"><?= number_format($data['stats']['suspended_users']) ?></span>
+                        <span class="stat-label">Suspended Users</span>
                     </div>
                 </div>
             </div>
 
+            <!-- Flash Messages -->
+            <?php if (isset($_SESSION['success'])): ?>
+                <div class="alert alert-success">
+                    <?= $_SESSION['success'] ?>
+                    <?php unset($_SESSION['success']); ?>
+                </div>
+            <?php endif; ?>
+            
+            <?php if (isset($_SESSION['error'])): ?>
+                <div class="alert alert-error">
+                    <?= $_SESSION['error'] ?>
+                    <?php unset($_SESSION['error']); ?>
+                </div>
+            <?php endif; ?>
+
             <div class="admin-body">
-                <!-- Reports Section -->
-                <section class="admin-section">
-                    <div class="section-header">
-                        <h2 class="section-title">Recent Reports</h2>
-                        <a href="<?= URLROOT ?>/admin/reports" class="btn-primary">See All Reports</a>
+                <section class="admin-section" style="text-align: center;">
+                    <div class="section-header" style="justify-content: center; gap: 1.5rem;">
+                        <h2 class="section-title">Quick Links</h2>
                     </div>
-                    
-                    <div class="table-container">
-                        <table class="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>Reported User</th>
-                                    <th>Reported By</th>
-                                    <th>Reason</th>
-                                    <th>Date</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php if (!empty($data['recent_reports'])): ?>
-                                    <?php foreach (array_slice($data['recent_reports'], 0, 5) as $report): ?>
-                                        <tr>
-                                            <td>
-                                                <div class="user-cell">
-                                                    <div class="user-avatar">
-                                                        <?= strtoupper(substr($report->reported_username ?? 'U', 0, 2)) ?>
-                                                    </div>
-                                                    <span><?= htmlspecialchars($report->reported_username ?? 'Unknown') ?></span>
-                                                </div>
-                                            </td>
-                                            <td><?= htmlspecialchars($report->reporter_username ?? 'Anonymous') ?></td>
-                                            <td><?= htmlspecialchars($report->reason) ?></td>
-                                            <td><?= date('M d, Y', strtotime($report->created_at)) ?></td>
-                                            <td>
-                                                <a href="<?= URLROOT ?>/admin/viewReport/<?= $report->id ?>" class="action-btn btn-view">View</a>
-                                                <button class="action-btn btn-suspend" onclick="sendWarning(<?= $report->reported_user_id ?>, <?= $report->id ?>)">Warn</button>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                <?php else: ?>
-                                    <tr>
-                                        <td colspan="5" style="text-align: center;">No reports found</td>
-                                    </tr>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
 
-                <!-- User Management Section -->
-                <section class="admin-section">
-                    <div class="section-header">
-                        <h2 class="section-title">Recent Users</h2>
-                        <a href="<?= URLROOT ?>/admin/users" class="btn-primary">View All Users</a>
+                    <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; margin-top:1rem;">
+                        <a href="<?= URLROOT ?>/admin/users" class="btn-primary" style="min-width:180px;">User Management</a>
+                        <a href="<?= URLROOT ?>/admin/reports" class="btn-primary" style="min-width:180px;">Reports</a>
+                        <a href="<?= URLROOT ?>/admin/activityLogs" class="btn-primary" style="min-width:180px;">Activity Logs</a>
                     </div>
-                    
-                    <div class="table-container">
-                        <table class="admin-table">
-                            <thead>
-                                <tr>
-                                    <th>User</th>
-                                    <th>Email</th>
-                                    <th>Join Date</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php if (!empty($data['recent_users'])): ?>
-                                    <?php foreach ($data['recent_users'] as $user): ?>
-                                        <tr>
-                                            <td>
-                                                <div class="user-cell">
-                                                    <div class="user-avatar">
-                                                        <?= strtoupper(substr($user->username ?? 'U', 0, 2)) ?>
-                                                    </div>
-                                                    <span><?= htmlspecialchars($user->username ?? 'Unknown') ?></span>
-                                                </div>
-                                            </td>
-                                            <td><?= htmlspecialchars($user->email) ?></td>
-                                            <td><?= date('M d, Y', strtotime($user->created_at)) ?></td>
-                                            <td>
-                                                <span class="badge badge-success">Active</span>
-                                            </td>
-                                            <td>
-                                                <a href="<?= URLROOT ?>/admin/viewUser/<?= $user->id ?>" class="action-btn btn-view">View</a>
-                                                <button class="action-btn btn-suspend" onclick="suspendUser(<?= $user->id ?>)">Suspend</button>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                <?php else: ?>
-                                    <tr>
-                                        <td colspan="5" style="text-align: center;">No users found</td>
-                                    </tr>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
 
-                <!-- Popular Skills Section -->
-                <section class="admin-section">
-                    <div class="section-header">
-                        <h2 class="section-title">Popular Skills</h2>
-                        <a href="<?= URLROOT ?>/admin/skills" class="btn-primary">Manage Skills</a>
-                    </div>
-                    
-                    <div class="skills-stats-grid">
-                        <?php if (!empty($data['popular_skills'])): ?>
-                            <?php foreach (array_slice($data['popular_skills'], 0, 3) as $skill): ?>
-                                <div class="skill-stat-card">
-                                    <div class="skill-stat-header">
-                                        <h3><?= htmlspecialchars($skill->skill_name) ?></h3>
-                                    </div>
-                                    <div class="skill-stat-numbers">
-                                        <div class="skill-stat-item">
-                                            <span class="stat-num"><?= $skill->teachers ?></span>
-                                            <span class="stat-text">Teachers</span>
-                                        </div>
-                                        <div class="skill-stat-item">
-                                            <span class="stat-num"><?= $skill->learners ?></span>
-                                            <span class="stat-text">Learners</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <p>No skills data available</p>
-                        <?php endif; ?>
-                    </div>
+                    <p class="text-muted" style="margin-top:1rem;">Use the links above to manage users, review reports and view activity logs.</p>
                 </section>
+            </div>
+
+                <!-- (Popular Skills removed as requested) -->
             </div>
         </div>
     </div>
 </div>
 </main>
 
+<style>
+.alert {
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+}
+
+.alert-success {
+    background: #dcfce7;
+    color: #166534;
+    border: 2px solid #22c55e;
+}
+
+.alert-error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 2px solid #ef4444;
+}
+
+.reason-badge {
+    display: inline-block;
+    padding: 0.4rem 0.9rem;
+    background: var(--blue-bg);
+    color: var(--primary-blue);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.warning-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    background: #fef3c7;
+    color: #f59e0b;
+    border-radius: 50%;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.badge-danger {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.text-muted {
+    color: #9ca3af;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.activity-log-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.activity-log-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--white-bg);
+    border: 2px solid var(--blue-bg);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.activity-log-item:hover {
+    border-color: var(--accent-blue);
+    box-shadow: 0 4px 12px rgba(101, 131, 150, 0.1);
+}
+
+.activity-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    background: var(--blue-bg);
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.activity-details {
+    flex: 1;
+}
+
+.activity-title {
+    font-size: 1rem;
+    margin-bottom: 0.3rem;
+    color: var(--dark-bg);
+}
+
+.activity-description {
+    font-size: 0.9rem;
+    color: #6b7280;
+    margin-bottom: 0.3rem;
+}
+
+.activity-time {
+    font-size: 0.85rem;
+    color: #9ca3af;
+}
+</style>
+
 <script src="<?= URLROOT ?>/assets/js/admin.js" defer></script>
-<?php require_once "../app/views/layouts/footer.php"; ?>
+<?php require_once "../app/views/layouts/footer_user.php"; ?>
