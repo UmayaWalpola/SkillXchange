@@ -1,338 +1,329 @@
 /**
- * Feedback Module - AJAX Handler
- * Handles feedback form submission without page reload
+ * Feedback Module JavaScript
+ * Handles feedback modal, star ratings, tags, and AJAX submission
  */
+
+// Global state
+let selectedTags = [];
 
 /**
- * Open feedback modal
- * @param {number} userId - User ID to give feedback to
- * @param {string} userName - User's name
- * @param {number|null} projectId - Optional project ID
+ * Open feedback modal with user context
  */
-function openFeedbackModal(userId, userName, projectId = null) {
-    const modal = document.getElementById('feedbackModal');
-    if (!modal) return;
-
-    // Set hidden field values
-    document.getElementById('feedback_user_id').value = userId;
-    document.getElementById('feedback_project_id').value = projectId || '';
-
-    // Set member info display
-    const memberNameEl = document.getElementById('feedback_member_name');
-    if (memberNameEl) {
-        memberNameEl.textContent = userName;
-    }
-
+function openFeedbackModal(userId, userName, userAvatar, contextType, contextId, contextName) {
+    console.log('Opening feedback modal for:', userName, userId, contextType, contextId);
+    
+    // Set hidden form fields
+    document.getElementById('feedbackUserId').value = userId;
+    document.getElementById('feedbackContextType').value = contextType;
+    document.getElementById('feedbackContextId').value = contextId;
+    
+    // Set visible user info
+    document.getElementById('feedbackMemberName').textContent = userName;
+    document.getElementById('feedbackMemberAvatar').src = userAvatar || '/public/assets/images/default-avatar.png';
+    
+    // Set context info
+    let contextText = contextType === 'project' ? 'Project: ' : 'Session: ';
+    contextText += contextName || 'N/A';
+    document.getElementById('feedbackMemberContext').textContent = contextText;
+    
     // Reset form
-    const form = document.getElementById('feedbackForm');
-    if (form) {
-        form.reset();
+    resetFeedbackForm();
+    
+    // Show modal
+    const modal = document.getElementById('feedbackModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        
+        // Scroll modal content to top
+        const modalContent = modal.querySelector('.feedback-modal-content');
+        if (modalContent) {
+            modalContent.scrollTop = 0;
+        }
+        
+        console.log('Modal opened successfully');
+    } else {
+        console.error('Feedback modal not found!');
     }
-
-    // Reset star rating display
-    clearStarSelection();
-
-    // Reset comment counter
-    const commentCount = document.getElementById('commentCount');
-    if (commentCount) {
-        commentCount.textContent = '0';
-    }
-
-    // Show modal with animation
-    modal.style.display = 'flex';
-    setTimeout(() => {
-        modal.classList.add('show');
-    }, 10);
 }
 
 /**
  * Close feedback modal
  */
 function closeFeedbackModal() {
-    const modal = document.getElementById('feedbackModal');
-    if (!modal) return;
-
-    modal.classList.remove('show');
-    setTimeout(() => {
-        modal.style.display = 'none';
-    }, 300);
+    document.getElementById('feedbackModal').style.display = 'none';
+    resetFeedbackForm();
 }
 
 /**
- * Set star rating
- * @param {number} rating - Rating value (1-5)
+ * Reset feedback form to initial state
  */
-function setRating(rating) {
-    const radioBtn = document.getElementById('star' + rating);
-    if (radioBtn) {
-        radioBtn.checked = true;
-        updateStarDisplay(rating);
-    }
-}
-
-/**
- * Update star display
- * @param {number} rating - Rating value
- */
-function updateStarDisplay(rating) {
-    const ratingValueEl = document.getElementById('ratingValue');
-    if (!ratingValueEl) return;
-
-    const ratingTexts = {
-        '1': 'Poor (1/5)',
-        '2': 'Fair (2/5)',
-        '3': 'Average (3/5)',
-        '4': 'Good (4/5)',
-        '5': 'Excellent (5/5)'
-    };
-
-    ratingValueEl.textContent = ratingTexts[rating.toString()] || '';
-    ratingValueEl.classList.add('show');
-}
-
-/**
- * Clear star selection
- */
-function clearStarSelection() {
-    const ratingValueEl = document.getElementById('ratingValue');
-    if (ratingValueEl) {
-        ratingValueEl.classList.remove('show');
-        ratingValueEl.textContent = '';
-    }
-
-    // Uncheck all radio buttons
-    document.querySelectorAll('input[name="rating"]').forEach(input => {
-        input.checked = false;
-    });
-}
-
-/**
- * Show feedback toast notification
- * @param {string} message - Toast message
- * @param {boolean} isSuccess - Whether it's a success or error message
- */
-function showFeedbackToast(message, isSuccess = true) {
-    // Remove existing toasts
-    const existingToasts = document.querySelectorAll('.feedback-toast');
-    existingToasts.forEach(toast => toast.remove());
-
-    // Create toast element
-    const toast = document.createElement('div');
-    toast.className = 'feedback-toast ' + (isSuccess ? 'success' : 'error');
-
-    // Text prefix based on type
-    const prefix = isSuccess ? 'Success:' : 'Error:';
-
-    toast.innerHTML = `
-        <span>${prefix}</span>
-        <span style="font-weight:500;">${message}</span>
-    `;
-
-    document.body.appendChild(toast);
-
-    // Auto-remove after 3 seconds
-    setTimeout(() => {
-        if (toast.parentNode) {
-            toast.remove();
-        }
-    }, 3000);
-}
-
-/**
- * Submit feedback via AJAX
- * @param {Event} event - Form submit event
- */
-function submitFeedback(event) {
-    event.preventDefault();
-    
-    // Get form data
+function resetFeedbackForm() {
     const form = document.getElementById('feedbackForm');
-    const formData = new FormData(form);
-    const submitBtn = form.querySelector('.btn-submit-feedback');
-    const rating = document.getElementById('feedback_rating').value;
-    
-    // Validate rating
-    if (!rating || rating < 1 || rating > 5) {
-        document.getElementById('ratingError').style.display = 'block';
-        document.getElementById('ratingError').textContent = 'Please select a rating';
-        return false;
+    if (form) {
+        form.reset();
     }
     
-    // Disable submit button and show loading state
-    submitBtn.disabled = true;
-    submitBtn.classList.add('loading');
-    const originalText = submitBtn.textContent;
-    submitBtn.textContent = 'Submitting...';
+    const ratingInput = document.getElementById('feedbackRating');
+    if (ratingInput) {
+        ratingInput.value = '';
+    }
     
-    // Make AJAX request
-    fetch(window.URLROOT + '/feedback/submit', {
-        method: 'POST',
-        body: formData,
-        credentials: 'same-origin',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => {
-        // Check if response is JSON
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-            throw new Error('Server returned non-JSON response');
-        }
-        return response.json();
-    })
-    .then(data => {
-        // Re-enable button
-        submitBtn.disabled = false;
-        submitBtn.classList.remove('loading');
-        submitBtn.textContent = originalText;
-        
-        if (data.success) {
-            // Show success toast
-            showFeedbackToast(data.message || 'Feedback submitted successfully!', true);
-            
-            // Close modal
-            closeFeedbackModal();
-            
-            // Optional: Reload page after 2 seconds to show updated rating
-            setTimeout(() => {
-                location.reload();
-            }, 2000);
-        } else {
-            // Show error toast
-            showFeedbackToast(data.message || 'Failed to submit feedback', false);
-        }
-    })
-    .catch(error => {
-        console.error('Feedback submission error:', error);
-        
-        // Re-enable button
-        submitBtn.disabled = false;
-        submitBtn.classList.remove('loading');
-        submitBtn.textContent = originalText;
-        
-        // Show error toast
-        showFeedbackToast('An error occurred. Please try again.', false);
+    // Reset stars
+    document.querySelectorAll('.star').forEach(star => {
+        star.textContent = '☆';
+        star.classList.remove('active');
     });
     
-    return false;
+    // Reset tags
+    selectedTags = [];
+    document.querySelectorAll('.tag-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    const tagsInput = document.getElementById('feedbackTags');
+    if (tagsInput) {
+        tagsInput.value = '';
+    }
+    
+    // Reset counter and rating text
+    const charCounter = document.querySelector('.char-counter');
+    if (charCounter) {
+        charCounter.textContent = '0 / 500 characters';
+    }
+    
+    const ratingText = document.querySelector('.rating-text');
+    if (ratingText) {
+        ratingText.style.display = 'none';
+    }
 }
 
 /**
- * Initialize feedback button click handlers
- * Call this function when the page loads if buttons are dynamically created
+ * Initialize feedback functionality on page load
  */
-function initializeFeedbackButtons() {
-    document.querySelectorAll('.give-feedback-btn').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            const userId = this.dataset.userId;
-            const userName = this.dataset.userName;
-            const projectId = this.dataset.projectId || null;
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Feedback module loaded');
+    
+    // Star rating interaction
+    const stars = document.querySelectorAll('.star');
+    const ratingText = document.querySelector('.rating-text');
+    const ratingLabels = ['Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+    
+    stars.forEach(star => {
+        // Click event
+        star.addEventListener('click', function() {
+            const rating = parseInt(this.getAttribute('data-rating'));
+            document.getElementById('feedbackRating').value = rating;
             
-            openFeedbackModal(userId, userName, projectId);
+            // Update stars
+            stars.forEach((s, index) => {
+                if (index < rating) {
+                    s.textContent = '★';
+                    s.classList.add('active');
+                } else {
+                    s.textContent = '☆';
+                    s.classList.remove('active');
+                }
+            });
+            
+            // Show rating label
+            ratingText.textContent = ratingLabels[rating - 1];
+            ratingText.style.display = 'block';
+        });
+        
+        // Hover effect
+        star.addEventListener('mouseenter', function() {
+            const rating = parseInt(this.getAttribute('data-rating'));
+            stars.forEach((s, index) => {
+                if (index < rating) {
+                    s.style.color = '#FFD700';
+                }
+            });
+        });
+        
+        star.addEventListener('mouseleave', function() {
+            stars.forEach(s => {
+                if (!s.classList.contains('active')) {
+                    s.style.color = '';
+                }
+            });
         });
     });
-}
-
-// Auto-initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeFeedbackButtons);
-} else {
-    initializeFeedbackButtons();
-}
-
-/**
- * Fetch and display user feedback statistics
- * @param {number} userId - User ID
- * @param {number|null} projectId - Optional project ID
- * @param {string} targetElementId - ID of element to display stats
- */
-function loadFeedbackStats(userId, projectId = null, targetElementId = 'feedbackStats') {
-    let url = window.URLROOT + '/feedback/stats/' + userId;
-    if (projectId) {
-        url += '/' + projectId;
+    
+    // Tag buttons interaction
+    document.querySelectorAll('.tag-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tag = this.getAttribute('data-tag');
+            
+            if (this.classList.contains('active')) {
+                // Remove tag
+                this.classList.remove('active');
+                selectedTags = selectedTags.filter(t => t !== tag);
+            } else {
+                // Add tag
+                this.classList.add('active');
+                selectedTags.push(tag);
+            }
+            
+            // Update hidden field
+            document.getElementById('feedbackTags').value = selectedTags.join(',');
+        });
+    });
+    
+    // Character counter
+    const commentField = document.getElementById('feedbackComment');
+    if (commentField) {
+        commentField.addEventListener('input', function() {
+            const length = this.value.length;
+            document.querySelector('.char-counter').textContent = `${length} / 500 characters`;
+        });
     }
     
-    fetch(url, {
-        method: 'GET',
-        credentials: 'same-origin',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const targetEl = document.getElementById(targetElementId);
-            if (targetEl) {
-                targetEl.innerHTML = `
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <span style="font-size:14px;color:#666;">Rating</span>
-                        <span style="font-weight:600;color:#333;">${data.avgRating.toFixed(1)}</span>
-                        <span style="color:#666;font-size:14px;">(${data.count} reviews)</span>
-                    </div>
-                `;
+    // Form submission
+    const feedbackForm = document.getElementById('feedbackForm');
+    if (feedbackForm) {
+        feedbackForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Validate rating
+            const rating = document.getElementById('feedbackRating').value;
+            if (!rating) {
+                showFeedbackToast('Please select a rating', 'error');
+                return;
             }
-        }
-    })
-    .catch(error => {
-        console.error('Error loading feedback stats:', error);
+            
+            const formData = new FormData(this);
+            const submitBtn = this.querySelector('.btn-primary');
+            
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+            
+            // Submit via AJAX to the store endpoint
+            fetch(window.URLROOT + '/Feedback/store', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showFeedbackToast(data.message || 'Feedback submitted successfully!', 'success');
+                    closeFeedbackModal();
+                    
+                    // Update rating display on the page if available
+                    if (data.stats) {
+                        updateMemberRating(formData.get('user_id'), data.stats.avg_rating);
+                    }
+                    
+                    // Reload page after short delay to show updated data
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showFeedbackToast(data.message || 'Failed to submit feedback', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit Feedback';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showFeedbackToast('An error occurred. Please try again.', 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Feedback';
+            });
+        });
+    }
+    
+    // Attach event listeners to "Give Feedback" buttons
+    const feedbackButtons = document.querySelectorAll('.give-feedback-btn');
+    console.log('Found', feedbackButtons.length, 'feedback buttons');
+    
+    feedbackButtons.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Feedback button clicked!', this);
+            
+            const userId = this.getAttribute('data-user-id');
+            const userName = this.getAttribute('data-user-name');
+            const userAvatar = this.getAttribute('data-user-avatar');
+            const contextType = this.getAttribute('data-context-type') || 'project';
+            const contextId = this.getAttribute('data-context-id');
+            const contextName = this.getAttribute('data-context-name') || '';
+            
+            console.log('Button data:', { userId, userName, contextType, contextId, contextName });
+            
+            openFeedbackModal(userId, userName, userAvatar, contextType, contextId, contextName);
+        });
     });
+});
+
+/**
+ * Show toast notification
+ */
+function showFeedbackToast(message, type) {
+    // Remove existing toasts
+    const existingToasts = document.querySelectorAll('.feedback-toast');
+    existingToasts.forEach(t => t.remove());
+    
+    // Create new toast
+    const toast = document.createElement('div');
+    toast.className = `feedback-toast ${type}`;
+    
+    const icon = type === 'success' ? '<i class="ph ph-check-circle"></i>' : '<i class="ph ph-warning-circle"></i>';
+    toast.innerHTML = icon + '<span>' + message + '</span>';
+    
+    document.body.appendChild(toast);
+    
+    // Show toast
+    setTimeout(() => toast.classList.add('show'), 100);
+    
+    // Hide and remove toast
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3500);
 }
 
 /**
- * Handle keyboard shortcuts for modal
+ * Update member rating display on the page
+ */
+function updateMemberRating(userId, newRating) {
+    // Find the member card and update rating display
+    const memberCard = document.querySelector(`[data-user-id="${userId}"]`)?.closest('.member-card');
+    if (memberCard) {
+        const ratingElement = memberCard.querySelector('.stat-item');
+        if (ratingElement && ratingElement.textContent.includes('Rating:')) {
+            ratingElement.innerHTML = `<span class="icon"><i class="ph ph-star"></i></span> Rating: ${newRating}`;
+        }
+    }
+}
+
+/**
+ * Close modal on ESC key
  */
 document.addEventListener('keydown', function(e) {
-    const modal = document.getElementById('feedbackModal');
-    if (!modal || modal.style.display !== 'flex') return;
-    
-    // Number keys 1-5 for quick rating
-    if (e.key >= '1' && e.key <= '5') {
-        const rating = parseInt(e.key);
-        setRating(rating);
-    }
-    
-    // Ctrl/Cmd + Enter to submit
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault();
-        document.getElementById('feedbackForm').dispatchEvent(new Event('submit'));
+    if (e.key === 'Escape') {
+        closeFeedbackModal();
     }
 });
 
 /**
- * Validate feedback form before submission
- * @returns {boolean}
+ * Fetch and display feedback stats (optional - for stats page)
  */
-function validateFeedbackForm() {
-    const rating = document.getElementById('feedback_rating').value;
-    const userId = document.getElementById('feedback_user_id').value;
+function fetchFeedbackStats(userId, contextType, contextId) {
+    const url = `${window.URLROOT}/Feedback/stats?user_id=${userId}&context_type=${contextType}&context_id=${contextId}`;
     
-    // Check rating
-    if (!rating || rating < 1 || rating > 5) {
-        showFeedbackToast('Please select a rating between 1 and 5 stars', false);
-        document.getElementById('ratingError').style.display = 'block';
-        return false;
-    }
-    
-    // Check user ID
-    if (!userId) {
-        showFeedbackToast('Invalid user selection', false);
-        return false;
-    }
-    
-    return true;
-}
-
-// Export functions for use in other scripts if needed
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        submitFeedback,
-        openFeedbackModal,
-        closeFeedbackModal,
-        setRating,
-        loadFeedbackStats,
-        initializeFeedbackButtons
-    };
+    fetch(url, {
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.stats) {
+            console.log('User Stats:', data.stats);
+            // You can use this data to display stats elsewhere on the page
+        }
+    })
+    .catch(error => console.error('Error fetching stats:', error));
 }

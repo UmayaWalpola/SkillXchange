@@ -33,7 +33,7 @@ class User extends Database {
         return false;
     }
 
-    // 🔹 Login (shared for both roles)
+    // 🔹 Login (Updated with Suspension Logic)
     public function login($email, $password) {
         $sql = "SELECT * FROM users WHERE email = :email";
         $stmt = $this->connect()->prepare($sql);
@@ -42,11 +42,31 @@ class User extends Database {
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($user && password_verify($password, $user['password'])) {
+            
+            // --- NEW SUSPENSION LOGIC START ---
+            if ($user['status'] === 'suspended') {
+                $currentDate = date('Y-m-d H:i:s');
+                
+                // Check if they have an end date and if it is in the future
+                if (!empty($user['suspension_end_date']) && $user['suspension_end_date'] > $currentDate) {
+                    // They are still suspended. Return the date so we can show it.
+                    return 'suspended|' . $user['suspension_end_date'];
+                } 
+                
+                // If we get here, the suspension time has passed (or was never set)!
+                // Auto-Reactivate the user
+                $this->updateUserStatus($user['id'], 'active');
+                $this->clearSuspensionDate($user['id']);
+                
+                // Update the local variable so they can log in now
+                $user['status'] = 'active'; 
+            }
+            // --- NEW SUSPENSION LOGIC END ---
+
             return $user;
         }
         return false;
     }
-
     // 🔹 Find user by ID
     public function getUserById($id) {
         $sql = "SELECT * FROM users WHERE id = :id";
@@ -427,4 +447,14 @@ class User extends Database {
             return false;
         }
     }
+
+    // Clear suspension date (used when auto-reactivating)
+    public function clearSuspensionDate($userId) {
+        $sql = "UPDATE users SET suspension_end_date = NULL WHERE id = :id";
+        $stmt = $this->connect()->prepare($sql);
+        $stmt->bindValue(':id', $userId);
+        return $stmt->execute();
+    }
+
+
 }

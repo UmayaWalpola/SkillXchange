@@ -98,219 +98,65 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <!-- Report 1 - High Priority -->
-                            <tr class="report-row priority-high">
-                                <td><strong>#R-1247</strong></td>
-                                <td>
-                                    <div class="user-cell">
-                                        <div class="user-avatar" style="background: #ef4444;">JM</div>
-                                        <span>James Miller</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="user-cell">
-                                        <div class="user-avatar-sm" style="background: #8b5cf6;">SK</div>
-                                        <span>Sarah Kim</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="reason-badge harassment">Harassment</span>
-                                </td>
-                                <td>Jan 20, 2025</td>
-                                <td><span class="priority-badge high">High</span></td>
-                                <td><span class="status-badge pending">Pending</span></td>
-                                <td>
-                                    <button class="action-btn btn-view">Review</button>
-                                    <button class="action-btn btn-resolve">Resolve</button>
-                                </td>
-                            </tr>
-                            
-                            <!-- Report 2 - Medium Priority -->
-                            <tr class="report-row priority-medium">
-                                <td><strong>#R-1246</strong></td>
-                                <td>
-                                    <div class="user-cell">
-                                        <div class="user-avatar" style="background: #f59e0b;">TC</div>
-                                        <span>Tom Chen</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="user-cell">
-                                        <div class="user-avatar-sm" style="background: #10b981;">ER</div>
-                                        <span>Emily Roberts</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="reason-badge spam">Spam Content</span>
-                                </td>
-                                <td>Jan 19, 2025</td>
-                                <td><span class="priority-badge medium">Medium</span></td>
-                                <td><span class="status-badge reviewing">Reviewing</span></td>
-                                <td>
-                                    <button class="action-btn btn-view">Review</button>
-                                    <button class="action-btn btn-resolve">Resolve</button>
-                                </td>
-                            </tr>
-                            
-                            <!-- Report 3 - Low Priority -->
-                            <tr class="report-row priority-low">
-                                <td><strong>#R-1245</strong></td>
-                                <td>
-                                    <div class="user-cell">
-                                        <div class="user-avatar" style="background: #06b6d4;">AP</div>
-                                        <span>Alex Peterson</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="user-cell">
-                                        <div class="user-avatar-sm" style="background: #ec4899;">MB</div>
-                                        <span>Mike Brown</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="reason-badge inappropriate">Inappropriate</span>
-                                </td>
-                                <td>Jan 18, 2025</td>
-                                <td><span class="priority-badge low">Low</span></td>
-                                <td><span class="status-badge pending">Pending</span></td>
-                                <td>
-                                    <button class="action-btn btn-view">Review</button>
-                                    <button class="action-btn btn-resolve">Resolve</button>
-                                </td>
-                            </tr>
-                            
-                            <!-- Report 4 -->
-                            <tr class="report-row priority-high">
-                                <td><strong>#R-1244</strong></td>
-                                <td>
-                                    <div class="user-cell">
-                                        <div class="user-avatar" style="background: #f97316;">NK</div>
-                                        <span>Nina Kumar</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="user-cell">
-                                        <div class="user-avatar-sm" style="background: #3b82f6;">DL</div>
-                                        <span>David Lee</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="reason-badge fake">Fake Profile</span>
-                                </td>
-                                <td>Jan 17, 2025</td>
-                                <td><span class="priority-badge high">High</span></td>
-                                <td><span class="status-badge reviewing">Reviewing</span></td>
-                                <td>
-                                    <button class="action-btn btn-view">Review</button>
-                                    <button class="action-btn btn-resolve">Resolve</button>
-                                </td>
-                            </tr>
-                            
-                            <!-- Report 5 -->
-                            <tr class="report-row priority-medium">
-                                <td><strong>#R-1243</strong></td>
-                                <td>
-                                    <div class="user-cell">
-                                        <div class="user-avatar" style="background: #14b8a6;">RJ</div>
-                                        <span>Rachel Jackson</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="user-cell">
-                                        <div class="user-avatar-sm" style="background: #a855f7;">PT</div>
-                                        <span>Paul Taylor</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="reason-badge other">Other</span>
-                                </td>
-                                <td>Jan 16, 2025</td>
-                                <td><span class="priority-badge medium">Medium</span></td>
-                                <td><span class="status-badge pending">Pending</span></td>
-                                <td>
-                                    <button class="action-btn btn-view">Review</button>
-                                    <button class="action-btn btn-resolve">Resolve</button>
-                                </td>
-                            </tr>
-                            
-                            <!-- Report 6 - Resolved -->
-                            <tr class="report-row">
-                                <td><strong>#R-1242</strong></td>
-                                <td>
-                                    <div class="user-cell">
-                                        <div class="user-avatar" style="background: #84cc16;">MH</div>
-                                        <span>Mark Harris</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="user-cell">
-                                        <div class="user-avatar-sm" style="background: #f43f5e;">LW</div>
-                                        <span>Linda White</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="reason-badge spam">Spam Content</span>
-                                </td>
-                                <td>Jan 15, 2025</td>
-                                <td><span class="priority-badge low">Low</span></td>
-                                <td><span class="status-badge resolved">Resolved</span></td>
-                                <td>
-                                    <button class="action-btn btn-view">View Details</button>
-                                </td>
-                            </tr>
-                            
-                            <!-- Report 7 - Resolved -->
-                            <tr class="report-row">
-                                <td><strong>#R-1241</strong></td>
-                                <td>
-                                    <div class="user-cell">
-                                        <div class="user-avatar" style="background: #eab308;">CS</div>
-                                        <span>Chris Smith</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="user-cell">
-                                        <div class="user-avatar-sm" style="background: #06b6d4;">AG</div>
-                                        <span>Anna Green</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="reason-badge inappropriate">Inappropriate</span>
-                                </td>
-                                <td>Jan 14, 2025</td>
-                                <td><span class="priority-badge medium">Medium</span></td>
-                                <td><span class="status-badge resolved">Resolved</span></td>
-                                <td>
-                                    <button class="action-btn btn-view">View Details</button>
-                                </td>
-                            </tr>
-                            
-                            <!-- Report 8 -->
-                            <tr class="report-row priority-high">
-                                <td><strong>#R-1240</strong></td>
-                                <td>
-                                    <div class="user-cell">
-                                        <div class="user-avatar" style="background: #ef4444;">BJ</div>
-                                        <span>Brian Johnson</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="user-cell">
-                                        <div class="user-avatar-sm" style="background: #22c55e;">KM</div>
-                                        <span>Kelly Martinez</span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="reason-badge harassment">Harassment</span>
-                                </td>
-                                <td>Jan 13, 2025</td>
-                                <td><span class="priority-badge high">High</span></td>
-                                <td><span class="status-badge reviewing">Reviewing</span></td>
-                                <td>
-                                    <button class="action-btn btn-view">Review</button>
-                                    <button class="action-btn btn-resolve">Resolve</button>
-                                </td>
-                            </tr>
+                            <tbody>
+    <?php if (empty($data['reports'])): ?>
+        <tr><td colspan="8" style="text-align:center;">No reports found.</td></tr>
+    <?php else: ?>
+      <?php foreach ($data['reports'] as $report): ?>
+            <tr class="report-row priority-medium">
+                <td><strong>#<?= $report->id ?></strong> <small>(<?= ucfirst($report->type) ?>)</small></td>
+                <td>
+                    <div class="user-cell">
+                        <span><?= htmlspecialchars($report->reported_name) ?></span>
+                    </div>
+                </td>
+                <td>
+                    <div class="user-cell">
+                        <span><?= htmlspecialchars($report->reporter_name) ?></span>
+                    </div>
+                </td>
+                <td>
+                    <span class="reason-badge other"><?= htmlspecialchars($report->reason) ?></span>
+                    <?php if(!empty($report->content_preview)): ?>
+                        <br><small style="color:#666;">"<?= substr(htmlspecialchars($report->content_preview), 0, 50) ?>..."</small>
+                    <?php endif; ?>
+                </td>
+                <td><?= date('M d, Y', strtotime($report->created_at)) ?></td>
+                <td><span class="priority-badge medium">Medium</span></td>
+                <td>
+                    <span class="status-badge <?= strtolower($report->status) ?>">
+                        <?= ucfirst($report->status) ?>
+                    </span>
+                </td>
+                <td>
+                    <button class="action-btn btn-resolve" 
+                            onclick="updateReportStatus(<?= $report->id ?>, '<?= $report->type ?>', 'resolved')">
+                        Resolve
+                    </button>
+
+                    <?php if ($report->type === 'user'): ?>
+                        <button class="action-btn btn-view" 
+                                style="background-color: #f59e0b; color: white;"
+                                onclick="updateReportStatus(<?= $report->id ?>, 'user', 'warned')">
+                            Warn
+                        </button>
+                        <button class="action-btn" 
+                                style="background-color: #ef4444; color: white;"
+                                onclick="if(confirm('Ban this user?')) updateReportStatus(<?= $report->id ?>, 'user', 'banned')">
+                            Ban
+                        </button>
+                    <?php elseif ($report->type === 'content'): ?>
+                        <button class="action-btn" 
+                                style="background-color: #dc2626; color: white;"
+                                onclick="if(confirm('Delete this content permanently?')) updateReportStatus(<?= $report->id ?>, 'content', 'content_removed')">
+                            Delete Content
+                        </button>
+                    <?php endif; ?>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+    <?php endif; ?>
+</tbody>
                         </tbody>
                     </table>
                 </div>
@@ -642,4 +488,33 @@
 </style>
 
 <script src="<?= URLROOT ?>/assets/js/admin.js" defer></script>
+
+
+<script>
+function updateReportStatus(id, type, status) {
+    // 1. Create the data to send
+    const formData = new FormData();
+    formData.append('report_id', id);
+    formData.append('report_type', type); // 'user', 'content', etc.
+    formData.append('status', status);    // 'banned', 'warned', 'resolved'
+
+    // 2. Send it to the Controller using AJAX (fetch)
+    fetch('<?= URLROOT ?>/ReportController/updateStatus', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            // 3. If successful, reload the page to see the changes
+            alert(data.message);
+            location.reload(); 
+        } else {
+            alert("Error: " + data.message);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+</script>
+
 <?php require_once "../app/views/layouts/footer.php"; ?>

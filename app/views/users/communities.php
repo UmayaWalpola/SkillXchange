@@ -21,13 +21,13 @@
                     <?php else: ?>
                         <?php foreach ($data['communities'] as $community): ?>
                             <div class="community-card">
-                                <div class="community-icon"><?= htmlspecialchars($community->icon) ?></div>
-                                <h3><?= htmlspecialchars($community->name) ?></h3>
-                                <p><?= htmlspecialchars($community->description) ?></p>
+                                <div class="community-icon"><?= strtoupper(substr($community->name, 0, 1)) ?></div>
+                                <h3><?= htmlspecialchars($community->name ?? '') ?></h3>
+                                <p><?= htmlspecialchars($community->description ?? '') ?></p>
                                 
                                 <div class="community-stats">
-                                    <span>👥 <?= $community->members ?> members</span>
-                                    <span>💬 <?= $community->posts ?> posts</span>
+                                    <span>👥 <?= $community->members ?? 0 ?> members</span>
+                                    <span>💬 <?= $community->posts ?? 0 ?> posts</span>
                                 </div>
                                 
                                 <?php if ($community->is_member): ?>

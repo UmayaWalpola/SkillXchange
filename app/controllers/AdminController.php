@@ -149,8 +149,46 @@ class AdminController extends Controller {
     }
 
     // Reports page
-    public function reports() {
-        $data = ['reports' => []];
-        $this->view('users/admin_reports', $data);
+   public function reports() {
+        try {
+            $db = new Database();
+            
+            // This query is a bit complex! It combines two tables.
+            // 1. Get User Reports
+            $sql = "SELECT 
+                        r.id, r.reason, r.created_at, r.status, 
+                        'user' as type,
+                        u1.username as reporter_name, 
+                        u2.username as reported_name,
+                        NULL as content_preview
+                    FROM reports r
+                    JOIN users u1 ON r.reporter_user_id = u1.id
+                    JOIN users u2 ON r.reported_user_id = u2.id
+                    
+                    UNION ALL
+                    
+                    SELECT 
+                        cr.id, cr.reason, cr.created_at, cr.status,
+                        'content' as type,
+                        u.username as reporter_name,
+                        'Content Author' as reported_name, -- We could join posts to get real name, but keeping it simple
+                        p.content as content_preview
+                    FROM content_reports cr
+                    JOIN users u ON cr.reporter_id = u.id
+                    LEFT JOIN posts p ON cr.content_id = p.id
+                    
+                    ORDER BY created_at DESC";
+                      
+            $db->query($sql);
+            $reports = $db->resultSet();
+
+            $data = ['reports' => $reports];
+            $this->view('users/admin_reports', $data);
+
+        } catch (Exception $e) {
+            error_log("Error fetching reports: " . $e->getMessage());
+            $data = ['reports' => []];
+            $this->view('users/admin_reports', $data);
+        }
     }
 }

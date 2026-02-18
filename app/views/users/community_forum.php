@@ -66,4 +66,6 @@ window.URLROOT = '<?= URLROOT ?>';
 <script src="<?= URLROOT ?>/assets/js/community_forum.js"></script>
 <script src="<?= URLROOT ?>/assets/js/reporting.js"></script>
 
+<?php require_once APPROOT . '/views/components/report_modal.php'; ?>
+
 <?php require_once "../app/views/layouts/footer_user.php"; ?>

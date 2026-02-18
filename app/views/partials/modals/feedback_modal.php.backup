@@ -76,3 +76,62 @@
         </div>
     </div>
 </div>
+                    </div>
+                </div>
+                
+                <!-- Hidden Fields -->
+                <input type="hidden" id="feedbackUserId" name="user_id">
+                <input type="hidden" id="feedbackContextType" name="context_type">
+                <input type="hidden" id="feedbackContextId" name="context_id">
+                
+                <!-- Star Rating Section -->
+                <div class="feedback-rating-section">
+                    <label>Rating <span style="color: red;">*</span></label>
+                    <div class="star-rating" id="starRating">
+                        <span class="star" data-rating="1">☆</span>
+                        <span class="star" data-rating="2">☆</span>
+                        <span class="star" data-rating="3">☆</span>
+                        <span class="star" data-rating="4">☆</span>
+                        <span class="star" data-rating="5">☆</span>
+                    </div>
+                    <input type="hidden" id="feedbackRating" name="rating" required>
+                    <small class="rating-text" style="display: none; margin-top: 8px; color: #666;"></small>
+                </div>
+                
+                <!-- Quick Tags (Optional) -->
+                <div class="feedback-tags-section">
+                    <label>Qualities (Optional)</label>
+                    <div class="feedback-tags">
+                        <button type="button" class="tag-btn" data-tag="communication">
+                            <i class="ph ph-chat-dots"></i> Communication
+                        </button>
+                        <button type="button" class="tag-btn" data-tag="quality">
+                            <i class="ph ph-seal-check"></i> Quality
+                        </button>
+                        <button type="button" class="tag-btn" data-tag="ontime">
+                            <i class="ph ph-clock"></i> On-time
+                        </button>
+                        <button type="button" class="tag-btn" data-tag="teamwork">
+                            <i class="ph ph-users-three"></i> Teamwork
+                        </button>
+                    </div>
+                    <input type="hidden" id="feedbackTags" name="tags">
+                </div>
+                
+                <!-- Comment Section -->
+                <div class="feedback-comment-section">
+                    <label for="feedbackComment">Comments (Optional)</label>
+                    <textarea id="feedbackComment" name="comment" rows="4" maxlength="500" 
+                              placeholder="Share your experience working with this person..."></textarea>
+                    <small class="char-counter">0 / 500 characters</small>
+                </div>
+                
+                <!-- Footer Buttons -->
+                <div class="feedback-modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeFeedbackModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Submit Feedback</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -4,7 +4,12 @@
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/organizations.css">
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/feedback.css">
-<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/feedback.css">
+
+<!-- Include Feedback Modal early so elements exist -->
+<?php require_once "../app/views/partials/modals/feedback_modal.php"; ?>
+
+<!-- Load Feedback JavaScript after modal HTML -->
+<script src="<?= URLROOT ?>/assets/js/feedback.js"></script>
 
 <main class="site-main">
     <div class="container org-dashboard">
@@ -439,7 +444,10 @@
                                     data-user-id="<?= $member->user_id ?>" 
                                     data-user-name="<?= htmlspecialchars($member->username) ?>" 
                                     data-user-avatar="<?= !empty($member->profile_picture) ? URLROOT . '/' . $member->profile_picture : '' ?>" 
-                                    data-project-id="<?= $data['projectId'] ?>">
+                                    data-context-type="project"
+                                    data-context-id="<?= $data['projectId'] ?>"
+                                    data-context-name="<?= htmlspecialchars($data['project']->name) ?>"
+                                    onclick="openFeedbackModal(<?= $member->user_id ?>, '<?= addslashes($member->username) ?>', '<?= !empty($member->profile_picture) ? addslashes(URLROOT . '/' . $member->profile_picture) : '' ?>', 'project', <?= $data['projectId'] ?>, '<?= addslashes($data['project']->name) ?>')">
                                     <i class="ph ph-star" style="font-size:16px;"></i> Give Feedback
                                 </button>
                                 <button class="btn btn-danger remove-member-btn" data-member-id="<?= $member->id ?>" data-user-id="<?= $member->user_id ?>" data-project-id="<?= $data['projectId'] ?>">Remove</button>
@@ -511,6 +519,10 @@
 
 <script>
     window.URLROOT = window.URLROOT || '<?= URLROOT ?>';
+    
+    // Debug: Test if feedback buttons exist
+    console.log('URLROOT:', window.URLROOT);
+    console.log('Feedback buttons on load:', document.querySelectorAll('.give-feedback-btn').length);
 
 // Handle custom role input visibility
 document.querySelectorAll('.role-select').forEach(select => {
@@ -730,11 +742,5 @@ document.querySelectorAll('.task-status-select').forEach(select => {
     });
 });
 </script>
-
-<!-- Include Feedback Modal -->
-<?php require_once "../app/views/partials/modals/feedback_modal.php"; ?>
-
-<!-- Include Feedback JavaScript -->
-<script src="<?= URLROOT ?>/assets/js/feedback.js"></script>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>
