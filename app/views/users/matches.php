@@ -78,9 +78,9 @@
                     <label for="match-tier-filter">Match Type:</label>
                     <select id="match-tier-filter" class="filter-select">
                         <option value="all">All Matches</option>
-                        <option value="mutual">🤝 Mutual Matches</option>
-                        <option value="multi">⭐ Multi-Skill</option>
-                        <option value="single">✓ Single Skill</option>
+                        <option value="mutual"> Mutual Matches</option>
+                        <option value="multi"> Multi-Skill</option>
+                        <option value="single"> Single Skill</option>
                     </select>
                 </div>
                 
@@ -116,7 +116,7 @@
             <?php if (!empty($data['mutual'])): ?>
             <div class="match-tier-section" data-tier="mutual">
                 <h2 class="tier-title">
-                    🤝 MUTUAL MATCHES
+                     MUTUAL MATCHES
                     <span class="tier-count">(<?= count($data['mutual']); ?> found)</span>
                 </h2>
                 <p class="tier-description">You can both teach AND learn from each other - the best connections!</p>
@@ -186,9 +186,14 @@
                                 </span>
                                 
                                 <?php if(isset($match['connection_status']) && $match['connection_status'] === 'pending'): ?>
-                                    <span class="badge badge-warning">⏳ Pending</span>
+                                    <span class="badge badge-warning">Pending</span>
                                 <?php elseif(isset($match['connection_status']) && $match['connection_status'] === 'connected'): ?>
-                                    <span class="badge badge-success">✓ Connected</span>
+                                    <div class="connected-actions">
+                                        <span class="badge badge-success">✓ Connected</span>
+                                        <button class="btn-chat" onclick="event.stopPropagation(); openChat(<?= $match['id']; ?>)">
+                                             Chat
+                                        </button>
+                                    </div>
                                 <?php else: ?>
                                     <button class="btn-connect" onclick="event.stopPropagation(); connectWithUser(<?= $match['id']; ?>, '<?= htmlspecialchars($match['name']); ?>')">
                                         Connect
@@ -205,7 +210,7 @@
             <?php if (!empty($data['multi'])): ?>
             <div class="match-tier-section" data-tier="multi">
                 <h2 class="tier-title">
-                    ⭐ MULTI-SKILL MATCHES
+                     MULTI-SKILL MATCHES
                     <span class="tier-count">(<?= count($data['multi']); ?> found)</span>
                 </h2>
                 <p class="tier-description">Multiple skills in common - great learning potential</p>
@@ -273,10 +278,16 @@
                                     <?= $match['total_skills']; ?> skills matched
                                 </span>
                                 
+                                <!-- NEW: Connection Status Actions -->
                                 <?php if(isset($match['connection_status']) && $match['connection_status'] === 'pending'): ?>
                                     <span class="badge badge-warning">⏳ Pending</span>
                                 <?php elseif(isset($match['connection_status']) && $match['connection_status'] === 'connected'): ?>
-                                    <span class="badge badge-success">✓ Connected</span>
+                                    <div class="connected-actions">
+                                        <span class="badge badge-success">✓ Connected</span>
+                                        <button class="btn-chat" onclick="event.stopPropagation(); openChat(<?= $match['id']; ?>)">
+                                             Chat
+                                        </button>
+                                    </div>
                                 <?php else: ?>
                                     <button class="btn-connect" onclick="event.stopPropagation(); connectWithUser(<?= $match['id']; ?>, '<?= htmlspecialchars($match['name']); ?>')">
                                         Connect
@@ -288,6 +299,7 @@
                 </div>
             </div>
             <?php endif; ?>
+
 
             <!-- SINGLE SKILL MATCHES -->
             <?php if (!empty($data['single'])): ?>
@@ -360,10 +372,16 @@
                                     1 skill matched
                                 </span>
                                 
+                                <!-- NEW: Connection Status Actions -->
                                 <?php if(isset($match['connection_status']) && $match['connection_status'] === 'pending'): ?>
                                     <span class="badge badge-warning">⏳ Pending</span>
                                 <?php elseif(isset($match['connection_status']) && $match['connection_status'] === 'connected'): ?>
-                                    <span class="badge badge-success">✓ Connected</span>
+                                    <div class="connected-actions">
+                                        <span class="badge badge-success">✓ Connected</span>
+                                        <button class="btn-chat" onclick="event.stopPropagation(); openChat(<?= $match['id']; ?>)">
+                                            Chat
+                                        </button>
+                                    </div>
                                 <?php else: ?>
                                     <button class="btn-connect" onclick="event.stopPropagation(); connectWithUser(<?= $match['id']; ?>, '<?= htmlspecialchars($match['name']); ?>')">
                                         Connect

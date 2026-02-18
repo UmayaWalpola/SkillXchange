@@ -7,7 +7,8 @@ let lastMessageId = 0;
  * Open chat window with a specific partner
  */
 function openChatWindow(partnerId) {
-    window.location.href = `${URLROOT}/chat/user/${partnerId}`;
+    // Use the same route as the rest of the app for consistency
+    window.location.href = `${URLROOT}/userdashboard/chats?partnerId=${partnerId}`;
 }
 
 /**

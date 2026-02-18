@@ -1,5 +1,5 @@
 
-// matches.js - Fixed version with proper UI updates
+// matches.js - Complete version with chat functionality
 
 function connectWithUser(userId, userName) {
     if (!confirm(`Send connection request to ${userName}?`)) {
@@ -112,6 +112,17 @@ function updateRequestCount() {
             requestsSection.style.display = 'none';
         }
     }
+}
+
+/**
+ * NEW: Open chat with a connected user
+ */
+function openChat(userId) {
+    console.log('Opening chat with user:', userId);
+    // Use the same route as the sidebar: /userdashboard/chats?partnerId={id}
+    const target = `${URLROOT}/userdashboard/chats?partnerId=${userId}`;
+    console.log('Redirecting to:', target);
+    window.location.href = target;
 }
 
 function viewProfile(userId) {

@@ -66,17 +66,108 @@ class UserdashboardController extends Controller {
 
 public function chats() {
     $userId = $this->checkAuth();
-    
     $user = $this->getUserData($userId);
     $chats = $this->getActiveChats($userId);
-    
+
+    // Prepare base data (sidebar expects `allChats`)
     $data = [
         'title' => 'Chats',
         'user' => $user,
         'page' => 'chats',
-        'chats' => $chats
+        'chats' => $chats,
+        'allChats' => $chats
     ];
-    
+
+    // If partnerId provided, load active chat context so the same route shows the conversation
+    if (isset($_GET['partnerId']) && is_numeric($_GET['partnerId'])) {
+        $partnerId = (int) $_GET['partnerId'];
+
+        // Verify partner exists
+        $this->db->query("SELECT id, username, profile_picture FROM users WHERE id = :partner_id");
+        $this->db->bind(':partner_id', $partnerId);
+        $partner = $this->db->single();
+
+        if (!$partner) {
+            $_SESSION['error'] = 'User not found.';
+            // Render chats list without active chat
+            $this->view('users/chats', $data);
+            return;
+        }
+
+        // Verify active connection exists (users must be connected to chat)
+        $this->db->query("\n            SELECT id FROM exchanges \n            WHERE ((requester_id = :user_id AND receiver_id = :partner_id)\n                OR (requester_id = :partner_id AND receiver_id = :user_id))\n            AND status = 'active'\n            LIMIT 1\n        ");
+        $this->db->bind(':user_id', $userId);
+        $this->db->bind(':partner_id', $partnerId);
+        $connection = $this->db->single();
+
+        if (!$connection) {
+            $_SESSION['error'] = 'You must be connected with this user to chat.';
+            header('Location: ' . URLROOT . '/userdashboard/matches');
+            exit();
+        }
+
+        // Get or create chat between users
+        $this->db->query("\n            SELECT id FROM chats \n            WHERE (user1_id = :user1 AND user2_id = :user2)\n               OR (user1_id = :user2 AND user2_id = :user1)\n            LIMIT 1\n        ");
+        $this->db->bind(':user1', $userId);
+        $this->db->bind(':user2', $partnerId);
+        $chat = $this->db->single();
+
+        if ($chat) {
+            $chatId = $chat->id;
+        } else {
+            $this->db->query("INSERT INTO chats (user1_id, user2_id, created_at) VALUES (:user1, :user2, NOW())");
+            $this->db->bind(':user1', $userId);
+            $this->db->bind(':user2', $partnerId);
+            $this->db->execute();
+            $chatId = $this->db->lastInsertId();
+        }
+
+        // Get active transaction for this chat (if any)
+        $this->db->query("\n            SELECT e.*, \n                   u1.username AS teacher_name,\n                   u2.username AS learner_name\n            FROM chat_transaction_events e\n            INNER JOIN users u1 ON e.teacher_id = u1.id\n            INNER JOIN users u2 ON e.learner_id = u2.id\n            WHERE e.chat_id = :chat_id \n            AND e.status IN ('pending_learner', 'pending_teacher', 'active', 'teacher_completed')\n            ORDER BY e.created_at DESC\n            LIMIT 1\n        ");
+        $this->db->bind(':chat_id', $chatId);
+        $event = $this->db->single();
+
+        $activeTransaction = null;
+        if ($event) {
+            $userRole = ($event->teacher_id == $userId) ? 'teacher' : 'learner';
+            $isCreator = ($event->status === 'pending_learner' && $userRole === 'teacher') ||
+                         ($event->status === 'pending_teacher' && $userRole === 'learner');
+
+            $activeTransaction = [
+                'id' => $event->id,
+                'payment_type' => $event->payment_type,
+                'amount' => $event->amount,
+                'skill_debt_hours' => $event->skill_debt_hours,
+                'skill_name' => $event->skill_name,
+                'timeframe_hours' => $event->agreed_timeframe_hours,
+                'status' => $event->status,
+                'teacher_name' => $event->teacher_name,
+                'learner_name' => $event->learner_name,
+                'expires_at' => $event->expires_at,
+                'teacher_completed_at' => $event->teacher_completed_at,
+                'user_role' => $userRole,
+                'is_creator' => $isCreator,
+                'both_agreed_at' => $event->both_agreed_at
+            ];
+        }
+
+        // Get user's BuckX balance
+        $this->db->query("SELECT buckx_balance, buckx_frozen FROM users WHERE id = :user_id");
+        $this->db->bind(':user_id', $userId);
+        $userBalance = $this->db->single();
+
+        // Merge active chat data into view data
+        $data = array_merge($data, [
+            'chatId' => $chatId,
+            'partnerId' => $partnerId,
+            'partnerName' => $partner->username,
+            'partnerAvatar' => $partner->profile_picture ?? strtoupper(substr($partner->username, 0, 2)),
+            'allChats' => $chats,
+            'activeTransaction' => $activeTransaction,
+            'buckxBalance' => $userBalance ? ($userBalance->buckx_balance - $userBalance->buckx_frozen) : 0
+        ]);
+    }
+
     $this->view('users/chats', $data);
 }
 
