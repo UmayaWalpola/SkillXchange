@@ -8,6 +8,7 @@ class UserdashboardController extends Controller {
         if (session_status() == PHP_SESSION_NONE) {
             session_start();
         }
+        
         $this->db = new Database();
     }
     
@@ -19,7 +20,10 @@ class UserdashboardController extends Controller {
         return $_SESSION['user_id'];
     }
 
-    // ============================================
+    // ====================
+    
+    
+
     // PUBLIC ROUTE METHODS
     // ============================================
 
@@ -47,6 +51,22 @@ class UserdashboardController extends Controller {
         
         $this->view('users/profile', $data);
     }
+    
+    // Add badge count to user data
+    $userData['badge_count'] = count($userBadges);
+    
+    $data = [
+        'title' => 'My Profile',
+        'user' => $userData,
+        'skills' => $userSkills,
+        'projects' => $userProjects,
+        'feedback' => $userFeedback,
+        'badges' => $userBadges, // NEW: Pass badges to view
+        'page' => 'profile'
+    ];
+    
+    $this->view('users/profile', $data);
+}
 
     public function notifications() {
         $userId = $this->checkAuth();
@@ -461,93 +481,559 @@ public function handleRequest() {
         exit;
     }
 
-    public function communities() {
-        $userId = $this->checkAuth();
+   
+// Add these methods to your UserdashboardController class
+
+public function communities() {
+    $userId = $this->checkAuth();
+    $user = $this->getUserData($userId);
+    
+    $communityModel = $this->model('Community');
+    $communities = $communityModel->getAllCommunitiesForUser($userId);
+    
+    $data = [
+        'title' => 'Communities',
+        'user' => $user,
+        'page' => 'communities',
+        'communities' => $communities
+    ];
+    
+    $this->view('users/communities', $data);
+}
+
+/**
+ * View single community
+ */
+public function viewCommunity($communityId = null) {
+    $userId = $this->checkAuth();
+    $user = $this->getUserData($userId);
+    
+    if (!$communityId) {
+        header('Location: ' . URLROOT . '/userdashboard/communities');
+        exit;
+    }
+    
+    $communityModel = $this->model('Community');
+    $community = $communityModel->getCommunityById($communityId, $userId);
+    
+    if (!$community) {
+        $_SESSION['error'] = 'Community not found';
+        header('Location: ' . URLROOT . '/userdashboard/communities');
+        exit;
+    }
+    
+    $members = $communityModel->getCommunityMembers($communityId);
+    $posts = $communityModel->getCommunityPosts($communityId);
+    
+    $data = [
+        'title' => $community->name,
+        'user' => $user,
+        'page' => 'communities',
+        'community' => $community,
+        'members' => $members,
+        'posts' => $posts
+    ];
+    
+    $this->view('users/community_detail', $data);
+}
+
+/**
+ * Join community
+ */
+public function joinCommunity() {
+    header('Content-Type: application/json');
+    
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        echo json_encode(['success' => false, 'message' => 'Invalid request']);
+        exit;
+    }
+    
+    $userId = $this->checkAuth();
+    $communityId = $_POST['community_id'] ?? null;
+    
+    if (!$communityId) {
+        echo json_encode(['success' => false, 'message' => 'Community ID required']);
+        exit;
+    }
+    
+    $communityModel = $this->model('Community');
+    $result = $communityModel->joinCommunity($userId, $communityId);
+    
+    if ($result) {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Successfully joined community!'
+        ]);
+    } else {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Failed to join community'
+        ]);
+    }
+    exit;
+}
+
+/**
+ * Leave community
+ */
+public function leaveCommunity() {
+    header('Content-Type: application/json');
+    
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        echo json_encode(['success' => false, 'message' => 'Invalid request']);
+        exit;
+    }
+    
+    $userId = $this->checkAuth();
+    $communityId = $_POST['community_id'] ?? null;
+    
+    if (!$communityId) {
+        echo json_encode(['success' => false, 'message' => 'Community ID required']);
+        exit;
+    }
+    
+    $communityModel = $this->model('Community');
+    $result = $communityModel->leaveCommunity($userId, $communityId);
+    
+    if ($result) {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Successfully left community'
+        ]);
+    } else {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Failed to leave community (owners cannot leave)'
+        ]);
+    }
+    exit;
+}
+
+/**
+ * Post message to community
+ */
+public function postToCommunity() {
+    header('Content-Type: application/json');
+    
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        echo json_encode(['success' => false, 'message' => 'Invalid request']);
+        exit;
+    }
+    
+    $userId = $this->checkAuth();
+    $communityId = $_POST['community_id'] ?? null;
+    $content = trim($_POST['content'] ?? '');
+    
+    if (!$communityId || empty($content)) {
+        echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+        exit;
+    }
+    
+    $communityModel = $this->model('Community');
+    
+    // Check if user is a member
+    if (!$communityModel->isMember($userId, $communityId)) {
+        echo json_encode(['success' => false, 'message' => 'You must be a member to post']);
+        exit;
+    }
+    
+    $postId = $communityModel->createPost($userId, $communityId, $content);
+    
+    if ($postId) {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Message posted successfully',
+            'post_id' => $postId
+        ]);
+    } else {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Failed to post message'
+        ]);
+    }
+    exit;
+}
+
+/**
+ * Get community messages (AJAX)
+ */
+public function getCommunityMessages() {
+    header('Content-Type: application/json');
+    
+    $userId = $this->checkAuth();
+    $communityId = $_GET['community_id'] ?? null;
+    
+    if (!$communityId) {
+        echo json_encode(['success' => false, 'message' => 'Community ID required']);
+        exit;
+    }
+    
+    $communityModel = $this->model('Community');
+    
+    // Check if user is a member
+    if (!$communityModel->isMember($userId, $communityId)) {
+        echo json_encode(['success' => false, 'message' => 'Not a member']);
+        exit;
+    }
+    
+    $posts = $communityModel->getCommunityPosts($communityId);
+    
+    echo json_encode([
+        'success' => true,
+        'posts' => $posts
+    ]);
+    exit;
+}
+
+/**
+ * Create new community
+ */
+public function createCommunity() {
+    $userId = $this->checkAuth();
+    
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $name = trim($_POST['name'] ?? '');
+        $description = trim($_POST['description'] ?? '');
+        $about = trim($_POST['about'] ?? '');
+        $icon = $_POST['icon'] ?? '🌐';
+        $category = $_POST['category'] ?? null;
         
+        $errors = [];
+        
+        if (empty($name)) {
+            $errors[] = 'Community name is required';
+        }
+        if (empty($description)) {
+            $errors[] = 'Description is required';
+        }
+        
+        if (empty($errors)) {
+            $communityModel = $this->model('Community');
+            $communityId = $communityModel->createCommunity($userId, $name, $description, $about, $icon, $category);
+            
+            if ($communityId) {
+                $_SESSION['success'] = 'Community created successfully!';
+                header('Location: ' . URLROOT . '/userdashboard/viewCommunity/' . $communityId);
+                exit;
+            } else {
+                $errors[] = 'Failed to create community';
+            }
+        }
+        
+        // Show form with errors
         $user = $this->getUserData($userId);
-        $communities = $this->getAllCommunities();
-        
         $data = [
-            'title' => 'Communities',
+            'title' => 'Create Community',
             'user' => $user,
             'page' => 'communities',
-            'communities' => $communities
+            'errors' => $errors,
+            'old' => $_POST
         ];
         
-        $this->view('users/communities', $data);
-    }
-
-    public function quiz() {
-        $userId = $this->checkAuth();
-        
+        $this->view('users/create_community', $data);
+    } else {
+        // Show create form
         $user = $this->getUserData($userId);
-        $quizzes = $this->getAllQuizzes();
-        
         $data = [
-            'title' => 'Quiz',
+            'title' => 'Create Community',
             'user' => $user,
-            'page' => 'quiz',
-            'quizzes' => $quizzes
+            'page' => 'communities',
+            'errors' => []
         ];
         
-        $this->view('users/quiz', $data);
+        $this->view('users/create_community', $data);
     }
+}
 
-    public function takeQuiz($quizId = null) {
-        $userId = $this->checkAuth();
+// ============================================
+// QUIZ METHODS - UPDATED
+// ============================================
+
+public function quiz() {
+    $userId = $this->checkAuth();
+    $user = $this->getUserData($userId);
+    
+    // Load the Quiz model
+    $quizModel = $this->model('Quiz');
+    
+    // Fetch quizzes from database
+    $dbQuizzes = $quizModel->getQuizzesForUser($userId);
+    
+    // Format for your existing JavaScript
+    $formattedQuizzes = array_map(function($quiz) {
+        // Convert object to array if needed
+        $quizArray = is_object($quiz) ? (array)$quiz : $quiz;
         
-        if (!$quizId) {
-            header('Location: ' . URLROOT . '/userdashboard/quiz');
-            exit;
+        return [
+            'id' => $quizArray['quiz_id'] ?? $quizArray['id'],
+            'title' => $quizArray['title'],
+            'description' => $quizArray['description'] ?? '',
+            'difficulty' => $quizArray['difficulty_level'],
+            'category' => $quizArray['category'] ?? 'General',
+            'questionCount' => $quizArray['total_questions'],
+            'timeLimit' => $quizArray['duration'],
+            'status' => $quizArray['user_status'] ?? 'not_started',
+            'lastScore' => isset($quizArray['last_score']) ? round($quizArray['last_score'], 1) : null,
+            'isPremium' => false,
+            'badge' => null
+        ];
+    }, $dbQuizzes);
+    
+    $data = [
+        'title' => 'Quizzes',
+        'user' => $user,
+        'page' => 'quiz',
+        'quizzes' => $formattedQuizzes
+    ];
+    
+    $this->view('users/quiz', $data);
+}
+
+/**
+ * Save/unsave quiz (AJAX endpoint)
+ */
+public function toggleSaveQuiz() {
+    header('Content-Type: application/json');
+    
+    if($_SERVER['REQUEST_METHOD'] != 'POST') {
+        echo json_encode(['success' => false, 'message' => 'Invalid request']);
+        exit;
+    }
+    
+    $userId = $this->checkAuth();
+    $quizId = $_POST['quiz_id'] ?? null;
+    $action = $_POST['action'] ?? null;
+    
+    if(!$quizId || !$action) {
+        echo json_encode(['success' => false, 'message' => 'Missing parameters']);
+        exit;
+    }
+    
+    $quizModel = $this->model('Quiz');
+    
+    if($action === 'save') {
+        $result = $quizModel->saveQuizForUser($userId, $quizId);
+        $message = 'Quiz saved for later!';
+    } else {
+        $result = $quizModel->unsaveQuizForUser($userId, $quizId);
+        $message = 'Quiz removed from saved';
+    }
+    
+    echo json_encode([
+        'success' => $result,
+        'message' => $message
+    ]);
+    exit;
+}
+
+/**
+ * Take quiz - load quiz data from database
+ */
+public function takeQuiz($quizId = null) {
+    if(!$quizId) {
+        header('Location: ' . URLROOT . '/userdashboard/quiz');
+        exit;
+    }
+    
+    $userId = $this->checkAuth();
+    $user = $this->getUserData($userId);
+    
+    $quizModel = $this->model('Quiz');
+    
+    // Get quiz from database
+    $quiz = $quizModel->getQuizById($quizId);
+    
+    if(!$quiz || $quiz['status'] !== 'active') {
+        header('Location: ' . URLROOT . '/userdashboard/quiz');
+        exit;
+    }
+    
+    // Get questions
+    $dbQuestions = $quizModel->getQuizQuestions($quizId);
+    
+    // Format quiz data for your existing view
+    $quizData = [
+        'id' => $quiz['quiz_id'] ?? $quiz['id'],
+        'title' => $quiz['title'],
+        'description' => $quiz['description'] ?? '',
+        'difficulty' => $quiz['difficulty_level'],
+        'questionCount' => $quiz['total_questions'],
+        'timeLimit' => $quiz['duration'],
+        'badge' => null,
+        'questions' => array_map(function($q) {
+            return [
+                'id' => $q['question_id'],
+                'question' => $q['question_text'],
+                'options' => [
+                    $q['option_a'] ?? '',
+                    $q['option_b'] ?? '',
+                    $q['option_c'] ?? '',
+                    $q['option_d'] ?? ''
+                ]
+            ];
+        }, $dbQuestions)
+    ];
+    
+    // Create attempt record
+    $attemptId = $quizModel->startAttempt($userId, $quizId, count($dbQuestions));
+    $quizData['attempt_id'] = $attemptId;
+    
+    $data = [
+        'title' => 'Take Quiz - ' . $quiz['title'],
+        'user' => $user,
+        'page' => 'quiz',
+        'quiz' => $quizData
+    ];
+    
+    $this->view('users/take_quiz', $data);
+}
+
+/**
+ * Submit quiz answers
+ */
+public function submitQuiz() {
+    header('Content-Type: application/json');
+    
+    if($_SERVER['REQUEST_METHOD'] != 'POST') {
+        echo json_encode(['success' => false, 'message' => 'Invalid request']);
+        exit;
+    }
+    
+    $userId = $this->checkAuth();
+    
+    // Get JSON data
+    $json = file_get_contents('php://input');
+    $data = json_decode($json, true);
+    
+    // Log received data for debugging
+    error_log("Quiz submission data: " . print_r($data, true));
+    
+    $attemptId = $data['attempt_id'] ?? null;
+    $quizId = $data['quiz_id'] ?? null;
+    $answers = $data['answers'] ?? [];
+    $timeTaken = $data['time_taken'] ?? 0;
+    
+    // Validation
+    if(!$attemptId) {
+        echo json_encode(['success' => false, 'message' => 'Attempt ID missing']);
+        exit;
+    }
+    
+    if(!$quizId) {
+        echo json_encode(['success' => false, 'message' => 'Quiz ID missing']);
+        exit;
+    }
+    
+    if(empty($answers)) {
+        echo json_encode(['success' => false, 'message' => 'No answers provided']);
+        exit;
+    }
+    
+    $quizModel = $this->model('Quiz');
+    
+    // Get quiz details
+    $quiz = $quizModel->getQuizById($quizId);
+    if (!$quiz) {
+        echo json_encode(['success' => false, 'message' => 'Quiz not found']);
+        exit;
+    }
+    
+    // Get all questions with correct answers
+    $questions = $quizModel->getQuizQuestions($quizId);
+    
+    if (empty($questions)) {
+        echo json_encode(['success' => false, 'message' => 'No questions found']);
+        exit;
+    }
+    
+    // Calculate score
+    $correctCount = 0;
+    $totalQuestions = count($answers);
+    
+    foreach($answers as $answer) {
+        $questionId = $answer['question_id'];
+        $selectedAnswer = intval($answer['selected_answer']);
+        
+        // Find the matching question
+        $matchedQuestion = null;
+        foreach ($questions as $q) {
+            if ($q['question_id'] == $questionId) {
+                $matchedQuestion = $q;
+                break;
+            }
         }
         
-        $user = $this->getUserData($userId);
-        $quiz = $this->getQuizById($quizId);
-        
-        if (!$quiz) {
-            header('Location: ' . URLROOT . '/userdashboard/quiz');
-            exit;
+        if ($matchedQuestion && isset($matchedQuestion['correct_answer'])) {
+            if (intval($matchedQuestion['correct_answer']) === $selectedAnswer) {
+                $correctCount++;
+            }
         }
-        
-        $data = [
-            'title' => $quiz['title'],
-            'user' => $user,
-            'page' => 'quiz',
-            'quiz' => $quiz
-        ];
-        
-        $this->view('users/take_quiz', $data);
     }
-
-    public function projects() {
-        $userId = $this->checkAuth();
+    
+    // Calculate percentage score
+    $score = ($correctCount / $totalQuestions) * 100;
+    $passed = $score >= 70; // 70% passing score
+    
+    // Save attempt to database
+    $quizModel->completeAttempt($attemptId, $correctCount, $totalQuestions, $timeTaken);
+    
+    // CHECK FOR BADGE ELIGIBILITY
+    $badgeEarned = null;
+    
+    if ($passed) {
+        // Check if quiz has associated badge
+        $this->db->query("
+            SELECT b.* 
+            FROM badges b
+            INNER JOIN quizzes q ON b.id = q.badge_id
+            WHERE q.id = :quiz_id
+            LIMIT 1
+        ");
+        $this->db->bind(':quiz_id', $quizId);
+        $badge = $this->db->single();
         
-        $projectModel = $this->model('Project');
-        $projects = $projectModel->getProjectsForUser($userId);
-        
-        // Debug: Log what we're getting
-        error_log('DEBUG: User ID = ' . $userId);
-        error_log('DEBUG: Projects returned: ' . count($projects ?? []));
-        
-        // If no projects found, show all active projects (for testing/browse)
-        if (empty($projects)) {
-            error_log('DEBUG: No projects found for user, loading all active projects');
-            $projects = $projectModel->getAllActiveProjects();
-            error_log('DEBUG: Loaded ' . count($projects ?? []) . ' active projects');
+        if ($badge) {
+            // Check if user already has this badge
+            $this->db->query("
+                SELECT id FROM user_badges 
+                WHERE user_id = :user_id AND badge_id = :badge_id
+            ");
+            $this->db->bind(':user_id', $userId);
+            $this->db->bind(':badge_id', $badge->id);
+            $existingBadge = $this->db->single();
+            
+            if (!$existingBadge) {
+                // Award badge to user
+                $this->db->query("
+                    INSERT INTO user_badges (user_id, badge_id, earned_at) 
+                    VALUES (:user_id, :badge_id, NOW())
+                ");
+                $this->db->bind(':user_id', $userId);
+                $this->db->bind(':badge_id', $badge->id);
+                $this->db->execute();
+                
+                // Return badge info
+                $badgeEarned = [
+                    'id' => $badge->id,
+                    'name' => $badge->name,
+                    'description' => $badge->description,
+                    'icon' => $badge->icon
+                ];
+            }
         }
-        
-        $user = $this->getUserData($userId);
-        
-        $data = [
-            'title' => 'Projects',
-            'user' => $user,
-            'page' => 'projects',
-            'projects' => $projects ?? []
-        ];
-        
-        $this->view('users/projects', $data);
     }
-
+    
+    // Return success response
+    echo json_encode([
+        'success' => true,
+        'score' => round($score, 2),
+        'correct' => $correctCount,
+        'total' => $totalQuestions,
+        'passed' => $passed,
+        'badgeEarned' => $badgeEarned
+    ]);
+    exit;
+}
     public function wallet() {
         require_once '../app/controllers/WalletController.php';
         $walletController = new WalletController();
@@ -877,7 +1363,7 @@ public function handleRequest() {
             ]
         ];
     }
-
+    
     private function getChats($userId) {
         return [
             [
@@ -891,23 +1377,6 @@ public function handleRequest() {
                 'messages' => []
             ]
         ];
-    }
-
-    private function getAllQuizzes() {
-        return [
-            ['id' => 1, 'title' => 'Programming Fundamentals', 'category' => 'Programming', 'difficulty' => 'Beginner', 'status' => 'not_started'],
-            ['id' => 2, 'title' => 'Frontend Development', 'category' => 'Frontend', 'difficulty' => 'Advanced', 'status' => 'completed'],
-            ['id' => 3, 'title' => 'System Design', 'category' => 'System', 'difficulty' => 'Intermediate', 'status' => 'saved']
-        ];
-    }
-
-    private function getQuizById($quizId) {
-        $quizzes = [
-            1 => ['id' => 1, 'title' => 'Programming Fundamentals', 'questions' => []],
-            2 => ['id' => 2, 'title' => 'Frontend Development', 'questions' => []]
-        ];
-        
-        return $quizzes[$quizId] ?? null;
     }
 
     private function getAllCommunities() {
@@ -975,14 +1444,7 @@ public function handleRequest() {
             ];
         }
     }
-
-    private function getAllProjects() {
-        return [
-            ['id' => 1, 'title' => 'AI Chatbot', 'category' => 'Web Development', 'status' => 'active'],
-            ['id' => 2, 'title' => 'SkillXchange App', 'category' => 'Mobile', 'status' => 'in-progress']
-        ];
-    }
-
+    
     private function getTeachMatches($userId) {
         return [
             ['id' => 101, 'name' => 'Sophia Chen', 'skill' => 'Wants to learn Web Development'],
@@ -997,4 +1459,71 @@ public function handleRequest() {
         ];
     }
 
+
+
+private function getUserBadges($userId) {
+    try {
+        $this->db->query("
+            SELECT 
+                b.id,
+                b.name,
+                b.description,
+                b.icon,
+                b.badge_type,
+                b.requirement_type,
+                b.requirement_value,
+                b.color,
+                ub.earned_at
+            FROM user_badges ub
+            INNER JOIN badges b ON ub.badge_id = b.id
+            WHERE ub.user_id = :user_id
+            ORDER BY ub.earned_at DESC
+        ");
+        
+        $this->db->bind(':user_id', $userId);
+        $results = $this->db->resultSet();
+        
+        $badges = [];
+        foreach ($results as $badge) {
+            $badges[] = [
+                'id' => $badge->id,
+                'name' => $badge->name,
+                'description' => $badge->description,
+                'icon' => $badge->icon,
+                'badge_type' => $badge->badge_type,
+                'color' => $badge->color ?? '#3b82f6',
+                'earned_at' => $this->timeAgo($badge->earned_at),
+                'earned_date' => date('M d, Y', strtotime($badge->earned_at))
+            ];
+        }
+        
+        return $badges;
+        
+    } catch (Exception $e) {
+        error_log("getUserBadges error: " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Get badge count for user
+ */
+private function getUserBadgeCount($userId) {
+    try {
+        $this->db->query("
+            SELECT COUNT(*) as badge_count
+            FROM user_badges
+            WHERE user_id = :user_id
+        ");
+        
+        $this->db->bind(':user_id', $userId);
+        $result = $this->db->single();
+        
+        return $result ? $result->badge_count : 0;
+        
+    } catch (Exception $e) {
+        error_log("getUserBadgeCount error: " . $e->getMessage());
+        return 0;
+    }
+}
 }

@@ -1,112 +1,319 @@
-let currentQuestionIndex = 0;
-let userAnswers = [];
-let quizCompleted = false;
-
-const quizContent = document.getElementById('quizContent');
-const prevBtn = document.getElementById('prevBtn');
-const nextBtn = document.getElementById('nextBtn');
-const submitBtn = document.getElementById('submitBtn');
-const progressFill = document.getElementById('progressFill');
-const currentQuestionEl = document.getElementById('currentQuestion');
-const resultsSection = document.getElementById('resultsSection');
-
-function renderQuestion() {
-    const question = quizData.questions[currentQuestionIndex];
-    const isAnswered = userAnswers[currentQuestionIndex] !== undefined;
+// FIXED take_quiz.js - Correct quiz submission
+(function() {
+    'use strict';
     
-    quizContent.innerHTML = `
-        <div class="question-card">
-            <h2 class="question-text">${question.question}</h2>
-            <div class="options-list">
-                ${question.options.map((option, index) => `
-                    <div class="option-item ${userAnswers[currentQuestionIndex] === index ? 'selected' : ''}" 
-                         onclick="selectOption(${index})">
-                        <span class="option-letter">${String.fromCharCode(65 + index)}</span>
-                        <span class="option-text">${option}</span>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-    `;
-    
-    updateProgress();
-    updateNavigation();
-}
-
-function selectOption(optionIndex) {
-    if (quizCompleted) return;
-    
-    userAnswers[currentQuestionIndex] = optionIndex;
-    renderQuestion();
-}
-
-function updateProgress() {
-    const progress = ((currentQuestionIndex + 1) / quizData.questions.length) * 100;
-    progressFill.style.width = `${progress}%`;
-    currentQuestionEl.textContent = currentQuestionIndex + 1;
-}
-
-function updateNavigation() {
-    prevBtn.disabled = currentQuestionIndex === 0;
-    
-    if (currentQuestionIndex === quizData.questions.length - 1) {
-        nextBtn.style.display = 'none';
-        submitBtn.style.display = 'block';
-    } else {
-        nextBtn.style.display = 'block';
-        submitBtn.style.display = 'none';
-    }
-}
-
-function nextQuestion() {
-    if (currentQuestionIndex < quizData.questions.length - 1) {
-        currentQuestionIndex++;
-        renderQuestion();
-    }
-}
-
-function previousQuestion() {
-    if (currentQuestionIndex > 0) {
-        currentQuestionIndex--;
-        renderQuestion();
-    }
-}
-
-function submitQuiz() {
-    if (userAnswers.length < quizData.questions.length) {
-        alert('Please answer all questions before submitting');
+    if (window.quizInitialized) {
+        console.warn('Quiz already initialized');
         return;
     }
-    
-    quizCompleted = true;
-    calculateResults();
-}
+    window.quizInitialized = true;
 
-function calculateResults() {
-    let correctAnswers = 0;
-    
-    quizData.questions.forEach((question, index) => {
-        if (userAnswers[index] === question.correct) {
-            correctAnswers++;
+    const quizDataElement = document.getElementById('quiz-data');
+    if (!quizDataElement || !quizDataElement.dataset.quiz) {
+        console.error('Quiz data not found!');
+        alert('Error: Quiz data not loaded');
+        return;
+    }
+
+    let quizData, urlRoot;
+    try {
+        quizData = JSON.parse(quizDataElement.dataset.quiz);
+        urlRoot = quizDataElement.dataset.urlroot;
+        console.log('✅ Quiz loaded:', quizData);
+    } catch (error) {
+        console.error('Parse error:', error);
+        alert('Error loading quiz data');
+        return;
+    }
+
+    let currentQuestionIndex = 0;
+    let userAnswers = [];
+    let quizCompleted = false;
+    let startTime = Date.now();
+    let timerInterval = null;
+
+    const quizContent = document.getElementById('quizContent');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const progressFill = document.getElementById('progressFill');
+    const currentQuestionEl = document.getElementById('currentQuestion');
+    const totalQuestionsEl = document.getElementById('totalQuestions');
+    const resultsSection = document.getElementById('resultsSection');
+    const timerDisplay = document.getElementById('timerDisplay');
+
+    if (totalQuestionsEl) {
+        totalQuestionsEl.textContent = quizData.questions.length;
+    }
+
+    if (quizData.timeLimit) {
+        startTimer(quizData.timeLimit * 60);
+    }
+
+    function startTimer(seconds) {
+        let remaining = seconds;
+        updateTimerDisplay(remaining);
+        
+        timerInterval = setInterval(() => {
+            remaining--;
+            updateTimerDisplay(remaining);
+            
+            if (remaining <= 0) {
+                clearInterval(timerInterval);
+                autoSubmitQuiz();
+            }
+        }, 1000);
+    }
+
+    function updateTimerDisplay(seconds) {
+        if (!timerDisplay) return;
+        
+        const minutes = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        timerDisplay.textContent = `${minutes}:${secs.toString().padStart(2, '0')}`;
+        
+        if (seconds <= 60) {
+            timerDisplay.style.color = '#ef4444';
+        } else if (seconds <= 300) {
+            timerDisplay.style.color = '#f59e0b';
+        }
+    }
+
+    function renderQuestion() {
+        const question = quizData.questions[currentQuestionIndex];
+        
+        quizContent.innerHTML = `
+            <div class="question-card">
+                <div class="question-header">
+                    <span class="question-number">Question ${currentQuestionIndex + 1} of ${quizData.questions.length}</span>
+                </div>
+                <h2 class="question-text">${question.question}</h2>
+                <div class="options-list">
+                    ${question.options.map((option, index) => `
+                        <div class="option-item ${userAnswers[currentQuestionIndex] === index ? 'selected' : ''}" 
+                             data-option-index="${index}">
+                            <div class="option-radio ${userAnswers[currentQuestionIndex] === index ? 'checked' : ''}">
+                                ${userAnswers[currentQuestionIndex] === index ? '●' : ''}
+                            </div>
+                            <span class="option-letter">${String.fromCharCode(65 + index)}</span>
+                            <span class="option-text">${option}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+        
+        document.querySelectorAll('.option-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const optionIndex = parseInt(this.dataset.optionIndex);
+                selectOption(optionIndex);
+            });
+        });
+        
+        updateProgress();
+        updateNavigation();
+    }
+
+    function selectOption(optionIndex) {
+        if (quizCompleted) return;
+        userAnswers[currentQuestionIndex] = optionIndex;
+        renderQuestion();
+    }
+
+    function updateProgress() {
+        const progress = ((currentQuestionIndex + 1) / quizData.questions.length) * 100;
+        if (progressFill) {
+            progressFill.style.width = `${progress}%`;
+        }
+        if (currentQuestionEl) {
+            currentQuestionEl.textContent = currentQuestionIndex + 1;
+        }
+        
+        const answeredCount = userAnswers.filter(a => a !== undefined).length;
+        const progressText = document.getElementById('progressText');
+        if (progressText) {
+            progressText.textContent = `${answeredCount} of ${quizData.questions.length} answered`;
+        }
+    }
+
+    function updateNavigation() {
+        if (prevBtn) {
+            prevBtn.disabled = currentQuestionIndex === 0;
+        }
+        
+        if (currentQuestionIndex === quizData.questions.length - 1) {
+            if (nextBtn) nextBtn.style.display = 'none';
+            if (submitBtn) submitBtn.style.display = 'block';
+        } else {
+            if (nextBtn) nextBtn.style.display = 'block';
+            if (submitBtn) submitBtn.style.display = 'none';
+        }
+    }
+
+    function nextQuestion() {
+        if (currentQuestionIndex < quizData.questions.length - 1) {
+            currentQuestionIndex++;
+            renderQuestion();
+            window.scrollTo(0, 0);
+        }
+    }
+
+    function previousQuestion() {
+        if (currentQuestionIndex > 0) {
+            currentQuestionIndex--;
+            renderQuestion();
+            window.scrollTo(0, 0);
+        }
+    }
+
+    async function submitQuiz() {
+        // Check all questions answered
+        const unanswered = [];
+        for (let i = 0; i < quizData.questions.length; i++) {
+            if (userAnswers[i] === undefined) {
+                unanswered.push(i + 1);
+            }
+        }
+        
+        if (unanswered.length > 0) {
+            alert(`Please answer all questions.\n\nUnanswered: ${unanswered.join(', ')}`);
+            return;
+        }
+        
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+        }
+        
+        if (timerInterval) {
+            clearInterval(timerInterval);
+        }
+        
+        const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+        
+        // FIXED: Format answers correctly with question IDs
+        const formattedAnswers = quizData.questions.map((q, index) => ({
+            question_id: q.id,
+            quiz_id: quizData.id,
+            selected_answer: userAnswers[index]
+        }));
+        
+        // FIXED: Send as JSON
+        const payload = {
+            attempt_id: quizData.attempt_id,
+            quiz_id: quizData.id,
+            answers: formattedAnswers,
+            time_taken: timeTaken
+        };
+        
+        console.log('📤 Submitting:', payload);
+        
+        try {
+            const response = await fetch(urlRoot + '/userdashboard/submitQuiz', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            const result = await response.json();
+            console.log('📥 Response:', result);
+            
+            if (result.success) {
+                quizCompleted = true;
+                displayResults(result);
+            } else {
+                alert(result.message || 'Failed to submit quiz');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit Quiz';
+                }
+            }
+        } catch (error) {
+            console.error('❌ Submit error:', error);
+            alert('Error submitting quiz. Please try again.');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Quiz';
+            }
+        }
+    }
+
+    function autoSubmitQuiz() {
+        alert('Time is up! Submitting automatically...');
+        submitQuiz();
+    }
+
+    function displayResults(result) {
+        const quizContentEl = document.querySelector('.quiz-content');
+        const quizNav = document.querySelector('.quiz-navigation');
+        const progressSection = document.querySelector('.progress-section');
+        
+        if (quizContentEl) quizContentEl.style.display = 'none';
+        if (quizNav) quizNav.style.display = 'none';
+        if (progressSection) progressSection.style.display = 'none';
+        
+        const percentage = result.score;
+        const passed = result.passed || percentage >= 70;
+        const scoreClass = passed ? 'pass' : 'fail';
+        
+        let badgeHTML = '';
+        if (result.badgeEarned && result.badgeEarned.name) {
+            badgeHTML = `
+                <div class="badge-earned">
+                    <div class="badge-icon-large">${result.badgeEarned.icon || '🏆'}</div>
+                    <h3>🎉 Badge Earned!</h3>
+                    <p class="badge-name">${result.badgeEarned.name}</p>
+                    <p class="badge-description">${result.badgeEarned.description || 'Congratulations!'}</p>
+                </div>
+            `;
+        }
+        
+        if (resultsSection) {
+            resultsSection.innerHTML = `
+                <div class="results-content">
+                    <div class="score-circle ${scoreClass}">
+                        <div class="score-percentage">${percentage.toFixed(1)}%</div>
+                        <div class="score-label">${passed ? 'Passed!' : 'Failed'}</div>
+                    </div>
+                    
+                    <div class="score-details">
+                        <h2>${passed ? '🎉 Congratulations!' : '😔 Keep Trying!'}</h2>
+                        <p class="score-text">
+                            You got <strong>${result.correct}</strong> out of 
+                            <strong>${result.total}</strong> questions correct!
+                        </p>
+                        <p class="passing-score">Passing score: 70%</p>
+                    </div>
+                    
+                    ${badgeHTML}
+                    
+                    <div class="results-actions">
+                        <a href="${urlRoot}/userdashboard/quiz" class="btn btn-secondary">Back to Quizzes</a>
+                        <button class="btn-retake btn btn-primary" onclick="location.reload()">Retake Quiz</button>
+                    </div>
+                </div>
+            `;
+            
+            resultsSection.style.display = 'block';
+        }
+        
+        window.scrollTo(0, 0);
+    }
+
+    if (prevBtn) prevBtn.addEventListener('click', previousQuestion);
+    if (nextBtn) nextBtn.addEventListener('click', nextQuestion);
+    if (submitBtn) submitBtn.addEventListener('click', submitQuiz);
+
+    window.addEventListener('beforeunload', (e) => {
+        if (!quizCompleted) {
+            e.preventDefault();
+            e.returnValue = '';
         }
     });
-    
-    const percentage = Math.round((correctAnswers / quizData.questions.length) * 100);
-    const scoreText = `You got ${correctAnswers} out of ${quizData.questions.length} questions correct!`;
-    
-    document.getElementById('scorePercentage').textContent = percentage;
-    document.getElementById('scoreText').textContent = scoreText;
-    
-    document.querySelector('.quiz-content').style.display = 'none';
-    document.querySelector('.quiz-navigation').style.display = 'none';
-    document.querySelector('.progress-section').style.display = 'none';
-    resultsSection.style.display = 'block';
-}
 
-// Event Listeners
-prevBtn.addEventListener('click', previousQuestion);
-nextBtn.addEventListener('click', nextQuestion);
-submitBtn.addEventListener('click', submitQuiz);
+    console.log('🚀 Quiz initialized');
+    renderQuestion();
 
-// Initialize
-renderQuestion();
+})();

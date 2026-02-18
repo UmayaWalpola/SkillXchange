@@ -20,25 +20,25 @@
         <div class="stats-grid">
             <div class="stat-box total">
                 <div class="stat-number"><?= $stats->total ?? 0 ?></div>
-                <div class="stat-label">📥 Total</div>
+                <div class="stat-label">Total</div>
             </div>
             <div class="stat-box pending">
                 <div class="stat-number"><?= $stats->pending ?? 0 ?></div>
-                <div class="stat-label">⏳ Pending</div>
+                <div class="stat-label">Pending</div>
             </div>
             <div class="stat-box accepted">
                 <div class="stat-number"><?= $stats->accepted ?? 0 ?></div>
-                <div class="stat-label">✅ Accepted</div>
+                <div class="stat-label">Accepted</div>
             </div>
             <div class="stat-box rejected">
                 <div class="stat-number"><?= $stats->rejected ?? 0 ?></div>
-                <div class="stat-label">❌ Rejected</div>
+                <div class="stat-label">Rejected</div>
             </div>
         </div>
 
         <!-- Pending Applications -->
         <div class="applications-section">
-            <h2 class="section-title">⏳ Pending Applications</h2>
+            <h2 class="section-title">Pending Applications</h2>
             <div class="applications-list">
                 <?php 
                     $pendingApps = array_filter($applications, function($app) { 
@@ -67,8 +67,8 @@
                                         <small class="muted">(<?= htmlspecialchars($app->user_email) ?>)</small>
                                     </div>
                                     <div class="app-meta">
-                                        <span class="icon">⭐</span> Rating: <?= $app->user_rating ?? '0' ?>
-                                        &nbsp;•&nbsp; <span class="icon">👥</span> Completed: <?= $app->completed_projects ?? 0 ?>
+                                        <span class="icon"><i class="ph ph-star"></i></span> Rating: <?= $app->user_rating ?? '0' ?>
+                                        &nbsp;•&nbsp; <span class="icon"><i class="ph ph-users"></i></span> Completed: <?= $app->completed_projects ?? 0 ?>
                                         &nbsp;•&nbsp; <small class="muted"><?= date('M d, Y H:i', strtotime($app->applied_at)) ?></small>
                                     </div>
                                 </div>
@@ -85,28 +85,28 @@
                                 <div class="app-details">
                                     <?php if (!empty($app->experience)): ?>
                                     <div class="detail-section">
-                                        <strong>📚 Relevant Experience:</strong>
+                                        <strong>Relevant Experience:</strong>
                                         <p><?= nl2br(htmlspecialchars($app->experience)) ?></p>
                                     </div>
                                     <?php endif; ?>
 
                                     <?php if (!empty($app->skills)): ?>
                                     <div class="detail-section">
-                                        <strong>🛠️ Skills Match:</strong>
+                                        <strong>Skills Match:</strong>
                                         <p><?= nl2br(htmlspecialchars($app->skills)) ?></p>
                                     </div>
                                     <?php endif; ?>
 
                                     <?php if (!empty($app->contribution)): ?>
                                     <div class="detail-section">
-                                        <strong>💡 How They'll Contribute:</strong>
+                                        <strong>Contribution Plan:</strong>
                                         <p><?= nl2br(htmlspecialchars($app->contribution)) ?></p>
                                     </div>
                                     <?php endif; ?>
 
                                     <?php if (!empty($app->motivation)): ?>
                                     <div class="detail-section">
-                                        <strong>🎯 Motivation:</strong>
+                                        <strong>Motivation:</strong>
                                         <p><?= nl2br(htmlspecialchars($app->motivation)) ?></p>
                                     </div>
                                     <?php endif; ?>
@@ -115,13 +115,13 @@
                                     <div class="detail-section inline">
                                         <?php if (!empty($app->commitment)): ?>
                                         <div class="inline-item">
-                                            <strong>⏱️ Time Commitment:</strong>
+                                            <strong>Time Commitment:</strong>
                                             <p><?= htmlspecialchars($app->commitment) ?></p>
                                         </div>
                                         <?php endif; ?>
                                         <?php if (!empty($app->duration)): ?>
                                         <div class="inline-item">
-                                            <strong>📅 Duration:</strong>
+                                            <strong>Duration:</strong>
                                             <p><?= htmlspecialchars($app->duration) ?></p>
                                         </div>
                                         <?php endif; ?>
@@ -130,7 +130,7 @@
 
                                     <?php if (!empty($app->portfolio)): ?>
                                     <div class="detail-section">
-                                        <strong>🔗 Portfolio:</strong>
+                                        <strong>Portfolio:</strong>
                                         <p><a href="<?= htmlspecialchars($app->portfolio) ?>" target="_blank" class="portfolio-link"><?= htmlspecialchars($app->portfolio) ?></a></p>
                                     </div>
                                     <?php endif; ?>
@@ -157,7 +157,7 @@
 
         <!-- Accepted Applications -->
         <div class="applications-section">
-            <h2 class="section-title">✅ Accepted Applications</h2>
+            <h2 class="section-title">Accepted Applications</h2>
             <div class="applications-list">
                 <?php 
                     $acceptedApps = array_filter($applications, function($app) { 
@@ -186,8 +186,8 @@
                                         <small class="muted">(<?= htmlspecialchars($app->user_email) ?>)</small>
                                     </div>
                                     <div class="app-meta">
-                                        <span class="icon">⭐</span> Rating: <?= $app->user_rating ?? '0' ?>
-                                        &nbsp;•&nbsp; <span class="icon">👥</span> Completed: <?= $app->completed_projects ?? 0 ?>
+                                        <span class="icon"><i class="ph ph-star"></i></span> Rating: <?= $app->user_rating ?? '0' ?>
+                                        &nbsp;•&nbsp; <span class="icon"><i class="ph ph-users"></i></span> Completed: <?= $app->completed_projects ?? 0 ?>
                                         &nbsp;•&nbsp; <small class="muted"><?= date('M d, Y H:i', strtotime($app->applied_at)) ?></small>
                                     </div>
                                 </div>
@@ -218,7 +218,7 @@
 
         <!-- Rejected Applications -->
         <div class="applications-section">
-            <h2 class="section-title">❌ Rejected Applications</h2>
+            <h2 class="section-title">Rejected Applications</h2>
             <div class="applications-list">
                 <?php 
                     $rejectedApps = array_filter($applications, function($app) { 
@@ -247,8 +247,8 @@
                                         <small class="muted">(<?= htmlspecialchars($app->user_email) ?>)</small>
                                     </div>
                                     <div class="app-meta">
-                                        <span class="icon">⭐</span> Rating: <?= $app->user_rating ?? '0' ?>
-                                        &nbsp;•&nbsp; <span class="icon">👥</span> Completed: <?= $app->completed_projects ?? 0 ?>
+                                        <span class="icon"><i class="ph ph-star"></i></span> Rating: <?= $app->user_rating ?? '0' ?>
+                                        &nbsp;•&nbsp; <span class="icon"><i class="ph ph-users"></i></span> Completed: <?= $app->completed_projects ?? 0 ?>
                                         &nbsp;•&nbsp; <small class="muted"><?= date('M d, Y H:i', strtotime($app->applied_at)) ?></small>
                                     </div>
                                 </div>

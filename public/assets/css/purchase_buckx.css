@@ -1,0 +1,344 @@
+/* PURCHASE BUCKX PAGE STYLES */
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Current Balance Card */
+.current-balance-card {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-blue) 100%);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 3rem;
+    box-shadow: 0 4px 15px rgba(101, 131, 150, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.balance-info {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    color: var(--white-bg);
+}
+
+.balance-icon {
+    font-size: 3.5rem;
+    opacity: 0.9;
+}
+
+.balance-content {
+    flex: 1;
+}
+
+.balance-label {
+    font-size: 1rem;
+    opacity: 0.9;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.balance-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+/* Packages Section */
+.packages-section {
+    margin-bottom: 3rem;
+}
+
+.section-heading {
+    font-size: 2rem;
+    color: var(--dark-bg);
+    margin-bottom: 2rem;
+    text-align: center;
+    font-weight: 600;
+}
+
+.packages-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+/* Package Card */
+.package-card {
+    background: var(--white-bg);
+    border: 2px solid var(--blue-bg);
+    border-radius: 20px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.package-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 10px 30px rgba(101, 131, 150, 0.25);
+    border-color: var(--primary-blue);
+}
+
+.package-card.popular {
+    border-color: var(--primary-blue);
+    border-width: 3px;
+    box-shadow: 0 8px 25px rgba(101, 131, 150, 0.2);
+}
+
+/* Badges */
+.popular-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: linear-gradient(135deg, var(--primary-blue), var(--accent-blue));
+    color: var(--white-bg);
+    padding: 8px 20px;
+    border-radius: 0 20px 0 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.discount-badge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: #22c55e;
+    color: var(--white-bg);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+/* Package Content */
+.package-icon {
+    font-size: 4rem;
+    margin: 1rem 0;
+}
+
+.package-name {
+    font-size: 1.5rem;
+    color: var(--dark-bg);
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.package-buckx {
+    margin: 1.5rem 0;
+}
+
+.buckx-amount {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--primary-blue);
+    display: block;
+    line-height: 1;
+}
+
+.buckx-label {
+    font-size: 1rem;
+    color: var(--dark-bg);
+    opacity: 0.7;
+    font-weight: 500;
+}
+
+.package-price {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.25rem;
+    margin: 1.5rem 0 0.5rem 0;
+}
+
+.price-currency {
+    font-size: 1.5rem;
+    color: var(--dark-bg);
+    font-weight: 600;
+}
+
+.price-amount {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--dark-bg);
+}
+
+.price-label {
+    font-size: 1rem;
+    color: var(--dark-bg);
+    opacity: 0.6;
+    font-weight: 500;
+}
+
+.package-price-alt {
+    font-size: 0.9rem;
+    color: var(--dark-bg);
+    opacity: 0.6;
+    margin-bottom: 1.5rem;
+}
+
+/* Select Button */
+.btn-select-package {
+    width: 100%;
+    padding: 1rem 2rem;
+    background: var(--primary-blue);
+    color: var(--white-bg);
+    border: 2px solid var(--primary-blue);
+    border-radius: 10px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+}
+
+.btn-select-package:hover {
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
+    color: var(--dark-bg);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(101, 131, 150, 0.3);
+}
+
+.package-card.popular .btn-select-package {
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
+    color: var(--dark-bg);
+}
+
+.package-card.popular .btn-select-package:hover {
+    background: var(--primary-blue);
+    border-color: var(--primary-blue);
+    color: var(--white-bg);
+}
+
+/* Payment Info Box */
+.payment-info-box {
+    background: var(--blue-bg);
+    border: 2px solid var(--primary-blue);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.info-icon {
+    font-size: 2.5rem;
+}
+
+.info-content h3 {
+    color: var(--dark-bg);
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.info-content p {
+    color: var(--dark-bg);
+    opacity: 0.8;
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+/* Alerts (from global.css but ensuring they work) */
+.alert {
+    padding: 1.25rem 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-weight: 500;
+    animation: slideInDown 0.3s ease;
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.alert span:first-child {
+    font-size: 1.5rem;
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    border: 2px solid #22c55e;
+    color: #065f46;
+}
+
+.alert-error {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    border: 2px solid #dc2626;
+    color: #991b1b;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .packages-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 1.5rem;
+    }
+
+    .current-balance-card {
+        padding: 1.5rem;
+    }
+
+    .balance-icon {
+        font-size: 2.5rem;
+    }
+
+    .balance-value {
+        font-size: 2rem;
+    }
+
+    .section-heading {
+        font-size: 1.75rem;
+    }
+
+    .packages-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .payment-info-box {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .package-icon {
+        font-size: 3rem;
+    }
+
+    .package-name {
+        font-size: 1.3rem;
+    }
+
+    .buckx-amount {
+        font-size: 2.5rem;
+    }
+
+    .price-amount {
+        font-size: 2rem;
+    }
+}

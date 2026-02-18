@@ -116,7 +116,47 @@
                         <?php endforeach; ?>
                     </div>
                 </section>
-
+                            <div class="profile-section badges-section">
+    <div class="section-header">
+        <h2 class="section-title">
+            🏆 Badges & Achievements 
+            <?php if (!empty($data['badges'])): ?>
+                <span class="badge-count">(<?= count($data['badges']) ?>)</span>
+            <?php endif; ?>
+        </h2>
+    </div>
+    
+    <?php if (!empty($data['badges'])): ?>
+        <div class="badges-grid">
+            <?php foreach ($data['badges'] as $badge): ?>
+                <div class="badge-card" style="border-left: 4px solid <?= htmlspecialchars($badge['color']) ?>">
+                    <div class="badge-icon-container">
+                        <span class="badge-icon-large"><?= htmlspecialchars($badge['icon']) ?></span>
+                    </div>
+                    <div class="badge-info">
+                        <h3 class="badge-name"><?= htmlspecialchars($badge['name']) ?></h3>
+                        <p class="badge-description"><?= htmlspecialchars($badge['description']) ?></p>
+                        <div class="badge-meta">
+                            <span class="badge-earned">
+                                ✓ Earned <?= htmlspecialchars($badge['earned_at']) ?>
+                            </span>
+                            <span class="badge-date" title="<?= htmlspecialchars($badge['earned_date']) ?>">
+                                <?= htmlspecialchars($badge['earned_date']) ?>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    <?php else: ?>
+        <div class="no-badges">
+            <div class="no-badges-icon">🎯</div>
+            <p class="no-badges-text">No badges earned yet</p>
+            <p class="no-badges-hint">Complete quizzes to earn your first badge!</p>
+            <a href="<?= URLROOT ?>/userdashboard/quiz" class="btn btn-primary">Browse Quizzes</a>
+        </div>
+    <?php endif; ?>
+</div>
                 <!-- Feedback Section -->
                 <section class="profile-section">
                     <div class="section-header">
