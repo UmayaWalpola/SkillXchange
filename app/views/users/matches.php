@@ -15,19 +15,19 @@
                 <p>Discover people to learn with and teach</p>
                 <div class="match-summary">
                     <span class="summary-item">
-                        <strong><?= $data['matchStats']['total_count']; ?></strong> Total Matches
+                        <strong><?= isset($data['matchStats']['total_count']) ? $data['matchStats']['total_count'] : 0; ?></strong> Total Matches
                     </span>
                     <span class="summary-divider">•</span>
-                    <span class="summary-item perfect">
-                         <?= $data['matchStats']['perfect_count']; ?> Perfect
+                    <span class="summary-item mutual">
+                         <?= isset($data['matchStats']['mutual_count']) ? $data['matchStats']['mutual_count'] : 0; ?> Mutual
                     </span>
                     <span class="summary-divider">•</span>
-                    <span class="summary-item great">
-                         <?= $data['matchStats']['great_count']; ?> Great
+                    <span class="summary-item multi">
+                         <?= isset($data['matchStats']['multi_count']) ? $data['matchStats']['multi_count'] : 0; ?> Multi-Skill
                     </span>
                     <span class="summary-divider">•</span>
-                    <span class="summary-item good">
-                         <?= $data['matchStats']['good_count']; ?> Good
+                    <span class="summary-item single">
+                         <?= isset($data['matchStats']['single_count']) ? $data['matchStats']['single_count'] : 0; ?> Single
                     </span>
                 </div>
             </div>
@@ -75,12 +75,12 @@
             <!-- Filters Section -->
             <div class="matches-filters">
                 <div class="filter-group">
-                    <label for="match-tier-filter">Match Quality:</label>
+                    <label for="match-tier-filter">Match Type:</label>
                     <select id="match-tier-filter" class="filter-select">
                         <option value="all">All Matches</option>
-                        <option value="perfect"> Perfect (100%)</option>
-                        <option value="great"> Great (75%)</option>
-                        <option value="good"> Good (50%)</option>
+                        <option value="mutual"> Mutual Matches</option>
+                        <option value="multi"> Multi-Skill</option>
+                        <option value="single"> Single Skill</option>
                     </select>
                 </div>
                 
@@ -112,24 +112,24 @@
                 <button class="btn-clear-filters" onclick="clearFilters()">Clear Filters</button>
             </div>
 
-            <!-- PERFECT MATCHES (100%) -->
-            <?php if (!empty($data['perfectMatches'])): ?>
-            <div class="match-tier-section" data-tier="perfect">
+            <!-- MUTUAL MATCHES -->
+            <?php if (!empty($data['mutual'])): ?>
+            <div class="match-tier-section" data-tier="mutual">
                 <h2 class="tier-title">
-                    PERFECT MATCHES (100%)
-                    <span class="tier-count">(<?= count($data['perfectMatches']); ?> found)</span>
+                     MUTUAL MATCHES
+                    <span class="tier-count">(<?= count($data['mutual']); ?> found)</span>
                 </h2>
-                <p class="tier-description">Mutual benefit - both can teach AND learn from each other</p>
+                <p class="tier-description">You can both teach AND learn from each other - the best connections!</p>
                 
                 <div class="matches-grid">
-                    <?php foreach ($data['perfectMatches'] as $match): ?>
-                        <div class="match-card perfect-match" 
-                             data-tier="perfect"
+                    <?php foreach ($data['mutual'] as $match): ?>
+                        <div class="match-card mutual-match" 
+                             data-tier="mutual"
                              data-skills="<?= htmlspecialchars(json_encode(array_merge(
                                  array_column($match['i_teach'], 'name'),
                                  array_column($match['they_teach'], 'name')
                              ))); ?>">
-                            <div class="match-badge-overlay">Perfect</div>
+                            <div class="match-badge-overlay">🤝 Mutual</div>
                             <div class="match-header">
                                 <div class="match-avatar">
                                     <?= htmlspecialchars($match['avatar']); ?>
@@ -138,99 +138,7 @@
                                     <h3 class="match-name" onclick="viewProfile(<?= $match['id']; ?>)">
                                         <?= htmlspecialchars($match['name']); ?>
                                     </h3>
-                                    <span class="match-type-badge mutual">⚡ Mutual Match</span>
-                                </div>
-                            </div>
-                            
-                            <div class="match-skills-section">
-                                <?php if (!empty($match['i_teach'])): ?>
-                                <div class="skill-direction">
-                                    <div class="direction-header">
-
-                                        <span class="direction-label">You Teach</span>
-                                    </div>
-                                    <?php foreach ($match['i_teach'] as $skill): ?>
-                                        <div class="skill-item teach">
-                                            <span class="skill-name"><?= htmlspecialchars($skill['display_name']); ?></span>
-                                            <div class="skill-levels">
-                                                <span class="level-badge your-level"><?= htmlspecialchars($skill['my_level']); ?></span>
-                                                <span class="level-arrow">→</span>
-                                                <span class="level-badge their-level"><?= htmlspecialchars($skill['their_level']); ?></span>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                                <?php endif; ?>
-                                
-                                <?php if (!empty($match['they_teach'])): ?>
-                                <div class="skill-direction">
-                                    <div class="direction-header">
-                                        <span class="direction-label">You Learn</span>
-                                    </div>
-                                    <?php foreach ($match['they_teach'] as $skill): ?>
-                                        <div class="skill-item learn">
-                                            <span class="skill-name"><?= htmlspecialchars($skill['display_name']); ?></span>
-                                            <div class="skill-levels">
-                                                <span class="level-badge their-level"><?= htmlspecialchars($skill['their_level']); ?></span>
-                                                <span class="level-arrow">→</span>
-                                                <span class="level-badge your-level"><?= htmlspecialchars($skill['my_level']); ?></span>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                                <?php endif; ?>
-                            </div>
-                            
-                            <div class="match-footer">
-    <span class="compatibility-score">
-         <?= $match['total_skills']; ?> skill<?= $match['total_skills'] > 1 ? 's' : ''; ?> matched
-    </span>
-    
-    <?php if(isset($match['connection_status']) && $match['connection_status'] === 'pending'): ?>
-        <span class="badge badge-warning">Request Pending</span>
-    <?php elseif(isset($match['connection_status']) && $match['connection_status'] === 'connected'): ?>
-        <span class="badge badge-success">✓ Connected</span>
-    <?php else: ?>
-        <button class="btn-connect" onclick="event.stopPropagation(); connectWithUser(<?= $match['id']; ?>, '<?= htmlspecialchars($match['name']); ?>')">
-            Connect
-        </button>
-    <?php endif; ?>
-</div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <?php endif; ?>
-
-            <!-- GREAT MATCHES (75%) -->
-            <?php if (!empty($data['greatMatches'])): ?>
-            <div class="match-tier-section" data-tier="great">
-                <h2 class="tier-title">
-                    GREAT MATCHES (75%)
-                    <span class="tier-count">(<?= count($data['greatMatches']); ?> found)</span>
-                </h2>
-                <p class="tier-description">High compatibility - multiple skills or excellent proficiency match</p>
-                
-                <div class="matches-grid">
-                    <?php foreach ($data['greatMatches'] as $match): ?>
-                        <div class="match-card great-match" 
-                             data-tier="great"
-                             data-skills="<?= htmlspecialchars(json_encode(array_merge(
-                                 array_column($match['i_teach'], 'name'),
-                                 array_column($match['they_teach'], 'name')
-                             ))); ?>">
-                            <div class="match-badge-overlay"> Great</div>
-                            <div class="match-header">
-                                <div class="match-avatar">
-                                    <?= htmlspecialchars($match['avatar']); ?>
-                                </div>
-                                <div class="match-basic-info">
-                                    <h3 class="match-name" onclick="viewProfile(<?= $match['id']; ?>)">
-                                        <?= htmlspecialchars($match['name']); ?>
-                                    </h3>
-                                    <?php if ($match['is_mutual']): ?>
-                                        <span class="match-type-badge mutual">⚡ Mutual</span>
-                                    <?php endif; ?>
+                                    <span class="match-type-badge mutual-badge">⚡ Mutual Exchange</span>
                                 </div>
                             </div>
                             
@@ -273,44 +181,49 @@
                             </div>
                             
                             <div class="match-footer">
-    <span class="compatibility-score">
-         <?= $match['total_skills']; ?> skill<?= $match['total_skills'] > 1 ? 's' : ''; ?> matched
-    </span>
-    
-    <?php if(isset($match['connection_status']) && $match['connection_status'] === 'pending'): ?>
-        <span class="badge badge-warning">⏳ Request Pending</span>
-    <?php elseif(isset($match['connection_status']) && $match['connection_status'] === 'connected'): ?>
-        <span class="badge badge-success">✓ Connected</span>
-    <?php else: ?>
-        <button class="btn-connect" onclick="event.stopPropagation(); connectWithUser(<?= $match['id']; ?>, '<?= htmlspecialchars($match['name']); ?>')">
-            Connect
-        </button>
-    <?php endif; ?>
-</div>
+                                <span class="compatibility-score">
+                                    <?= $match['total_skills']; ?> skill<?= $match['total_skills'] > 1 ? 's' : ''; ?> matched
+                                </span>
+                                
+                                <?php if(isset($match['connection_status']) && $match['connection_status'] === 'pending'): ?>
+                                    <span class="badge badge-warning">Pending</span>
+                                <?php elseif(isset($match['connection_status']) && $match['connection_status'] === 'connected'): ?>
+                                    <div class="connected-actions">
+                                        <span class="badge badge-success">✓ Connected</span>
+                                        <button class="btn-chat" onclick="event.stopPropagation(); openChat(<?= $match['id']; ?>)">
+                                             Chat
+                                        </button>
+                                    </div>
+                                <?php else: ?>
+                                    <button class="btn-connect" onclick="event.stopPropagation(); connectWithUser(<?= $match['id']; ?>, '<?= htmlspecialchars($match['name']); ?>')">
+                                        Connect
+                                    </button>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     <?php endforeach; ?>
                 </div>
             </div>
             <?php endif; ?>
 
-            <!-- GOOD MATCHES (50%) -->
-            <?php if (!empty($data['goodMatches'])): ?>
-            <div class="match-tier-section" data-tier="good">
+            <!-- MULTI-SKILL MATCHES -->
+            <?php if (!empty($data['multi'])): ?>
+            <div class="match-tier-section" data-tier="multi">
                 <h2 class="tier-title">
-                    GOOD MATCHES (50%)
-                    <span class="tier-count">(<?= count($data['goodMatches']); ?> found)</span>
+                     MULTI-SKILL MATCHES
+                    <span class="tier-count">(<?= count($data['multi']); ?> found)</span>
                 </h2>
-                <p class="tier-description">Solid connections - valuable learning opportunities</p>
+                <p class="tier-description">Multiple skills in common - great learning potential</p>
                 
                 <div class="matches-grid">
-                    <?php foreach ($data['goodMatches'] as $match): ?>
-                        <div class="match-card good-match" 
-                             data-tier="good"
+                    <?php foreach ($data['multi'] as $match): ?>
+                        <div class="match-card multi-match" 
+                             data-tier="multi"
                              data-skills="<?= htmlspecialchars(json_encode(array_merge(
                                  array_column($match['i_teach'], 'name'),
                                  array_column($match['they_teach'], 'name')
                              ))); ?>">
-                            <div class="match-badge-overlay">Good</div>
+                            <div class="match-badge-overlay">⭐ Multi</div>
                             <div class="match-header">
                                 <div class="match-avatar">
                                     <?= htmlspecialchars($match['avatar']); ?>
@@ -361,32 +274,133 @@
                             </div>
                             
                             <div class="match-footer">
-    <span class="compatibility-score">
-         <?= $match['total_skills']; ?> skill<?= $match['total_skills'] > 1 ? 's' : ''; ?> matched
-    </span>
-    
-    <?php if(isset($match['connection_status']) && $match['connection_status'] === 'pending'): ?>
-        <span class="badge badge-warning"> Request Pending</span>
-    <?php elseif(isset($match['connection_status']) && $match['connection_status'] === 'connected'): ?>
-        <span class="badge badge-success">✓ Connected</span>
-    <?php else: ?>
-        <button class="btn-connect" onclick="event.stopPropagation(); connectWithUser(<?= $match['id']; ?>, '<?= htmlspecialchars($match['name']); ?>')">
-            Connect
-        </button>
-    <?php endif; ?>
-</div>
+                                <span class="compatibility-score">
+                                    <?= $match['total_skills']; ?> skills matched
+                                </span>
+                                
+                                <!-- NEW: Connection Status Actions -->
+                                <?php if(isset($match['connection_status']) && $match['connection_status'] === 'pending'): ?>
+                                    <span class="badge badge-warning">⏳ Pending</span>
+                                <?php elseif(isset($match['connection_status']) && $match['connection_status'] === 'connected'): ?>
+                                    <div class="connected-actions">
+                                        <span class="badge badge-success">✓ Connected</span>
+                                        <button class="btn-chat" onclick="event.stopPropagation(); openChat(<?= $match['id']; ?>)">
+                                             Chat
+                                        </button>
+                                    </div>
+                                <?php else: ?>
+                                    <button class="btn-connect" onclick="event.stopPropagation(); connectWithUser(<?= $match['id']; ?>, '<?= htmlspecialchars($match['name']); ?>')">
+                                        Connect
+                                    </button>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     <?php endforeach; ?>
                 </div>
             </div>
             <?php endif; ?>
 
-            <!-- No Matches State -->
-            <?php if (empty($data['perfectMatches']) && empty($data['greatMatches']) && empty($data['goodMatches'])): ?>
+
+            <!-- SINGLE SKILL MATCHES -->
+            <?php if (!empty($data['single'])): ?>
+            <div class="match-tier-section" data-tier="single">
+                <h2 class="tier-title">
+                    ✓ MATCHES
+                    <span class="tier-count">(<?= count($data['single']); ?> found)</span>
+                </h2>
+                <p class="tier-description">One skill to learn or teach</p>
+                
+                <div class="matches-grid">
+                    <?php foreach ($data['single'] as $match): ?>
+                        <div class="match-card single-match" 
+                             data-tier="single"
+                             data-skills="<?= htmlspecialchars(json_encode(array_merge(
+                                 array_column($match['i_teach'], 'name'),
+                                 array_column($match['they_teach'], 'name')
+                             ))); ?>">
+                            <div class="match-header">
+                                <div class="match-avatar">
+                                    <?= htmlspecialchars($match['avatar']); ?>
+                                </div>
+                                <div class="match-basic-info">
+                                    <h3 class="match-name" onclick="viewProfile(<?= $match['id']; ?>)">
+                                        <?= htmlspecialchars($match['name']); ?>
+                                    </h3>
+                                </div>
+                            </div>
+                            
+                            <div class="match-skills-section">
+                                <?php if (!empty($match['i_teach'])): ?>
+                                <div class="skill-direction">
+                                    <div class="direction-header">
+                                        <span class="direction-label">You Teach</span>
+                                    </div>
+                                    <?php foreach ($match['i_teach'] as $skill): ?>
+                                        <div class="skill-item teach">
+                                            <span class="skill-name"><?= htmlspecialchars($skill['display_name']); ?></span>
+                                            <div class="skill-levels">
+                                                <span class="level-badge your-level"><?= htmlspecialchars($skill['my_level']); ?></span>
+                                                <span class="level-arrow">→</span>
+                                                <span class="level-badge their-level"><?= htmlspecialchars($skill['their_level']); ?></span>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                                <?php endif; ?>
+                                
+                                <?php if (!empty($match['they_teach'])): ?>
+                                <div class="skill-direction">
+                                    <div class="direction-header">
+                                        <span class="direction-label">You Learn</span>
+                                    </div>
+                                    <?php foreach ($match['they_teach'] as $skill): ?>
+                                        <div class="skill-item learn">
+                                            <span class="skill-name"><?= htmlspecialchars($skill['display_name']); ?></span>
+                                            <div class="skill-levels">
+                                                <span class="level-badge their-level"><?= htmlspecialchars($skill['their_level']); ?></span>
+                                                <span class="level-arrow">→</span>
+                                                <span class="level-badge your-level"><?= htmlspecialchars($skill['my_level']); ?></span>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <div class="match-footer">
+                                <span class="compatibility-score">
+                                    1 skill matched
+                                </span>
+                                
+                                <!-- NEW: Connection Status Actions -->
+                                <?php if(isset($match['connection_status']) && $match['connection_status'] === 'pending'): ?>
+                                    <span class="badge badge-warning">⏳ Pending</span>
+                                <?php elseif(isset($match['connection_status']) && $match['connection_status'] === 'connected'): ?>
+                                    <div class="connected-actions">
+                                        <span class="badge badge-success">✓ Connected</span>
+                                        <button class="btn-chat" onclick="event.stopPropagation(); openChat(<?= $match['id']; ?>)">
+                                            Chat
+                                        </button>
+                                    </div>
+                                <?php else: ?>
+                                    <button class="btn-connect" onclick="event.stopPropagation(); connectWithUser(<?= $match['id']; ?>, '<?= htmlspecialchars($match['name']); ?>')">
+                                        Connect
+                                    </button>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- NO MATCHES MESSAGE -->
+            <?php if (empty($data['mutual']) && empty($data['multi']) && empty($data['single'])): ?>
             <div class="no-matches-state">
+                <div class="no-matches-icon">🔍</div>
                 <h2>No matches found yet</h2>
-                <p>We're looking for people who match your skills!</p>
-                <small>Check back later or update your profile to see more matches.</small>
+                <p>Try adding more skills to your profile to find compatible learning partners!</p>
+                <a href="<?= URLROOT ?>/users/profile" class="btn-primary">Update Your Skills</a>
             </div>
             <?php endif; ?>
 

@@ -28,16 +28,28 @@ class UserdashboardController extends Controller {
     // ============================================
 
     public function index() {
-    $userId = $this->checkAuth();
-    
-    $userData = $this->getUserData($userId);
-    $userSkills = $this->getUserSkills($userId);
-    $userProjects = $this->getUserProjects($userId);
-    $userFeedback = $this->getUserFeedback($userId);
-    $userBadges = $this->getUserBadges($userId); // NEW: Get user badges
-    
-    if (!is_array($userData)) {
-        die("ERROR: getUserData returned: " . print_r($userData, true));
+        $userId = $this->checkAuth();
+        
+        $userData = $this->getUserData($userId);
+        $userSkills = $this->getUserSkills($userId);
+        $userProjects = $this->getUserProjects($userId);
+        $userFeedback = $this->getUserFeedback($userId);
+        $matches = $this->skillMatchModel->getAllMatchesWithScores($userId);
+
+        if (!is_array($userData)) {
+            die("ERROR: getUserData returned: " . print_r($userData, true));
+        }
+        
+        $data = [
+            'title' => 'My Profile',
+            'user' => $userData,
+            'skills' => $userSkills,
+            'projects' => $userProjects,
+            'feedback' => $userFeedback,
+            'page' => 'profile'
+        ];
+        
+        $this->view('users/profile', $data);
     }
     
     // Add badge count to user data
@@ -72,21 +84,177 @@ class UserdashboardController extends Controller {
         $this->view('users/notifications', $data);
     }
 
-    public function chats() {
-        $userId = $this->checkAuth();
-        
-        $user = $this->getUserData($userId);
-        $chats = $this->getChats($userId);
-        
-        $data = [
-            'title' => 'Chats',
-            'user' => $user,
-            'page' => 'chats',
-            'chats' => $chats
-        ];
-        
-        $this->view('users/chats', $data);
+public function chats() {
+    $userId = $this->checkAuth();
+    $user = $this->getUserData($userId);
+    $chats = $this->getActiveChats($userId);
+
+    // Prepare base data (sidebar expects `allChats`)
+    $data = [
+        'title' => 'Chats',
+        'user' => $user,
+        'page' => 'chats',
+        'chats' => $chats,
+        'allChats' => $chats
+    ];
+
+    // If partnerId provided, load active chat context so the same route shows the conversation
+    if (isset($_GET['partnerId']) && is_numeric($_GET['partnerId'])) {
+        $partnerId = (int) $_GET['partnerId'];
+
+        // Verify partner exists
+        $this->db->query("SELECT id, username, profile_picture FROM users WHERE id = :partner_id");
+        $this->db->bind(':partner_id', $partnerId);
+        $partner = $this->db->single();
+
+        if (!$partner) {
+            $_SESSION['error'] = 'User not found.';
+            // Render chats list without active chat
+            $this->view('users/chats', $data);
+            return;
+        }
+
+        // Verify active connection exists (users must be connected to chat)
+        $this->db->query("\n            SELECT id FROM exchanges \n            WHERE ((requester_id = :user_id AND receiver_id = :partner_id)\n                OR (requester_id = :partner_id AND receiver_id = :user_id))\n            AND status = 'active'\n            LIMIT 1\n        ");
+        $this->db->bind(':user_id', $userId);
+        $this->db->bind(':partner_id', $partnerId);
+        $connection = $this->db->single();
+
+        if (!$connection) {
+            $_SESSION['error'] = 'You must be connected with this user to chat.';
+            header('Location: ' . URLROOT . '/userdashboard/matches');
+            exit();
+        }
+
+        // Get or create chat between users
+        $this->db->query("\n            SELECT id FROM chats \n            WHERE (user1_id = :user1 AND user2_id = :user2)\n               OR (user1_id = :user2 AND user2_id = :user1)\n            LIMIT 1\n        ");
+        $this->db->bind(':user1', $userId);
+        $this->db->bind(':user2', $partnerId);
+        $chat = $this->db->single();
+
+        if ($chat) {
+            $chatId = $chat->id;
+        } else {
+            $this->db->query("INSERT INTO chats (user1_id, user2_id, created_at) VALUES (:user1, :user2, NOW())");
+            $this->db->bind(':user1', $userId);
+            $this->db->bind(':user2', $partnerId);
+            $this->db->execute();
+            $chatId = $this->db->lastInsertId();
+        }
+
+        // Get active transaction for this chat (if any)
+        $this->db->query("\n            SELECT e.*, \n                   u1.username AS teacher_name,\n                   u2.username AS learner_name\n            FROM chat_transaction_events e\n            INNER JOIN users u1 ON e.teacher_id = u1.id\n            INNER JOIN users u2 ON e.learner_id = u2.id\n            WHERE e.chat_id = :chat_id \n            AND e.status IN ('pending_learner', 'pending_teacher', 'active', 'teacher_completed')\n            ORDER BY e.created_at DESC\n            LIMIT 1\n        ");
+        $this->db->bind(':chat_id', $chatId);
+        $event = $this->db->single();
+
+        $activeTransaction = null;
+        if ($event) {
+            $userRole = ($event->teacher_id == $userId) ? 'teacher' : 'learner';
+            $isCreator = ($event->status === 'pending_learner' && $userRole === 'teacher') ||
+                         ($event->status === 'pending_teacher' && $userRole === 'learner');
+
+            $activeTransaction = [
+                'id' => $event->id,
+                'payment_type' => $event->payment_type,
+                'amount' => $event->amount,
+                'skill_debt_hours' => $event->skill_debt_hours,
+                'skill_name' => $event->skill_name,
+                'timeframe_hours' => $event->agreed_timeframe_hours,
+                'status' => $event->status,
+                'teacher_name' => $event->teacher_name,
+                'learner_name' => $event->learner_name,
+                'expires_at' => $event->expires_at,
+                'teacher_completed_at' => $event->teacher_completed_at,
+                'user_role' => $userRole,
+                'is_creator' => $isCreator,
+                'both_agreed_at' => $event->both_agreed_at
+            ];
+        }
+
+        // Get user's BuckX balance
+        $this->db->query("SELECT buckx_balance, buckx_frozen FROM users WHERE id = :user_id");
+        $this->db->bind(':user_id', $userId);
+        $userBalance = $this->db->single();
+
+        // Merge active chat data into view data
+        $data = array_merge($data, [
+            'chatId' => $chatId,
+            'partnerId' => $partnerId,
+            'partnerName' => $partner->username,
+            'partnerAvatar' => $partner->profile_picture ?? strtoupper(substr($partner->username, 0, 2)),
+            'allChats' => $chats,
+            'activeTransaction' => $activeTransaction,
+            'buckxBalance' => $userBalance ? ($userBalance->buckx_balance - $userBalance->buckx_frozen) : 0
+        ]);
     }
+
+    $this->view('users/chats', $data);
+}
+
+private function getActiveChats($userId) {
+    try {
+        $this->db->query("
+            SELECT 
+                c.id as chat_id,
+                CASE 
+                    WHEN c.user1_id = :user_id THEN c.user2_id
+                    ELSE c.user1_id
+                END as partner_id,
+                CASE 
+                    WHEN c.user1_id = :user_id THEN u2.username
+                    ELSE u1.username
+                END as partner_name,
+                CASE 
+                    WHEN c.user1_id = :user_id THEN u2.profile_picture
+                    ELSE u1.profile_picture
+                END as partner_avatar,
+                cm.message as last_message,
+                COALESCE(cm.created_at, c.created_at) as last_message_time,
+                (SELECT COUNT(*) FROM chat_messages 
+                 WHERE chat_id = c.id 
+                 AND sender_id != :user_id 
+                 AND read_status = 0) as unread_count
+            FROM chats c
+            INNER JOIN users u1 ON c.user1_id = u1.id
+            INNER JOIN users u2 ON c.user2_id = u2.id
+            LEFT JOIN (
+                SELECT chat_id, message, created_at
+                FROM chat_messages cm1
+                WHERE id = (
+                    SELECT MAX(id) 
+                    FROM chat_messages cm2 
+                    WHERE cm2.chat_id = cm1.chat_id
+                )
+            ) cm ON c.id = cm.chat_id
+            WHERE (c.user1_id = :user_id OR c.user2_id = :user_id)
+            ORDER BY last_message_time DESC
+        ");
+        
+        $this->db->bind(':user_id', $userId);
+        $results = $this->db->resultSet();
+        
+        $chats = [];
+        foreach ($results as $row) {
+            $chats[] = [
+                'id' => $row->chat_id,
+                'partner_id' => $row->partner_id,
+                'name' => $row->partner_name,
+                'avatar' => $row->partner_avatar ?? strtoupper(substr($row->partner_name, 0, 2)),
+                'lastMessage' => $row->last_message ?? 'No messages yet',
+                'time' => $this->timeAgo($row->last_message_time),
+                'unread' => $row->unread_count > 0,
+                'unreadCount' => $row->unread_count ?? 0,
+                'online' => false
+            ];
+        }
+        
+        return $chats;
+        
+    } catch (Exception $e) {
+        error_log("getActiveChats error: " . $e->getMessage());
+        return [];
+    }
+}
 
 
 public function matches() {
@@ -95,9 +263,14 @@ public function matches() {
     $skillMatchModel = $this->model('SkillMatch');
     $exchangeModel = $this->model('Exchange');
     
+    // Get all matches with new tier system (mutual, multi, single)
     $allMatches = $skillMatchModel->getAllMatchesWithScores($userId);
-    
 
+    // Ensure arrays exist (in case model returns empty)
+    $mutual = isset($allMatches['mutual']) && is_array($allMatches['mutual']) ? $allMatches['mutual'] : [];
+    $multi = isset($allMatches['multi']) && is_array($allMatches['multi']) ? $allMatches['multi'] : [];
+    $single = isset($allMatches['single']) && is_array($allMatches['single']) ? $allMatches['single'] : [];
+    
     // Get pending connection requests
     $pendingRequests = $exchangeModel->getExchangeRequests($userId);
 
@@ -105,7 +278,7 @@ public function matches() {
     foreach ($pendingRequests as $request) {
         $formattedRequests[] = [
             'exchange_id' => $request->id,
-            'sender_id' => $request->sender_id,
+            'sender_id' => $request->requester_id,
             'sender_name' => $request->sender_name,
             'sender_email' => $request->sender_email,
             'sender_avatar' => $request->sender_avatar ?? strtoupper(substr($request->sender_name, 0, 2)),
@@ -114,7 +287,6 @@ public function matches() {
             'time_ago' => $this->timeAgo($request->created_at)
         ];
     }   
-
     
     $userSkillsData = $skillMatchModel->getUserSkillsForFilter($userId);
     $user = $this->getUserData($userId);
@@ -123,22 +295,23 @@ public function matches() {
         'title' => 'Matches',
         'user' => $user,
         'page' => 'matches',
-       'perfectMatches' => $allMatches['perfect'],
-        'greatMatches' => $allMatches['great'],
-        'goodMatches' => $allMatches['good'],
+        // Pass the three tier arrays
+        'mutual' => $mutual,
+        'multi' => $multi,
+        'single' => $single,
+        // Match statistics
         'matchStats' => [
-            'perfect_count' => count($allMatches['perfect']),
-            'great_count' => count($allMatches['great']),
-            'good_count' => count($allMatches['good']),
-            'total_count' => count($allMatches['perfect']) + count($allMatches['great']) + count($allMatches['good'])
+            'total_count' => count($mutual) + count($multi) + count($single),
+            'mutual_count' => count($mutual),
+            'multi_count' => count($multi),
+            'single_count' => count($single)
         ],
         'userSkills' => $userSkillsData,
         'pendingRequests' => $formattedRequests
     ];
     
     $this->view('users/matches', $data);
-} 
-
+}
 /**
  * Handle accept/reject connection requests
  */

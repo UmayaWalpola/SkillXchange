@@ -1038,7 +1038,113 @@ button {
     background: #f59e0b;
     color: white;
 }
+/* Notification Banner Styles */
+.notification-banner {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    min-width: 300px;
+    max-width: 500px;
+    padding: 16px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 10000;
+    animation: slideInRight 0.3s ease-out;
+    transition: opacity 0.3s ease;
+}
 
+@keyframes slideInRight {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notification-banner.notification-success {
+    background-color: #10b981;
+    color: white;
+}
+
+.notification-banner.notification-error {
+    background-color: #ef4444;
+    color: white;
+}
+
+.notification-banner.notification-info {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.notification-banner.notification-warning {
+    background-color: #f59e0b;
+    color: white;
+}
+
+.notification-message {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 16px;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.notification-close:hover {
+    opacity: 1;
+}
+
+/* Badge styles for pending/connected states */
+.badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.badge-warning {
+    background-color: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fbbf24;
+}
+
+.badge-success {
+    background-color: #d1fae5;
+    color: #065f46;
+    border: 1px solid #10b981;
+}
+
+/* Request card animations */
+.request-card {
+    transition: all 0.3s ease;
+}
+
+.request-card.removing {
+    opacity: 0;
+    transform: translateX(-20px);
+}
 /* Form Input Improvements */
 input[type="text"],
 input[type="email"],
