@@ -271,8 +271,14 @@
         }
         
         if (resultsSection) {
+            let rewardHTML = '';
+            if (result.reward && result.reward > 0) {
+                rewardHTML = `<div class="reward-banner" style="background: #ecf8f8; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-weight:600; color:#0b7285;">🎉 You earned ${result.reward} BuckX! New balance: ${result.newBalance ?? '—'}</div>`;
+            }
+
             resultsSection.innerHTML = `
                 <div class="results-content">
+                    ${rewardHTML}
                     <div class="score-circle ${scoreClass}">
                         <div class="score-percentage">${percentage.toFixed(1)}%</div>
                         <div class="score-label">${passed ? 'Passed!' : 'Failed'}</div>
@@ -295,7 +301,7 @@
                     </div>
                 </div>
             `;
-            
+
             resultsSection.style.display = 'block';
         }
         

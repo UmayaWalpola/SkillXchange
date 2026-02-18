@@ -4,6 +4,26 @@
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/wallet.css">
 
+<style>
+    /* Ensure user wallet keeps boxed transaction layout */
+    .user-transactions {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    .user-transactions .transaction-list {
+        display: block;
+    }
+
+    .user-transactions .transaction-item {
+        width: 100%;
+        box-sizing: border-box;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+</style>
+
 <main class="site-main">  
 <div class="dashboard-container">
 <div class="dashboard-main">
@@ -57,76 +77,10 @@
         </div>
     </div>
 
-    <!-- Transfer Section -->
-    <div class="transfer-section">
-        <div class="section-header">
-            <div>
-                <div class="section-title">Send BuckX</div>
-                <div class="section-subtitle">Transfer BuckX to your matches</div>
-            </div>
-        </div>
-        
-        <?php if (empty($data['allowedRecipients'])): ?>
-            <div class="no-recipients-notice">
-                <span class="notice-icon">&#x2139;&#xFE0F;</span>
-                <div class="notice-content">
-                    <h3>No Users Available</h3>
-                    <p>There are no other users in the system yet.</p>
-                </div>
-            </div>
-        <?php else: ?>
-            <form class="transfer-form" id="transferForm" method="POST" action="<?= URLROOT ?>/wallet/confirmTransfer">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="recipient_id">Select Recipient</label>
-                        <select id="recipient_id" 
-                                name="recipient_id" 
-                                required
-                                class="recipient-dropdown">
-                            <option value="">Select a user</option>
-                            <?php foreach($data['allowedRecipients'] as $recipient): ?>
-                                <option value="<?= $recipient->id ?>">
-                                    <?= htmlspecialchars($recipient->username) ?> 
-                                    (<?= htmlspecialchars($recipient->email) ?>)
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <div class="field-hint">Select the user you want to send BuckX to</div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="amount">Amount (BuckX)</label>
-                        <input type="number" 
-                               id="amount" 
-                               name="amount" 
-                               min="1" 
-                               max="1000"
-                               step="0.01"
-                               placeholder="Enter amount" 
-                               required>
-                        <div class="field-hint">Maximum: 1000 BuckX per transaction</div>
-                    </div>
-                </div>
-                
-                <div class="form-group full-width">
-                    <label for="note">Reason for Transfer (Optional)</label>
-                    <input type="text" 
-                           id="note" 
-                           name="note" 
-                           placeholder="e.g., Payment for lesson, Project completion, etc."
-                           maxlength="255">
-                    <div class="field-hint">This reason will be visible to the recipient and logged</div>
-                </div>
-                
-                <button type="submit" class="send-btn">
-                    <span>Review Transfer</span>
-                </button>
-            </form>
-        <?php endif; ?>
-    </div>
+    <!-- Transfer Section removed per request -->
 
     <!-- Transactions Container -->
-    <div class="transactions-container">
+    <div class="transactions-container user-transactions">
         <!-- Sent Transactions -->
         <div class="transaction-section">
             <div class="transaction-header">

@@ -849,6 +849,56 @@ public function submitQuiz() {
             }
         }
     }
+
+    // Award BuckX reward based on quiz difficulty when passed
+    $rewardGiven = 0;
+    $newBalance = null;
+
+    if ($passed) {
+        // Determine difficulty from quiz object/array
+        $difficulty = '';
+        if (is_array($quiz)) {
+            $difficulty = $quiz['difficulty_level'] ?? $quiz['difficulty'] ?? '';
+        } elseif (is_object($quiz)) {
+            $difficulty = $quiz->difficulty_level ?? $quiz->difficulty ?? '';
+        }
+
+        $map = [
+            'beginner' => 10,
+            'intermediate' => 20,
+            'expert' => 30
+        ];
+
+        $key = strtolower(trim($difficulty));
+        $rewardAmount = $map[$key] ?? 0;
+
+        if ($rewardAmount > 0) {
+            $walletModel = $this->model('Wallet');
+            $note = 'Quiz reward (quiz_id: ' . $quizId . ')';
+            $ok = $walletModel->creditReward($userId, $rewardAmount, $note);
+            if ($ok) {
+                $rewardGiven = $rewardAmount;
+                $newBalance = $walletModel->getBalance($userId);
+
+                // Create a notification for the user about the reward
+                $notificationModel = $this->model('Notification');
+                $quizTitle = is_array($quiz) ? ($quiz['title'] ?? '') : ($quiz->title ?? '');
+                $notifMsg = "You earned {$rewardAmount} BuckX for passing the quiz \"" . $quizTitle . "\".";
+                $notificationModel->createNotification([
+                    'user_id' => $userId,
+                    'type' => 'reward',
+                    'message' => $notifMsg,
+                    'project_id' => null,
+                    'task_id' => null,
+                    'is_read' => 0
+                ]);
+
+                error_log("Credit Reward: user {$userId} awarded {$rewardAmount}, new balance {$newBalance}");
+            } else {
+                error_log("Credit Reward failed for user {$userId}, quiz {$quizId}, amount {$rewardAmount}");
+            }
+        }
+    }
     
     // Return success response
     echo json_encode([
@@ -857,7 +907,9 @@ public function submitQuiz() {
         'correct' => $correctCount,
         'total' => $totalQuestions,
         'passed' => $passed,
-        'badgeEarned' => $badgeEarned
+        'badgeEarned' => $badgeEarned,
+        'reward' => $rewardGiven,
+        'newBalance' => $newBalance
     ]);
     exit;
 }
