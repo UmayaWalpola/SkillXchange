@@ -28,28 +28,16 @@ class UserdashboardController extends Controller {
     // ============================================
 
     public function index() {
-        $userId = $this->checkAuth();
-        
-        $userData = $this->getUserData($userId);
-        $userSkills = $this->getUserSkills($userId);
-        $userProjects = $this->getUserProjects($userId);
-        $userFeedback = $this->getUserFeedback($userId);
-        $matches = $this->skillMatchModel->getAllMatchesWithScores($userId);
-
-        if (!is_array($userData)) {
-            die("ERROR: getUserData returned: " . print_r($userData, true));
-        }
-        
-        $data = [
-            'title' => 'My Profile',
-            'user' => $userData,
-            'skills' => $userSkills,
-            'projects' => $userProjects,
-            'feedback' => $userFeedback,
-            'page' => 'profile'
-        ];
-        
-        $this->view('users/profile', $data);
+    $userId = $this->checkAuth();
+    
+    $userData = $this->getUserData($userId);
+    $userSkills = $this->getUserSkills($userId);
+    $userProjects = $this->getUserProjects($userId);
+    $userFeedback = $this->getUserFeedback($userId);
+    $userBadges = $this->getUserBadges($userId); // Get user badges
+    
+    if (!is_array($userData)) {
+        die("ERROR: getUserData returned: " . print_r($userData, true));
     }
     
     // Add badge count to user data
@@ -61,13 +49,12 @@ class UserdashboardController extends Controller {
         'skills' => $userSkills,
         'projects' => $userProjects,
         'feedback' => $userFeedback,
-        'badges' => $userBadges, // NEW: Pass badges to view
+        'badges' => $userBadges, // Pass badges to view
         'page' => 'profile'
     ];
     
     $this->view('users/profile', $data);
 }
-
     public function notifications() {
         $userId = $this->checkAuth();
         
