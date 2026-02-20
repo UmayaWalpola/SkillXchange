@@ -26,8 +26,8 @@
                                 <p><?= htmlspecialchars($community->description ?? '') ?></p>
                                 
                                 <div class="community-stats">
-                                    <span>👥 <?= $community->members ?? 0 ?> members</span>
-                                    <span>💬 <?= $community->posts ?? 0 ?> posts</span>
+                                    <span><i class="ph ph-users"></i> <?= $community->members ?? 0 ?> members</span>
+                                    <span><i class="ph ph-chat-circle-dots"></i> <?= $community->posts ?? 0 ?> posts</span>
                                 </div>
                                 
                                 <?php if ($community->is_member): ?>

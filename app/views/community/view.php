@@ -13,9 +13,9 @@
                 <h1><?= $data['community']->name ?></h1>
                 <p><?= $data['community']->description ?></p>
                 <div class="stats">
-                    <span>👥 <?= $data['community']->members_count ?> members</span>
-                    <span>💬 <?= count($data['posts']) ?> posts</span>
-                    <span>📈 Active</span>
+                    <span><i class="ph ph-users"></i> <?= $data['community']->members_count ?> members</span>
+                    <span><i class="ph ph-chat-circle-dots"></i> <?= count($data['posts']) ?> posts</span>
+                    <span><i class="ph ph-chart-line-up"></i> Active</span>
                 </div>
             </div>
             <form method="POST">
@@ -30,7 +30,7 @@
             <div class="form-content">
                 <form method="POST">
                     <textarea name="content" placeholder="What's on your mind? Share with the community..." required></textarea>
-                    <button type="submit" class="btn btn-primary">✈️ Post</button>
+                    <button type="submit" class="btn btn-primary"><i class="ph ph-paper-plane-tilt"></i> Post</button>
                 </form>
             </div>
         </div>
@@ -49,7 +49,7 @@
                                     data-content-type="post" 
                                     data-content-id="<?= $post->id ?>"
                                     title="Report this post">
-                                <span>⚠</span>
+                                <span><i class="ph ph-warning"></i></span>
                             </button>
                             <?php endif; ?>
                         </div>

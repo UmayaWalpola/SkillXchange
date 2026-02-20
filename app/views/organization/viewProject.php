@@ -14,10 +14,10 @@
             </button>
             <div class="detail-actions">
                 <button class="action-btn edit-btn" onclick="window.location.href='<?= URLROOT ?>/organization/editProject/<?= $data['project']->id ?>'">
-                    ✏️ Edit Project
+                    <i class="ph ph-pencil"></i> Edit Project
                 </button>
                 <button class="action-btn delete-btn" onclick="deleteProject(this, <?= $data['project']->id ?>, '<?= htmlspecialchars($data['project']->name) ?>')">
-                    🗑️ Delete Project
+                    <i class="ph ph-trash"></i> Delete Project
                 </button>
             </div>
         </div>
@@ -27,13 +27,13 @@
             <div class="project-icon-large <?= $data['project']->category ?>">
                 <?php 
                     $icons = [
-                        'web' => '💻',
-                        'mobile' => '📱',
-                        'data' => '📊',
-                        'design' => '🎨',
-                        'other' => '📁'
+                        'web' => '<i class="ph ph-code"></i>',
+                        'mobile' => '<i class="ph ph-device-mobile"></i>',
+                        'data' => '<i class="ph ph-chart-bar"></i>',
+                        'design' => '<i class="ph ph-paint-brush"></i>',
+                        'other' => '<i class="ph ph-folder-open"></i>'
                     ];
-                    echo $icons[$data['project']->category] ?? '📁';
+                    echo $icons[$data['project']->category] ?? '<i class="ph ph-folder-open"></i>';
                 ?>
             </div>
             <div class="header-content">
@@ -43,10 +43,10 @@
                         <?= ucfirst(str_replace('-', ' ', $data['project']->status)) ?>
                     </span>
                     <span class="category-badge">
-                        📂 <?= ucfirst($data['project']->category) ?>
+                        <i class="ph ph-folder-open"></i> <?= ucfirst($data['project']->category) ?>
                     </span>
                     <span class="members-badge">
-                        👥 <?= $data['project']->current_members ?? 0 ?>/<?= $data['project']->max_members ?> Members
+                        <i class="ph ph-users"></i> <?= $data['project']->current_members ?? 0 ?>/<?= $data['project']->max_members ?> Members
                     </span>
                 </div>
             </div>
@@ -57,7 +57,7 @@
             
             <!-- Description Section -->
             <div class="detail-card full-width">
-                <h2 class="card-title">📝 Project Description</h2>
+                <h2 class="card-title"><i class="ph ph-notepad"></i> Project Description</h2>
                 <p class="project-description-full">
                     <?= nl2br(htmlspecialchars($data['project']->description)) ?>
                 </p>
@@ -65,7 +65,7 @@
 
             <!-- Skills Section -->
             <div class="detail-card">
-                <h2 class="card-title">🎯 Required Skills</h2>
+                <h2 class="card-title"><i class="ph ph-target"></i> Required Skills</h2>
                 <div class="skills-list">
                     <?php 
                     $skills = explode(',', $data['project']->required_skills);
@@ -78,7 +78,7 @@
 
             <!-- Timeline Section -->
             <div class="detail-card">
-                <h2 class="card-title">📅 Timeline</h2>
+                <h2 class="card-title"><i class="ph ph-calendar"></i> Timeline</h2>
                 <div class="timeline-info">
                     <div class="timeline-item">
                         <span class="timeline-label">Created:</span>
@@ -105,7 +105,7 @@
 
             <!-- Project Info Section -->
             <div class="detail-card full-width">
-                <h2 class="card-title">ℹ️ Project Information</h2>
+                <h2 class="card-title"><i class="ph ph-info"></i> Project Information</h2>
                 <div class="info-grid">
                     <div class="info-item">
                         <span class="info-label">Project ID:</span>

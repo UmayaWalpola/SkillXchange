@@ -276,7 +276,7 @@
 <main class="site-main">
     <div class="reports-container">
         <div class="reports-header">
-            <h1>📋 Manage Reports</h1>
+            <h1><i class="ph ph-list"></i> Manage Reports</h1>
             <p>Review and manage all reported content and users</p>
         </div>
 
@@ -376,7 +376,7 @@
                                         | <strong>Project:</strong> <span><?= htmlspecialchars($report->project_name) ?></span>
                                     <?php endif; ?>
                                     <br>
-                                    <small>📅 <?= date('M d, Y h:i A', strtotime($report->created_at)) ?></small>
+                                    <small><i class="ph ph-calendar"></i> <?= date('M d, Y h:i A', strtotime($report->created_at)) ?></small>
                                 </div>
                                 <div class="report-actions">
                                     <select class="status-select" data-report-id="<?= $report->id ?>" data-report-type="<?= $report->report_type ?>">

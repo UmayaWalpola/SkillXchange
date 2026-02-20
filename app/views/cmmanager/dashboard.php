@@ -16,7 +16,7 @@
     <!-- Stats Overview -->
     <div class="stats-container">
         <div class="stat-card">
-            <div class="stat-icon">🏘️</div>
+            <div class="stat-icon"><i class="ph ph-buildings"></i></div>
             <div class="stat-details">
                 <div class="stat-value" id="totalCommunities">0</div>
                 <div class="stat-label">Total Communities</div>
@@ -24,7 +24,7 @@
         </div>
         
         <div class="stat-card">
-            <div class="stat-icon">✅</div>
+            <div class="stat-icon"><i class="ph ph-check-circle"></i></div>
             <div class="stat-details">
                 <div class="stat-value" id="activeCommunities">0</div>
                 <div class="stat-label">Active</div>
@@ -32,7 +32,7 @@
         </div>
         
         <div class="stat-card">
-            <div class="stat-icon">👥</div>
+            <div class="stat-icon"><i class="ph ph-users"></i></div>
             <div class="stat-details">
                 <div class="stat-value" id="totalMembers">0</div>
                 <div class="stat-label">Total Members</div>
@@ -40,7 +40,7 @@
         </div>
         
         <div class="stat-card">
-            <div class="stat-icon">📝</div>
+            <div class="stat-icon"><i class="ph ph-notepad"></i></div>
             <div class="stat-details">
                 <div class="stat-value" id="totalPosts">0</div>
                 <div class="stat-label">Total Posts</div>

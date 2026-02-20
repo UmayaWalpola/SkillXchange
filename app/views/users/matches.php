@@ -138,7 +138,7 @@
                                     <h3 class="match-name" onclick="viewProfile(<?= $match['id']; ?>)">
                                         <?= htmlspecialchars($match['name']); ?>
                                     </h3>
-                                    <span class="match-type-badge mutual-badge">⚡ Mutual Exchange</span>
+                                    <span class="match-type-badge mutual-badge"><i class="ph ph-lightning"></i> Mutual Exchange</span>
                                 </div>
                             </div>
                             
@@ -223,7 +223,7 @@
                                  array_column($match['i_teach'], 'name'),
                                  array_column($match['they_teach'], 'name')
                              ))); ?>">
-                            <div class="match-badge-overlay">⭐ Multi</div>
+                            <div class="match-badge-overlay"><i class="ph ph-star"></i> Multi</div>
                             <div class="match-header">
                                 <div class="match-avatar">
                                     <?= htmlspecialchars($match['avatar']); ?>
@@ -397,7 +397,7 @@
             <!-- NO MATCHES MESSAGE -->
             <?php if (empty($data['mutual']) && empty($data['multi']) && empty($data['single'])): ?>
             <div class="no-matches-state">
-                <div class="no-matches-icon">🔍</div>
+                <div class="no-matches-icon"><i class="ph ph-magnifying-glass"></i></div>
                 <h2>No matches found yet</h2>
                 <p>Try adding more skills to your profile to find compatible learning partners!</p>
                 <a href="<?= URLROOT ?>/users/profile" class="btn-primary">Update Your Skills</a>

@@ -6,13 +6,13 @@
 <!-- 1. REPORT USER PROFILE BUTTON -->
 <!-- Add this to user profile pages -->
 <button class="report-btn report-user-btn" data-user-id="<?= $user->id ?>">
-    <span class="report-btn-icon">⚠</span>
+    <span class="report-btn-icon"><i class="ph ph-warning"></i></span>
     Report Profile
 </button>
 
 <!-- Small icon-only version -->
 <button class="report-btn-small report-user-btn" data-user-id="<?= $user->id ?>" title="Report this profile">
-    <span>⚠</span>
+    <span><i class="ph ph-warning"></i></span>
 </button>
 
 
@@ -21,7 +21,7 @@
 <button class="report-btn report-project-member-btn" 
         data-user-id="<?= $member->user_id ?>" 
         data-project-id="<?= $project->id ?>">
-    <span class="report-btn-icon">⚠</span>
+    <span class="report-btn-icon"><i class="ph ph-warning"></i></span>
     Report Member
 </button>
 
@@ -32,7 +32,7 @@
         data-content-type="post" 
         data-content-id="<?= $post->id ?>"
         title="Report this post">
-    <span>⚠</span>
+    <span><i class="ph ph-warning"></i></span>
 </button>
 
 
@@ -42,7 +42,7 @@
         data-content-type="chat_message" 
         data-content-id="<?= $message->id ?>"
         title="Report this message">
-    <span>⚠</span>
+    <span><i class="ph ph-warning"></i></span>
 </button>
 
 

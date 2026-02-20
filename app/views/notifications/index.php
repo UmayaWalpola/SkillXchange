@@ -17,7 +17,7 @@
             <div class="cards-grid">
                 <?php if (empty($data['notifications'])): ?>
                     <div class="empty-state">
-                        <div class="empty-icon">🔔</div>
+                        <div class="empty-icon"><i class="ph ph-bell"></i></div>
                         <h3>No notifications yet</h3>
                         <p>You'll see important project and task updates here.</p>
                     </div>
@@ -25,15 +25,15 @@
                     <?php foreach ($data['notifications'] as $n): ?>
                         <?php
                             $iconClass = 'info';
-                            $iconSymbol = '🔧';
-                            if ($n->type === 'application_accepted') { $iconClass = 'success'; $iconSymbol = '🎉'; }
-                            elseif ($n->type === 'application_rejected') { $iconClass = 'danger'; $iconSymbol = '❌'; }
-                            elseif ($n->type === 'project_invite') { $iconClass = 'info'; $iconSymbol = '📨'; }
-                            elseif ($n->type === 'deadline_warning') { $iconClass = 'danger'; $iconSymbol = '⚠'; }
-                            elseif ($n->type === 'deadline_due_today') { $iconClass = 'warning'; $iconSymbol = '📅'; }
-                            elseif ($n->type === 'deadline_due_soon') { $iconClass = 'warning'; $iconSymbol = '⏳'; }
-                            elseif ($n->type === 'task_assigned') { $iconClass = 'info'; $iconSymbol = '📌'; }
-                            elseif ($n->type === 'task_update') { $iconClass = 'info'; $iconSymbol = '🔧'; }
+                            $iconSymbol = '<i class="ph ph-wrench"></i>';
+                            if ($n->type === 'application_accepted') { $iconClass = 'success'; $iconSymbol = '<i class="ph ph-confetti"></i>'; }
+                            elseif ($n->type === 'application_rejected') { $iconClass = 'danger'; $iconSymbol = '<i class="ph ph-x-circle"></i>'; }
+                            elseif ($n->type === 'project_invite') { $iconClass = 'info'; $iconSymbol = '<i class="ph ph-envelope"></i>'; }
+                            elseif ($n->type === 'deadline_warning') { $iconClass = 'danger'; $iconSymbol = '<i class="ph ph-warning"></i>'; }
+                            elseif ($n->type === 'deadline_due_today') { $iconClass = 'warning'; $iconSymbol = '<i class="ph ph-calendar"></i>'; }
+                            elseif ($n->type === 'deadline_due_soon') { $iconClass = 'warning'; $iconSymbol = '<i class="ph ph-hourglass"></i>'; }
+                            elseif ($n->type === 'task_assigned') { $iconClass = 'info'; $iconSymbol = '<i class="ph ph-push-pin"></i>'; }
+                            elseif ($n->type === 'task_update') { $iconClass = 'info'; $iconSymbol = '<i class="ph ph-wrench"></i>'; }
                         ?>
                         <a href="<?= URLROOT ?>/notifications/read/<?= $n->id ?>" class="card notification-card <?= $n->is_read ? '' : 'unread' ?>" style="text-decoration:none;">
                             <div class="notification-icon <?= $iconClass ?>"><?= $iconSymbol ?></div>

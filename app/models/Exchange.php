@@ -43,31 +43,27 @@ class Exchange extends Database {
             $skillWanted = $matchingSkills['wanted'] ?? 'general';
         }
         
-        error_log("Creating exchange: sender=$senderId, receiver=$receiverId, offered=$skillOffered, wanted=$skillWanted");
+        error_log("Creating exchange: sender=$senderId, receiver=$receiverId");
         
         // Create new exchange request
         $this->db->query("
             INSERT INTO exchanges (
                 requester_id, 
                 receiver_id, 
-                skill_offered, 
-                skill_wanted, 
+                skill_id, 
                 status, 
                 created_at
             ) VALUES (
                 :requester_id, 
                 :receiver_id, 
-                :skill_offered, 
-                :skill_wanted, 
-                'pending', 
+                1, 
+                'active', 
                 NOW()
             )
         ");
         
         $this->db->bind(':requester_id', $senderId);
         $this->db->bind(':receiver_id', $receiverId);
-        $this->db->bind(':skill_offered', $skillOffered);
-        $this->db->bind(':skill_wanted', $skillWanted);
         
         if ($this->db->execute()) {
             error_log("Exchange created successfully!");
@@ -171,8 +167,7 @@ class Exchange extends Database {
                 e.id,
                 e.requester_id,
                 e.receiver_id,
-                e.skill_offered,
-                e.skill_wanted,
+                e.skill_id,
                 e.status,
                 e.created_at,
                 requester.username as sender_name,
@@ -180,7 +175,7 @@ class Exchange extends Database {
                 requester.profile_picture as sender_avatar
             FROM exchanges e
             INNER JOIN users requester ON e.requester_id = requester.id
-            WHERE e.receiver_id = :user_id AND e.status = 'pending'
+            WHERE e.receiver_id = :user_id AND e.status = 'active'
             ORDER BY e.created_at DESC
         ");
         

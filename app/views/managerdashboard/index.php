@@ -50,22 +50,22 @@
                 <h2 class="section-title">Quick Actions</h2>
                 <div class="quick-actions-grid">
                     <a href="<?= URLROOT ?>/managerdashboard/organizations" class="action-card">
-                        <span class="action-icon">🏢</span>
+                        <span class="action-icon"><i class="ph ph-buildings"></i></span>
                         <span class="action-text">View Organizations</span>
                     </a>
                     
                     <a href="<?= URLROOT ?>/managerdashboard/users" class="action-card">
-                        <span class="action-icon">👥</span>
+                        <span class="action-icon"><i class="ph ph-users"></i></span>
                         <span class="action-text">Manage Users</span>
                     </a>
                     
                     <a href="<?= URLROOT ?>/managerdashboard/announcements" class="action-card">
-                        <span class="action-icon">📢</span>
+                        <span class="action-icon"><i class="ph ph-megaphone"></i></span>
                         <span class="action-text">Post Announcement</span>
                     </a>
                     
                     <a href="<?= URLROOT ?>/managerdashboard/feedback" class="action-card">
-                        <span class="action-icon">💬</span>
+                        <span class="action-icon"><i class="ph ph-chat-circle-dots"></i></span>
                         <span class="action-text">View Feedback</span>
                     </a>
                 </div>

@@ -3,6 +3,7 @@
 class UserdashboardController extends Controller {
     
     private $db;
+    private $skillMatchModel;
     
     public function __construct() {
         if (session_status() == PHP_SESSION_NONE) {
@@ -10,6 +11,7 @@ class UserdashboardController extends Controller {
         }
         
         $this->db = new Database();
+        $this->skillMatchModel = $this->model('SkillMatch');
     }
     
     private function checkAuth() {
@@ -28,33 +30,30 @@ class UserdashboardController extends Controller {
     // ============================================
 
     public function index() {
-    $userId = $this->checkAuth();
-    
-    $userData = $this->getUserData($userId);
-    $userSkills = $this->getUserSkills($userId);
-    $userProjects = $this->getUserProjects($userId);
-    $userFeedback = $this->getUserFeedback($userId);
-    $userBadges = $this->getUserBadges($userId); // Get user badges
-    
-    if (!is_array($userData)) {
-        die("ERROR: getUserData returned: " . print_r($userData, true));
+        $userId = $this->checkAuth();
+        
+        $userData = $this->getUserData($userId);
+        $userSkills = $this->getUserSkills($userId);
+        $userProjects = $this->getUserProjects($userId);
+        $userFeedback = $this->getUserFeedback($userId);
+        $matches = $this->skillMatchModel->getAllMatchesWithScores($userId);
+
+        if (!is_array($userData)) {
+            die("ERROR: getUserData returned: " . print_r($userData, true));
+        }
+        
+        $data = [
+            'title' => 'My Profile',
+            'user' => $userData,
+            'skills' => $userSkills,
+            'projects' => $userProjects,
+            'feedback' => $userFeedback,
+            'page' => 'profile'
+        ];
+        
+        $this->view('users/profile', $data);
     }
-    
-    // Add badge count to user data
-    $userData['badge_count'] = count($userBadges);
-    
-    $data = [
-        'title' => 'My Profile',
-        'user' => $userData,
-        'skills' => $userSkills,
-        'projects' => $userProjects,
-        'feedback' => $userFeedback,
-        'badges' => $userBadges, // Pass badges to view
-        'page' => 'profile'
-    ];
-    
-    $this->view('users/profile', $data);
-}
+
     public function notifications() {
         $userId = $this->checkAuth();
         
@@ -1021,6 +1020,48 @@ public function submitQuiz() {
     ]);
     exit;
 }
+
+    public function projects() {
+        $userId = $this->checkAuth();
+        $user = $this->getUserData($userId);
+        
+        // Get projects where user is a team member
+        $this->db->query("
+            SELECT 
+                p.id,
+                p.name,
+                p.description,
+                p.status,
+                p.created_at,
+                pm.role as member_role,
+                pm.joined_at,
+                (SELECT COUNT(*) FROM project_members WHERE project_id = p.id AND status = 'active') as team_size
+            FROM project_members pm
+            INNER JOIN projects p ON pm.project_id = p.id
+            WHERE pm.user_id = :user_id AND pm.status = 'active'
+            ORDER BY 
+                CASE 
+                    WHEN p.status = 'in_progress' THEN 1
+                    WHEN p.status = 'open' THEN 2
+                    WHEN p.status = 'completed' THEN 3
+                    ELSE 4
+                END,
+                pm.joined_at DESC
+        ");
+        
+        $this->db->bind(':user_id', $userId);
+        $projects = $this->db->resultSet();
+        
+        $data = [
+            'title' => 'My Projects',
+            'user' => $user,
+            'page' => 'projects',
+            'projects' => $projects
+        ];
+        
+        $this->view('users/projects', $data);
+    }
+
     public function wallet() {
         require_once '../app/controllers/WalletController.php';
         $walletController = new WalletController();

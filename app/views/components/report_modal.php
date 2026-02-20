@@ -3,7 +3,7 @@
     <div class="report-modal-overlay" onclick="closeReportModal()"></div>
     <div class="report-modal-content">
         <div class="report-modal-header">
-            <h3>🚨 Report Content</h3>
+            <h3><i class="ph ph-warning-octagon"></i> Report Content</h3>
             <button class="close-modal-btn" onclick="closeReportModal()">&times;</button>
         </div>
         <form id="reportForm" onsubmit="submitReport(event)">
@@ -304,11 +304,11 @@ function submitReport(event) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('✅ ' + data.message);
+            alert('[SUCCESS] ' + data.message);
             closeReportModal();
             form.reset();
         } else {
-            alert('❌ ' + data.message);
+            alert('[ERROR] ' + data.message);
         }
     })
     .catch(error => {

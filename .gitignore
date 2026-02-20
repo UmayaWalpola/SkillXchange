@@ -20,9 +20,13 @@ database/migrations/SAFE_VERSION_feedback_columns.sql
 database/migrations/setup_reporting_system.sql
 database/migrations/add_moderator_role.sql
 database/migrations/OPTION_A_USE_MANAGER_ROLE.md
+database/migrations/fix_quiz_tables.sql
+database/migrations/fix_quizzes_add_status_column.sql
 DB.sql
 
 # Documentation files
+COMPLETE_PROJECT_DOCUMENTATION.md
+PROJECT_OVERVIEW_FOR_AI.md
 MVC_STRUCTURE.md
 REPORTING_IMPLEMENTATION_SUMMARY.md
 REPORTING_QUICK_REFERENCE.md

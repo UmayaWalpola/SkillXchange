@@ -3,28 +3,28 @@
 <!-- 1. COMMUNITY POST REPORT BUTTON -->
 <!-- Add this inside each post card -->
 <button class="btn-report" onclick="openReportModal('content', {type: 'post', id: <?= $post['id'] ?>})">
-    <span class="btn-report-icon">🚨</span>
+    <span class="btn-report-icon"><i class="ph ph-warning-octagon"></i></span>
     Report Post
 </button>
 
 <!-- 2. CHAT MESSAGE REPORT BUTTON -->
 <!-- Add this to each chat message -->
 <button class="btn-report" onclick="openReportModal('content', {type: 'chat_message', id: <?= $message['id'] ?>})">
-    <span class="btn-report-icon">🚨</span>
+    <span class="btn-report-icon"><i class="ph ph-warning-octagon"></i></span>
     Report Message
 </button>
 
 <!-- 3. USER PROFILE REPORT BUTTON -->
 <!-- Add this to user profile view -->
 <button class="btn-report" onclick="openReportModal('user', <?= $user['id'] ?>)">
-    <span class="btn-report-icon">🚨</span>
+    <span class="btn-report-icon"><i class="ph ph-warning-octagon"></i></span>
     Report User
 </button>
 
 <!-- 4. PROJECT MEMBER REPORT BUTTON -->
 <!-- Add this to project member list (for organizations reporting members) -->
 <button class="btn-report" onclick="openReportModal('projectUser', <?= $member['id'] ?>, <?= $project['id'] ?>)">
-    <span class="btn-report-icon">🚨</span>
+    <span class="btn-report-icon"><i class="ph ph-warning-octagon"></i></span>
     Report Member
 </button>
 

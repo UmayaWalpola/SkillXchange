@@ -184,10 +184,11 @@ class User extends Database {
 
     // 🔹 Get User Badges
     public function getUserBadges($userId) {
-        $sql = "SELECT badge_name, badge_icon, earned_at 
-                FROM user_badges 
-                WHERE user_id = :user_id 
-                ORDER BY earned_at DESC";
+        $sql = "SELECT b.name as badge_name, b.icon as badge_icon, ub.earned_at 
+                FROM user_badges ub
+                JOIN badges b ON ub.badge_id = b.id
+                WHERE ub.user_id = :user_id 
+                ORDER BY ub.earned_at DESC";
         $stmt = $this->connect()->prepare($sql);
         $stmt->bindValue(':user_id', $userId);
         $stmt->execute();
