@@ -27,15 +27,15 @@
             $dueTomorrowCount = isset($dueTomorrowTasks) ? count($dueTomorrowTasks) : 0;
         ?>
         <?php if ($overdueCount || $dueTodayCount || $dueTomorrowCount): ?>
-            <div class="alert" style="background:#0f172a;color:#e5e7eb;border-radius:10px;padding:12px 16px;margin-bottom:16px;border:1px solid #1f2937;display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+            <div class="alert" style="background:#0f172a;color:#e5e7eb;border-radius:10px;padding:12px 16px;margin-bottom:16px;border:1px solid#1f2937;display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
                 <?php if ($overdueCount): ?>
-                    <span style="background:#b91c1c;color:#fee2e2;border-radius:999px;padding:4px 10px;font-size:0.85rem;">⚠ You have <?= $overdueCount ?> overdue task<?= $overdueCount>1?'s':''; ?></span>
+                    <span style="background:#b91c1c;color:#fee2e2;border-radius:999px;padding:4px 10px;font-size:0.85rem;"><i class="ph ph-warning"></i> You have <?= $overdueCount ?> overdue task<?= $overdueCount>1?'s':''; ?></span>
                 <?php endif; ?>
                 <?php if ($dueTodayCount): ?>
-                    <span style="background:#f97316;color:#fff7ed;border-radius:999px;padding:4px 10px;font-size:0.85rem;">⌛ <?= $dueTodayCount ?> task<?= $dueTodayCount>1?'s':''; ?> due today</span>
+                    <span style="background:#f97316;color:#fff7ed;border-radius:999px;padding:4px 10px;font-size:0.85rem;"><i class="ph ph-hourglass"></i> <?= $dueTodayCount ?> task<?= $dueTodayCount>1?'s':''; ?> due today</span>
                 <?php endif; ?>
                 <?php if ($dueTomorrowCount): ?>
-                    <span style="background:#0ea5e9;color:#e0f2fe;border-radius:999px;padding:4px 10px;font-size:0.85rem;">📅 <?= $dueTomorrowCount ?> task<?= $dueTomorrowCount>1?'s':''; ?> due in 24 hours</span>
+                    <span style="background:#0ea5e9;color:#e0f2fe;border-radius:999px;padding:4px 10px;font-size:0.85rem;"><i class="ph ph-calendar"></i> <?= $dueTomorrowCount ?> task<?= $dueTomorrowCount>1?'s':''; ?> due in 24 hours</span>
                 <?php endif; ?>
             </div>
         <?php endif; ?>
@@ -49,7 +49,7 @@
 
         <div class="kanban-board">
             <?php $grouped = $tasksGrouped ?? ['todo'=>[], 'in-progress'=>[], 'done'=>[]]; ?>
-            <?php foreach (['todo' => '📋 To Do', 'in-progress' => '⚙️ In Progress', 'done' => '✅ Done'] as $statusKey => $label): ?>
+            <?php foreach (['todo' => '<i class="ph ph-list"></i> To Do', 'in-progress' => '<i class="ph ph-gear"></i> In Progress', 'done' => '<i class="ph ph-check-circle"></i> Done'] as $statusKey => $label): ?>
                 <div class="kanban-column">
                     <div class="column-header">
                         <h2><?= $label ?></h2>
@@ -67,14 +67,14 @@
                                             $d = $task->deadline;
                                             if ($d < $today) {
                                                 $days = (new DateTime($d))->diff(new DateTime($today))->days;
-                                                $badgeLabel = '⚠ Overdue by ' . $days . ' day' . ($days>1?'s':'');
+                                                $badgeLabel = '<i class="ph ph-warning"></i> Overdue by ' . $days . ' day' . ($days>1?'s':'');
                                                 $deadlineClass = 'badge-overdue';
                                             } elseif ($d === $today) {
-                                                $badgeLabel = '⌛ Due Today';
+                                                $badgeLabel = '<i class="ph ph-hourglass"></i> Due Today';
                                                 $deadlineClass = 'badge-due-today';
                                             } else {
                                                 $days = (new DateTime($today))->diff(new DateTime($d))->days;
-                                                $badgeLabel = '📅 Due in ' . $days . ' day' . ($days>1?'s':'');
+                                                $badgeLabel = '<i class="ph ph-calendar"></i> Due in ' . $days . ' day' . ($days>1?'s':'');
                                                 $deadlineClass = 'badge-due-soon';
                                             }
                                         }
@@ -91,7 +91,7 @@
                                     <p class="task-description"><?= htmlspecialchars(substr($task->description ?? '', 0, 100)) ?></p>
                                     <div class="task-meta">
                                         <?php if ($task->deadline): ?>
-                                            <span class="deadline">📅 <?= date('M d, Y', strtotime($task->deadline)) ?></span>
+                                            <span class="deadline"><i class="ph ph-calendar"></i> <?= date('M d, Y', strtotime($task->deadline)) ?></span>
                                         <?php endif; ?>
                                     </div>
                                     <div class="task-assignee">

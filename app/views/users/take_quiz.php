@@ -19,7 +19,7 @@
                 <span class="badge difficulty-<?= strtolower($data['quiz']['difficulty']) ?>">
                     <?= $data['quiz']['difficulty'] ?>
                 </span>
-                <span class="quiz-info-item">📝 <?= $data['quiz']['questionCount'] ?> Questions</span>
+                <span class="quiz-info-item"><i class="ph ph-notepad"></i> <?= $data['quiz']['questionCount'] ?> Questions</span>
                 <?php if ($data['quiz']['timeLimit']): ?>
                     <span class="quiz-info-item">⏱️ <?= $data['quiz']['timeLimit'] ?> minutes</span>
                 <?php endif; ?>

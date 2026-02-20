@@ -32,11 +32,11 @@
                     </label>
                     <select id="reportReason" name="reason" required style="width:100%;padding:12px;border:2px solid #e1eefb;border-radius:8px;font-size:14px;background:white;cursor:pointer;">
                         <option value="">Select a reason...</option>
-                        <option value="abusive">🚫 Abusive/Harassment</option>
-                        <option value="fake">🎭 Fake/False Information</option>
-                        <option value="spam">📧 Spam</option>
-                        <option value="inappropriate">⚠️ Inappropriate Content</option>
-                        <option value="other">❓ Other</option>
+                        <option value="abusive">Abusive/Harassment</option>
+                        <option value="fake">Fake/False Information</option>
+                        <option value="spam">Spam</option>
+                        <option value="inappropriate">Inappropriate Content</option>
+                        <option value="other">Other</option>
                     </select>
                 </div>
 

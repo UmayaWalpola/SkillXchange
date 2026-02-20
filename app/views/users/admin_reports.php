@@ -17,28 +17,28 @@
             <!-- Stats Overview -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-icon">⚠️</div>
+                    <div class="stat-icon"><i class="ph ph-warning"></i></div>
                     <div class="stat-info">
                         <span class="stat-number">24</span>
                         <span class="stat-label">Pending Reports</span>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">✅</div>
+                    <div class="stat-icon"><i class="ph ph-check-circle"></i></div>
                     <div class="stat-info">
                         <span class="stat-number">156</span>
                         <span class="stat-label">Resolved</span>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">🚫</div>
+                    <div class="stat-icon"><i class="ph ph-x-circle"></i></div>
                     <div class="stat-info">
                         <span class="stat-number">8</span>
                         <span class="stat-label">Suspended Users</span>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">📊</div>
+                    <div class="stat-icon"><i class="ph ph-chart-bar"></i></div>
                     <div class="stat-info">
                         <span class="stat-number">87%</span>
                         <span class="stat-label">Resolution Rate</span>
@@ -181,21 +181,21 @@
                 
                 <div class="quick-actions-grid">
                     <div class="quick-action-card">
-                        <div class="quick-action-icon">📋</div>
+                        <div class="quick-action-icon"><i class="ph ph-list"></i></div>
                         <h3>Bulk Review</h3>
                         <p>Review multiple pending reports at once</p>
                         <button class="btn-primary">Start Review</button>
                     </div>
                     
                     <div class="quick-action-card">
-                        <div class="quick-action-icon">📊</div>
+                        <div class="quick-action-icon"><i class="ph ph-chart-bar"></i></div>
                         <h3>Generate Report</h3>
                         <p>Create detailed analytics report</p>
                         <button class="btn-primary">Generate</button>
                     </div>
                     
                     <div class="quick-action-card">
-                        <div class="quick-action-icon">⚙️</div>
+                        <div class="quick-action-icon"><i class="ph ph-gear"></i></div>
                         <h3>Report Settings</h3>
                         <p>Configure report rules and auto-actions</p>
                         <button class="btn-primary">Configure</button>

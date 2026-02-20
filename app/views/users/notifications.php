@@ -45,7 +45,7 @@
                     <?php endforeach; ?>
                 <?php else: ?>
                     <div class="no-notifications">
-                        <div class="empty-icon">🔔</div>
+                        <div class="empty-icon"><i class="ph ph-bell"></i></div>
                         <h2>No notifications yet</h2>
                         <p>When you get notifications, they'll show up here</p>
                     </div>

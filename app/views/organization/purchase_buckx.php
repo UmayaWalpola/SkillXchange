@@ -18,7 +18,7 @@
     $success = $_SESSION['payment_success'];
 ?>
     <div class="alert alert-success" style="background: #10b981; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-        <h3 style="margin: 0 0 10px 0;">✅ Payment Successful!</h3>
+        <h3 style="margin: 0 0 10px 0;"><i class="ph ph-check-circle"></i> Payment Successful!</h3>
         <p style="margin: 5px 0;">
             <strong><?= number_format($success['buckx_amount']) ?> BuckX</strong> has been added to your wallet
         </p>
@@ -35,7 +35,7 @@
 <!-- Error Message -->
 <?php if (isset($_SESSION['error'])): ?>
     <div class="alert alert-error" style="background: #ef4444; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-        <h3 style="margin: 0 0 10px 0;">❌ Payment Failed</h3>
+        <h3 style="margin: 0 0 10px 0;"><i class="ph ph-x-circle"></i> Payment Failed</h3>
         <p style="margin: 0;"><?= $_SESSION['error'] ?></p>
     </div>
     <?php unset($_SESSION['error']); ?>
@@ -87,7 +87,7 @@
 
     <!-- Payment Info Box -->
     <div class="payment-info-box">
-        <div class="info-icon">🔒</div>
+        <div class="info-icon"><i class="ph ph-lock"></i></div>
         <div class="info-content">
             <h3>Secure Payment</h3>
             <p>Your payment is processed securely through Stripe. We never store your card details.</p>

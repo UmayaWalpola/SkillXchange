@@ -10,7 +10,7 @@
 <div class="container">
     
     <div class="result-card cancel-card">
-        <div class="result-icon">❌</div>
+        <div class="result-icon"><i class="ph ph-x-circle"></i></div>
         <h1 class="result-title">Payment Cancelled</h1>
         <p class="result-message">Your payment was cancelled. No charges were made.</p>
         

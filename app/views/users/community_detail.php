@@ -21,8 +21,8 @@
                         <p><?= htmlspecialchars($data['community']->description ?? '') ?></p>
                         
                         <div class="community-stats">
-                            <span>👥 <?= $data['community']->members ?> members</span>
-                            <span>💬 <?= $data['community']->posts ?> posts</span>
+                            <span><i class="ph ph-users"></i> <?= $data['community']->members ?> members</span>
+                            <span><i class="ph ph-chat-circle-dots"></i> <?= $data['community']->posts ?> posts</span>
                         </div>
                         
                         <div class="header-actions">

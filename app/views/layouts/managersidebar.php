@@ -1,46 +1,26 @@
 <aside class="sidebar">
     <a href="<?= URLROOT ?>/managerdashboard" class="sidebar-item <?= ($data['page'] ?? '') == 'dashboard' ? 'active' : '' ?>">
-<<<<<<< HEAD
-        <span class="icon"></span>
-=======
-        <span class="icon">📊</span>
->>>>>>> origin/feature/manager
+        <span class="icon"><i class="ph ph-chart-bar"></i></span>
         <span>Dashboard</span>
     </a>
     
     <a href="<?= URLROOT ?>/managerdashboard/organizations" class="sidebar-item <?= ($data['page'] ?? '') == 'organizations' ? 'active' : '' ?>">
-<<<<<<< HEAD
-        <span class="icon"></span>
-=======
-        <span class="icon">🏢</span>
->>>>>>> origin/feature/manager
+        <span class="icon"><i class="ph ph-buildings"></i></span>
         <span>Organizations</span>
     </a>
     
     <a href="<?= URLROOT ?>/managerdashboard/users" class="sidebar-item <?= ($data['page'] ?? '') == 'users' ? 'active' : '' ?>">
-<<<<<<< HEAD
-        <span class="icon"></span>
-=======
-        <span class="icon">👥</span>
->>>>>>> origin/feature/manager
+        <span class="icon"><i class="ph ph-users"></i></span>
         <span>User Management</span>
     </a>
     
     <a href="<?= URLROOT ?>/managerdashboard/announcements" class="sidebar-item <?= ($data['page'] ?? '') == 'announcements' ? 'active' : '' ?>">
-<<<<<<< HEAD
-        <span class="icon"></span>
-=======
-        <span class="icon">📢</span>
->>>>>>> origin/feature/manager
+        <span class="icon"><i class="ph ph-megaphone"></i></span>
         <span>Announcements</span>
     </a>
     
     <a href="<?= URLROOT ?>/managerdashboard/feedback" class="sidebar-item <?= ($data['page'] ?? '') == 'feedback' ? 'active' : '' ?>">
-<<<<<<< HEAD
-        <span class="icon"></span>
-=======
-        <span class="icon">💬</span>
->>>>>>> origin/feature/manager
+        <span class="icon"><i class="ph ph-chat-circle-dots"></i></span>
         <span>Feedback</span>
     </a>
 </aside>

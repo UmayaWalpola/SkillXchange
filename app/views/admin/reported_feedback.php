@@ -221,11 +221,11 @@ require_once "../app/views/layouts/adminsidebar.php";
                                 <div style="color:#1a1a1a;">
                                     <?php
                                     $reasonIcons = [
-                                        'abusive' => '🚫 Abusive/Harassment',
-                                        'fake' => '🎭 Fake/False Information',
-                                        'spam' => '📧 Spam',
-                                        'inappropriate' => '⚠️ Inappropriate Content',
-                                        'other' => '❓ Other'
+                                        'abusive' => 'Abusive/Harassment',
+                                        'fake' => 'Fake/False Information',
+                                        'spam' => 'Spam',
+                                        'inappropriate' => 'Inappropriate Content',
+                                        'other' => 'Other'
                                     ];
                                     echo $reasonIcons[$report['reason']] ?? $report['reason'];
                                     ?>

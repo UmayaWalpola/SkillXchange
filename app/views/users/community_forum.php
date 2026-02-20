@@ -26,8 +26,8 @@
                         <h3><?= htmlspecialchars($community['name']); ?></h3>
                         <p><?= htmlspecialchars($community['description']); ?></p>
                         <div class="community-stats">
-                            <span>👥 <?= $community['members']; ?> members</span>
-                            <span>💬 <?= $community['totalPosts']; ?> posts</span>
+                            <span><i class="ph ph-users"></i> <?= $community['members']; ?> members</span>
+                            <span><i class="ph ph-chat-circle-dots"></i> <?= $community['totalPosts']; ?> posts</span>
                         </div>
                         <div class="btn-group">
                             <button class="btn btn-primary join-btn" onclick="joinCommunity(<?= $community['id']; ?>)">

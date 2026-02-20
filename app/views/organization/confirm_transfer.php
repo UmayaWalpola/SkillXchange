@@ -70,7 +70,7 @@
 
             <?php if ($data['remainingBalance'] < 50): ?>
             <div class="low-balance-warning">
-                <span class="warning-icon">⚠️</span>
+                <span class="warning-icon"><i class="ph ph-warning"></i></span>
                 <span>Warning: Your remaining balance will be low after this transfer</span>
             </div>
             <?php endif; ?>

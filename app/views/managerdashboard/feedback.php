@@ -48,7 +48,7 @@
                             
                             <div class="feedback-rating">
                                 <?php for($i = 1; $i <= 5; $i++): ?>
-                                    <span class="star <?= $i <= $feedback['rating'] ? 'filled' : '' ?>">⭐</span>
+                                    <span class="star <?= $i <= $feedback['rating'] ? 'filled' : '' ?>"><i class="ph ph-star"></i></span>
                                 <?php endfor; ?>
                                 <span class="rating-text"><?= $feedback['rating'] ?>/5</span>
                             </div>
@@ -58,7 +58,7 @@
                             
                             <div class="feedback-footer">
                                 <span class="feedback-date">
-                                    📅 <?= date('M d, Y', strtotime($feedback['created_at'])) ?>
+                                    <i class="ph ph-calendar"></i> <?= date('M d, Y', strtotime($feedback['created_at'])) ?>
                                 </span>
                                 <?php if($feedback['status'] == 'new'): ?>
                                     <button class="btn-mark-reviewed" onclick="markAsReviewed(<?= $feedback['id'] ?>)">

@@ -76,7 +76,7 @@
 <div class="payment-container">
     
     <div class="order-summary-card">
-        <h2>📦 Order Summary</h2>
+        <h2><i class="ph ph-package"></i> Order Summary</h2>
         
         <div class="summary-row">
             <span>Package:</span>
@@ -96,7 +96,7 @@
 
     <div class="payment-actions">
         <button id="proceedToPayment" class="btn btn-primary btn-large">
-            Proceed to Payment 💳
+            Proceed to Payment <i class="ph ph-credit-card"></i>
         </button>
         <a href="<?= URLROOT ?>/wallet/purchaseBuckx" class="btn btn-secondary btn-large">
             Cancel
@@ -104,7 +104,7 @@
     </div>
 
     <div class="info-box">
-        <div class="info-icon">🔒</div>
+        <div class="info-icon"><i class="ph ph-lock"></i></div>
         <div>
             <strong>Secure Payment via Stripe</strong>
             <p style="margin: 5px 0 0 0; color: #666;">You will be redirected to Stripe's secure payment page to enter your card details. OTP verification may be required by your bank.</p>
@@ -139,16 +139,16 @@ document.getElementById('proceedToPayment').addEventListener('click', function()
             // Redirect to Stripe checkout page
             window.location.href = data.checkout_url;
         } else {
-            alert('❌ ' + (data.message || 'Payment initialization failed'));
+            alert('[ERROR] ' + (data.message || 'Payment initialization failed'));
             button.disabled = false;
-            button.textContent = 'Proceed to Payment 💳';
+            button.textContent = 'Proceed to Payment';
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('❌ An error occurred. Please try again.');
+        alert('[ERROR] An error occurred. Please try again.');
         button.disabled = false;
-        button.textContent = 'Proceed to Payment 💳';
+        button.textContent = 'Proceed to Payment';
     });
 });
 </script>

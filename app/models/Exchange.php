@@ -12,9 +12,9 @@ class Exchange extends Database {
      * Create an exchange/connection request
      */
     public function createExchangeRequest($senderId, $receiverId, $skillOffered = null, $skillWanted = null) {
-        // Check if exchange already exists
+        // Check if exchange already exists (any status)
         $this->db->query("
-            SELECT id FROM exchanges 
+            SELECT id, status FROM exchanges 
             WHERE (requester_id = :requester_id AND receiver_id = :receiver_id)
                OR (requester_id = :receiver_id AND receiver_id = :requester_id)
             LIMIT 1
@@ -23,8 +23,17 @@ class Exchange extends Database {
         $this->db->bind(':requester_id', $senderId);
         $this->db->bind(':receiver_id', $receiverId);
         
-        if ($this->db->single()) {
-            return false; // Exchange already exists
+        $existing = $this->db->single();
+        if ($existing) {
+            error_log("Exchange already exists with status: " . $existing->status);
+            // If cancelled, allow re-request
+            if ($existing->status === 'cancelled') {
+                $this->db->query("DELETE FROM exchanges WHERE id = :id");
+                $this->db->bind(':id', $existing->id);
+                $this->db->execute();
+            } else {
+                return false; // Exchange already exists
+            }
         }
         
         // Get matching skills automatically if not provided
@@ -34,36 +43,36 @@ class Exchange extends Database {
             $skillWanted = $matchingSkills['wanted'] ?? 'general';
         }
         
+        error_log("Creating exchange: sender=$senderId, receiver=$receiverId");
+        
         // Create new exchange request
         $this->db->query("
             INSERT INTO exchanges (
                 requester_id, 
                 receiver_id, 
-                skill_offered, 
-                skill_wanted, 
+                skill_id, 
                 status, 
                 created_at
             ) VALUES (
                 :requester_id, 
                 :receiver_id, 
-                :skill_offered, 
-                :skill_wanted, 
-                'pending', 
+                1, 
+                'active', 
                 NOW()
             )
         ");
         
         $this->db->bind(':requester_id', $senderId);
         $this->db->bind(':receiver_id', $receiverId);
-        $this->db->bind(':skill_offered', $skillOffered);
-        $this->db->bind(':skill_wanted', $skillWanted);
         
         if ($this->db->execute()) {
-            // Optionally create a notification
+            error_log("Exchange created successfully!");
+            // Create a notification
             $this->createExchangeNotification($senderId, $receiverId);
             return true;
         }
         
+        error_log("Failed to create exchange!");
         return false;
     }
     
@@ -86,7 +95,8 @@ class Exchange extends Database {
         
         $this->db->bind(':user_id1', $userId1);
         $this->db->bind(':user_id2', $userId2);
-        $offered = $this->db->single()->offered ?? null;
+        $result = $this->db->single();
+        $offered = $result ? $result->offered : null;
         
         // What user1 wants to learn that user2 teaches
         $this->db->query("
@@ -103,7 +113,8 @@ class Exchange extends Database {
         
         $this->db->bind(':user_id1', $userId1);
         $this->db->bind(':user_id2', $userId2);
-        $wanted = $this->db->single()->wanted ?? null;
+        $result = $this->db->single();
+        $wanted = $result ? $result->wanted : null;
         
         return [
             'offered' => $offered,
@@ -116,7 +127,7 @@ class Exchange extends Database {
      */
     private function createExchangeNotification($senderId, $receiverId) {
         // Get sender's name
-        $this->db->query("SELECT name FROM users WHERE id = :id");
+        $this->db->query("SELECT username FROM users WHERE id = :id");
         $this->db->bind(':id', $senderId);
         $sender = $this->db->single();
         
@@ -141,29 +152,30 @@ class Exchange extends Database {
         ");
         
         $this->db->bind(':user_id', $receiverId);
-        $this->db->bind(':message', $sender->name . ' wants to connect with you');
+        $this->db->bind(':message', $sender->username . ' wants to connect with you');
         $this->db->bind(':related_user_id', $senderId);
         
         return $this->db->execute();
     }
     
     /**
-     * Get all exchange requests for a user
+     * Get all exchange requests for a user (FIXED)
      */
     public function getExchangeRequests($userId) {
         $this->db->query("
             SELECT 
-                e.*,
-                sender.username as sender_name,
-                sender.email as sender_email,
-                sender.profile_picture as sender_avatar,
-                receiver.username as receiver_name,
-                receiver.email as receiver_email,
-                receiver.profile_picture as receiver_avatar
+                e.id,
+                e.requester_id,
+                e.receiver_id,
+                e.skill_id,
+                e.status,
+                e.created_at,
+                requester.username as sender_name,
+                requester.email as sender_email,
+                requester.profile_picture as sender_avatar
             FROM exchanges e
-            INNER JOIN users sender ON e.requester_id = sender.id
-            INNER JOIN users receiver ON e.receiver_id = receiver.id
-            WHERE e.receiver_id = :user_id AND e.status = 'pending'
+            INNER JOIN users requester ON e.requester_id = requester.id
+            WHERE e.receiver_id = :user_id AND e.status = 'active'
             ORDER BY e.created_at DESC
         ");
         
@@ -173,33 +185,34 @@ class Exchange extends Database {
     
     /**
      * Get all active exchanges (accepted connections)
+     * CHANGED: 'accepted' → 'active'
      */
     public function getActiveExchanges($userId) {
         $this->db->query("
             SELECT 
                 e.*,
                 CASE 
-                    WHEN e.requester_id = :user_id THEN receiver.id
-                    ELSE sender.id
+                    WHEN e.requester_id = :user_id THEN e.receiver_id
+                    ELSE e.requester_id
                 END as partner_id,
                 CASE 
-                    WHEN e.requester_id = :user_id THEN receiver.name
-                    ELSE sender.username
+                    WHEN e.requester_id = :user_id THEN receiver.username
+                    ELSE requester.username
                 END as partner_name,
                 CASE 
                     WHEN e.requester_id = :user_id THEN receiver.email
-                    ELSE sender.email
+                    ELSE requester.email
                 END as partner_email,
                 CASE 
-                    WHEN e.requester_id = :user_id THEN receiver.avatar
-                    ELSE sender.profile_picture
+                    WHEN e.requester_id = :user_id THEN receiver.profile_picture
+                    ELSE requester.profile_picture
                 END as partner_avatar
             FROM exchanges e
-            INNER JOIN users sender ON e.requester_id = sender.id
+            INNER JOIN users requester ON e.requester_id = requester.id
             INNER JOIN users receiver ON e.receiver_id = receiver.id
             WHERE (e.requester_id = :user_id OR e.receiver_id = :user_id)
-                AND e.status = 'accepted'
-            ORDER BY e.updated_at DESC
+                AND e.status = 'active'
+            ORDER BY e.created_at DESC
         ");
         
         $this->db->bind(':user_id', $userId);
@@ -208,34 +221,87 @@ class Exchange extends Database {
     
     /**
      * Accept an exchange request
+     * CHANGED: status 'accepted' → 'active'
      */
     public function acceptExchange($exchangeId, $userId) {
         // Verify user is the receiver
         $this->db->query("
-            UPDATE exchanges 
-            SET status = 'accepted', updated_at = NOW()
-            WHERE id = :exchange_id AND receiver_id = :user_id
+            SELECT * FROM exchanges 
+            WHERE id = :exchange_id AND receiver_id = :user_id AND status = 'pending'
         ");
-        
         $this->db->bind(':exchange_id', $exchangeId);
         $this->db->bind(':user_id', $userId);
+        $exchange = $this->db->single();
+        
+        if (!$exchange) {
+            error_log("Accept Exchange Failed: Exchange not found or not pending");
+            return false;
+        }
+        
+        // Update status to active (not 'accepted')
+        $this->db->query("
+            UPDATE exchanges 
+            SET status = 'active', created_at = NOW()
+            WHERE id = :exchange_id
+        ");
+        $this->db->bind(':exchange_id', $exchangeId);
         
         if ($this->db->execute()) {
+            // Create chat between the two users
+            $chatCreated = $this->createChatForExchange($exchange->requester_id, $exchange->receiver_id);
+            
             // Create notification for sender
-            $this->createAcceptanceNotification($exchangeId);
+            $this->createAcceptanceNotification($exchangeId, $exchange->requester_id, $userId);
+            
+            error_log("Exchange accepted successfully. Chat created: " . ($chatCreated ? 'yes' : 'no'));
             return true;
         }
         
+        error_log("Failed to update exchange status");
         return false;
+    }
+
+    /**
+     * Create a chat when exchange is accepted
+     */
+    private function createChatForExchange($userId1, $userId2) {
+        // Check if chat already exists
+        $this->db->query("
+            SELECT id FROM chats 
+            WHERE (user1_id = :user1 AND user2_id = :user2)
+               OR (user1_id = :user2 AND user2_id = :user1)
+            LIMIT 1
+        ");
+        $this->db->bind(':user1', $userId1);
+        $this->db->bind(':user2', $userId2);
+        
+        if ($this->db->single()) {
+            error_log("Chat already exists between users $userId1 and $userId2");
+            return true; // Chat already exists, which is fine
+        }
+        
+        // Create new chat
+        $this->db->query("
+            INSERT INTO chats (user1_id, user2_id, created_at)
+            VALUES (:user1, :user2, NOW())
+        ");
+        $this->db->bind(':user1', $userId1);
+        $this->db->bind(':user2', $userId2);
+        
+        $result = $this->db->execute();
+        error_log("Creating new chat between $userId1 and $userId2: " . ($result ? 'success' : 'failed'));
+        
+        return $result;
     }
     
     /**
      * Reject an exchange request
+     * CHANGED: Uses 'cancelled' instead of 'rejected'
      */
     public function rejectExchange($exchangeId, $userId) {
         $this->db->query("
             UPDATE exchanges 
-            SET status = 'rejected', updated_at = NOW()
+            SET status = 'cancelled', created_at = NOW()
             WHERE id = :exchange_id AND receiver_id = :user_id
         ");
         
@@ -263,19 +329,13 @@ class Exchange extends Database {
     /**
      * Create notification when exchange is accepted
      */
-    private function createAcceptanceNotification($exchangeId) {
-        // Get exchange details
-        $this->db->query("
-            SELECT e.requester_id, u.name as receiver_name
-            FROM exchanges e
-            INNER JOIN users u ON e.receiver_id = u.id
-            WHERE e.id = :exchange_id
-        ");
+    private function createAcceptanceNotification($exchangeId, $requesterId, $receiverId) {
+        // Get receiver's name
+        $this->db->query("SELECT username FROM users WHERE id = :id");
+        $this->db->bind(':id', $receiverId);
+        $receiver = $this->db->single();
         
-        $this->db->bind(':exchange_id', $exchangeId);
-        $exchange = $this->db->single();
-        
-        if (!$exchange) return false;
+        if (!$receiver) return false;
         
         $this->db->query("
             INSERT INTO notifications (
@@ -283,34 +343,35 @@ class Exchange extends Database {
                 type,
                 title,
                 message,
-                related_exchange_id,
+                related_user_id,
                 created_at
             ) VALUES (
                 :user_id,
                 'exchange_accepted',
                 'Connection Accepted!',
                 :message,
-                :exchange_id,
+                :related_user_id,
                 NOW()
             )
         ");
         
-        $this->db->bind(':user_id', $exchange->requester_id);
-        $this->db->bind(':message', $exchange->receiver_name . ' accepted your connection request');
-        $this->db->bind(':exchange_id', $exchangeId);
+        $this->db->bind(':user_id', $requesterId);
+        $this->db->bind(':message', $receiver->username . ' accepted your connection request');
+        $this->db->bind(':related_user_id', $receiverId);
         
         return $this->db->execute();
     }
     
     /**
      * Check if connection exists between two users
+     * CHANGED: Checks for 'pending' and 'active' (not 'accepted')
      */
     public function connectionExists($userId1, $userId2) {
         $this->db->query("
             SELECT id FROM exchanges 
             WHERE ((requester_id = :user_id1 AND receiver_id = :user_id2)
                 OR (requester_id = :user_id2 AND receiver_id = :user_id1))
-            AND status IN ('pending', 'accepted')
+            AND status IN ('pending', 'active')
             LIMIT 1
         ");
         
