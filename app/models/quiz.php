@@ -18,6 +18,14 @@ class Quiz {
         // Fixed to use Database class instead of global $pdo
         $this->db = new Database();
     }
+
+    private function computeRewardAmount($difficultyLevel) {
+        $key = strtolower(trim((string)$difficultyLevel));
+        if ($key === 'beginner') return 10;
+        if ($key === 'intermediate') return 20;
+        if ($key === 'expert') return 30;
+        return 0;
+    }
     
     /**
      * Create a new quiz with questions and options
@@ -113,7 +121,17 @@ class Quiz {
             ORDER BY q.created_at DESC
         ");
         
-        return $this->db->resultSet();
+        $rows = $this->db->resultSet();
+        if (!$rows) return [];
+
+        foreach ($rows as $row) {
+            if (!is_object($row)) continue;
+            if (!isset($row->reward_amount) || (int)$row->reward_amount <= 0) {
+                $row->reward_amount = $this->computeRewardAmount($row->difficulty_level ?? '');
+            }
+        }
+
+        return $rows;
     }
     
     /**
@@ -144,7 +162,17 @@ class Quiz {
         ");
         
         $this->db->bind(':user_id', $user_id);
-        return $this->db->resultSet();
+        $rows = $this->db->resultSet();
+        if (!$rows) return [];
+
+        foreach ($rows as $row) {
+            if (!is_object($row)) continue;
+            if (!isset($row->reward_amount) || (int)$row->reward_amount <= 0) {
+                $row->reward_amount = $this->computeRewardAmount($row->difficulty_level ?? '');
+            }
+        }
+
+        return $rows;
     }
     
     /**
@@ -179,7 +207,12 @@ class Quiz {
         $result = $this->db->single();
         
         // Convert object to array for compatibility
-        return $result ? (array)$result : null;
+        if (!$result) return null;
+        $quizArray = (array)$result;
+        if (!isset($quizArray['reward_amount']) || (int)$quizArray['reward_amount'] <= 0) {
+            $quizArray['reward_amount'] = $this->computeRewardAmount($quizArray['difficulty_level'] ?? '');
+        }
+        return $quizArray;
     }
     
     /**
@@ -307,26 +340,29 @@ class Quiz {
     /**
      * Complete quiz attempt
      */
-    public function completeAttempt($attempt_id, $correct_answers, $total_questions, $time_taken) {
-        $score = ($correct_answers / $total_questions) * 100;
-        
-        $this->db->query("
-            UPDATE user_quiz_attempts 
-            SET score = :score, 
-                correct_answers = :correct,
-                time_taken = :time,
-                status = 'completed',
-                completed_at = NOW()
-            WHERE id = :id
-        ");
-        
-        $this->db->bind(':score', $score);
-        $this->db->bind(':correct', $correct_answers);
-        $this->db->bind(':time', $time_taken);
-        $this->db->bind(':id', $attempt_id);
-        
-        return $this->db->execute();
-    }
+public function completeAttempt($attempt_id, $correct_answers, $total_questions, $time_taken) {
+    $score = ($correct_answers / $total_questions) * 100;
+    $passed = ($score >= 70) ? 1 : 0;
+    
+    $this->db->query("
+        UPDATE user_quiz_attempts 
+        SET score = :score, 
+            correct_answers = :correct,
+            time_taken = :time,
+            status = 'completed',
+            passed = :passed,
+            completed_at = NOW()
+        WHERE id = :id
+    ");
+    
+    $this->db->bind(':score', $score);
+    $this->db->bind(':correct', $correct_answers);
+    $this->db->bind(':time', $time_taken);
+    $this->db->bind(':passed', $passed);
+    $this->db->bind(':id', $attempt_id);
+    
+    return $this->db->execute();
+}
     
     /**
      * Save individual answer

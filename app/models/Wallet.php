@@ -81,12 +81,16 @@ class Wallet {
         $this->db->bind(':user_id', $userId);
         $sent = $this->db->resultSet();
 
+
         // Received transactions
         $this->db->query("
             SELECT wt.*, 
-                   u.username as sender, 
-                   u.role as sender_role,
-                   DATE_FORMAT(wt.created_at, '%Y-%m-%d %H:%i') as timestamp
+                CASE 
+                    WHEN wt.transaction_type = 'reward' THEN wt.note
+                    ELSE u.username 
+                END as sender, 
+                u.role as sender_role,
+                DATE_FORMAT(wt.created_at, '%Y-%m-%d %H:%i') as timestamp
             FROM wallet_transactions wt
             INNER JOIN users u ON wt.sender_id = u.id
             WHERE wt.receiver_id = :user_id
@@ -189,38 +193,51 @@ class Wallet {
     }
 
     /**
-     * Credit a reward amount to a user's wallet and log the transaction.
-     * Returns true on success, false otherwise.
+     * Credit a quiz reward to a user's wallet and log it as a reward transaction.
+     * - Increases wallet balance
+     * - Inserts into wallet_transactions with transaction_type = 'reward'
      */
-    public function creditReward($userId, $amount, $note = '') {
+    public function creditQuizReward($userId, $amount, $quizId = null, $quizTitle = null) {
+        $amount = (float)$amount;
         if ($amount <= 0) return false;
 
-        // Ensure wallet exists for the user (assume individual role by default)
+        // ensure wallet exists (assume individual by default)
         $this->ensureWalletExists($userId, 'individual');
 
+        // sender_id must reference an existing user because of FK constraints
+        $systemSenderId = defined('SYSTEM_REWARD_SENDER_ID') ? (int)SYSTEM_REWARD_SENDER_ID : 1;
+
+        $noteParts = ['Quiz Reward'];
+        if (!empty($quizTitle)) $noteParts[] = $quizTitle;
+        $note = implode(' ', $noteParts);
+
         try {
-            $this->db->query("START TRANSACTION");
+            $this->db->query('START TRANSACTION');
 
             if (!$this->updateBalance($userId, $amount, 'add')) {
                 throw new Exception('Failed to update balance');
             }
 
             $this->db->query(
-                "INSERT INTO wallet_transactions (receiver_id, amount, note, transaction_type, status, created_at) VALUES (:rid, :amt, :note, 'reward', 'completed', NOW())"
+                "INSERT INTO wallet_transactions (sender_id, receiver_id, amount, note, transaction_type, status, created_at)
+                 VALUES (:sid, :rid, :amt, :note, 'reward', 'completed', NOW())"
             );
+            $this->db->bind(':sid', $systemSenderId);
             $this->db->bind(':rid', $userId);
-            $this->db->bind(':amt', $amount);
+            $this->db->bind(':amt', abs($amount));
             $this->db->bind(':note', $note);
+
             if (!$this->db->execute()) {
                 throw new Exception('Failed to insert wallet transaction');
             }
 
-            $this->db->query("COMMIT");
+            $this->db->query('COMMIT');
             return true;
         } catch (Exception $e) {
-            $this->db->query("ROLLBACK");
-            error_log('creditReward error: ' . $e->getMessage());
+            $this->db->query('ROLLBACK');
+            error_log('creditQuizReward error: ' . $e->getMessage());
             return false;
         }
     }
+
 }

@@ -103,6 +103,12 @@
                                     <span class="user-icon">&#x1F464;</span>
                                     <?= htmlspecialchars($tx->receiver) ?>
                                 </div>
+                                <?php if (isset($tx->transaction_type)): ?>
+                                    <div class="transaction-note">
+                                        <strong>Type:</strong>
+                                        <?= htmlspecialchars($tx->transaction_type === 'reward' ? 'Quiz Reward' : ucfirst($tx->transaction_type)) ?>
+                                    </div>
+                                <?php endif; ?>
                                 <?php if (!empty($tx->note)): ?>
                                     <div class="transaction-note">
                                         <strong>Reason:</strong> <?= htmlspecialchars($tx->note) ?>
@@ -140,13 +146,17 @@
                         <div class="transaction-item">
                             <div class="transaction-info">
                                 <div class="transaction-user">
-                                    <span class="user-icon">&#x1F464;</span>
                                     <?= htmlspecialchars($tx->sender) ?>
                                 </div>
-                                <?php if (!empty($tx->note)): ?>
+                                <?php if (isset($tx->transaction_type) && $tx->transaction_type !== 'reward'): ?>
                                     <div class="transaction-note">
-                                        <strong>Reason:</strong> <?= htmlspecialchars($tx->note) ?>
+                                        <strong>Type:</strong> <?= htmlspecialchars(ucfirst($tx->transaction_type)) ?>
                                     </div>
+                                    <?php if (!empty($tx->note)): ?>
+                                        <div class="transaction-note">
+                                            <strong>Reason:</strong> <?= htmlspecialchars($tx->note) ?>
+                                        </div>
+                                    <?php endif; ?>
                                 <?php endif; ?>
                                 <div class="transaction-time">
                                     <?= htmlspecialchars($tx->timestamp) ?>

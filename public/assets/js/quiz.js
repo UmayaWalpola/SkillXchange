@@ -96,6 +96,7 @@ function getStatusIcon(status) {
 function createQuizCard(quiz) {
     const difficultyClass = `difficulty-${quiz.difficulty.toLowerCase()}`;
     const statusClass = `status-${quiz.status.replace('_', '-')}`;
+    const rewardAmount = Number.isFinite(Number(quiz.rewardAmount)) ? Number(quiz.rewardAmount) : 0;
     
     return `
         <div class="quiz-card">
@@ -107,6 +108,7 @@ function createQuizCard(quiz) {
                         <span class="badge ${difficultyClass}">${quiz.difficulty}</span>
                         <span class="quiz-questions">${quiz.questionCount} Questions</span>
                         ${quiz.timeLimit ? `<span class="quiz-time">⏱️ ${quiz.timeLimit} min</span>` : ''}
+                        <span class="quiz-reward">Reward: ${rewardAmount} Buckx</span>
                     </div>
                 </div>
             </div>
