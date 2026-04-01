@@ -1,12 +1,19 @@
 <?php 
-// Check if user is admin
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+// Check if user can moderate feedback
+$allowedRoles = ['admin', 'manager', 'community_admin'];
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], $allowedRoles, true)) {
     header('Location: ' . URLROOT . '/auth/login');
     exit;
 }
 
 require_once "../app/views/layouts/header_user.php";
-require_once "../app/views/layouts/adminsidebar.php";
+
+// Preserve existing design language per role
+if (isset($_SESSION['role']) && $_SESSION['role'] === 'manager') {
+    require_once "../app/views/layouts/managersidebar.php";
+} else {
+    require_once "../app/views/layouts/adminsidebar.php";
+}
 ?>
 
 <style>

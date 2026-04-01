@@ -16,6 +16,39 @@ class FeedbackReportController extends Controller {
     }
 
     /**
+     * Roles that can moderate reported feedback.
+     */
+    private function isModerator() {
+        if (!isset($_SESSION['user_id'], $_SESSION['role'])) {
+            return false;
+        }
+
+        return in_array($_SESSION['role'], ['admin', 'manager', 'community_admin'], true);
+    }
+
+    /**
+     * Guard for page routes.
+     */
+    private function requireModeratorPage() {
+        if (!$this->isModerator()) {
+            header('Location: ' . URLROOT . '/auth/login');
+            exit;
+        }
+    }
+
+    /**
+     * Guard for JSON routes.
+     */
+    private function requireModeratorJson() {
+        if (!$this->isModerator()) {
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Submit a new feedback report (AJAX endpoint)
      * POST /FeedbackReport/submit
      */
@@ -92,11 +125,7 @@ class FeedbackReportController extends Controller {
      * GET /FeedbackReport/index
      */
     public function index($status = 'all') {
-        // Check if user is admin
-        if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-            header('Location: ' . URLROOT . '/auth/login');
-            exit;
-        }
+        $this->requireModeratorPage();
 
         // Get filter from query params
         $status = $_GET['status'] ?? 'all';
@@ -133,9 +162,7 @@ class FeedbackReportController extends Controller {
      * GET /FeedbackReport/list
      */
     public function list() {
-        // Check if user is admin
-        if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+        if (!$this->requireModeratorJson()) {
             return;
         }
 
@@ -170,9 +197,7 @@ class FeedbackReportController extends Controller {
      * POST /FeedbackReport/updateStatus
      */
     public function updateStatus() {
-        // Check if user is admin
-        if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+        if (!$this->requireModeratorJson()) {
             return;
         }
 
@@ -227,9 +252,7 @@ class FeedbackReportController extends Controller {
      * POST /FeedbackReport/removeFeedback
      */
     public function removeFeedback() {
-        // Check if user is admin
-        if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+        if (!$this->requireModeratorJson()) {
             return;
         }
 
@@ -247,6 +270,17 @@ class FeedbackReportController extends Controller {
                 return;
             }
 
+            // Avoid false-success responses for invalid feedback IDs.
+            $checkSql = "SELECT id FROM user_feedback WHERE id = :feedback_id LIMIT 1";
+            $checkStmt = $this->feedbackReportModel->connect()->prepare($checkSql);
+            $checkStmt->bindValue(':feedback_id', $feedbackId);
+            $checkStmt->execute();
+
+            if (!$checkStmt->fetch(PDO::FETCH_ASSOC)) {
+                echo json_encode(['success' => false, 'message' => 'Feedback not found']);
+                return;
+            }
+
             // Delete the actual feedback (this will cascade delete reports due to FK)
             $success = $this->feedbackModel->deleteFeedback($feedbackId);
 
@@ -256,7 +290,7 @@ class FeedbackReportController extends Controller {
                     $reportId,
                     'action_taken',
                     $_SESSION['user_id'],
-                    'Feedback removed by admin'
+                    'Feedback removed by moderator'
                 );
 
                 echo json_encode([
@@ -278,9 +312,7 @@ class FeedbackReportController extends Controller {
      * GET /FeedbackReport/stats
      */
     public function stats() {
-        // Check if user is admin
-        if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+        if (!$this->requireModeratorJson()) {
             return;
         }
 
@@ -306,7 +338,7 @@ class FeedbackReportController extends Controller {
     private function notifyAdmins($reportId, $feedbackId, $reason) {
         try {
             // Get all admin users
-            $adminSql = "SELECT id FROM users WHERE role = 'admin'";
+            $adminSql = "SELECT id FROM users WHERE role IN ('admin', 'manager', 'community_admin')";
             $stmt = $this->feedbackReportModel->connect()->prepare($adminSql);
             $stmt->execute();
             $admins = $stmt->fetchAll(PDO::FETCH_ASSOC);
