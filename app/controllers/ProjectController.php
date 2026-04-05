@@ -81,6 +81,69 @@ class ProjectController extends Controller
     }
 
     // Public project detail view (user-facing)
+    public function browse()
+    {
+        if (!isset($_SESSION['user_id'])) {
+            $_SESSION['error'] = 'Please sign in to browse projects.';
+            header('Location: ' . URLROOT . '/auth/signin');
+            exit();
+        }
+
+        if (isset($_SESSION['role']) && $_SESSION['role'] === 'organization') {
+            header('Location: ' . URLROOT . '/organization/projects');
+            exit();
+        }
+
+        $userId = (int)$_SESSION['user_id'];
+        $db = new Database();
+
+        // Fetch the latest application status per project for the current user.
+        $db->query("SELECT pa.project_id, pa.status
+                    FROM project_applications pa
+                    INNER JOIN (
+                        SELECT project_id, MAX(id) AS latest_id
+                        FROM project_applications
+                        WHERE user_id = :user_id
+                        GROUP BY project_id
+                    ) latest ON latest.latest_id = pa.id");
+        $db->bind(':user_id', $userId);
+        $applicationRows = $db->resultSet();
+        $applicationStatusByProject = [];
+        foreach ($applicationRows as $row) {
+            $applicationStatusByProject[(int)$row->project_id] = strtolower($row->status);
+        }
+
+        // Fetch member projects with join date for top banner
+        $db->query("SELECT p.*, pm.joined_at, pm.role,
+                    (SELECT COUNT(*) FROM project_members WHERE project_id = p.id AND status='active') AS current_members
+                    FROM projects p
+                    JOIN project_members pm ON pm.project_id = p.id
+                    WHERE pm.user_id = :user_id AND pm.status = 'active'
+                    ORDER BY pm.joined_at DESC");
+        $db->bind(':user_id', $userId);
+        $memberProjects = $db->resultSet();
+
+        $memberProjectIds = [];
+        foreach ($memberProjects as $mp) {
+            $memberProjectIds[(int)$mp->id] = true;
+        }
+
+        // Fetch ALL projects from DB for the bottom discovery section
+        $allProjects = $this->projectModel->getAllProjects();
+
+        $data = [
+            'title'                      => 'Discover Projects',
+            'projects'                   => $allProjects,       // all projects (bottom grid)
+            'memberProjects'             => $memberProjects,    // user's member projects (top)
+            'page'                       => 'discover-projects',
+            'applicationStatusByProject' => $applicationStatusByProject,
+            'memberProjectIds'           => $memberProjectIds
+        ];
+
+        $this->view('projects/browse', $data);
+    }
+
+    // Public project detail view (user-facing)
     public function detail($id = null)
     {
         if (!$id) {
@@ -114,15 +177,22 @@ class ProjectController extends Controller
         $taskModel = $this->model('Task');
         $taskStats = $taskModel->getTaskStats($id);
 
+        // Load tasks assigned to the current user for this project (member view)
+        $myTasks = [];
+        if (isset($_SESSION['user_id']) && $is_member) {
+            $myTasks = $taskModel->getTasksByMember($id, $_SESSION['user_id']);
+        }
+
         $data = [
-            'title' => $project->name,
-            'project' => $project,
+            'title'       => $project->name,
+            'project'     => $project,
             'application' => $application,
-            'is_member' => $is_member,
-            'members' => $members ?? [],
-            'progress' => $progress,
-            'taskModel' => $taskModel,
-            'taskStats' => $taskStats
+            'is_member'   => $is_member,
+            'members'     => $members ?? [],
+            'progress'    => $progress,
+            'taskModel'   => $taskModel,
+            'taskStats'   => $taskStats,
+            'myTasks'     => $myTasks
         ];
 
         parent::view('projects/view', $data);
@@ -241,5 +311,67 @@ class ProjectController extends Controller
 
         header('Location: ' . URLROOT . '/project/detail/' . $projectId);
         exit();
+    }
+
+    /**
+     * AJAX: Mark a task as complete (called by member)
+     * POST JSON: { task_id, project_id }
+     */
+    public function completeTask()
+    {
+        ob_clean();
+        header('Content-Type: application/json');
+
+        if (!isset($_SESSION['user_id'])) {
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            exit;
+        }
+
+        $rawInput = file_get_contents('php://input');
+        $input    = json_decode($rawInput, true) ?: $_POST;
+
+        $taskId    = (int)($input['task_id']    ?? 0);
+        $projectId = (int)($input['project_id'] ?? 0);
+
+        if (!$taskId || !$projectId) {
+            echo json_encode(['success' => false, 'message' => 'Missing task_id or project_id']);
+            exit;
+        }
+
+        $taskModel = $this->model('Task');
+        $task = $taskModel->getTaskById($taskId);
+
+        if (!$task || (int)$task->project_id !== $projectId) {
+            echo json_encode(['success' => false, 'message' => 'Task not found']);
+            exit;
+        }
+
+        // Only the assigned member may complete the task
+        if ((int)$task->assigned_to !== (int)$_SESSION['user_id']) {
+            echo json_encode(['success' => false, 'message' => 'You are not assigned to this task']);
+            exit;
+        }
+
+        if ($taskModel->updateTaskStatus($taskId, 'done')) {
+            // Notify the project organisation
+            try {
+                $project = $this->projectModel->getProjectById($projectId);
+                $notifModel = $this->model('Notification');
+                $memberName = $_SESSION['username'] ?? 'A member';
+                $notifModel->createNotification([
+                    'user_id'    => $project->organization_id,
+                    'type'       => 'task_completed',
+                    'message'    => "{$memberName} completed the task: {$task->title}",
+                    'project_id' => $projectId,
+                    'task_id'    => $taskId
+                ]);
+            } catch (Exception $e) {
+                error_log('Notify org on task complete: ' . $e->getMessage());
+            }
+            echo json_encode(['success' => true, 'message' => 'Task marked as complete!']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Failed to update task status']);
+        }
+        exit;
     }
 }

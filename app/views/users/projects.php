@@ -81,7 +81,7 @@
                         <div style="font-size: 3rem; margin-bottom: 1rem;"><i class="ph ph-folder-open" style="font-size: 4rem; color: #ccc;"></i></div>
                         <h3 style="color: #333; margin-bottom: 0.5rem;">No Projects Yet</h3>
                         <p>You haven't joined any projects yet. Check available projects or wait for an organization to invite you!</p>
-                        <a href="<?= URLROOT ?>/projects" style="display: inline-block; margin-top: 1rem; padding: 0.75rem 1.5rem; background: #3b82f6; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                        <a href="<?= URLROOT ?>/project/browse" style="display: inline-block; margin-top: 1rem; padding: 0.75rem 1.5rem; background: #3b82f6; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
                             Browse Projects
                         </a>
                     </div>

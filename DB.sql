@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Feb 18, 2026 at 01:24 PM
+-- Generation Time: Apr 04, 2026 at 07:44 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -20,6 +20,32 @@ SET time_zone = "+00:00";
 --
 -- Database: `skillxchange`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `badges`
+--
+
+CREATE TABLE `badges` (
+  `id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `description` text DEFAULT NULL,
+  `icon` varchar(50) DEFAULT '?',
+  `type` enum('quiz','project','community','skill') DEFAULT 'quiz',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `badges`
+--
+
+INSERT INTO `badges` (`id`, `name`, `description`, `icon`, `type`, `created_at`) VALUES
+(1, 'Quiz Master', 'Complete 10 quizzes', '🎓', 'quiz', '2026-02-18 19:13:43'),
+(2, 'Perfect Score', 'Get 100% on any quiz', '💯', 'quiz', '2026-02-18 19:13:43'),
+(3, 'Quick Learner', 'Complete a quiz in under 5 minutes', '⚡', 'quiz', '2026-02-18 19:13:43'),
+(4, 'Web Developer', 'Complete all web development quizzes', '💻', 'quiz', '2026-02-18 19:13:43'),
+(5, 'Data Expert', 'Complete all data science quizzes', '📊', 'quiz', '2026-02-18 19:13:43');
 
 -- --------------------------------------------------------
 
@@ -70,7 +96,8 @@ CREATE TABLE `community_members` (
 INSERT INTO `community_members` (`id`, `community_id`, `user_id`, `role`, `joined_at`) VALUES
 (1, 1, 1, 'admin', '2024-01-15 10:00:00'),
 (2, 1, 2, 'member', '2024-01-16 10:00:00'),
-(7, 5, 1, 'admin', '2024-01-25 10:00:00');
+(7, 5, 1, 'admin', '2024-01-25 10:00:00'),
+(8, 1, 41, 'member', '2026-04-02 13:16:03');
 
 -- --------------------------------------------------------
 
@@ -111,6 +138,45 @@ CREATE TABLE `exchanges` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `exchanges`
+--
+
+INSERT INTO `exchanges` (`id`, `requester_id`, `receiver_id`, `skill_id`, `status`, `created_at`) VALUES
+(1, 41, 47, 1, 'active', '2026-02-20 07:36:09'),
+(2, 41, 50, 1, 'active', '2026-04-02 07:36:50'),
+(3, 41, 45, 1, 'active', '2026-04-02 07:39:33'),
+(4, 41, 48, 1, 'active', '2026-04-02 07:43:05');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `feedback_reports`
+--
+
+CREATE TABLE `feedback_reports` (
+  `id` int(11) NOT NULL,
+  `feedback_id` int(11) NOT NULL,
+  `reporter_id` int(11) NOT NULL,
+  `reason` enum('abusive','fake','spam','inappropriate','other') NOT NULL,
+  `details` text DEFAULT NULL,
+  `status` enum('pending','reviewed','dismissed','action_taken') DEFAULT 'pending',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `reviewed_by` int(11) DEFAULT NULL,
+  `reviewed_at` timestamp NULL DEFAULT NULL,
+  `admin_notes` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `feedback_reports`
+--
+
+INSERT INTO `feedback_reports` (`id`, `feedback_id`, `reporter_id`, `reason`, `details`, `status`, `created_at`, `reviewed_by`, `reviewed_at`, `admin_notes`) VALUES
+(2, 2, 48, 'fake', 'Automated test fake', 'pending', '2026-04-01 14:43:28', NULL, NULL, NULL),
+(3, 3, 47, 'fake', 'Fresh fake report test', 'pending', '2026-04-01 14:47:01', NULL, NULL, NULL),
+(4, 2, 46, 'abusive', 'Post-fix success check', 'reviewed', '2026-04-01 14:48:13', 7, '2026-04-04 12:25:30', ''),
+(6, 3, 44, 'abusive', 'Abusive reason success verification', 'pending', '2026-04-01 14:49:51', NULL, NULL, NULL);
+
 -- --------------------------------------------------------
 
 --
@@ -127,6 +193,14 @@ CREATE TABLE `notifications` (
   `is_read` tinyint(1) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `notifications`
+--
+
+INSERT INTO `notifications` (`id`, `user_id`, `type`, `message`, `project_id`, `task_id`, `is_read`, `created_at`) VALUES
+(1, 7, 'feedback_report', 'A feedback has been reported as fake. Please review.', NULL, NULL, 0, '2026-04-01 14:49:23'),
+(2, 7, 'feedback_report', 'A feedback has been reported as abusive. Please review.', NULL, NULL, 0, '2026-04-01 14:49:51');
 
 -- --------------------------------------------------------
 
@@ -184,7 +258,7 @@ INSERT INTO `projects` (`id`, `organization_id`, `name`, `description`, `categor
 (8, 37, 'CodeCollab Hub', 'mplement a module to create and manage community skill-sharing events, allowing users to RSVP and join online/offline workshops.', 'web', 'completed', 'HTML5 , CSS3, JavaScript, PHP, MySql', 5, 1, '2025-11-28', '2026-01-03', '2025-11-17 12:33:12', '2025-11-18 10:37:23'),
 (9, 37, 'SkillMentor', 'A system to connect learners with expert mentors in various skills.', 'data', 'cancelled', 'Python, R, SQL, Machine Learning, Data Visualization, Pandas, NumPy, Scikit-learn, Matplotlib, Tableau', 10, 0, '2026-12-17', '2026-12-31', '2025-11-17 12:34:15', '2025-11-17 12:34:15'),
 (10, 37, 'LearnLab', 'An interactive platform for project-based skill learning and exercises.', 'design', 'completed', 'UI/UX Design, Adobe Photoshop, Adobe Illustrator, Figma, Sketch, Wireframing, Prototyping, Interaction Design, Graphic Design, Color Theory', 8, 0, '2025-11-18', '2028-11-18', '2025-11-17 12:35:27', '2025-11-17 12:35:27'),
-(13, 37, 'kithsara project', 'Pretty software project', 'web', 'active', 'HTML5 , CSS3, JavaScript, PHP, MySql', 7, 3, '2025-11-29', '2026-10-18', '2025-11-18 10:55:15', '2025-11-26 13:57:29'),
+(13, 37, 'kithsara project', 'Pretty software project', 'web', 'active', 'HTML5 , CSS3, JavaScript, PHP, MySql', 7, 2, '2025-11-29', '2026-10-18', '2025-11-18 10:55:15', '2026-02-18 18:45:19'),
 (14, 37, 'Devinda Web Project', 'This project is a modern and responsive web application designed to provide users with an easy-to-use and interactive online experience. It includes key features such as user authentication, dynamic content display, and a well-structured interface built with best web development practices. The system ensures smooth navigation, mobile-friendly layouts, and efficient data handling through backend integration. The project focuses on scalability, maintainability, and clean UI/UX design to offer a seamless workflow for both users and administrators.', 'web', 'active', 'HTML5 , CSS3, JavaScript, PHP, MySql', 7, 0, '2025-11-20', '2026-10-18', '2025-11-18 17:11:40', '2025-11-18 17:11:51'),
 (15, 37, 'SmartConnect Mobile App (PS software)', 'SmartConnect is a modern mobile application designed to help users connect, collaborate, and share skills effortlessly. The app provides a clean and responsive interface with real-time interactions, profile management, skill listings, messaging, and project collaboration features.\r\nIt aims to deliver fast performance, smooth navigation, and a user-friendly experience across Android and iOS platforms.', 'mobile', 'active', 'Flutter / Dart, React Native, Java / Kotlin ,Git/GitHub', 10, 1, '2025-11-29', '2025-12-31', '2025-11-19 19:03:48', '2025-11-19 19:51:05'),
 (16, 37, 'Online Bookstore Management System', 'A web application that allows users to browse, search, and purchase books online with secure payment integration.', 'web', 'active', 'PHP, MySQL, Laravel, HTML, CSS, JavaScript', 5, 0, '2025-11-23', '2025-11-29', '2025-11-23 10:28:30', '2025-11-23 10:28:30'),
@@ -283,7 +357,7 @@ INSERT INTO `project_members` (`id`, `project_id`, `user_id`, `role`, `joined_at
 (2, 8, 41, 'Member', '2025-11-18 10:37:23', 'active'),
 (3, 13, 41, 'Developer', '2025-11-18 17:10:17', 'active'),
 (4, 15, 37, 'Developer', '2025-11-19 19:51:05', 'active'),
-(5, 13, 50, 'Frontend Engineer', '2025-11-26 12:09:26', 'active'),
+(5, 13, 50, 'Frontend Engineer', '2025-11-26 12:09:26', ''),
 (6, 13, 51, 'Project Lead', '2025-11-26 13:57:29', 'active');
 
 -- --------------------------------------------------------
@@ -304,6 +378,58 @@ CREATE TABLE `project_tasks` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `quizzes`
+--
+
+CREATE TABLE `quizzes` (
+  `id` int(11) NOT NULL,
+  `title` varchar(200) NOT NULL,
+  `description` text NOT NULL,
+  `category` varchar(100) NOT NULL,
+  `difficulty` enum('beginner','intermediate','advanced') DEFAULT 'beginner',
+  `passing_score` int(11) DEFAULT 70,
+  `time_limit` int(11) DEFAULT NULL COMMENT 'Time limit in minutes',
+  `is_premium` tinyint(1) DEFAULT 0,
+  `badge_id` int(11) DEFAULT NULL,
+  `created_by` int(11) NOT NULL,
+  `status` enum('active','inactive') DEFAULT 'active',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `quiz_questions`
+--
+
+CREATE TABLE `quiz_questions` (
+  `id` int(11) NOT NULL,
+  `quiz_id` int(11) NOT NULL,
+  `question_text` text NOT NULL,
+  `question_type` enum('multiple_choice','true_false','short_answer') DEFAULT 'multiple_choice',
+  `points` int(11) DEFAULT 1,
+  `order_number` int(11) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `quiz_question_options`
+--
+
+CREATE TABLE `quiz_question_options` (
+  `id` int(11) NOT NULL,
+  `question_id` int(11) NOT NULL,
+  `option_text` text NOT NULL,
+  `is_correct` tinyint(1) DEFAULT 0,
+  `order_number` int(11) DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -386,7 +512,7 @@ CREATE TABLE `users` (
   `profile_picture` varchar(255) DEFAULT NULL,
   `bio` varchar(255) DEFAULT NULL,
   `password` varchar(255) NOT NULL,
-  `role` enum('individual','organization','admin','quiz_manager','manager','community_admin') DEFAULT 'individual',
+  `role` enum('individual','organization','admin','quiz_manager','manager','community_admin','moderator') DEFAULT 'individual',
   `org_cert` varchar(255) DEFAULT NULL,
   `profile_completed` tinyint(1) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -435,24 +561,9 @@ CREATE TABLE `user_activity` (
 CREATE TABLE `user_badges` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
-  `badge_name` varchar(100) NOT NULL,
-  `badge_icon` varchar(10) DEFAULT '?',
+  `badge_id` int(11) NOT NULL,
   `earned_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `user_badges`
---
-
-INSERT INTO `user_badges` (`id`, `user_id`, `badge_name`, `badge_icon`, `earned_at`) VALUES
-(11, 41, 'Early Adopter', '🌟', '2025-11-17 11:03:28'),
-(12, 45, 'Early Adopter', '🌟', '2025-11-19 18:29:17'),
-(13, 46, 'Early Adopter', '🌟', '2025-11-19 18:29:47'),
-(14, 47, 'Early Adopter', '🌟', '2025-11-19 18:30:41'),
-(15, 48, 'Early Adopter', '🌟', '2025-11-19 18:31:13'),
-(16, 49, 'Early Adopter', '🌟', '2025-11-19 18:31:39'),
-(17, 50, 'Early Adopter', '🌟', '2025-11-26 12:02:27'),
-(18, 51, 'Early Adopter', '🌟', '2025-11-26 13:53:32');
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -471,16 +582,17 @@ CREATE TABLE `user_feedback` (
   `comment` text DEFAULT NULL,
   `tags` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `report_count` int(11) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `user_feedback`
 --
 
-INSERT INTO `user_feedback` (`id`, `user_id`, `reviewer_id`, `project_id`, `context_type`, `context_id`, `rating`, `comment`, `tags`, `created_at`, `updated_at`) VALUES
-(1, 50, 37, 13, 'project', 13, 2, 'kkk', 'teamwork', '2026-02-17 19:30:09', '2026-02-17 19:30:09'),
-(2, 41, 37, 13, 'project', 13, 3, 'It was a pleasure working with Devinda. He communicated clearly, delivered quality work, and completed tasks on time. Very reliable and professional throughout the project.', 'quality,ontime,teamwork,communication', '2026-02-18 12:19:54', '2026-02-18 12:19:54');
+INSERT INTO `user_feedback` (`id`, `user_id`, `reviewer_id`, `project_id`, `context_type`, `context_id`, `rating`, `comment`, `tags`, `created_at`, `updated_at`, `report_count`) VALUES
+(2, 41, 37, 13, 'project', 13, 3, 'It was a pleasure working with Devinda. He communicated clearly, delivered quality work, and completed tasks on time. Very reliable and professional throughout the project.', 'quality,ontime,teamwork,communication', '2026-02-18 12:19:54', '2026-04-01 14:48:13', 2),
+(3, 51, 37, 13, 'project', 13, 3, 'kkk', 'communication', '2026-02-18 18:44:57', '2026-04-01 14:49:51', 2);
 
 -- --------------------------------------------------------
 
@@ -496,6 +608,43 @@ CREATE TABLE `user_projects` (
   `status` enum('in_progress','completed') DEFAULT 'in_progress',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `user_quiz_answers`
+--
+
+CREATE TABLE `user_quiz_answers` (
+  `id` int(11) NOT NULL,
+  `attempt_id` int(11) NOT NULL,
+  `question_id` int(11) NOT NULL,
+  `selected_option_id` int(11) DEFAULT NULL,
+  `answer_text` text DEFAULT NULL,
+  `is_correct` tinyint(1) DEFAULT 0,
+  `points_earned` decimal(5,2) DEFAULT 0.00,
+  `answered_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `user_quiz_attempts`
+--
+
+CREATE TABLE `user_quiz_attempts` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `quiz_id` int(11) NOT NULL,
+  `score` decimal(5,2) DEFAULT 0.00,
+  `total_questions` int(11) DEFAULT 0,
+  `correct_answers` int(11) DEFAULT 0,
+  `passed` tinyint(1) DEFAULT 0,
+  `time_taken` int(11) DEFAULT NULL COMMENT 'Time taken in seconds',
+  `started_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `completed_at` timestamp NULL DEFAULT NULL,
+  `status` enum('in_progress','completed','abandoned') DEFAULT 'in_progress'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -520,6 +669,19 @@ CREATE TABLE `user_reports` (
 
 INSERT INTO `user_reports` (`id`, `project_id`, `reported_user_id`, `reporter_org_id`, `reason`, `details`, `status`, `reported_at`) VALUES
 (1, 7, 41, 37, 'llll', '', 'pending', '2025-12-08 08:11:22');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `user_saved_quizzes`
+--
+
+CREATE TABLE `user_saved_quizzes` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `quiz_id` int(11) NOT NULL,
+  `saved_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -686,6 +848,12 @@ CREATE TABLE `wallet_transactions` (
 --
 
 --
+-- Indexes for table `badges`
+--
+ALTER TABLE `badges`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `communities`
 --
 ALTER TABLE `communities`
@@ -720,6 +888,16 @@ ALTER TABLE `exchanges`
   ADD KEY `requester_id` (`requester_id`),
   ADD KEY `receiver_id` (`receiver_id`),
   ADD KEY `skill_id` (`skill_id`);
+
+--
+-- Indexes for table `feedback_reports`
+--
+ALTER TABLE `feedback_reports`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_feedback_reports_feedback` (`feedback_id`),
+  ADD KEY `idx_feedback_reports_status` (`status`,`created_at`),
+  ADD KEY `idx_feedback_reports_reporter` (`reporter_id`),
+  ADD KEY `fk_feedback_reports_reviewer` (`reviewed_by`);
 
 --
 -- Indexes for table `notifications`
@@ -783,6 +961,30 @@ ALTER TABLE `project_tasks`
   ADD KEY `idx_assigned_to` (`assigned_to`);
 
 --
+-- Indexes for table `quizzes`
+--
+ALTER TABLE `quizzes`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_category` (`category`),
+  ADD KEY `idx_difficulty` (`difficulty`),
+  ADD KEY `idx_status` (`status`),
+  ADD KEY `idx_badge_id` (`badge_id`);
+
+--
+-- Indexes for table `quiz_questions`
+--
+ALTER TABLE `quiz_questions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_quiz_id` (`quiz_id`);
+
+--
+-- Indexes for table `quiz_question_options`
+--
+ALTER TABLE `quiz_question_options`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_question_id` (`question_id`);
+
+--
 -- Indexes for table `reports`
 --
 ALTER TABLE `reports`
@@ -824,7 +1026,9 @@ ALTER TABLE `user_activity`
 --
 ALTER TABLE `user_badges`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `user_id` (`user_id`);
+  ADD UNIQUE KEY `unique_user_badge` (`user_id`,`badge_id`),
+  ADD KEY `idx_user_id` (`user_id`),
+  ADD KEY `idx_badge_id` (`badge_id`);
 
 --
 -- Indexes for table `user_feedback`
@@ -856,6 +1060,23 @@ ALTER TABLE `user_projects`
   ADD KEY `user_id` (`user_id`);
 
 --
+-- Indexes for table `user_quiz_answers`
+--
+ALTER TABLE `user_quiz_answers`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_attempt_id` (`attempt_id`),
+  ADD KEY `idx_question_id` (`question_id`);
+
+--
+-- Indexes for table `user_quiz_attempts`
+--
+ALTER TABLE `user_quiz_attempts`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_user_id` (`user_id`),
+  ADD KEY `idx_quiz_id` (`quiz_id`),
+  ADD KEY `idx_user_quiz` (`user_id`,`quiz_id`);
+
+--
 -- Indexes for table `user_reports`
 --
 ALTER TABLE `user_reports`
@@ -863,6 +1084,15 @@ ALTER TABLE `user_reports`
   ADD KEY `idx_project` (`project_id`),
   ADD KEY `idx_reported_user` (`reported_user_id`),
   ADD KEY `idx_reporter_org` (`reporter_org_id`);
+
+--
+-- Indexes for table `user_saved_quizzes`
+--
+ALTER TABLE `user_saved_quizzes`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_user_quiz` (`user_id`,`quiz_id`),
+  ADD KEY `idx_user_id` (`user_id`),
+  ADD KEY `idx_quiz_id` (`quiz_id`);
 
 --
 -- Indexes for table `user_skills`
@@ -909,6 +1139,12 @@ ALTER TABLE `wallet_transactions`
 --
 
 --
+-- AUTO_INCREMENT for table `badges`
+--
+ALTER TABLE `badges`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
 -- AUTO_INCREMENT for table `communities`
 --
 ALTER TABLE `communities`
@@ -918,7 +1154,7 @@ ALTER TABLE `communities`
 -- AUTO_INCREMENT for table `community_members`
 --
 ALTER TABLE `community_members`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `content_reports`
@@ -930,13 +1166,19 @@ ALTER TABLE `content_reports`
 -- AUTO_INCREMENT for table `exchanges`
 --
 ALTER TABLE `exchanges`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT for table `feedback_reports`
+--
+ALTER TABLE `feedback_reports`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `posts`
@@ -975,6 +1217,24 @@ ALTER TABLE `project_tasks`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `quizzes`
+--
+ALTER TABLE `quizzes`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `quiz_questions`
+--
+ALTER TABLE `quiz_questions`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `quiz_question_options`
+--
+ALTER TABLE `quiz_question_options`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `reports`
 --
 ALTER TABLE `reports`
@@ -1008,13 +1268,13 @@ ALTER TABLE `user_activity`
 -- AUTO_INCREMENT for table `user_badges`
 --
 ALTER TABLE `user_badges`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `user_feedback`
 --
 ALTER TABLE `user_feedback`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `user_projects`
@@ -1023,10 +1283,28 @@ ALTER TABLE `user_projects`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `user_quiz_answers`
+--
+ALTER TABLE `user_quiz_answers`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `user_quiz_attempts`
+--
+ALTER TABLE `user_quiz_attempts`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `user_reports`
 --
 ALTER TABLE `user_reports`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT for table `user_saved_quizzes`
+--
+ALTER TABLE `user_saved_quizzes`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `user_skills`
@@ -1083,6 +1361,14 @@ ALTER TABLE `exchanges`
   ADD CONSTRAINT `exchanges_ibfk_3` FOREIGN KEY (`skill_id`) REFERENCES `skills` (`id`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `feedback_reports`
+--
+ALTER TABLE `feedback_reports`
+  ADD CONSTRAINT `fk_feedback_reports_feedback` FOREIGN KEY (`feedback_id`) REFERENCES `user_feedback` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_feedback_reports_reporter` FOREIGN KEY (`reporter_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_feedback_reports_reviewer` FOREIGN KEY (`reviewed_by`) REFERENCES `users` (`id`) ON DELETE SET NULL;
+
+--
 -- Constraints for table `notifications`
 --
 ALTER TABLE `notifications`
@@ -1131,6 +1417,18 @@ ALTER TABLE `project_tasks`
   ADD CONSTRAINT `task_user_fk` FOREIGN KEY (`assigned_to`) REFERENCES `users` (`id`) ON DELETE SET NULL;
 
 --
+-- Constraints for table `quiz_questions`
+--
+ALTER TABLE `quiz_questions`
+  ADD CONSTRAINT `fk_quiz_questions_quiz` FOREIGN KEY (`quiz_id`) REFERENCES `quizzes` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `quiz_question_options`
+--
+ALTER TABLE `quiz_question_options`
+  ADD CONSTRAINT `fk_quiz_options_question` FOREIGN KEY (`question_id`) REFERENCES `quiz_questions` (`id`) ON DELETE CASCADE;
+
+--
 -- Constraints for table `reports`
 --
 ALTER TABLE `reports`
@@ -1154,7 +1452,8 @@ ALTER TABLE `user_activity`
 -- Constraints for table `user_badges`
 --
 ALTER TABLE `user_badges`
-  ADD CONSTRAINT `user_badges_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `fk_user_badges_badge` FOREIGN KEY (`badge_id`) REFERENCES `badges` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_user_badges_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `user_feedback`
@@ -1172,12 +1471,33 @@ ALTER TABLE `user_projects`
   ADD CONSTRAINT `user_projects_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
+-- Constraints for table `user_quiz_answers`
+--
+ALTER TABLE `user_quiz_answers`
+  ADD CONSTRAINT `fk_quiz_answers_attempt` FOREIGN KEY (`attempt_id`) REFERENCES `user_quiz_attempts` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_quiz_answers_question` FOREIGN KEY (`question_id`) REFERENCES `quiz_questions` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `user_quiz_attempts`
+--
+ALTER TABLE `user_quiz_attempts`
+  ADD CONSTRAINT `fk_quiz_attempts_quiz` FOREIGN KEY (`quiz_id`) REFERENCES `quizzes` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_quiz_attempts_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
 -- Constraints for table `user_reports`
 --
 ALTER TABLE `user_reports`
   ADD CONSTRAINT `fk_report_project` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_report_reported_user` FOREIGN KEY (`reported_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_report_reporter_org` FOREIGN KEY (`reporter_org_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `user_saved_quizzes`
+--
+ALTER TABLE `user_saved_quizzes`
+  ADD CONSTRAINT `fk_saved_quizzes_quiz` FOREIGN KEY (`quiz_id`) REFERENCES `quizzes` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_saved_quizzes_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `user_skills`

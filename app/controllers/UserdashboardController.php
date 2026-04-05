@@ -260,17 +260,35 @@ public function matches() {
     // Get pending connection requests
     $pendingRequests = $exchangeModel->getExchangeRequests($userId);
 
+    // Some exchange rows may not include optional skill columns depending on schema/version.
+    // Read values defensively to avoid undefined property/index warnings.
+    $readRequestValue = function ($row, array $keys, $default = null) {
+        foreach ($keys as $key) {
+            if (is_array($row) && array_key_exists($key, $row) && $row[$key] !== null) {
+                return $row[$key];
+            }
+
+            if (is_object($row) && isset($row->$key)) {
+                return $row->$key;
+            }
+        }
+
+        return $default;
+    };
+
     $formattedRequests = [];
     foreach ($pendingRequests as $request) {
+        $senderName = $readRequestValue($request, ['sender_name'], 'Unknown');
+
         $formattedRequests[] = [
-            'exchange_id' => $request->id,
-            'sender_id' => $request->requester_id,
-            'sender_name' => $request->sender_name,
-            'sender_email' => $request->sender_email,
-            'sender_avatar' => $request->sender_avatar ?? strtoupper(substr($request->sender_name, 0, 2)),
-            'skill_offered' => $request->skill_offered,
-            'skill_wanted' => $request->skill_wanted,
-            'time_ago' => $this->timeAgo($request->created_at)
+            'exchange_id' => $readRequestValue($request, ['id']),
+            'sender_id' => $readRequestValue($request, ['requester_id']),
+            'sender_name' => $senderName,
+            'sender_email' => $readRequestValue($request, ['sender_email'], ''),
+            'sender_avatar' => $readRequestValue($request, ['sender_avatar', 'profile_picture'], strtoupper(substr($senderName, 0, 2))),
+            'skill_offered' => $readRequestValue($request, ['skill_offered', 'offered_skill', 'offered']),
+            'skill_wanted' => $readRequestValue($request, ['skill_wanted', 'wanted_skill', 'wanted']),
+            'time_ago' => $this->timeAgo($readRequestValue($request, ['created_at']))
         ];
     }   
     
@@ -1022,44 +1040,10 @@ public function submitQuiz() {
 }
 
     public function projects() {
-        $userId = $this->checkAuth();
-        $user = $this->getUserData($userId);
-        
-        // Get projects where user is a team member
-        $this->db->query("
-            SELECT 
-                p.id,
-                p.name,
-                p.description,
-                p.status,
-                p.created_at,
-                pm.role as member_role,
-                pm.joined_at,
-                (SELECT COUNT(*) FROM project_members WHERE project_id = p.id AND status = 'active') as team_size
-            FROM project_members pm
-            INNER JOIN projects p ON pm.project_id = p.id
-            WHERE pm.user_id = :user_id AND pm.status = 'active'
-            ORDER BY 
-                CASE 
-                    WHEN p.status = 'in_progress' THEN 1
-                    WHEN p.status = 'open' THEN 2
-                    WHEN p.status = 'completed' THEN 3
-                    ELSE 4
-                END,
-                pm.joined_at DESC
-        ");
-        
-        $this->db->bind(':user_id', $userId);
-        $projects = $this->db->resultSet();
-        
-        $data = [
-            'title' => 'My Projects',
-            'user' => $user,
-            'page' => 'projects',
-            'projects' => $projects
-        ];
-        
-        $this->view('users/projects', $data);
+        $this->checkAuth();
+        // Unified Projects page — redirect to discover/browse
+        header('Location: ' . URLROOT . '/project/browse');
+        exit;
     }
 
     public function wallet() {
