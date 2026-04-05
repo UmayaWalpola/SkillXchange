@@ -108,7 +108,7 @@ class TaskController extends Controller {
                         'project_id' => $projectId,
                         'title' => trim($_POST['task_name'] ?? ''),
                         'description' => trim($_POST['description'] ?? ''),
-                        'assigned_to' => !empty($_POST['member_id']) ? (int)$_POST['member_id'] : null,
+                        'assigned_to' => !empty($_POST['assigned_to']) ? (int)$_POST['assigned_to'] : (!empty($_POST['member_id']) ? (int)$_POST['member_id'] : null),
                         'priority' => strtolower(trim($_POST['priority'] ?? 'medium')),
                         'deadline' => !empty($_POST['due_date']) ? $_POST['due_date'] : null,
                         'status' => 'todo'
@@ -124,12 +124,12 @@ class TaskController extends Controller {
                         // Notify assigned user about new task
                         if (!empty($taskData['assigned_to'])) {
                             try {
-                                $this->notificationModel->create([
-                                    'user_id' => $taskData['assigned_to'],
-                                    'type' => 'task_assigned',
-                                    'content' => "You have been assigned the task: {$taskData['title']}",
-                                    'related_id' => $taskId,
-                                    'related_type' => 'task'
+                                $this->notificationModel->createNotification([
+                                    'user_id'    => $taskData['assigned_to'],
+                                    'type'       => 'task_assigned',
+                                    'message'    => "You have been assigned the task: {$taskData['title']}",
+                                    'project_id' => $taskData['project_id'],
+                                    'task_id'    => $taskId
                                 ]);
                             } catch (Exception $e) {
                                 error_log("Notification error: " . $e->getMessage());

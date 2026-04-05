@@ -758,7 +758,9 @@ class OrganizationController extends Controller {
     
     public function assignTask() {
         // Prevent any output before JSON
-        ob_clean();
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
         header('Content-Type: application/json');
         
         try {
@@ -768,12 +770,12 @@ class OrganizationController extends Controller {
                 exit;
             }
 
-            // Get POST data
-            $rawInput = file_get_contents('php://input');
-            $data = json_decode($rawInput, true);
-            
-            if (!$data) {
-                $data = $_POST;
+            // Prefer standard form data, but still support JSON payloads.
+            $data = $_POST;
+            if (empty($data)) {
+                $rawInput = file_get_contents('php://input');
+                $decoded = json_decode($rawInput, true);
+                $data = is_array($decoded) ? $decoded : [];
             }
 
             // Validate required fields
@@ -786,8 +788,8 @@ class OrganizationController extends Controller {
                 exit;
             }
 
-            $memberId = $data['member_id'];
-            $projectId = $data['project_id'];
+            $memberId = (int)$data['member_id'];
+            $projectId = (int)$data['project_id'];
             
             // Get project details
             $project = $this->projectModel->getProjectById($projectId);
@@ -808,17 +810,14 @@ class OrganizationController extends Controller {
                 exit;
             }
 
-            // Verify the assignee is a member of the project
-            $members = $this->projectModel->getMembersByProject($projectId);
-            $isMember = false;
-            foreach ($members as $member) {
-                if ($member->user_id == $memberId) {
-                    $isMember = true;
-                    break;
-                }
-            }
+            // Verify the assignee is an active member of the project
+            $db = new Database();
+            $db->query("SELECT id FROM project_members WHERE project_id = :project_id AND user_id = :user_id AND status = 'active' LIMIT 1");
+            $db->bind(':project_id', $projectId);
+            $db->bind(':user_id', $memberId);
+            $memberRow = $db->single();
 
-            if (!$isMember) {
+            if (!$memberRow) {
                 echo json_encode(['success' => false, 'message' => 'User is not a member of this project']);
                 exit;
             }
@@ -840,14 +839,14 @@ class OrganizationController extends Controller {
             if ($taskId) {
                 // Send notification to assigned user
                 try {
-                    $this->notificationModel->create([
-                        'user_id' => $memberId,
-                        'type' => 'task_assigned',
-                        'content' => 'You have been assigned a new task: ' . $taskData['title'],
-                        'related_id' => $taskId,
-                        'related_type' => 'task'
+                    $this->notificationModel->createNotification([
+                        'user_id'    => $memberId,
+                        'type'       => 'task_assigned',
+                        'message'    => 'You have been assigned a new task: ' . $taskData['title'],
+                        'project_id' => $projectId,
+                        'task_id'    => $taskId
                     ]);
-                } catch (Exception $e) {
+                } catch (Throwable $e) {
                     // Log but don't fail if notification fails
                     error_log("Notification error: " . $e->getMessage());
                 }
@@ -861,12 +860,70 @@ class OrganizationController extends Controller {
                 echo json_encode(['success' => false, 'message' => 'Failed to create task in database']);
             }
             
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             error_log("Task assignment exception: " . $e->getMessage());
             echo json_encode([
                 'success' => false, 
                 'message' => 'Server error: ' . $e->getMessage()
             ]);
+        }
+        exit;
+    }
+
+    /**
+     * AJAX: Remove (delete) a task — org only
+     * Accepts JSON: { task_id }
+     */
+    public function removeTask() {
+        ob_clean();
+        header('Content-Type: application/json');
+
+        try {
+            $rawInput = file_get_contents('php://input');
+            $data     = json_decode($rawInput, true) ?: $_POST;
+            $taskId   = (int)($data['task_id'] ?? 0);
+
+            if (!$taskId) {
+                echo json_encode(['success' => false, 'message' => 'Task ID required']);
+                exit;
+            }
+
+            // Fetch the task to verify project ownership
+            $task = $this->taskModel->getTaskById($taskId);
+            if (!$task) {
+                echo json_encode(['success' => false, 'message' => 'Task not found']);
+                exit;
+            }
+
+            $project = $this->projectModel->getProjectById($task->project_id);
+            if (!$project || (int)$project->organization_id !== (int)$_SESSION['user_id']) {
+                echo json_encode(['success' => false, 'message' => 'Permission denied']);
+                exit;
+            }
+
+            // Delete
+            if ($this->taskModel->deleteTask($taskId)) {
+                // Notify the assigned member (if any)
+                if (!empty($task->assigned_to)) {
+                    try {
+                        $this->notificationModel->createNotification([
+                            'user_id'    => $task->assigned_to,
+                            'type'       => 'task_removed',
+                            'message'    => 'A task assigned to you was removed: ' . $task->title,
+                            'project_id' => $task->project_id,
+                            'task_id'    => null
+                        ]);
+                    } catch (Exception $e) {
+                        error_log('Notify member on task remove: ' . $e->getMessage());
+                    }
+                }
+                echo json_encode(['success' => true, 'message' => 'Task removed successfully']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Failed to remove task']);
+            }
+        } catch (Exception $e) {
+            error_log('removeTask error: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Server error: ' . $e->getMessage()]);
         }
         exit;
     }

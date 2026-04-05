@@ -1,39 +1,28 @@
-// Wrap everything in an IIFE to avoid global scope pollution
+// FIXED take_quiz.js - Correct quiz submission
 (function() {
     'use strict';
     
-    // Check if already initialized
     if (window.quizInitialized) {
-        console.warn('Quiz already initialized, skipping...');
+        console.warn('Quiz already initialized');
         return;
     }
     window.quizInitialized = true;
 
-    // Get quiz data from HTML data attributes
     const quizDataElement = document.getElementById('quiz-data');
-
-    if (!quizDataElement) {
-        console.error('Quiz data element not found!');
-        alert('Error: Quiz data not loaded. Please refresh the page.');
-        return;
-    }
-
-    if (!quizDataElement.dataset.quiz) {
-        console.error('Quiz data attribute is missing!');
-        alert('Error: Quiz data not found. Please go back and try again.');
+    if (!quizDataElement || !quizDataElement.dataset.quiz) {
+        console.error('Quiz data not found!');
+        alert('Error: Quiz data not loaded');
         return;
     }
 
     let quizData, urlRoot;
-
     try {
         quizData = JSON.parse(quizDataElement.dataset.quiz);
         urlRoot = quizDataElement.dataset.urlroot;
-        console.log('✅ Quiz data loaded successfully:', quizData);
-        console.log('📝 Total questions:', quizData.questions.length);
+        console.log('✅ Quiz loaded:', quizData);
     } catch (error) {
-        console.error('Error parsing quiz data:', error);
-        alert('Error loading quiz. Please go back and try again.');
+        console.error('Parse error:', error);
+        alert('Error loading quiz data');
         return;
     }
 
@@ -43,7 +32,6 @@
     let startTime = Date.now();
     let timerInterval = null;
 
-    // DOM Elements
     const quizContent = document.getElementById('quizContent');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
@@ -54,19 +42,16 @@
     const resultsSection = document.getElementById('resultsSection');
     const timerDisplay = document.getElementById('timerDisplay');
 
-    // Initialize
     if (totalQuestionsEl) {
         totalQuestionsEl.textContent = quizData.questions.length;
     }
 
-    // Start timer if time limit exists
     if (quizData.timeLimit) {
-        startTimer(quizData.timeLimit * 60); // Convert minutes to seconds
+        startTimer(quizData.timeLimit * 60);
     }
 
     function startTimer(seconds) {
         let remaining = seconds;
-        
         updateTimerDisplay(remaining);
         
         timerInterval = setInterval(() => {
@@ -87,7 +72,6 @@
         const secs = seconds % 60;
         timerDisplay.textContent = `${minutes}:${secs.toString().padStart(2, '0')}`;
         
-        // Change color when time is running out
         if (seconds <= 60) {
             timerDisplay.style.color = '#ef4444';
         } else if (seconds <= 300) {
@@ -119,7 +103,6 @@
             </div>
         `;
         
-        // Add click handlers to options
         document.querySelectorAll('.option-item').forEach(item => {
             item.addEventListener('click', function() {
                 const optionIndex = parseInt(this.dataset.optionIndex);
@@ -133,7 +116,6 @@
 
     function selectOption(optionIndex) {
         if (quizCompleted) return;
-        
         userAnswers[currentQuestionIndex] = optionIndex;
         renderQuestion();
     }
@@ -147,7 +129,6 @@
             currentQuestionEl.textContent = currentQuestionIndex + 1;
         }
         
-        // Update answered questions indicator
         const answeredCount = userAnswers.filter(a => a !== undefined).length;
         const progressText = document.getElementById('progressText');
         if (progressText) {
@@ -186,43 +167,58 @@
     }
 
     async function submitQuiz() {
-        // Check if all questions are answered
-        const unansweredQuestions = [];
+        // Check all questions answered
+        const unanswered = [];
         for (let i = 0; i < quizData.questions.length; i++) {
             if (userAnswers[i] === undefined) {
-                unansweredQuestions.push(i + 1);
+                unanswered.push(i + 1);
             }
         }
         
-        if (unansweredQuestions.length > 0) {
-            const message = `Please answer all questions before submitting.\n\nUnanswered questions: ${unansweredQuestions.join(', ')}`;
-            alert(message);
+        if (unanswered.length > 0) {
+            alert(`Please answer all questions.\n\nUnanswered: ${unanswered.join(', ')}`);
             return;
         }
         
-        // Show loading state
         if (submitBtn) {
             submitBtn.disabled = true;
             submitBtn.textContent = 'Submitting...';
         }
         
-        // Stop timer
         if (timerInterval) {
             clearInterval(timerInterval);
         }
         
         const timeTaken = Math.floor((Date.now() - startTime) / 1000);
         
+        // FIXED: Format answers correctly with question IDs
+        const formattedAnswers = quizData.questions.map((q, index) => ({
+            question_id: q.id,
+            quiz_id: quizData.id,
+            selected_answer: userAnswers[index]
+        }));
+        
+        // FIXED: Send as JSON
+        const payload = {
+            attempt_id: quizData.attempt_id,
+            quiz_id: quizData.id,
+            answers: formattedAnswers,
+            time_taken: timeTaken
+        };
+        
+        console.log('📤 Submitting:', payload);
+        
         try {
             const response = await fetch(urlRoot + '/userdashboard/submitQuiz', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Content-Type': 'application/json',
                 },
-                body: `quiz_id=${quizData.id}&answers=${JSON.stringify(userAnswers)}&time_taken=${timeTaken}`
+                body: JSON.stringify(payload)
             });
             
             const result = await response.json();
+            console.log('📥 Response:', result);
             
             if (result.success) {
                 quizCompleted = true;
@@ -235,8 +231,8 @@
                 }
             }
         } catch (error) {
-            console.error('Error submitting quiz:', error);
-            alert('An error occurred while submitting the quiz');
+            console.error('❌ Submit error:', error);
+            alert('Error submitting quiz. Please try again.');
             if (submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Submit Quiz';
@@ -245,12 +241,11 @@
     }
 
     function autoSubmitQuiz() {
-        alert('Time is up! Your quiz will be submitted automatically.');
+        alert('Time is up! Submitting automatically...');
         submitQuiz();
     }
 
     function displayResults(result) {
-        // Hide quiz content
         const quizContentEl = document.querySelector('.quiz-content');
         const quizNav = document.querySelector('.quiz-navigation');
         const progressSection = document.querySelector('.progress-section');
@@ -260,17 +255,17 @@
         if (progressSection) progressSection.style.display = 'none';
         
         const percentage = result.score;
-        const passed = result.passed;
+        const passed = result.passed || percentage >= 70;
         const scoreClass = passed ? 'pass' : 'fail';
         
         let badgeHTML = '';
-        if (result.badgeEarned) {
+        if (result.badgeEarned && result.badgeEarned.name) {
             badgeHTML = `
                 <div class="badge-earned">
-                    <div class="badge-icon-large">${result.badgeEarned.icon}</div>
+                    <div class="badge-icon-large">${result.badgeEarned.icon || '🏆'}</div>
                     <h3>🎉 Badge Earned!</h3>
                     <p class="badge-name">${result.badgeEarned.name}</p>
-                    <p class="badge-description">${result.badgeEarned.description}</p>
+                    <p class="badge-description">${result.badgeEarned.description || 'Congratulations!'}</p>
                 </div>
             `;
         }
@@ -279,33 +274,27 @@
             resultsSection.innerHTML = `
                 <div class="results-content">
                     <div class="score-circle ${scoreClass}">
-                        <div class="score-percentage">${percentage}%</div>
+                        <div class="score-percentage">${percentage.toFixed(1)}%</div>
                         <div class="score-label">${passed ? 'Passed!' : 'Failed'}</div>
                     </div>
                     
                     <div class="score-details">
                         <h2>${passed ? '🎉 Congratulations!' : '😔 Keep Trying!'}</h2>
                         <p class="score-text">
-                            You got <strong>${result.correctAnswers}</strong> out of 
-                            <strong>${result.totalQuestions}</strong> questions correct!
+                            You got <strong>${result.correct}</strong> out of 
+                            <strong>${result.total}</strong> questions correct!
                         </p>
-                        <p class="passing-score">Passing score: ${quizData.passingScore}%</p>
+                        <p class="passing-score">Passing score: 70%</p>
                     </div>
                     
                     ${badgeHTML}
                     
                     <div class="results-actions">
                         <a href="${urlRoot}/userdashboard/quiz" class="btn btn-secondary">Back to Quizzes</a>
-                        <button class="btn-retake btn btn-primary">Retake Quiz</button>
+                        <button class="btn-retake btn btn-primary" onclick="location.reload()">Retake Quiz</button>
                     </div>
                 </div>
             `;
-            
-            // Add retake handler
-            const retakeBtn = resultsSection.querySelector('.btn-retake');
-            if (retakeBtn) {
-                retakeBtn.addEventListener('click', () => location.reload());
-            }
             
             resultsSection.style.display = 'block';
         }
@@ -313,28 +302,18 @@
         window.scrollTo(0, 0);
     }
 
-    // Event Listeners
-    if (prevBtn) {
-        prevBtn.addEventListener('click', previousQuestion);
-    }
-    if (nextBtn) {
-        nextBtn.addEventListener('click', nextQuestion);
-    }
-    if (submitBtn) {
-        submitBtn.addEventListener('click', submitQuiz);
-    }
+    if (prevBtn) prevBtn.addEventListener('click', previousQuestion);
+    if (nextBtn) nextBtn.addEventListener('click', nextQuestion);
+    if (submitBtn) submitBtn.addEventListener('click', submitQuiz);
 
-    // Warn before leaving page
     window.addEventListener('beforeunload', (e) => {
         if (!quizCompleted) {
             e.preventDefault();
             e.returnValue = '';
-            return '';
         }
     });
 
-    // Initialize first question
-    console.log('🚀 Initializing quiz...');
+    console.log('🚀 Quiz initialized');
     renderQuestion();
 
 })();

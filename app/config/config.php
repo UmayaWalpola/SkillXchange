@@ -15,10 +15,7 @@ define('SITENAME', 'SkillXchange');
 if (file_exists(__DIR__ . '/db.local.php')) {
     require __DIR__ . '/db.local.php';
 } else {
-    define('DB_HOST', 'localhost');
-    define('DB_USER', 'root');
-    define('DB_PASS', '');
-    define('DB_NAME', 'skillxchange');
+    require __DIR__ . '/db.php';
 }
 
 
@@ -26,4 +23,5 @@ if (file_exists(__DIR__ . '/db.local.php')) {
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
 

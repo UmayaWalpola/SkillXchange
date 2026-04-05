@@ -51,7 +51,7 @@ class ReportController extends Controller
         }
 
         // Check for duplicate report
-        $this->db->query("SELECT id FROM reports WHERE reporter_id = :reporter_id AND reported_user_id = :reported_user_id AND status = 'pending'");
+        $this->db->query("SELECT id FROM reports WHERE reporter_user_id = :reporter_id AND reported_user_id = :reported_user_id AND status = 'pending'");
         $this->db->bind(':reporter_id', $reporterId);
         $this->db->bind(':reported_user_id', $reportedUserId);
         $existing = $this->db->single();
@@ -62,7 +62,7 @@ class ReportController extends Controller
         }
 
         // Insert report
-        $this->db->query("INSERT INTO reports (reporter_id, reported_user_id, reason, description, status, created_at) 
+        $this->db->query("INSERT INTO reports (reporter_user_id, reported_user_id, reason, description, status, created_at) 
                          VALUES (:reporter_id, :reported_user_id, :reason, :description, 'pending', NOW())");
         $this->db->bind(':reporter_id', $reporterId);
         $this->db->bind(':reported_user_id', $reportedUserId);
@@ -82,6 +82,8 @@ class ReportController extends Controller
      */
     public function reportProjectUser()
     {
+        header('Content-Type: application/json');
+
         if (!isset($_SESSION['user_id'])) {
             echo json_encode(['success' => false, 'message' => 'You must be logged in to report.']);
             exit;
@@ -114,8 +116,38 @@ class ReportController extends Controller
             exit;
         }
 
+        $this->db->query("SELECT id, organization_id FROM projects WHERE id = :project_id LIMIT 1");
+        $this->db->bind(':project_id', $projectId);
+        $project = $this->db->single();
+
+        if (!$project) {
+            echo json_encode(['success' => false, 'message' => 'Project not found.']);
+            exit;
+        }
+
+        $this->db->query("SELECT id FROM project_members WHERE project_id = :project_id AND user_id = :user_id AND status = 'active' LIMIT 1");
+        $this->db->bind(':project_id', $projectId);
+        $this->db->bind(':user_id', $reporterId);
+        $reporterMembership = $this->db->single();
+
+        $isProjectOwner = isset($project->organization_id) && (int)$project->organization_id === (int)$reporterId;
+        if (!$reporterMembership && !$isProjectOwner) {
+            echo json_encode(['success' => false, 'message' => 'Only active project participants can report a project member.']);
+            exit;
+        }
+
+        $this->db->query("SELECT id FROM project_members WHERE project_id = :project_id AND user_id = :user_id AND status = 'active' LIMIT 1");
+        $this->db->bind(':project_id', $projectId);
+        $this->db->bind(':user_id', $reportedUserId);
+        $reportedMembership = $this->db->single();
+
+        if (!$reportedMembership) {
+            echo json_encode(['success' => false, 'message' => 'That user is not an active member of this project.']);
+            exit;
+        }
+
         // Check for duplicate report
-        $this->db->query("SELECT id FROM user_reports WHERE reporter_id = :reporter_id AND reported_user_id = :reported_user_id AND project_id = :project_id AND status = 'pending'");
+        $this->db->query("SELECT id FROM user_reports WHERE reporter_org_id = :reporter_id AND reported_user_id = :reported_user_id AND project_id = :project_id AND status = 'pending'");
         $this->db->bind(':reporter_id', $reporterId);
         $this->db->bind(':reported_user_id', $reportedUserId);
         $this->db->bind(':project_id', $projectId);
@@ -126,14 +158,14 @@ class ReportController extends Controller
             exit;
         }
 
-        // Insert report
-        $this->db->query("INSERT INTO user_reports (reporter_id, reported_user_id, project_id, reason, description, status, created_at) 
-                         VALUES (:reporter_id, :reported_user_id, :project_id, :reason, :description, 'pending', NOW())");
-        $this->db->bind(':reporter_id', $reporterId);
-        $this->db->bind(':reported_user_id', $reportedUserId);
+        // Insert report using the existing DB.sql schema.
+        $this->db->query("INSERT INTO user_reports (project_id, reported_user_id, reporter_org_id, reason, details, status, reported_at) 
+                         VALUES (:project_id, :reported_user_id, :reporter_id, :reason, :details, 'pending', NOW())");
         $this->db->bind(':project_id', $projectId);
+        $this->db->bind(':reported_user_id', $reportedUserId);
+        $this->db->bind(':reporter_id', $reporterId);
         $this->db->bind(':reason', $reason);
-        $this->db->bind(':description', $description);
+        $this->db->bind(':details', $description);
 
         if ($this->db->execute()) {
             echo json_encode(['success' => true, 'message' => 'Your report has been submitted successfully.']);
@@ -298,7 +330,7 @@ class ReportController extends Controller
         if ($type === 'all' || $type === 'user') {
             $query = "SELECT r.*, u1.username as reporter_name, u2.username as reported_user_name, r.created_at
                      FROM reports r
-                     JOIN users u1 ON r.reporter_id = u1.id
+                     JOIN users u1 ON r.reporter_user_id = u1.id
                      JOIN users u2 ON r.reported_user_id = u2.id";
             
             $conditions = [];
@@ -329,9 +361,9 @@ class ReportController extends Controller
 
         // Get project member reports
         if ($type === 'all' || $type === 'project_member') {
-            $query = "SELECT ur.*, u1.username as reporter_name, u2.username as reported_user_name, p.name as project_name, ur.created_at
+            $query = "SELECT ur.*, u1.username as reporter_name, u2.username as reported_user_name, p.name as project_name, ur.reported_at as created_at
                      FROM user_reports ur
-                     JOIN users u1 ON ur.reporter_id = u1.id
+                     JOIN users u1 ON ur.reporter_org_id = u1.id
                      JOIN users u2 ON ur.reported_user_id = u2.id
                      JOIN projects p ON ur.project_id = p.id";
             
@@ -340,14 +372,14 @@ class ReportController extends Controller
                 $conditions[] = "ur.status = :status";
             }
             if ($date !== 'all') {
-                $conditions[] = $this->getDateCondition('ur.created_at', $date);
+                $conditions[] = $this->getDateCondition('ur.reported_at', $date);
             }
             
             if (!empty($conditions)) {
                 $query .= " WHERE " . implode(' AND ', $conditions);
             }
             
-            $query .= " ORDER BY ur.created_at DESC";
+            $query .= " ORDER BY ur.reported_at DESC";
             
             $this->db->query($query);
             if ($status !== 'all') {

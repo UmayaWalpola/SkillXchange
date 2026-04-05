@@ -118,6 +118,16 @@ function viewCommunity(communityId) {
 // ============================================
 
 /**
+ * Handle Enter key in message input
+ */
+function handleKeyPress(event, communityId) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage(communityId);
+    }
+}
+
+/**
  * Send a message in community chat
  */
 async function sendMessage(communityId) {
@@ -220,74 +230,6 @@ function formatTime(timestamp) {
     // Otherwise show date
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
-
-<<<<<<< HEAD
-                ${!isJoined ? '<div class="not-joined-msg">Join this community to create posts and participate in discussions</div>' : ''}
-                
-                <div class="posts-list" id="postsList">
-                    ${posts.length === 0 ? '<div class="no-posts">No posts yet. Be the first to post!</div>' : 
-                        posts.map(post => `
-                            <div class="forum-post">
-                                <div class="post-header">
-                                    <div class="post-author-info">
-                                        <div class="post-avatar">${post.author.charAt(0).toUpperCase()}</div>
-                                        <div>
-                                            <div class="post-author">${escapeHtml(post.author)}</div>
-                                            <div class="post-time">${escapeHtml(post.time)}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="post-content">
-                                    <h4 class="post-title">${escapeHtml(post.title)}</h4>
-                                    <p class="post-text">${escapeHtml(post.content)}</p>
-                                </div>
-                                <div class="post-footer">
-                                    <button class="post-action" onclick="likePost(${post.id})">
-                                        👍 ${post.likes} Likes
-                                    </button>
-                                    <button class="post-action" onclick="viewComments(${post.id})">
-                                        💬 ${(post.replies || []).length} Comments
-                                    </button>
-                                    ${post.authorId !== currentUser.id ? `<button class="btn-report" onclick="openReportModal('content', {contentType: 'post', contentId: ${post.id}})" title="Report this post">🚩</button>` : ''}
-                                </div>
-                                
-                                <!-- Comments Section -->
-                                <div id="comments-${post.id}" class="comments-section hide-element">
-                                    <div class="comments-list">
-                                        ${(post.replies || []).map(reply => `
-                                            <div class="comment">
-                                                <div class="comment-avatar">${reply.author.charAt(0).toUpperCase()}</div>
-                                                <div class="comment-content">
-                                                    <div class="comment-author">${escapeHtml(reply.author)}</div>
-                                                    <div class="comment-text">${escapeHtml(reply.content)}</div>
-                                                    <div class="comment-time">${escapeHtml(reply.time)}</div>
-                                                </div>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                    ${isJoined ? `
-                                        <div class="comment-input-section">
-                                            <input type="text" class="comment-input" id="comment-input-${post.id}" placeholder="Write a comment...">
-                                            <button class="btn btn-primary btn-sm" onclick="addComment(${post.id})">Comment</button>
-                                        </div>
-                                    ` : ''}
-                                </div>
-                            </div>
-                        `).join('')
-                    }
-                </div>
-            </div>
-=======
-/**
- * Handle Enter key in message input
- */
-function handleKeyPress(event, communityId) {
-    if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        sendMessage(communityId);
-    }
-}
->>>>>>> 4cc97da (All quiz and Community features)
 
 /**
  * Scroll chat to bottom

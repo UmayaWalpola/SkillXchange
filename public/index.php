@@ -1,5 +1,9 @@
 <?php
 
+// Start output buffering immediately so AJAX JSON endpoints can
+// call ob_clean() to suppress any stray HTML/warning output.
+ob_start();
+
 // Load config (includes session_start)
 require_once '../app/config/config.php';
 // ... rest of your code

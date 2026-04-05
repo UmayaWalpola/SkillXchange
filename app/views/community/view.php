@@ -66,6 +66,7 @@
 <script>window.URLROOT = '<?= URLROOT ?>';</script>
 <script src="<?= URLROOT ?>/assets/js/main.js" defer></script>
 <script src="<?= URLROOT ?>/assets/js/reporting.js"></script>
+<script src="<?= URLROOT ?>/assets/js/community_forum.js"></script>
 
 <?php require_once "../app/views/layouts/footer.php"; ?>
 
