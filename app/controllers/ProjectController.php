@@ -322,55 +322,61 @@ class ProjectController extends Controller
         ob_clean();
         header('Content-Type: application/json');
 
-        if (!isset($_SESSION['user_id'])) {
-            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
-            exit;
-        }
-
-        $rawInput = file_get_contents('php://input');
-        $input    = json_decode($rawInput, true) ?: $_POST;
-
-        $taskId    = (int)($input['task_id']    ?? 0);
-        $projectId = (int)($input['project_id'] ?? 0);
-
-        if (!$taskId || !$projectId) {
-            echo json_encode(['success' => false, 'message' => 'Missing task_id or project_id']);
-            exit;
-        }
-
-        $taskModel = $this->model('Task');
-        $task = $taskModel->getTaskById($taskId);
-
-        if (!$task || (int)$task->project_id !== $projectId) {
-            echo json_encode(['success' => false, 'message' => 'Task not found']);
-            exit;
-        }
-
-        // Only the assigned member may complete the task
-        if ((int)$task->assigned_to !== (int)$_SESSION['user_id']) {
-            echo json_encode(['success' => false, 'message' => 'You are not assigned to this task']);
-            exit;
-        }
-
-        if ($taskModel->updateTaskStatus($taskId, 'done')) {
-            // Notify the project organisation
-            try {
-                $project = $this->projectModel->getProjectById($projectId);
-                $notifModel = $this->model('Notification');
-                $memberName = $_SESSION['username'] ?? 'A member';
-                $notifModel->createNotification([
-                    'user_id'    => $project->organization_id,
-                    'type'       => 'task_completed',
-                    'message'    => "{$memberName} completed the task: {$task->title}",
-                    'project_id' => $projectId,
-                    'task_id'    => $taskId
-                ]);
-            } catch (Exception $e) {
-                error_log('Notify org on task complete: ' . $e->getMessage());
+        try {
+            if (!isset($_SESSION['user_id'])) {
+                echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+                exit;
             }
-            echo json_encode(['success' => true, 'message' => 'Task marked as complete!']);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Failed to update task status']);
+
+            $rawInput = file_get_contents('php://input');
+            $input    = json_decode($rawInput, true) ?: $_POST;
+
+            $taskId    = (int)($input['task_id'] ?? 0);
+            $projectId = (int)($input['project_id'] ?? 0);
+
+            if (!$taskId || !$projectId) {
+                echo json_encode(['success' => false, 'message' => 'Missing task_id or project_id']);
+                exit;
+            }
+
+            $taskModel = $this->model('Task');
+            $task = $taskModel->getTaskById($taskId);
+
+            if (!$task || (int)$task->project_id !== $projectId) {
+                echo json_encode(['success' => false, 'message' => 'Task not found']);
+                exit;
+            }
+
+            if ((int)$task->assigned_to !== (int)$_SESSION['user_id']) {
+                echo json_encode(['success' => false, 'message' => 'You are not assigned to this task']);
+                exit;
+            }
+
+            if ($taskModel->updateTaskStatus($taskId, 'done', (int)$_SESSION['user_id'])) {
+                try {
+                    $project = $this->projectModel->getProjectById($projectId);
+                    if ($project && !empty($project->organization_id)) {
+                        $notifModel = $this->model('Notification');
+                        $memberName = $_SESSION['username'] ?? 'A member';
+                        $notifModel->createNotification([
+                            'user_id'    => $project->organization_id,
+                            'type'       => 'task_completed',
+                            'message'    => "{$memberName} completed the task: {$task->title}",
+                            'project_id' => $projectId,
+                            'task_id'    => $taskId
+                        ]);
+                    }
+                } catch (Throwable $e) {
+                    error_log('Notify org on task complete: ' . $e->getMessage());
+                }
+
+                echo json_encode(['success' => true, 'message' => 'Task marked as complete!']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Failed to update task status']);
+            }
+        } catch (Throwable $e) {
+            error_log('Project completeTask error: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Failed to complete task. Please try again.']);
         }
         exit;
     }

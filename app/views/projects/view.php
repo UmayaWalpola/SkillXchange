@@ -826,6 +826,7 @@
                          data-task-priority="<?= htmlspecialchars(ucfirst($priority)) ?>"
                          data-task-deadline="<?= $deadline ? date('M d, Y', strtotime($deadline)) : 'No deadline' ?>"
                          data-task-status="<?= htmlspecialchars($statusLabel) ?>"
+                         data-task-status-raw="<?= htmlspecialchars($status) ?>"
                          data-task-done="<?= $isDone ? '1' : '0' ?>">
 
                         <!-- Status icon -->
@@ -1179,13 +1180,13 @@ window.URLROOT = '<?= URLROOT ?>';
                 </div>
             </div>
 
-            <!-- Complete button -->
+            <!-- Task action button -->
             <div id="tdCompleteWrap">
                 <button id="tdCompleteBtn" onclick="markTaskDone()" style="width:100%;padding:15px;background:linear-gradient(135deg,#658396,#5a7a8c);color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all 0.2s;box-shadow:0 4px 15px rgba(101,131,150,0.35);" onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 20px rgba(101,131,150,0.45)'" onmouseleave="this.style.transform='none';this.style.boxShadow='0 4px 15px rgba(101,131,150,0.35)'">
                     <i class="ph ph-check-circle" style="font-size:1.2rem;"></i>
                     Mark as Complete
                 </button>
-                <p style="text-align:center;font-size:0.8rem;color:#9ca3af;margin-top:10px;">Completing this task will notify the project organization.</p>
+                <p id="tdActionHint" style="text-align:center;font-size:0.8rem;color:#9ca3af;margin-top:10px;">Completing this task will notify the project organization.</p>
             </div>
             <div id="tdDoneMsg" style="display:none;text-align:center;padding:16px;background:#d5eaf6;border-radius:12px;color:#355266;font-weight:700;font-size:1rem;">
                 <i class="ph ph-check-circle" style="font-size:1.4rem;vertical-align:middle;margin-right:6px;"></i>
@@ -1219,6 +1220,7 @@ function toggleMyTasks() {
 /* ---- Task Detail Panel ---- */
 let _currentTaskId = null;
 let _currentProjectId = null;
+let _currentTaskStatusRaw = 'todo';
 
 function openTaskDetail(taskId, projectId) {
     const row = document.querySelector(`.my-task-row[data-task-id="${taskId}"]`);
@@ -1232,11 +1234,13 @@ function openTaskDetail(taskId, projectId) {
     const priority = row.dataset.taskPriority;
     const deadline = row.dataset.taskDeadline;
     const status   = row.dataset.taskStatus;
+    const statusRaw = row.dataset.taskStatusRaw || 'todo';
     const isDone   = row.dataset.taskDone === '1';
 
     document.getElementById('tdTitle').textContent   = title;
     document.getElementById('tdDesc').textContent    = desc;
     document.getElementById('tdDeadline').textContent = deadline;
+    _currentTaskStatusRaw = statusRaw;
 
     // Priority pill
     const prioColors = { High:'#c24141', Medium:'#b7791f', Low:'#4a6f86' };
@@ -1263,9 +1267,10 @@ function openTaskDetail(taskId, projectId) {
         document.getElementById('taskPanelHeader').style.background = 'linear-gradient(135deg,#658396,#5a7a8c)';
     }
 
-    // Show/hide complete button
+    // Show/hide task action button
     document.getElementById('tdCompleteWrap').style.display = isDone ? 'none' : 'block';
     document.getElementById('tdDoneMsg').style.display = isDone ? 'block' : 'none';
+    syncTaskActionButton(statusRaw);
 
     const overlay = document.getElementById('taskDetailOverlay');
     overlay.style.display = 'flex';
@@ -1276,6 +1281,127 @@ function closeTaskDetail(e) {
     if (e && e.target !== document.getElementById('taskDetailOverlay')) return;
     document.getElementById('taskDetailOverlay').style.display = 'none';
     document.body.style.overflow = '';
+}
+
+function syncTaskActionButton(statusRaw) {
+    const btn = document.getElementById('tdCompleteBtn');
+    const hint = document.getElementById('tdActionHint');
+    if (!btn || !hint) return;
+
+    if (statusRaw === 'in-progress') {
+        btn.innerHTML = '<i class="ph ph-check-circle" style="font-size:1.2rem;"></i> Mark as Complete';
+        btn.onclick = markTaskDone;
+        hint.textContent = 'Completing this task will notify the project organization.';
+    } else {
+        btn.innerHTML = '<i class="ph ph-play-circle" style="font-size:1.2rem;"></i> Start Task';
+        btn.onclick = startTaskProgress;
+        hint.textContent = 'Starting this task will notify the project organization.';
+    }
+}
+
+function updateTaskRowStatus(taskId, nextStatusRaw) {
+    const row = document.querySelector(`.my-task-row[data-task-id="${taskId}"]`);
+    if (!row) return;
+
+    const title = row.querySelector('div > div:first-child');
+    const iconWrap = row.querySelector('div:first-child');
+    const statusLabel = nextStatusRaw === 'done' ? 'Completed' : (nextStatusRaw === 'in-progress' ? 'In Progress' : 'To-Do');
+    const statusColor = nextStatusRaw === 'done' ? '#356b86' : (nextStatusRaw === 'in-progress' ? '#4f6d82' : '#b7791f');
+    const statusBg = nextStatusRaw === 'done' ? '#dff0fa' : (nextStatusRaw === 'in-progress' ? '#d5eaf6' : '#fff2cf');
+
+    row.dataset.taskStatusRaw = nextStatusRaw;
+    row.dataset.taskStatus = statusLabel;
+    row.dataset.taskDone = nextStatusRaw === 'done' ? '1' : '0';
+
+    if (nextStatusRaw === 'done') {
+        row.style.background = '#edf7fc';
+        row.style.border = '1.5px solid #b9d7e8';
+        row.style.opacity = '0.75';
+        if (title) {
+            title.style.textDecoration = 'line-through';
+            title.style.color = '#6b7280';
+        }
+        if (iconWrap) {
+            iconWrap.innerHTML = '<i class="ph ph-check-circle" style="font-size:20px;color:#356b86;"></i>';
+        }
+    } else if (nextStatusRaw === 'in-progress') {
+        row.style.background = '#f4f8fb';
+        row.style.border = '1.5px solid #c7d9e6';
+        row.style.opacity = '1';
+        if (title) {
+            title.style.textDecoration = 'none';
+            title.style.color = '#1f2937';
+        }
+        if (iconWrap) {
+            iconWrap.innerHTML = '<i class="ph ph-spinner" style="font-size:20px;color:#4f6d82;"></i>';
+        }
+    }
+
+    const statusChip = row.querySelector('div[style*="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"] span:first-child');
+    if (statusChip) {
+        statusChip.textContent = statusLabel;
+        statusChip.style.background = statusBg;
+        statusChip.style.color = statusColor;
+    }
+}
+
+function startTaskProgress() {
+    if (!_currentTaskId) return;
+
+    const btn = document.getElementById('tdCompleteBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph ph-spinner" style="font-size:1.1rem;"></i> Starting...';
+
+    const formData = new FormData();
+    formData.append('task_id', _currentTaskId);
+    formData.append('status', 'in-progress');
+
+    fetch(window.URLROOT + '/task/updateStatus', {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => {
+        if (r.status === 401) {
+            return r.json().then(data => { throw new Error(data.message || 'Your session has expired. Please sign in again.'); });
+        }
+        if (!r.ok) return r.text().then(t => { throw new Error(t.substring(0, 200)); });
+        const contentType = r.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+            return r.text().then(t => {
+                const lower = t.toLowerCase();
+                if (lower.includes('<!doctype') || lower.includes('/auth/signin') || lower.includes('sign in')) {
+                    throw new Error('Your session has expired. Please sign in again.');
+                }
+                throw new Error(t.substring(0, 200));
+            });
+        }
+        return r.json();
+    })
+    .then(data => {
+        if (data.success) {
+            _currentTaskStatusRaw = 'in-progress';
+            updateTaskRowStatus(_currentTaskId, 'in-progress');
+            document.getElementById('taskPanelHeader').style.background = 'linear-gradient(135deg,#658396,#7c9bb0)';
+            document.getElementById('tdBadges').innerHTML =
+                document.getElementById('tdBadges').innerHTML.replace(/To-Do|Completed|In Progress/, 'In Progress');
+            syncTaskActionButton('in-progress');
+            btn.disabled = false;
+            alert(data.message || 'Task moved to in progress');
+            setTimeout(() => location.reload(), 1200);
+        } else {
+            alert('Error: ' + (data.message || 'Failed to start task'));
+            btn.disabled = false;
+            syncTaskActionButton(_currentTaskStatusRaw);
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('An error occurred: ' + err.message);
+        btn.disabled = false;
+        syncTaskActionButton(_currentTaskStatusRaw);
+    });
 }
 
 function markTaskDone() {
@@ -1292,25 +1418,27 @@ function markTaskDone() {
         body: JSON.stringify({ task_id: _currentTaskId, project_id: _currentProjectId })
     })
     .then(r => {
+        if (r.status === 401) {
+            return r.json().then(data => { throw new Error(data.message || 'Your session has expired. Please sign in again.'); });
+        }
         if (!r.ok) return r.text().then(t => { throw new Error(t.substring(0, 200)); });
+        const contentType = r.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+            return r.text().then(t => {
+                const lower = t.toLowerCase();
+                if (lower.includes('<!doctype') || lower.includes('/auth/signin') || lower.includes('sign in')) {
+                    throw new Error('Your session has expired. Please sign in again.');
+                }
+                throw new Error(t.substring(0, 200));
+            });
+        }
         return r.json();
     })
     .then(data => {
         if (data.success) {
             // Update the row in the list
-            const row = document.querySelector(`.my-task-row[data-task-id="${_currentTaskId}"]`);
-            if (row) {
-                row.dataset.taskDone   = '1';
-                row.dataset.taskStatus = 'Completed';
-                row.style.background   = '#edf7fc';
-                row.style.border       = '1.5px solid #b9d7e8';
-                row.style.opacity      = '0.75';
-                const title = row.querySelector('div > div:first-child');
-                if (title) title.style.textDecoration = 'line-through';
-                // swap icon
-                const iconWrap = row.querySelector('div:first-child');
-                if (iconWrap) iconWrap.innerHTML = '<i class="ph ph-check-circle" style="font-size:20px;color:#356b86;"></i>';
-            }
+            _currentTaskStatusRaw = 'done';
+            updateTaskRowStatus(_currentTaskId, 'done');
 
             // Show done state in panel
             document.getElementById('tdCompleteWrap').style.display = 'none';
@@ -1324,14 +1452,14 @@ function markTaskDone() {
         } else {
             alert('Error: ' + (data.message || 'Failed to complete task'));
             btn.disabled = false;
-            btn.innerHTML = '<i class="ph ph-check-circle" style="font-size:1.2rem;"></i> Mark as Complete';
+            syncTaskActionButton(_currentTaskStatusRaw);
         }
     })
     .catch(err => {
         console.error(err);
         alert('An error occurred: ' + err.message);
         btn.disabled = false;
-        btn.innerHTML = '<i class="ph ph-check-circle" style="font-size:1.2rem;"></i> Mark as Complete';
+        syncTaskActionButton(_currentTaskStatusRaw);
     });
 }
 

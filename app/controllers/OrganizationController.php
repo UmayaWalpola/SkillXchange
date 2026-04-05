@@ -8,10 +8,24 @@ class OrganizationController extends Controller {
     private $notificationModel;
 
     public function __construct() {
+        $isAjaxRequest = isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
         // Require login + role check
         if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'organization') {
-            header('Location: ' . URLROOT . '/auth/signin');
+            if ($isAjaxRequest) {
+                while (ob_get_level() > 0) {
+                    ob_end_clean();
+                }
+                header('Content-Type: application/json');
+                http_response_code(401);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Your organization session has expired. Please sign in again as the organization account.'
+                ]);
+            } else {
+                header('Location: ' . URLROOT . '/auth/signin');
+            }
             exit();
         }
 

@@ -755,12 +755,23 @@ document.getElementById('taskAssignForm').addEventListener('submit', function(e)
         }
     })
     .then(res => {
+        if (res.status === 401) {
+            return res.json().then(data => {
+                throw new Error(data.message || 'Your organization session has expired. Please sign in again.');
+            });
+        }
         if (!res.ok) {
             return res.text().then(txt => { throw new Error('Server returned ' + res.status + ': ' + txt.substring(0, 200)); });
         }
         const contentType = res.headers.get('content-type') || '';
         if (!contentType.includes('application/json')) {
-            return res.text().then(txt => { throw new Error('Expected JSON response but received: ' + txt.substring(0, 200)); });
+            return res.text().then(txt => {
+                const lower = txt.toLowerCase();
+                if (lower.includes('/auth/signin') || lower.includes('sign in') || lower.includes('login')) {
+                    throw new Error('Your organization session has expired. Please sign in again as the organization account.');
+                }
+                throw new Error('Expected JSON response but received: ' + txt.substring(0, 200));
+            });
         }
         return res.json();
     })
@@ -800,7 +811,7 @@ document.querySelectorAll('.task-status-select').forEach(select => {
         
         this.disabled = true;
         
-        fetch(URLROOT + '/TaskController/updateStatus', {
+        fetch(URLROOT + '/task/updateStatus', {
             method: 'POST',
             body: formData,
             credentials: 'same-origin',
