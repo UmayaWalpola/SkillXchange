@@ -213,7 +213,7 @@ class AuthController extends Controller {
                     exit;
                 } elseif ($user['role'] === 'manager') {
                     // Manager go to manager dashboard
-                    header("Location: " . URLROOT . "/managerdashboard");
+                    header("Location: " . URLROOT . "/manager");
                     exit;
                 } elseif ($user['role'] === 'admin') {
                     // Admins go to admin dashboard

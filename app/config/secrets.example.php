@@ -1,5 +1,5 @@
 <?php
-return [
+return array(
     'stripe_secret_key' => 'YOUR_STRIPE_SECRET_KEY_HERE',
     'stripe_publishable_key' => 'YOUR_STRIPE_PUBLISHABLE_KEY_HERE'
-];
+);

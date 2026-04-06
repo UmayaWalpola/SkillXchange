@@ -6,7 +6,7 @@
 <main class="site-main">
     <div class="dashboard-container">
         <div class="dashboard-main">
-            
+
             <!-- Page Header -->
             <div class="page-header">
                 <div>
@@ -14,6 +14,14 @@
                     <p>View and manage registered organizations</p>
                 </div>
             </div>
+
+            <!-- Success / Error Messages -->
+            <?php if (!empty($data['success'])): ?>
+                <div class="success-message"><?= htmlspecialchars($data['success']) ?></div>
+            <?php endif; ?>
+            <?php if (!empty($data['error'])): ?>
+                <div class="error-message"><?= htmlspecialchars($data['error']) ?></div>
+            <?php endif; ?>
 
             <!-- Organizations Table -->
             <div class="section-card">
@@ -23,34 +31,79 @@
                             <tr>
                                 <th>Organization Name</th>
                                 <th>Email</th>
-                                <th>Phone</th>
-                                <th>Address</th>
-                                <th>Registration Date</th>
+                                <th>Wallet Balance</th>
+                                <th>Projects</th>
+                                <th>Registered</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if(!empty($data['organizations'])): ?>
-                                <?php foreach($data['organizations'] as $org): ?>
-                                    <tr data-org-id="<?= $org['id'] ?>">
-                                        <td>
-                                            <div class="org-info">
-                                                <strong><?= htmlspecialchars($org['name']) ?></strong>
-                                            </div>
-                                        </td>
-                                        <td><?= htmlspecialchars($org['email']) ?></td>
-                                        <td><?= htmlspecialchars($org['phone']) ?></td>
-                                        <td><?= htmlspecialchars($org['address']) ?></td>
-                                        <td><?= date('M d, Y', strtotime($org['created_at'])) ?></td>
+                            <?php if (!empty($data['organizations'])): ?>
+                                <?php foreach ($data['organizations'] as $org): ?>
+                                    <tr>
+                                        <td><strong><?= htmlspecialchars($org->name) ?></strong></td>
+                                        <td><?= htmlspecialchars($org->email) ?></td>
+                                        <td><?= number_format($org->wallet_balance, 0) ?> BuckX</td>
+                                        <td><?= (int) $org->project_count ?></td>
+                                        <td><?= date('M d, Y', strtotime($org->created_at)) ?></td>
                                         <td>
                                             <div class="action-buttons">
-                                                <button class="btn-icon btn-view" title="View Details" onclick="viewOrganization(<?= $org['id'] ?>)">
-                                                    View
-                                                </button>
-                                                <button class="btn-icon btn-delete" title="Remove Organization" onclick="removeOrganization(<?= $org['id'] ?>, '<?= htmlspecialchars($org['name']) ?>')">
-                                                    Remove
-                                                </button>
+
+                                                <?php if (!empty($org->org_cert)): ?>
+                                                    <a class="btn-outline" href="<?= URLROOT ?>/<?= htmlspecialchars($org->org_cert) ?>" target="_blank" rel="noopener">
+                                                        View Certificate
+                                                    </a>
+                                                <?php else: ?>
+                                                    <span>No certificate</span>
+                                                <?php endif; ?>
+
+                                                <!-- Suspend / Reactivate -->
+                                                <?php if ($org->status === 'active'): ?>
+                                                   <button class="btn-outline" onclick="toggleSuspendForm(<?= $org->id ?>)">
+                                                        Suspend
+                                                    </button>
+                                                <?php else: ?>
+                                                    <form method="POST" action="<?= URLROOT ?>/manager/reactivateOrganization">
+                                                        <input type="hidden" name="org_id" value="<?= $org->id ?>">
+                                                        <button type="submit" class="btn-outline">
+                                                            Reactivate
+                                                        </button>
+
+                                                    </form>
+                                                <?php endif; ?>
+
                                             </div>
+
+                                            <?php if ($org->status === 'suspended'): ?>
+                                                <div class="details-panel open">
+                                                    <p><strong>Suspended On:</strong> <?= $org->suspended_at ?? '—' ?></p>
+                                                    <p><strong>Reason:</strong> <?= htmlspecialchars($org->suspension_reason ?? '—') ?></p>
+                                                </div>
+                                            <?php endif; ?>
+
+                                            <!-- Inline Suspend Form -->
+                                            <?php if ($org->status === 'active'): ?>
+                                                <div id="suspend-<?= $org->id ?>" class="inline-form-panel">
+                                                    <form method="POST" action="<?= URLROOT ?>/manager/suspendOrganization">
+                                                        <input type="hidden" name="org_id" value="<?= $org->id ?>">
+                                                        <div class="form-group">
+                                                            <label for="reason-<?= $org->id ?>">Reason</label>
+                                                            <textarea id="reason-<?= $org->id ?>" name="reason" rows="2" required
+                                                                placeholder="Reason for suspension..."></textarea>
+                                                        </div>
+                                                        <div class="form-footer">
+                                                            <button type="submit" class="btn-primary">
+                                                                Confirm Suspend
+                                                            </button>
+                                                            <button type="button" onclick="toggleSuspendForm(<?= $org->id ?>)"
+                                                                class="btn-cancel">
+                                                                Cancel
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            <?php endif; ?>
+
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -68,90 +121,10 @@
     </div>
 </main>
 
-<!-- View Organization Modal -->
-<div id="viewModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeViewModal()">&times;</span>
-        <h2>Organization Details</h2>
-        <div id="orgDetails" style="margin-top: 20px;">
-            <!-- Details will be populated by JavaScript -->
-        </div>
-    </div>
-</div>
-
 <script>
-function viewOrganization(orgId) {
-    // Get organization data from the table row
-<<<<<<< HEAD
-    const row = document.querySelector(tr[data-org-id="${orgId}"]);
-=======
-    const row = document.querySelector(`tr[data-org-id="${orgId}"]`);
->>>>>>> origin/feature/manager
-    const cells = row.getElementsByTagName('td');
-    
-    const orgDetails = `
-        <div style="line-height: 2;">
-            <p><strong>Organization Name:</strong> ${cells[0].innerText}</p>
-            <p><strong>Email:</strong> ${cells[1].innerText}</p>
-            <p><strong>Phone:</strong> ${cells[2].innerText}</p>
-            <p><strong>Address:</strong> ${cells[3].innerText}</p>
-            <p><strong>Registration Date:</strong> ${cells[4].innerText}</p>
-        </div>
-    `;
-    
-    document.getElementById('orgDetails').innerHTML = orgDetails;
-    document.getElementById('viewModal').style.display = 'block';
-}
-
-function closeViewModal() {
-    document.getElementById('viewModal').style.display = 'none';
-}
-
-function removeOrganization(orgId, orgName) {
-<<<<<<< HEAD
-    if (confirm(Are you sure you want to remove "${orgName}"? This action cannot be undone.)) {
-=======
-    if (confirm(`Are you sure you want to remove "${orgName}"? This action cannot be undone.`)) {
->>>>>>> origin/feature/manager
-        // TODO: Implement actual AJAX call to remove organization
-        fetch('<?= URLROOT ?>/managerdashboard/removeOrganization', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-<<<<<<< HEAD
-            body: org_id=${orgId}
-=======
-            body: `org_id=${orgId}`
->>>>>>> origin/feature/manager
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                // Remove the row from table
-<<<<<<< HEAD
-                document.querySelector(tr[data-org-id="${orgId}"]).remove();
-=======
-                document.querySelector(`tr[data-org-id="${orgId}"]`).remove();
->>>>>>> origin/feature/manager
-            } else {
-                alert('Error removing organization');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error removing organization');
-        });
-    }
-}
-
-// Close modal when clicking outside of it
-window.onclick = function(event) {
-    const modal = document.getElementById('viewModal');
-    if (event.target == modal) {
-        modal.style.display = 'none';
-    }
+function toggleSuspendForm(orgId) {
+    const form = document.getElementById('suspend-' + orgId);
+    form.classList.toggle('open');
 }
 </script>
 
