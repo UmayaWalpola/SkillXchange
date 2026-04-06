@@ -17,28 +17,28 @@
             <!-- Stats Overview -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-icon">💡</div>
+                    <div class="stat-icon"><i class="ph ph-lightbulb"></i></div>
                     <div class="stat-info">
                         <span class="stat-number">127</span>
                         <span class="stat-label">Total Skills</span>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">👨‍🏫</div>
+                    <div class="stat-icon"><i class="ph ph-chalkboard-teacher"></i></div>
                     <div class="stat-info">
                         <span class="stat-number">458</span>
                         <span class="stat-label">Total Teachers</span>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">👨‍🎓</div>
+                    <div class="stat-icon"><i class="ph ph-student"></i></div>
                     <div class="stat-info">
                         <span class="stat-number">612</span>
                         <span class="stat-label">Total Learners</span>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">🔥</div>
+                    <div class="stat-icon"><i class="ph ph-fire"></i></div>
                     <div class="stat-info">
                         <span class="stat-number">23</span>
                         <span class="stat-label">Trending Skills</span>
@@ -55,7 +55,7 @@
                 
                 <div class="categories-grid">
                     <div class="category-card">
-                        <div class="category-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">💻</div>
+                        <div class="category-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"><i class="ph ph-code"></i></div>
                         <h3>Technology</h3>
                         <p class="category-count">34 Skills</p>
                         <div class="category-stats">
@@ -65,7 +65,7 @@
                     </div>
                     
                     <div class="category-card">
-                        <div class="category-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">🎨</div>
+                        <div class="category-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"><i class="ph ph-paint-brush"></i></div>
                         <h3>Creative Arts</h3>
                         <p class="category-count">28 Skills</p>
                         <div class="category-stats">
@@ -75,7 +75,7 @@
                     </div>
                     
                     <div class="category-card">
-                        <div class="category-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">🌍</div>
+                        <div class="category-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"><i class="ph ph-globe"></i></div>
                         <h3>Languages</h3>
                         <p class="category-count">22 Skills</p>
                         <div class="category-stats">
@@ -85,7 +85,7 @@
                     </div>
                     
                     <div class="category-card">
-                        <div class="category-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">🎵</div>
+                        <div class="category-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"><i class="ph ph-music-notes"></i></div>
                         <h3>Music</h3>
                         <p class="category-count">18 Skills</p>
                         <div class="category-stats">
@@ -95,7 +95,7 @@
                     </div>
                     
                     <div class="category-card">
-                        <div class="category-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">💼</div>
+                        <div class="category-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);"><i class="ph ph-briefcase"></i></div>
                         <h3>Business</h3>
                         <p class="category-count">15 Skills</p>
                         <div class="category-stats">
@@ -105,7 +105,7 @@
                     </div>
                     
                     <div class="category-card">
-                        <div class="category-icon" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);">🏃</div>
+                        <div class="category-icon" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);"><i class="ph ph-person-simple-run"></i></div>
                         <h3>Sports & Fitness</h3>
                         <p class="category-count">10 Skills</p>
                         <div class="category-stats">
@@ -153,7 +153,7 @@
                                 <td><span class="rank-badge rank-1">1</span></td>
                                 <td>
                                     <div class="skill-cell">
-                                        <span class="skill-icon">🐍</span>
+                                        <span class="skill-icon"><i class="ph ph-code"></i></span>
                                         <strong>Python Programming</strong>
                                     </div>
                                 </td>
@@ -170,7 +170,7 @@
                                 <td><span class="rank-badge rank-2">2</span></td>
                                 <td>
                                     <div class="skill-cell">
-                                        <span class="skill-icon">🌐</span>
+                                        <span class="skill-icon"><i class="ph ph-globe"></i></span>
                                         <strong>Spanish Language</strong>
                                     </div>
                                 </td>
@@ -187,7 +187,7 @@
                                 <td><span class="rank-badge rank-3">3</span></td>
                                 <td>
                                     <div class="skill-cell">
-                                        <span class="skill-icon">🎸</span>
+                                        <span class="skill-icon"><i class="ph ph-guitar"></i></span>
                                         <strong>Guitar Playing</strong>
                                     </div>
                                 </td>
@@ -204,7 +204,7 @@
                                 <td><span class="rank-badge">4</span></td>
                                 <td>
                                     <div class="skill-cell">
-                                        <span class="skill-icon">🎨</span>
+                                        <span class="skill-icon"><i class="ph ph-paint-brush"></i></span>
                                         <strong>Graphic Design</strong>
                                     </div>
                                 </td>
@@ -221,7 +221,7 @@
                                 <td><span class="rank-badge">5</span></td>
                                 <td>
                                     <div class="skill-cell">
-                                        <span class="skill-icon">📸</span>
+                                        <span class="skill-icon"><i class="ph ph-camera"></i></span>
                                         <strong>Photography</strong>
                                     </div>
                                 </td>
@@ -238,7 +238,7 @@
                                 <td><span class="rank-badge">6</span></td>
                                 <td>
                                     <div class="skill-cell">
-                                        <span class="skill-icon">💻</span>
+                                        <span class="skill-icon"><i class="ph ph-code"></i></span>
                                         <strong>Web Development</strong>
                                     </div>
                                 </td>
@@ -272,7 +272,7 @@
                                 <td><span class="rank-badge">8</span></td>
                                 <td>
                                     <div class="skill-cell">
-                                        <span class="skill-icon">📝</span>
+                                        <span class="skill-icon"><i class="ph ph-notepad"></i></span>
                                         <strong>Content Writing</strong>
                                     </div>
                                 </td>

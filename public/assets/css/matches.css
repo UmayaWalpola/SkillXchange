@@ -539,6 +539,31 @@
     border: 1px solid var(--accent-blue);
 }
 
+.connected-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.btn-chat {
+    padding: 0.65rem 1.5rem;
+    background: var(--accent-blue);
+    color: var(--dark-bg);
+    border: 2px solid var(--primary-blue);
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.btn-chat:hover {
+    background: var(--primary-blue);
+    color: var(--white-bg);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(101, 131, 150, 0.4);
+}
 .skill-item:last-child {
     margin-bottom: 0;
 }

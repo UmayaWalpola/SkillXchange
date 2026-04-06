@@ -15,14 +15,14 @@
 
                 <!-- Community Header -->
                 <div class="detail-header">
-                    <div class="detail-header-icon"><?= htmlspecialchars($data['community']->icon) ?></div>
+                    <div class="detail-header-icon"><?= strtoupper(substr($data['community']->name ?? 'C', 0, 1)) ?></div>
                     <div class="detail-header-info">
-                        <h1><?= htmlspecialchars($data['community']->name) ?></h1>
-                        <p><?= htmlspecialchars($data['community']->description) ?></p>
+                        <h1><?= htmlspecialchars($data['community']->name ?? '') ?></h1>
+                        <p><?= htmlspecialchars($data['community']->description ?? '') ?></p>
                         
                         <div class="community-stats">
-                            <span>👥 <?= $data['community']->members ?> members</span>
-                            <span>💬 <?= $data['community']->posts ?> posts</span>
+                            <span><i class="ph ph-users"></i> <?= $data['community']->members ?> members</span>
+                            <span><i class="ph ph-chat-circle-dots"></i> <?= $data['community']->posts ?> posts</span>
                         </div>
                         
                         <div class="header-actions">

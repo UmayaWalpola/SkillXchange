@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="<?= URLROOT; ?>/assets/css/global.css">
     <link rel="stylesheet" href="<?= URLROOT; ?>/assets/css/profile.css">
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
     <style>
         .header {
             position: fixed;
@@ -410,7 +412,7 @@ function sx_get_role_label($user) {
         <div class="auth-section">
             <?php if ($user): ?>
                 <div class="notif-bell" id="sxNotifBell">
-                    <button type="button" class="notif-bell-button" id="sxNotifTrigger">🔔</button>
+                    <button type="button" class="notif-bell-button" id="sxNotifTrigger"><i class="ph ph-bell"></i></button>
                     <?php if ($notifUnreadCount > 0): ?>
                         <div class="notif-badge"><?= $notifUnreadCount > 9 ? '9+' : $notifUnreadCount; ?></div>
                     <?php endif; ?>
@@ -424,15 +426,17 @@ function sx_get_role_label($user) {
                                 <?php foreach ($notifLatest as $n): ?>
                                     <?php
                                         $iconClass = 'info';
-                                        $iconSymbol = '🔧';
-                                        if ($n->type === 'application_accepted') { $iconClass = 'success'; $iconSymbol = '🎉'; }
-                                        elseif ($n->type === 'application_rejected') { $iconClass = 'danger'; $iconSymbol = '❌'; }
-                                        elseif ($n->type === 'project_invite') { $iconClass = 'info'; $iconSymbol = '📨'; }
-                                        elseif ($n->type === 'deadline_warning') { $iconClass = 'danger'; $iconSymbol = '⚠'; }
-                                        elseif ($n->type === 'deadline_due_today') { $iconClass = 'warning'; $iconSymbol = '📅'; }
-                                        elseif ($n->type === 'deadline_due_soon') { $iconClass = 'warning'; $iconSymbol = '⏳'; }
-                                        elseif ($n->type === 'task_assigned') { $iconClass = 'info'; $iconSymbol = '📌'; }
-                                        elseif ($n->type === 'task_update') { $iconClass = 'info'; $iconSymbol = '🔧'; }
+                                        $iconSymbol = '<i class="ph ph-wrench"></i>';
+                                        if ($n->type === 'application_accepted') { $iconClass = 'success'; $iconSymbol = '<i class="ph ph-confetti"></i>'; }
+                                        elseif ($n->type === 'application_rejected') { $iconClass = 'danger'; $iconSymbol = '<i class="ph ph-x-circle"></i>'; }
+                                        elseif ($n->type === 'project_invite') { $iconClass = 'info'; $iconSymbol = '<i class="ph ph-envelope"></i>'; }
+                                        elseif ($n->type === 'deadline_warning') { $iconClass = 'danger'; $iconSymbol = '<i class="ph ph-warning"></i>'; }
+                                        elseif ($n->type === 'deadline_due_today') { $iconClass = 'warning'; $iconSymbol = '<i class="ph ph-calendar"></i>'; }
+                                        elseif ($n->type === 'deadline_due_soon') { $iconClass = 'warning'; $iconSymbol = '<i class="ph ph-hourglass"></i>'; }
+                                        elseif ($n->type === 'task_assigned') { $iconClass = 'info'; $iconSymbol = '<i class="ph ph-push-pin"></i>'; }
+                                        elseif ($n->type === 'task_update') { $iconClass = 'info'; $iconSymbol = '<i class="ph ph-wrench"></i>'; }
+                                        elseif ($n->type === 'system_warning') { $iconClass = 'warning'; $iconSymbol = '<i class="ph ph-warning"></i>'; }
+                                        elseif ($n->type === 'account_ban') { $iconClass = 'danger'; $iconSymbol = '<i class="ph ph-x-circle"></i>'; }
                                     ?>
                                     <a href="<?= URLROOT ?>/notifications/read/<?= $n->id ?>" class="notif-item <?= $n->is_read ? '' : 'unread' ?>" style="text-decoration:none;">
                                         <div class="notif-icon <?= $iconClass ?>"><?= $iconSymbol ?></div>

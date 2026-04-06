@@ -26,8 +26,8 @@
                         <h3><?= htmlspecialchars($community['name']); ?></h3>
                         <p><?= htmlspecialchars($community['description']); ?></p>
                         <div class="community-stats">
-                            <span>👥 <?= $community['members']; ?> members</span>
-                            <span>💬 <?= $community['totalPosts']; ?> posts</span>
+                            <span><i class="ph ph-users"></i> <?= $community['members']; ?> members</span>
+                            <span><i class="ph ph-chat-circle-dots"></i> <?= $community['totalPosts']; ?> posts</span>
                         </div>
                         <div class="btn-group">
                             <button class="btn btn-primary join-btn" onclick="joinCommunity(<?= $community['id']; ?>)">
@@ -65,5 +65,7 @@ window.URLROOT = '<?= URLROOT ?>';
 
 <script src="<?= URLROOT ?>/assets/js/community_forum.js"></script>
 <script src="<?= URLROOT ?>/assets/js/reporting.js"></script>
+
+<?php require_once APPROOT . '/views/components/report_modal.php'; ?>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>

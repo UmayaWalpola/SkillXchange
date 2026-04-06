@@ -6,14 +6,58 @@
 <main class="site-main">
     <div class="dashboard-container">
         <div class="dashboard-main">
-            
+
             <!-- Page Header -->
             <div class="page-header">
                 <div>
                     <h1>User Management</h1>
-                    <p>Add and manage admin users</p>
+                    <p>Assign and manage admin roles</p>
                 </div>
-                <button class="btn-primary" onclick="openAddUserModal()">+ Add New User</button>
+                <button class="btn-primary" onclick="toggleAddForm()">+ Add New User</button>
+            </div>
+
+            <!-- Success / Error Messages -->
+            <?php if (!empty($data['success'])): ?>
+                <div class="success-message"><?= htmlspecialchars($data['success']) ?></div>
+            <?php endif; ?>
+            <?php if (!empty($data['error'])): ?>
+                <div class="error-message"><?= htmlspecialchars($data['error']) ?></div>
+            <?php endif; ?>
+
+            <!-- Add New User Form (hidden by default) -->
+            <div id="addUserForm" class="section-card inline-form-panel">
+                <h2 class="section-title">Add New User</h2>
+                <form method="POST" action="<?= URLROOT ?>/manager/addUser">
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label for="add-name">Full Name</label>
+                            <input id="add-name" type="text" name="name" required placeholder="Enter full name">
+                        </div>
+                        <div class="form-group">
+                            <label for="add-email">Email Address</label>
+                            <input id="add-email" type="email" name="email" required placeholder="Enter email">
+                        </div>
+                        <div class="form-group">
+                            <label for="add-role">Role</label>
+                            <select id="add-role" name="role" required>
+                                <option value="">Select Role</option>
+                                <option value="admin">Admin</option>
+                                <option value="quiz_manager">Quiz Manager</option>
+                                <option value="community_admin">Community Admin</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="add-password">Password</label>
+                            <input id="add-password" type="password" name="password" required placeholder="Enter password">
+                        </div>
+                    </div>
+                    <div class="form-footer">
+                        <button type="submit" class="btn-primary">Add User</button>
+                        <button type="button" onclick="toggleAddForm()" class="btn-cancel">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
             </div>
 
             <!-- Users Table -->
@@ -29,38 +73,70 @@
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="usersTableBody">
-                            <?php if(!empty($data['users'])): ?>
-                                <?php foreach($data['users'] as $user): ?>
-                                    <tr data-user-id="<?= $user['id'] ?>">
-                                        <td><strong><?= htmlspecialchars($user['name']) ?></strong></td>
-                                        <td><?= htmlspecialchars($user['email']) ?></td>
+                        <tbody>
+                            <?php if (!empty($data['users'])): ?>
+                                <?php foreach ($data['users'] as $user): ?>
+                                    <tr>
+                                        <td><strong><?= htmlspecialchars($user->name) ?></strong></td>
+                                        <td><?= htmlspecialchars($user->email) ?></td>
                                         <td>
-                                       <?php 
-$badgeClass = 'badge-info';
-if($user['role'] == 'admin') $badgeClass = 'badge-danger';
-elseif($user['role'] == 'quiz_manager') $badgeClass = 'badge-warning';
-elseif($user['role'] == 'manager') $badgeClass = 'badge-primary';
-elseif($user['role'] == 'community_admin') $badgeClass = 'badge-success';
-?>
-                                        <span class="badge <?= $badgeClass ?>">
-<<<<<<< HEAD
-                                        <?= htmlspecialchars(str_replace('', ' ', ucwords($user['role'], ''))) ?>
-=======
-                                        <?= htmlspecialchars(str_replace('_', ' ', ucwords($user['role'], '_'))) ?>
->>>>>>> origin/feature/manager
-                                        </span>
+                                            <span class="role-text"><?= htmlspecialchars(str_replace('_', ' ', $user->role)) ?></span>
                                         </td>
-                                        <td><?= date('M d, Y', strtotime($user['created_at'])) ?></td>
+                                        <td><?= date('M d, Y', strtotime($user->created_at)) ?></td>
                                         <td>
                                             <div class="action-buttons">
-                                                <button class="btn-icon btn-edit" title="Edit User" onclick='openEditUserModal(<?= $user['id'] ?>, <?= json_encode($user['name']) ?>, <?= json_encode($user['email']) ?>, <?= json_encode($user['role']) ?>)'>
+                                                <button class="btn-outline"
+                                                    onclick="toggleEditForm(<?= $user->id ?>)">
                                                     Edit
                                                 </button>
-                                                <button class="btn-icon btn-delete" title="Remove User" onclick='removeUser(<?= $user['id'] ?>, <?= json_encode($user['name']) ?>)'>
-                                                    Remove
-                                                </button>
+                                                <form method="POST" action="<?= URLROOT ?>/manager/removeUser"
+                                                    onsubmit="return confirm('Remove <?= htmlspecialchars($user->name) ?>? This cannot be undone.')">
+                                                    <input type="hidden" name="user_id" value="<?= $user->id ?>">
+                                                    <button type="submit" class="btn-outline">Remove</button>
+                                                </form>
                                             </div>
+
+                                            <!-- Inline Edit Form -->
+                                            <div id="edit-<?= $user->id ?>" class="inline-form-panel">
+                                                <form method="POST" action="<?= URLROOT ?>/manager/updateUser">
+                                                    <input type="hidden" name="user_id" value="<?= $user->id ?>">
+                                                    <div class="form-grid-2">
+                                                        <div class="form-group">
+                                                            <label for="edit-name-<?= $user->id ?>">Full Name</label>
+                                                            <input id="edit-name-<?= $user->id ?>" type="text" name="name" required
+                                                                value="<?= htmlspecialchars($user->name) ?>">
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="edit-email-<?= $user->id ?>">Email</label>
+                                                            <input id="edit-email-<?= $user->id ?>" type="email" name="email" required
+                                                                value="<?= htmlspecialchars($user->email) ?>">
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="edit-role-<?= $user->id ?>">Role</label>
+                                                            <select id="edit-role-<?= $user->id ?>" name="role" required>
+                                                                <option value="admin"           <?= $user->role == 'admin'           ? 'selected' : '' ?>>Admin</option>
+                                                                <option value="quiz_manager"    <?= $user->role == 'quiz_manager'    ? 'selected' : '' ?>>Quiz Manager</option>
+                                                                <option value="community_admin" <?= $user->role == 'community_admin' ? 'selected' : '' ?>>Community Admin</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="edit-password-<?= $user->id ?>">New Password (leave blank to keep current)</label>
+                                                            <input id="edit-password-<?= $user->id ?>" type="password" name="password"
+                                                                placeholder="Leave blank to keep current">
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-footer">
+                                                        <button type="submit" class="btn-primary">
+                                                            Save Changes
+                                                        </button>
+                                                        <button type="button" onclick="toggleEditForm(<?= $user->id ?>)"
+                                                            class="btn-cancel">
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -78,80 +154,16 @@ elseif($user['role'] == 'community_admin') $badgeClass = 'badge-success';
     </div>
 </main>
 
-<!-- Add User Modal -->
-<div id="addUserModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeAddUserModal()">&times;</span>
-        <h2>Add New User</h2>
-        <form id="addUserForm" data-urlroot="<?= URLROOT ?>" style="margin-top: 20px;">
-            <div style="margin-bottom: 15px;">
-                <label for="userName">Full Name</label>
-                <input type="text" id="userName" name="name" required>
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-                <label for="userEmail">Email Address</label>
-                <input type="email" id="userEmail" name="email" required>
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-                <label for="userRole">Role</label>
-                <select id="userRole" name="role" required style="width: 100%; padding: 15px 20px; border-radius: 10px; border: 2px solid var(--primary-blue); font-size: 1rem; background-color: var(--blue-bg);">
-                    <option value="">Select Role</option>
-                    <option value="admin">Admin</option>
-                    <option value="quiz_manager">Quiz Manager</option>
-                    <option value="community_admin">Community Admin</option>
-                </select>
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-                <label for="userPassword">Password</label>
-                <input type="password" id="userPassword" name="password" required>
-            </div>
-            
-            <button type="submit" class="btn-primary" style="width: 100%;">Add User</button>
-        </form>
-    </div>
-</div>
+<script>
+function toggleAddForm() {
+    const form = document.getElementById('addUserForm');
+    form.classList.toggle('open');
+}
 
-<!-- Edit User Modal -->
-<div id="editUserModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeEditUserModal()">&times;</span>
-        <h2>Edit User</h2>
-        <form id="editUserForm" data-urlroot="<?= URLROOT ?>" style="margin-top: 20px;">
-            <input type="hidden" id="editUserId" name="user_id">
-            
-            <div style="margin-bottom: 15px;">
-                <label for="editUserName">Full Name</label>
-                <input type="text" id="editUserName" name="name" required>
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-                <label for="editUserEmail">Email Address</label>
-                <input type="email" id="editUserEmail" name="email" required>
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-                <label for="editUserRole">Role</label>
-                <select id="editUserRole" name="role" required style="width: 100%; padding: 15px 20px; border-radius: 10px; border: 2px solid var(--primary-blue); font-size: 1rem; background-color: var(--blue-bg);">
-                    <option value="">Select Role</option>
-                    <option value="admin">Admin</option>
-                    <option value="quiz_manager">Quiz Manager</option>
-                    <option value="community_admin">Community Admin</option>
-                </select>
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-                <label for="editUserPassword">New Password (leave blank to keep current)</label>
-                <input type="password" id="editUserPassword" name="password" placeholder="Leave blank to keep current password">
-            </div>
-            
-            <button type="submit" class="btn-primary" style="width: 100%;">Update User</button>
-        </form>
-    </div>
-</div>
-
-<script src="<?= URLROOT ?>/assets/js/manager_users.js"></script>
+function toggleEditForm(userId) {
+    const form = document.getElementById('edit-' + userId);
+    form.classList.toggle('open');
+}
+</script>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>

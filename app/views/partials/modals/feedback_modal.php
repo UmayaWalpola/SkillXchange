@@ -1,78 +1,76 @@
-<!-- Feedback Modal -->
-<div id="feedbackModal" class="modal-overlay" style="display: none;">
-    <div class="modal-container feedback-modal">
+<!-- Reusable Feedback Modal with Context Support -->
+<div id="feedbackModal" class="feedback-modal" style="display: none;">
+    <div class="feedback-modal-overlay" onclick="closeFeedbackModal()"></div>
+    <div class="feedback-modal-content">
         <!-- Modal Header -->
-        <div class="modal-header">
-            <h3 class="modal-title">Performance Feedback</h3>
-            <button type="button" class="modal-close" id="closeFeedbackModal" aria-label="Close">&times;</button>
+        <div class="feedback-modal-header">
+            <h3>Give Feedback</h3>
+            <button class="feedback-close-btn" onclick="closeFeedbackModal()" aria-label="Close">&times;</button>
         </div>
-
+        
         <!-- Modal Body -->
-        <div class="modal-body">
+        <div class="feedback-modal-body">
             <form id="feedbackForm">
-                <!-- Hidden Fields -->
-                <input type="hidden" id="feedback_user_id" name="user_id">
-                <input type="hidden" id="feedback_project_id" name="project_id">
-
+                <!-- Hidden Fields for Context -->
+                <input type="hidden" id="feedbackUserId" name="user_id">
+                <input type="hidden" id="feedbackContextType" name="context_type">
+                <input type="hidden" id="feedbackContextId" name="context_id">
+                
                 <!-- Member Info Display -->
-                <div class="feedback-member-info" style="margin-bottom: 20px; padding: 15px; background: var(--blue-bg); border-radius: 8px; display: flex; align-items: center; gap: 12px;">
-                    <div class="member-avatar-small" id="feedback_member_avatar"></div>
+                <div class="feedback-member-info">
+                    <img id="feedbackMemberAvatar" src="" alt="User Avatar" class="feedback-avatar">
                     <div>
-                        <div style="font-weight: 600; color: var(--dark-bg); font-size: 15px;" id="feedback_member_name"></div>
-                        <div style="font-size: 13px; color: #666;">Team Member</div>
+                        <h4 id="feedbackMemberName"></h4>
+                        <p id="feedbackMemberContext" style="font-size: 13px; color: #666;"></p>
                     </div>
                 </div>
-
-                <!-- Star Rating -->
-                <div class="form-group">
-                    <label for="feedback_rating" style="display: block; font-weight: 600; margin-bottom: 10px; color: var(--dark-bg);">
-                        Rating <span style="color: #ef4444;">*</span>
-                    </label>
+                
+                <!-- Star Rating Section -->
+                <div class="feedback-rating-section">
+                    <label>Rating <span style="color: red;">*</span></label>
                     <div class="star-rating" id="starRating">
-                        <input type="radio" id="star5" name="rating" value="5" required>
-                        <label for="star5" class="star" title="Excellent - 5 stars">☆</label>
-                        
-                        <input type="radio" id="star4" name="rating" value="4">
-                        <label for="star4" class="star" title="Good - 4 stars">☆</label>
-                        
-                        <input type="radio" id="star3" name="rating" value="3">
-                        <label for="star3" class="star" title="Average - 3 stars">☆</label>
-                        
-                        <input type="radio" id="star2" name="rating" value="2">
-                        <label for="star2" class="star" title="Fair - 2 stars">☆</label>
-                        
-                        <input type="radio" id="star1" name="rating" value="1">
-                        <label for="star1" class="star" title="Poor - 1 star">☆</label>
+                        <span class="star" data-rating="1">☆</span>
+                        <span class="star" data-rating="2">☆</span>
+                        <span class="star" data-rating="3">☆</span>
+                        <span class="star" data-rating="4">☆</span>
+                        <span class="star" data-rating="5">☆</span>
                     </div>
-                    <div id="ratingValue" style="margin-top: 8px; font-size: 13px; color: #666; font-weight: 500;"></div>
+                    <input type="hidden" id="feedbackRating" name="rating" required>
+                    <small class="rating-text" style="display: none; margin-top: 8px; color: #666; text-align: center; display: block; font-weight: 600;"></small>
                 </div>
-
-                <!-- Comment/Feedback Text -->
-                <div class="form-group">
-                    <label for="feedback_comment" style="display: block; font-weight: 600; margin-bottom: 8px; color: var(--dark-bg);">
-                        Your Feedback <span style="font-size: 12px; font-weight: 400; color: #666;">(Optional)</span>
-                    </label>
-                    <textarea 
-                        id="feedback_comment" 
-                        name="comment" 
-                        class="form-control" 
-                        rows="4" 
-                        placeholder="Share your experience working with this team member..."
-                        style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; font-family: 'Poppins', sans-serif; resize: vertical; min-height: 100px;"
-                    ></textarea>
-                    <div style="margin-top: 5px; font-size: 12px; color: #999; text-align: right;">
-                        <span id="commentCount">0</span>/500 characters
+                
+                <!-- Quick Tags (Optional) -->
+                <div class="feedback-tags-section">
+                    <label>Qualities (Optional)</label>
+                    <div class="feedback-tags">
+                        <button type="button" class="tag-btn" data-tag="communication">
+                            <i class="ph ph-chat-dots"></i> Communication
+                        </button>
+                        <button type="button" class="tag-btn" data-tag="quality">
+                            <i class="ph ph-seal-check"></i> Quality
+                        </button>
+                        <button type="button" class="tag-btn" data-tag="ontime">
+                            <i class="ph ph-clock"></i> On-time
+                        </button>
+                        <button type="button" class="tag-btn" data-tag="teamwork">
+                            <i class="ph ph-users-three"></i> Teamwork
+                        </button>
                     </div>
+                    <input type="hidden" id="feedbackTags" name="tags">
                 </div>
-
-                <!-- Submit Actions -->
-                <div class="modal-actions" style="display: flex; gap: 12px; margin-top: 24px;">
-                    <button type="submit" class="btn btn-primary" id="submitFeedbackBtn" style="flex: 1; padding: 12px; border-radius: 8px; font-weight: 600; background: var(--primary-blue); color: white; border: none; cursor: pointer; transition: all 0.3s ease;">
-                        Submit Feedback
-                    </button>
-                    <button type="button" class="btn btn-secondary" id="cancelFeedbackBtn" style="flex: 1; padding: 12px; border-radius: 8px; font-weight: 600; background: #e5e7eb; color: var(--dark-bg); border: none; cursor: pointer; transition: all 0.3s ease;">
-                        Cancel
-                    </button>
+                
+                <!-- Comment Section -->
+                <div class="feedback-comment-section">
+                    <label for="feedbackComment">Comments (Optional)</label>
+                    <textarea id="feedbackComment" name="comment" rows="4" maxlength="500" 
+                              placeholder="Share your experience working with this person..."></textarea>
+                    <small class="char-counter">0 / 500 characters</small>
+                </div>
+                
+                <!-- Footer Buttons -->
+                <div class="feedback-modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeFeedbackModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Submit Feedback</button>
                 </div>
             </form>
         </div>

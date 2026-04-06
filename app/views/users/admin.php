@@ -18,28 +18,28 @@
             <!-- Stats Overview -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-icon">👥</div>
+                    <div class="stat-icon"><i class="ph ph-users"></i></div>
                     <div class="stat-info">
                         <span class="stat-number"><?= number_format($data['stats']['total_users']) ?></span>
                         <span class="stat-label">Total Users</span>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">🔄</div>
+                    <div class="stat-icon"><i class="ph ph-arrows-clockwise"></i></div>
                     <div class="stat-info">
                         <span class="stat-number"><?= number_format($data['stats']['active_exchanges']) ?></span>
                         <span class="stat-label">Active Exchanges</span>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">✅</div>
+                    <div class="stat-icon"><i class="ph ph-check-circle"></i></div>
                     <div class="stat-info">
                         <span class="stat-number"><?= number_format($data['stats']['completed_exchanges']) ?></span>
                         <span class="stat-label">Completed</span>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-icon">💡</div>
+                    <div class="stat-icon"><i class="ph ph-lightbulb"></i></div>
                     <div class="stat-info">
                         <span class="stat-number"><?= number_format($data['stats']['total_skills']) ?></span>
                         <span class="stat-label">Total Skills</span>

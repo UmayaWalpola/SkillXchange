@@ -24,4 +24,29 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Mail configuration (legacy constant style)
+// NOTE: Do not commit real credentials. Put local credentials in app/config/mail.local.php (gitignored).
+$mailLocalPath = __DIR__ . '/mail.local.php';
+if (file_exists($mailLocalPath)) {
+    require $mailLocalPath;
+}
+
+if (!defined('MAIL_HOST')) {
+    define('MAIL_HOST', 'sandbox.smtp.mailtrap.io');
+}
+if (!defined('MAIL_PORT')) {
+    define('MAIL_PORT', 2525);
+}
+if (!defined('MAIL_USERNAME')) {
+    define('MAIL_USERNAME', '');
+}
+if (!defined('MAIL_PASSWORD')) {
+    define('MAIL_PASSWORD', '');
+}
+if (!defined('MAIL_FROM')) {
+    define('MAIL_FROM', 'noreply@skillxchange.com');
+}
+if (!defined('MAIL_NAME')) {
+    define('MAIL_NAME', 'SkillXchange');
+}
 

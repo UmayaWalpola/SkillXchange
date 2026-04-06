@@ -754,6 +754,121 @@ class OrganizationController extends Controller {
         return $walletController->index();
     }
 
-}
+    //  tasks assigning fixing
+    
+    public function assignTask() {
+        // Prevent any output before JSON
+        ob_clean();
+        header('Content-Type: application/json');
+        
+        try {
+            // Check if user is logged in
+            if (!isset($_SESSION['user_id'])) {
+                echo json_encode(['success' => false, 'message' => 'Unauthorized - Please login']);
+                exit;
+            }
 
-?>
+            // Get POST data
+            $rawInput = file_get_contents('php://input');
+            $data = json_decode($rawInput, true);
+            
+            if (!$data) {
+                $data = $_POST;
+            }
+
+            // Validate required fields
+            if (empty($data['member_id']) || empty($data['task_name']) || empty($data['project_id'])) {
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'Missing required fields',
+                    'received' => $data
+                ]);
+                exit;
+            }
+
+            $memberId = $data['member_id'];
+            $projectId = $data['project_id'];
+            
+            // Get project details
+            $project = $this->projectModel->getProjectById($projectId);
+            
+            if (!$project) {
+                echo json_encode(['success' => false, 'message' => 'Project not found']);
+                exit;
+            }
+
+            // Check if current user is the organization owner of this project
+            if ($project->organization_id != $_SESSION['user_id']) {
+                echo json_encode([
+                    'success' => false, 
+                    'message' => 'Permission denied. Only organization owner can assign tasks',
+                    'org_id' => $project->organization_id,
+                    'user_id' => $_SESSION['user_id']
+                ]);
+                exit;
+            }
+
+            // Verify the assignee is a member of the project
+            $members = $this->projectModel->getMembersByProject($projectId);
+            $isMember = false;
+            foreach ($members as $member) {
+                if ($member->user_id == $memberId) {
+                    $isMember = true;
+                    break;
+                }
+            }
+
+            if (!$isMember) {
+                echo json_encode(['success' => false, 'message' => 'User is not a member of this project']);
+                exit;
+            }
+
+            // Prepare task data
+            $taskData = [
+                'project_id' => $projectId,
+                'assigned_to' => $memberId,
+                'title' => $data['task_name'],
+                'description' => $data['description'] ?? '',
+                'priority' => strtolower($data['priority'] ?? 'medium'),
+                'status' => 'todo',
+                'deadline' => !empty($data['due_date']) ? $data['due_date'] : null
+            ];
+
+            // Create the task
+            $taskId = $this->taskModel->createTask($taskData);
+
+            if ($taskId) {
+                // Send notification to assigned user
+                try {
+                    $this->notificationModel->create([
+                        'user_id' => $memberId,
+                        'type' => 'task_assigned',
+                        'content' => 'You have been assigned a new task: ' . $taskData['title'],
+                        'related_id' => $taskId,
+                        'related_type' => 'task'
+                    ]);
+                } catch (Exception $e) {
+                    // Log but don't fail if notification fails
+                    error_log("Notification error: " . $e->getMessage());
+                }
+
+                echo json_encode([
+                    'success' => true, 
+                    'message' => 'Task assigned successfully',
+                    'task_id' => $taskId
+                ]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Failed to create task in database']);
+            }
+            
+        } catch (Exception $e) {
+            error_log("Task assignment exception: " . $e->getMessage());
+            echo json_encode([
+                'success' => false, 
+                'message' => 'Server error: ' . $e->getMessage()
+            ]);
+        }
+        exit;
+    }
+
+}

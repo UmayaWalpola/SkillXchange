@@ -10,7 +10,7 @@
 <div class="container">
     
     <div class="result-card success-card">
-        <div class="result-icon">✅</div>
+        <div class="result-icon"><i class="ph ph-check-circle"></i></div>
         <h1 class="result-title">Payment Successful!</h1>
         <p class="result-message">Your BuckX has been added to your wallet</p>
         

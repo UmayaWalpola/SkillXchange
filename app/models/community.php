@@ -291,55 +291,64 @@ class Community {
     /**
      * Get community members
      */
-    public function getCommunityMembers($communityId) {
-        $this->db->query("
-            SELECT u.id, u.username as name, u.email, u.profile_picture, cm.joined_at, cm.role
-            FROM community_members cm
-            JOIN users u ON cm.user_id = u.id
-            WHERE cm.community_id = :community_id
-            ORDER BY cm.joined_at DESC
-        ");
-        
-        $this->db->bind(':community_id', $communityId);
-        return $this->db->resultSet();
-    }
+   public function getCommunityMembers($communityId) {
+    $this->db->query("
+        SELECT 
+            u.id AS user_id,
+            u.username as name, 
+            u.email, 
+            u.profile_picture, 
+            cm.joined_at, 
+            cm.role
+        FROM community_members cm
+        JOIN users u ON cm.user_id = u.id
+        WHERE cm.community_id = :community_id
+        ORDER BY cm.joined_at DESC
+    ");
     
-    /**
-     * Get community posts
-     */
-    public function getCommunityPosts($communityId) {
-        $this->db->query("
-            SELECT p.*, u.username as author_name, u.profile_picture as author_avatar
-            FROM posts p
-            JOIN users u ON p.user_id = u.id
-            WHERE p.community_id = :community_id
-            ORDER BY p.created_at DESC
-            LIMIT 50
-        ");
-        
-        $this->db->bind(':community_id', $communityId);
-        return $this->db->resultSet();
-    }
-    
+    $this->db->bind(':community_id', $communityId);
+    return $this->db->resultSet();
+}
+ /**
+  * Get posts in a community (for forum view)
+ */
+public function getCommunityPosts($communityId) {
+    $this->db->query("
+        SELECT 
+            cp.id,
+            cp.user_id,
+            cp.content,
+            cp.created_at,
+            u.username as author_name,
+            u.profile_picture
+        FROM community_posts cp
+        JOIN users u ON cp.user_id = u.id
+        WHERE cp.community_id = :community_id
+        ORDER BY cp.created_at ASC
+        LIMIT 50
+    ");
+
+    $this->db->bind(':community_id', $communityId);
+    return $this->db->resultSet();
+}
     /**
      * Create a post in community
      */
     public function createPost($userId, $communityId, $content) {
-        $this->db->query("
-            INSERT INTO posts (user_id, community_id, content, created_at) 
-            VALUES (:user_id, :community_id, :content, NOW())
-        ");
-        
-        $this->db->bind(':user_id', $userId);
-        $this->db->bind(':community_id', $communityId);
-        $this->db->bind(':content', $content);
-        
-        if ($this->db->execute()) {
-            return $this->db->lastInsertId();
-        }
-        return false;
-    }
+    $this->db->query("
+        INSERT INTO community_posts (user_id, community_id, content, post_type, created_at) 
+        VALUES (:user_id, :community_id, :content, 'message', NOW())
+    ");
     
+    $this->db->bind(':user_id', $userId);
+    $this->db->bind(':community_id', $communityId);
+    $this->db->bind(':content', $content);
+    
+    if ($this->db->execute()) {
+        return $this->db->lastInsertId();
+    }
+    return false;
+}
     /**
      * Create a new community (user-initiated)
      */
@@ -399,4 +408,5 @@ class Community {
         
         return $this->db->resultSet();
     }
+    
 }

@@ -69,7 +69,7 @@ include __DIR__ . '/layouts/header.php';
 
       <div id="skillsGrid" class="skills-grid">
         <div class="skill-card fade-in animate-delay-1" data-skill="webdev">
-          <div class="skill-icon">💻</div>
+          <div class="skill-icon"><i class="ph ph-code"></i></div>
           <h3 class="skill-name">Web Development</h3>
           <p class="skill-description">Build modern, responsive websites and web applications using the latest technologies and frameworks.</p>
           <div class="skill-stats">
@@ -78,7 +78,7 @@ include __DIR__ . '/layouts/header.php';
         </div>
 
         <div class="skill-card fade-in animate-delay-2" data-skill="uidesign">
-          <div class="skill-icon">🎨</div>
+          <div class="skill-icon"><i class="ph ph-paint-brush"></i></div>
           <h3 class="skill-name">UI/UX Design</h3>
           <p class="skill-description">Create intuitive and beautiful user interfaces that enhance user experience and engagement.</p>
           <div class="skill-stats">
@@ -96,7 +96,7 @@ include __DIR__ . '/layouts/header.php';
         </div>
 
         <div class="skill-card fade-in animate-delay-1" data-skill="mobile">
-          <div class="skill-icon">📱</div>
+          <div class="skill-icon"><i class="ph ph-device-mobile"></i></div>
           <h3 class="skill-name">Mobile Development</h3>
           <p class="skill-description">Develop native and cross-platform mobile applications for iOS and Android devices.</p>
           <div class="skill-stats">

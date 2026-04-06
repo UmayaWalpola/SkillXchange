@@ -119,7 +119,7 @@
                             <div class="profile-section badges-section">
     <div class="section-header">
         <h2 class="section-title">
-            🏆 Badges & Achievements 
+            <i class="ph ph-trophy"></i> Badges & Achievements 
             <?php if (!empty($data['badges'])): ?>
                 <span class="badge-count">(<?= count($data['badges']) ?>)</span>
             <?php endif; ?>
@@ -150,7 +150,7 @@
         </div>
     <?php else: ?>
         <div class="no-badges">
-            <div class="no-badges-icon">🎯</div>
+            <div class="no-badges-icon"><i class="ph ph-target"></i></div>
             <p class="no-badges-text">No badges earned yet</p>
             <p class="no-badges-hint">Complete quizzes to earn your first badge!</p>
             <a href="<?= URLROOT ?>/userdashboard/quiz" class="btn btn-primary">Browse Quizzes</a>

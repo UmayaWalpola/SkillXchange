@@ -62,7 +62,7 @@
                             class="file-input"
                         >
                         <div class="file-upload-display">
-                            <div class="upload-icon">📷</div>
+                            <div class="upload-icon"><i class="ph ph-camera"></i></div>
                             <span class="upload-text">Click to upload or drag and drop</span>
                             <small class="upload-hint">JPG, PNG, GIF (Max 5MB)</small>
                         </div>

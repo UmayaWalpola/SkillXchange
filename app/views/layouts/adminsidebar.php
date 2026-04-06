@@ -31,6 +31,10 @@
                 <span class="icon"></span>
                 <span>Reports</span>
             </a>
+            <a href="<?= URLROOT ?>/FeedbackReport/index" class="sidebar-item <?= (strpos($_SERVER['REQUEST_URI'], '/FeedbackReport') !== false) ? 'active' : '' ?>">
+                <span class="icon"></span>
+                <span>Reported Feedback</span>
+            </a>
         </nav>
     </div>
 
