@@ -867,3 +867,9 @@
         padding: 25px 15px;
     }
 }
+
+.quiz-reward {
+    color: #f59e0b;
+    font-weight: 600;
+    font-size: 0.8rem;
+}

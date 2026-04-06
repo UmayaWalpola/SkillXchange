@@ -6,7 +6,7 @@ define('APPROOT', dirname(dirname(__FILE__)) . '/app');
 // Base URL of your project
 define('BASE_URL', 'http://localhost/SkillXchange/public');
 define('URLROOT', 'http://localhost/SkillXchange/public');
-
+define('SYSTEM_REWARD_SENDER_ID', 1);
 
 // Site name (for reference in headers, titles, etc.)
 define('SITENAME', 'SkillXchange');

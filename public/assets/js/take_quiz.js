@@ -198,26 +198,33 @@
             selected_answer: userAnswers[index]
         }));
         
-        // FIXED: Send as JSON
-        const payload = {
-            attempt_id: quizData.attempt_id,
-            quiz_id: quizData.id,
-            answers: formattedAnswers,
-            time_taken: timeTaken
-        };
-        
-        console.log('📤 Submitting:', payload);
+        // Submit using form-urlencoded (legacy/earlier submission style)
+        const payload = new URLSearchParams();
+        payload.set('attempt_id', quizData.attempt_id);
+        payload.set('quiz_id', quizData.id);
+        payload.set('answers', JSON.stringify(formattedAnswers));
+        payload.set('time_taken', String(timeTaken));
+
+        console.log('📤 Submitting (form):', Object.fromEntries(payload.entries()));
         
         try {
             const response = await fetch(urlRoot + '/userdashboard/submitQuiz', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: JSON.stringify(payload)
+                body: payload.toString()
             });
-            
-            const result = await response.json();
+
+            // Some server-side errors return HTML; read text first and parse safely
+            const raw = await response.text();
+            let result;
+            try {
+                result = JSON.parse(raw);
+            } catch (e) {
+                console.error('Non-JSON response from submitQuiz:', raw);
+                throw new Error('Server returned non-JSON response');
+            }
             console.log('📥 Response:', result);
             
             if (result.success) {
@@ -232,7 +239,7 @@
             }
         } catch (error) {
             console.error('❌ Submit error:', error);
-            alert('Error submitting quiz. Please try again.');
+            alert(error.message || 'Error submitting quiz. Please try again.');
             if (submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Submit Quiz';
@@ -271,8 +278,15 @@
         }
         
         if (resultsSection) {
+            let rewardHTML = '';
+            if (result.reward && result.reward > 0) {
+                const msg = result.rewardMessage || `You received ${result.reward} Buckx`;
+                rewardHTML = `<div class="reward-banner" style="background: #ecf8f8; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-weight:600; color:#0b7285;">${msg}</div>`;
+            }
+
             resultsSection.innerHTML = `
                 <div class="results-content">
+                    ${rewardHTML}
                     <div class="score-circle ${scoreClass}">
                         <div class="score-percentage">${percentage.toFixed(1)}%</div>
                         <div class="score-label">${passed ? 'Passed!' : 'Failed'}</div>
@@ -295,7 +309,7 @@
                     </div>
                 </div>
             `;
-            
+
             resultsSection.style.display = 'block';
         }
         
