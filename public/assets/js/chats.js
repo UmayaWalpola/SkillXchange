@@ -19,6 +19,7 @@ function loadMessages() {
     fetch(`${URLROOT}/chat/fetchUserMessages?chat_id=${CURRENT_CHAT_ID}`)
         .then(response => response.json())
         .then(data => {
+            console.log('Messages received:', data);
             if (data.success) {
                 displayMessages(data.messages, data.current_user_id);
                 
@@ -40,25 +41,31 @@ function loadMessages() {
  */
 function displayMessages(messages, currentUserId) {
     const container = document.getElementById('messagesContainer');
-    
-    if (!messages || messages.length === 0) {
-        container.innerHTML = '<div class="no-messages">No messages yet. Start the conversation!</div>';
+
+    if (!container) {
+        console.error('messagesContainer not found');
         return;
     }
 
     let html = '';
     messages.forEach(msg => {
         const isOwn = msg.sender_id == currentUserId;
-        const avatarText = msg.sender_profile_pic || msg.sender_name.substring(0, 2).toUpperCase();
         const messageClass = isOwn ? 'message own-message' : 'message';
-        
+
+        let avatarHTML = '';
+        if (msg.sender_profile_pic && msg.sender_profile_pic.includes('uploads/')) {
+            avatarHTML = `<img src="${URLROOT}/${msg.sender_profile_pic}" alt="Avatar">`;
+        } else {
+            const initials = msg.sender_name
+                ? msg.sender_name.substring(0, 2).toUpperCase()
+                : '??';
+            avatarHTML = initials;
+        }
+
         html += `
             <div class="${messageClass}" data-message-id="${msg.id}">
                 <div class="message-avatar">
-                    ${avatarText.includes('uploads/') 
-                        ? `<img src="${URLROOT}/${avatarText}" alt="Avatar">` 
-                        : avatarText
-                    }
+                    ${avatarHTML}
                 </div>
                 <div class="message-content">
                     ${!isOwn ? `<div class="message-sender">${msg.sender_name}</div>` : ''}
@@ -72,7 +79,6 @@ function displayMessages(messages, currentUserId) {
     container.innerHTML = html;
     scrollToBottom();
 }
-
 /**
  * Send a new message
  */

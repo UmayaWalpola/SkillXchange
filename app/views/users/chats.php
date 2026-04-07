@@ -24,10 +24,11 @@
                     <div class="conversations">
                         <?php if (!empty($data['allChats'])): ?>
                             <?php foreach ($data['allChats'] as $chat): ?>
-                                <div class="chat-item <?= $chat['unread'] ? 'unread' : ''; ?> <?= isset($data['partnerId']) && $chat['partner_id'] == $data['partnerId'] ? 'active' : ''; ?>" 
-                                     data-chat-id="<?= $chat['id']; ?>"
-                                     data-partner-id="<?= $chat['partner_id']; ?>"
-                                     onclick="openChatWindow(<?= $chat['partner_id']; ?>)">
+                                <a class="chat-item <?= $chat['unread'] ? 'unread' : ''; ?> <?= isset($data['partnerId']) && $chat['partner_id'] == $data['partnerId'] ? 'active' : ''; ?>" 
+                                   data-chat-id="<?= $chat['id']; ?>"
+                                   data-partner-id="<?= $chat['partner_id']; ?>"
+                                   href="<?= URLROOT ?>/chat/user/<?= $chat['partner_id']; ?>"
+                                   style="text-decoration: none; color: inherit;">
                                     <div class="chat-avatar">
                                         <?php if (!empty($chat['avatar']) && strpos($chat['avatar'], 'uploads/') === 0): ?>
                                             <img src="<?= URLROOT ?>/<?= htmlspecialchars($chat['avatar']) ?>" alt="Avatar">
@@ -47,7 +48,7 @@
                                             <?php endif; ?>
                                         </div>
                                     </div>
-                                </div>
+                                </a>
                             <?php endforeach; ?>
                         <?php else: ?>
                             <div class="no-chats">
