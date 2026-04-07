@@ -50,7 +50,7 @@
                                             <div class="action-buttons">
 
                                                 <?php if (!empty($org->org_cert)): ?>
-                                                    <a class="btn-outline" href="<?= URLROOT ?>/manager/viewCertificate/<?= (int)$org->id ?>" target="_blank" rel="noopener">
+                                                    <a class="btn-outline" href="<?= URLROOT ?>/manager/viewCertificate/<?= (int)($org->id ?? 0) ?>?file=<?= rawurlencode(basename((string)$org->org_cert)) ?>" target="_blank" rel="noopener">
                                                         View Certificate
                                                     </a>
                                                 <?php else: ?>

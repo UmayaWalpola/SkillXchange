@@ -50,46 +50,85 @@ class ManagerController extends Controller {
             return;
         }
 
-        $orgId = is_numeric($orgId) ? (int)$orgId : 0;
-        if ($orgId <= 0) {
-            http_response_code(404);
-            $this->view('errors/404');
-            return;
+        $fileParam = isset($_GET['file']) ? (string)$_GET['file'] : '';
+        $fileName = '';
+
+        // Preferred path: if the view passed a file name, use it.
+        if (!empty($fileParam)) {
+            $fileName = basename(str_replace('\\', '/', $fileParam));
+        } else {
+            // Fallback: look up the org and derive the file name from the stored org_cert.
+            $orgId = is_numeric($orgId) ? (int)$orgId : 0;
+            if ($orgId <= 0) {
+                http_response_code(404);
+                $this->view('errors/404');
+                return;
+            }
+
+            $org = $this->managerModel->getOrganizationById($orgId);
+            if (!$org || empty($org->org_cert)) {
+                http_response_code(404);
+                $this->view('errors/404');
+                return;
+            }
+
+            $stored = str_replace('\\', '/', (string)$org->org_cert);
+            $fileName = basename($stored);
         }
 
-        $org = $this->managerModel->getOrganizationById($orgId);
-        if (!$org || empty($org->org_cert)) {
-            http_response_code(404);
-            $this->view('errors/404');
-            return;
-        }
-
-        // The DB may store a server path (e.g. ../public/uploads/...) or a URL-ish path.
-        // To keep this reliable, extract the filename and only serve from uploads/org_certs.
-        $stored = str_replace('\\', '/', (string)$org->org_cert);
-        $fileName = basename($stored);
         if (empty($fileName) || $fileName === '.' || $fileName === '..') {
             http_response_code(404);
             $this->view('errors/404');
             return;
         }
 
-        // Basic filename allow-list (prevents traversal / weird characters)
+        // Allow-list filename chars
         if (!preg_match('/^[A-Za-z0-9._-]+$/', $fileName)) {
             http_response_code(404);
             $this->view('errors/404');
             return;
         }
 
-        $publicRelative = 'uploads/org_certs/' . $fileName;
-        $diskPath = __DIR__ . '/../../public/' . $publicRelative;
-        if (!is_file($diskPath)) {
+        $certsDir = realpath(__DIR__ . '/../../public/uploads/org_certs');
+        if (!$certsDir) {
             http_response_code(404);
             $this->view('errors/404');
             return;
         }
 
-        header('Location: ' . URLROOT . '/' . $publicRelative);
+        $diskPath = realpath($certsDir . DIRECTORY_SEPARATOR . $fileName);
+        if (!$diskPath || !is_file($diskPath) || strpos($diskPath, $certsDir) !== 0) {
+            http_response_code(404);
+            $this->view('errors/404');
+            return;
+        }
+
+        // Stream the file inline (works regardless of static-file rewrite behavior)
+        http_response_code(200);
+        if (!headers_sent()) {
+            header((isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.1') . ' 200 OK');
+        }
+
+        // If any output buffering is active, clear it to avoid corrupting the file output
+        // or mixing it with HTML.
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        $mime = 'application/octet-stream';
+        if (function_exists('mime_content_type')) {
+            $detected = @mime_content_type($diskPath);
+            if (is_string($detected) && $detected !== '') {
+                $mime = $detected;
+            }
+        }
+
+        header('Content-Type: ' . $mime);
+        header('Content-Length: ' . filesize($diskPath));
+        header('Content-Disposition: inline; filename="' . $fileName . '"');
+        header('X-Content-Type-Options: nosniff');
+
+        readfile($diskPath);
         exit;
     }
 
