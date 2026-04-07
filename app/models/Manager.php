@@ -222,16 +222,22 @@ class Manager {
     }
 
     public function updateAnnouncement($announcementId, $title, $content) {
-    $this->db->query("
-        UPDATE announcements 
-        SET title = :title, content = :content 
-        WHERE id = :id
-    ");
-    $this->db->bind(':title', $title);
-    $this->db->bind(':content', $content);
-    $this->db->bind(':id', $announcementId);
-    return $this->db->execute();
-}
+        $this->db->query("
+            UPDATE announcements 
+            SET title = :title, content = :content 
+            WHERE id = :id
+        ");
+        $this->db->bind(':title', $title);
+        $this->db->bind(':content', $content);
+        $this->db->bind(':id', $announcementId);
+        return $this->db->execute();
+    }
+
+    public function removeAnnouncement($announcementId) {
+        $this->db->query("DELETE FROM announcements WHERE id = :id");
+        $this->db->bind(':id', $announcementId);
+        return $this->db->execute();
+    }
     // Get all active user IDs except the manager posting
     public function getAllUserIds($excludeId) {
         $this->db->query("
@@ -244,15 +250,63 @@ class Manager {
     }
 
     // Send a notification to one user
-    public function sendNotification($userId, $title, $message) {
-        $this->db->query("
-            INSERT INTO notifications (user_id, type, title, message, is_read, created_at)
-            VALUES (:user_id, 'system_announcement', :title, :message, 0, NOW())
-        ");
-        $this->db->bind(':user_id', $userId);
-        $this->db->bind(':title', $title);
-        $this->db->bind(':message', $message);
-        return $this->db->execute();
+    public function sendNotification($userId, $title, $message, $announcementId = null) {
+        try {
+            $this->db->query("
+                INSERT INTO notifications (user_id, type, title, message, is_read, created_at, announcement_id)
+                VALUES (:user_id, 'system_announcement', :title, :message, 0, NOW(), :announcement_id)
+            ");
+            $this->db->bind(':user_id', $userId);
+            $this->db->bind(':title', $title);
+            $this->db->bind(':message', $message);
+            $this->db->bind(':announcement_id', $announcementId);
+            return $this->db->execute();
+        } catch (PDOException $e) {
+            // Backward-compatible fallback if the DB doesn't have the new columns yet.
+            $this->db->query("
+                INSERT INTO notifications (user_id, type, message, is_read, created_at)
+                VALUES (:user_id, 'system_announcement', :message, 0, NOW())
+            ");
+            $this->db->bind(':user_id', $userId);
+            $this->db->bind(':message', $message);
+            return $this->db->execute();
+        }
+    }
+
+    public function updateAnnouncementNotifications($announcementId, $title, $message, $excludeUserId = 0) {
+        try {
+            $this->db->query("
+                UPDATE notifications
+                SET title = :title, message = :message
+                WHERE type = 'system_announcement'
+                  AND announcement_id = :announcement_id
+                  AND user_id != :exclude_user_id
+            ");
+            $this->db->bind(':title', $title);
+            $this->db->bind(':message', $message);
+            $this->db->bind(':announcement_id', $announcementId);
+            $this->db->bind(':exclude_user_id', (int)$excludeUserId);
+            return $this->db->execute();
+        } catch (PDOException $e) {
+            // If announcement_id/title doesn't exist yet, we can't reliably update legacy notifications.
+            return false;
+        }
+    }
+
+    public function removeAnnouncementNotifications($announcementId, $excludeUserId = 0) {
+        try {
+            $this->db->query("
+                DELETE FROM notifications
+                WHERE type = 'system_announcement'
+                  AND announcement_id = :announcement_id
+                  AND user_id != :exclude_user_id
+            ");
+            $this->db->bind(':announcement_id', $announcementId);
+            $this->db->bind(':exclude_user_id', (int)$excludeUserId);
+            return $this->db->execute();
+        } catch (PDOException $e) {
+            return false;
+        }
     }
 
 

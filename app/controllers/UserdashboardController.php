@@ -767,26 +767,43 @@ public function handleRequest() {
     }
 
     private function getNotifications($userId) {
-        return [
-            [
-                'id' => 1,
-                'type' => 'match',
-                'icon' => '❤️',
-                'title' => 'New Match!',
-                'message' => 'You have a new match with Dr. Kamal Silva',
-                'time' => '5 minutes ago',
-                'read' => false
-            ],
-            [
-                'id' => 2,
-                'type' => 'message',
-                'icon' => '💬',
-                'title' => 'New Message',
-                'message' => 'Sophia Chen sent you a message',
-                'time' => '1 hour ago',
-                'read' => false
-            ]
-        ];
+        $notificationModel = $this->model('Notification');
+        $results = $notificationModel->getUserNotifications($userId);
+
+        $notifications = [];
+        foreach ($results as $n) {
+            $displayTitle = '';
+            if ($n->type === 'system_announcement') {
+                $displayTitle = '';
+            } elseif (isset($n->title) && trim((string)$n->title) !== '') {
+                $displayTitle = $n->title;
+            } elseif ($n->type === 'reward') {
+                $displayTitle = 'BuckX Reward';
+            } else {
+                $displayTitle = ucfirst($n->type);
+            }
+
+            $icon = '';
+            if ($n->type !== 'system_announcement') {
+                if ($n->type === 'reward') {
+                    $icon = '🎁';
+                } else {
+                    $icon = '🔔';
+                }
+            }
+
+            $notifications[] = [
+                'id'      => $n->id,
+                'type'    => $n->type,
+                'title'   => $displayTitle,
+                'message' => $n->message,
+                'icon'    => $icon,
+                'time'    => $this->timeAgo($n->created_at),
+                'read'    => (bool)$n->is_read
+            ];
+        }
+
+        return $notifications;
     }
 
     private function getChats($userId) {

@@ -139,6 +139,11 @@
     background: #ef4444;
 }
 
+/* System announcements should read like full messages (no extra icon bubble) */
+.notification-item.system_announcement .notification-icon {
+    display: none;
+}
+
 /* Notification Content */
 .notification-content {
     flex: 1;

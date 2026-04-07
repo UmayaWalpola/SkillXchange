@@ -59,9 +59,16 @@
                                         <?= date('M d, Y', strtotime($announcement->created_at)) ?>
                                     </p>
                                 </div>
-                                <button class="btn-outline" onclick="toggleEditForm(<?= $announcement->id ?>)">
-                                    Edit
-                                </button>
+                                <div class="action-buttons">
+                                    <button class="btn-outline" onclick="toggleEditForm(<?= $announcement->id ?>)">
+                                        Edit
+                                    </button>
+                                    <form method="POST" action="<?= URLROOT ?>/manager/removeAnnouncement"
+                                          onsubmit="return confirm('Remove this announcement? This cannot be undone.');">
+                                        <input type="hidden" name="announcement_id" value="<?= $announcement->id ?>">
+                                        <button type="submit" class="btn-outline">Remove</button>
+                                    </form>
+                                </div>
                             </div>
 
                             <!-- Announcement Content -->

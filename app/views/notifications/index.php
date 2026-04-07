@@ -29,6 +29,7 @@
                             if ($n->type === 'application_accepted') { $iconClass = 'success'; $iconSymbol = '<i class="ph ph-confetti"></i>'; }
                             elseif ($n->type === 'application_rejected') { $iconClass = 'danger'; $iconSymbol = '<i class="ph ph-x-circle"></i>'; }
                             elseif ($n->type === 'project_invite') { $iconClass = 'info'; $iconSymbol = '<i class="ph ph-envelope"></i>'; }
+                            elseif ($n->type === 'system_announcement') { $iconClass = 'info'; $iconSymbol = ''; }
                             elseif ($n->type === 'deadline_warning') { $iconClass = 'danger'; $iconSymbol = '<i class="ph ph-warning"></i>'; }
                             elseif ($n->type === 'deadline_due_today') { $iconClass = 'warning'; $iconSymbol = '<i class="ph ph-calendar"></i>'; }
                             elseif ($n->type === 'deadline_due_soon') { $iconClass = 'warning'; $iconSymbol = '<i class="ph ph-hourglass"></i>'; }
@@ -36,9 +37,14 @@
                             elseif ($n->type === 'task_update') { $iconClass = 'info'; $iconSymbol = '<i class="ph ph-wrench"></i>'; }
                         ?>
                         <a href="<?= URLROOT ?>/notifications/read/<?= $n->id ?>" class="card notification-card <?= $n->is_read ? '' : 'unread' ?>" style="text-decoration:none;">
-                            <div class="notification-icon <?= $iconClass ?>"><?= $iconSymbol ?></div>
+                            <?php if ($n->type !== 'system_announcement'): ?>
+                                <div class="notification-icon <?= $iconClass ?>"><?= $iconSymbol ?></div>
+                            <?php endif; ?>
                             <div class="notification-body">
-                                <div class="notification-message"><?= htmlspecialchars($n->message) ?></div>
+                                <?php if ($n->type !== 'system_announcement' && !empty($n->title)): ?>
+                                    <div class="notification-title"><?= htmlspecialchars($n->title) ?></div>
+                                <?php endif; ?>
+                                <div class="notification-message"><?= nl2br(htmlspecialchars($n->message)) ?></div>
                                 <div class="notification-meta">
                                     <?= date('M d, Y H:i', strtotime($n->created_at)) ?>
                                 </div>
@@ -80,6 +86,12 @@
 .notification-message {
     color: #e5e7eb;
     font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+.notification-title {
+    color: #f3f4f6;
+    font-weight: 700;
+    font-size: 0.95rem;
     margin-bottom: 4px;
 }
 .notification-meta {

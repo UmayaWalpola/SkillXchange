@@ -346,14 +346,17 @@ class ManagerController extends Controller {
 
         $announcementId = $this->managerModel->addAnnouncement($title, $content, $managerId);
 
-        if ($announcementId) {
+        // lastInsertId() can return "0" if the table isn't AUTO_INCREMENT yet.
+        // Treat any non-false return as success so we don't show a false failure.
+        if ($announcementId !== false && $announcementId !== null) {
             // notify all active users
             $users = $this->managerModel->getAllUserIds($managerId);
             foreach ($users as $user) {
                 $this->managerModel->sendNotification(
                     $user->id,
                     $title,
-                    $content
+                    $content,
+                    (int)$announcementId
                 );
             }
             $_SESSION['success'] = 'Announcement posted and all users notified';
@@ -383,18 +386,37 @@ class ManagerController extends Controller {
         }
 
         if ($this->managerModel->updateAnnouncement($announcementId, $title, $content)) {
-            // notify all active users about the updated announcement
-            $users = $this->managerModel->getAllUserIds($managerId);
-            foreach ($users as $user) {
-                $this->managerModel->sendNotification(
-                    $user->id,
-                    '📢 Updated: ' . $title,
-                    $content
-                );
-            }
-            $_SESSION['success'] = 'Announcement updated and all users notified';
+            // Update existing notifications for this announcement for all users except manager
+            $this->managerModel->updateAnnouncementNotifications((int)$announcementId, $title, $content, (int)$managerId);
+            $_SESSION['success'] = 'Announcement updated successfully';
         } else {
             $_SESSION['error'] = 'Failed to update announcement';
+        }
+
+        header('Location: ' . URLROOT . '/manager/announcements');
+        exit;
+    }
+
+    public function removeAnnouncement() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ' . URLROOT . '/manager/announcements');
+            exit;
+        }
+
+        $announcementId = $_POST['announcement_id'] ?? null;
+
+        if (empty($announcementId)) {
+            $_SESSION['error'] = 'Announcement ID is required';
+            header('Location: ' . URLROOT . '/manager/announcements');
+            exit;
+        }
+
+        if ($this->managerModel->removeAnnouncement($announcementId)) {
+            // Remove notifications for this announcement for all users except manager
+            $this->managerModel->removeAnnouncementNotifications((int)$announcementId, (int)($_SESSION['user_id'] ?? 0));
+            $_SESSION['success'] = 'Announcement removed successfully';
+        } else {
+            $_SESSION['error'] = 'Failed to remove announcement';
         }
 
         header('Location: ' . URLROOT . '/manager/announcements');
