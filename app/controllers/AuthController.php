@@ -58,18 +58,19 @@ class AuthController extends Controller {
                 }
                 
                 if (empty($errors)) {
-                    $uploadDir = '../public/uploads/org_certs/';
-                    if (!is_dir($uploadDir)) {
-                        mkdir($uploadDir, 0755, true);
-                    }
-
                     $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
                     $fileName = uniqid('org_', true) . '.' . $extension;
-                    $filePath = $uploadDir . $fileName;
+                    $diskDir = __DIR__ . '/../../public/uploads/org_certs/';
+                    if (!is_dir($diskDir)) {
+                        mkdir($diskDir, 0755, true);
+                    }
+
+                    $diskPath = $diskDir . $fileName;
+                    $publicRelativePath = 'uploads/org_certs/' . $fileName;
                     
-                    if (!move_uploaded_file($file['tmp_name'], $filePath)) {
+                    if (!move_uploaded_file($file['tmp_name'], $diskPath)) {
                         $errors[] = "Failed to upload certificate.";
-                        $filePath = null;
+                        $publicRelativePath = null;
                     }
                 }
             } else {
@@ -78,15 +79,15 @@ class AuthController extends Controller {
 
             // Register if no errors
             if (empty($errors)) {
-                if ($this->userModel->registerOrganization($name, $email, $password, $filePath)) {
+                if ($this->userModel->registerOrganization($name, $email, $password, $publicRelativePath)) {
                     $_SESSION['success'] = "Organization registered successfully! Please login.";
                     header("Location: " . URLROOT . "/auth/signin");
                     exit;
                 } else {
                     $errors[] = "Registration failed. Email may already be in use.";
                     // Delete uploaded file if registration failed
-                    if ($filePath && file_exists($filePath)) {
-                        unlink($filePath);
+                    if (!empty($diskPath) && file_exists($diskPath)) {
+                        unlink($diskPath);
                     }
                 }
             }

@@ -42,6 +42,57 @@ class ManagerController extends Controller {
         $this->view('managerdashboard/organizations', $data);
     }
 
+    // View organization certificate (manager-only)
+    public function viewCertificate($orgId = null) {
+        if (($_SESSION['role'] ?? null) !== 'manager') {
+            http_response_code(404);
+            $this->view('errors/404');
+            return;
+        }
+
+        $orgId = is_numeric($orgId) ? (int)$orgId : 0;
+        if ($orgId <= 0) {
+            http_response_code(404);
+            $this->view('errors/404');
+            return;
+        }
+
+        $org = $this->managerModel->getOrganizationById($orgId);
+        if (!$org || empty($org->org_cert)) {
+            http_response_code(404);
+            $this->view('errors/404');
+            return;
+        }
+
+        // The DB may store a server path (e.g. ../public/uploads/...) or a URL-ish path.
+        // To keep this reliable, extract the filename and only serve from uploads/org_certs.
+        $stored = str_replace('\\', '/', (string)$org->org_cert);
+        $fileName = basename($stored);
+        if (empty($fileName) || $fileName === '.' || $fileName === '..') {
+            http_response_code(404);
+            $this->view('errors/404');
+            return;
+        }
+
+        // Basic filename allow-list (prevents traversal / weird characters)
+        if (!preg_match('/^[A-Za-z0-9._-]+$/', $fileName)) {
+            http_response_code(404);
+            $this->view('errors/404');
+            return;
+        }
+
+        $publicRelative = 'uploads/org_certs/' . $fileName;
+        $diskPath = __DIR__ . '/../../public/' . $publicRelative;
+        if (!is_file($diskPath)) {
+            http_response_code(404);
+            $this->view('errors/404');
+            return;
+        }
+
+        header('Location: ' . URLROOT . '/' . $publicRelative);
+        exit;
+    }
+
     // Suspend organization
     public function suspendOrganization() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
