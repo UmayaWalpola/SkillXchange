@@ -66,17 +66,21 @@ class UserdashboardController extends Controller {
 
 public function chats() {
     $userId = $this->checkAuth();
-    
+
     $user = $this->getUserData($userId);
-    $chats = $this->getActiveChats($userId);
-    
+    $chatModel = $this->model('Chat');
+
+    $rawChats = $chatModel->getUserChats($userId);
+    $allChats = $chatModel->formatChatsForDisplay($rawChats, $userId);
+
     $data = [
         'title' => 'Chats',
         'user' => $user,
         'page' => 'chats',
-        'chats' => $chats
+        'allChats' => $allChats,
+        'buckxBalance' => 0
     ];
-    
+
     $this->view('users/chats', $data);
 }
 

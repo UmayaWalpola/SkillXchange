@@ -202,6 +202,10 @@ function searchMatches() {
     });
 }
 
+function openSkillChat(userId, skillName = null, direction = null) {
+    window.location.href = `${URLROOT}/chat/user/${userId}`;
+}
+
 // Add event listeners
 document.addEventListener('DOMContentLoaded', function() {
     // Filter event listeners
