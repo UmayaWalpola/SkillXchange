@@ -1,5 +1,5 @@
 
-// matches.js - Complete version with chat functionality
+// matches.js - Fixed version with proper UI updates
 
 function connectWithUser(userId, userName) {
     if (!confirm(`Send connection request to ${userName}?`)) {
@@ -114,17 +114,6 @@ function updateRequestCount() {
     }
 }
 
-/**
- * NEW: Open chat with a connected user
- */
-function openChat(userId) {
-    console.log('Opening chat with user:', userId);
-    // Use the same route as the sidebar: /userdashboard/chats?partnerId={id}
-    const target = `${URLROOT}/userdashboard/chats?partnerId=${userId}`;
-    console.log('Redirecting to:', target);
-    window.location.href = target;
-}
-
 function viewProfile(userId) {
     window.location.href = `${URLROOT}/userdashboard/viewProfile/${userId}`;
 }
@@ -191,6 +180,10 @@ function showNotification(message, type = 'info') {
     }, 5000);
 }
 
+function openSkillChat(userId) {
+    window.location.href = `${URLROOT}/chat/user/${userId}`;
+}
+
 // Search functionality (if needed)
 function searchMatches() {
     const searchInput = document.querySelector('.matches-search-input');
@@ -211,6 +204,10 @@ function searchMatches() {
             card.style.display = 'none';
         }
     });
+}
+
+function openSkillChat(userId, skillName = null, direction = null) {
+    window.location.href = `${URLROOT}/chat/user/${userId}`;
 }
 
 // Add event listeners
