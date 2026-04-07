@@ -258,6 +258,16 @@ class Manager {
 
     // FEEDBACK
 
+    // Submit platform feedback from a user (no rating)
+    public function submitPlatformFeedback($userId, $subject, $message) {
+        $this->db->query("\n            INSERT INTO platform_feedback (user_id, subject, message, status, created_at)\n            VALUES (:user_id, :subject, :message, :status, NOW())\n        ");
+        $this->db->bind(':user_id', (int)$userId);
+        $this->db->bind(':subject', $subject);
+        $this->db->bind(':message', $message);
+        $this->db->bind(':status', 'new');
+        return $this->db->execute();
+    }
+
     // Get all platform feedback with user details
     public function getAllFeedbacks() {
         $this->db->query("
@@ -265,7 +275,7 @@ class Manager {
                 f.id,
                 f.subject,
                 f.message,
-                f.rating,
+                f.status,
                 f.created_at,
                 u.username AS user_name,
                 u.email AS user_email

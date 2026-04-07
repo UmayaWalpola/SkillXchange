@@ -186,6 +186,36 @@
                     </div>
                 </section>
 
+                <!-- System Feedback Box - Only for own profile -->
+                <?php if (!empty($data['is_own_profile'])): ?>
+                <section class="system-feedback-section">
+                    <div class="system-feedback-box">
+                        <h3 class="system-feedback-title">Send Feedback to Management</h3>
+                        <p class="system-feedback-description">Help us improve! Share your suggestions or report issues.</p>
+                        
+                        <form action="<?= URLROOT ?>/feedback/submit" method="POST" class="system-feedback-form">
+                            <textarea 
+                                name="feedback_message" 
+                                class="system-feedback-textarea" 
+                                placeholder="Share your thoughts, suggestions, or report any issues..."
+                                rows="4"
+                                required
+                            ></textarea>
+                            
+                            <div class="system-feedback-actions">
+                                <select name="feedback_type" class="feedback-type-select">
+                                    <option value="suggestion">Suggestion</option>
+                                    <option value="bug">Bug Report</option>
+                                    <option value="feature">Feature Request</option>
+                                    <option value="other">Other</option>
+                                </select>
+                                <button type="submit" class="system-feedback-btn">Send Feedback</button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+                <?php endif; ?>
+
                 <!-- REMOVED: Recent Activity section -->
             </div>
         </div>

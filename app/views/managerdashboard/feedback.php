@@ -34,14 +34,6 @@
                                 </div>
                             </div>
 
-                            <!-- Star Rating -->
-                            <div class="feedback-rating">
-                                <?php for ($i = 1; $i <= 5; $i++): ?>
-                                    <span class="star <?= $i <= $feedback->rating ? 'filled' : '' ?>">★</span>
-                                <?php endfor; ?>
-                                <span class="rating-text"><?= (int) $feedback->rating ?>/5</span>
-                            </div>
-
                             <!-- Subject and Message -->
                             <h3 class="feedback-subject"><?= htmlspecialchars($feedback->subject) ?></h3>
                             <p class="feedback-message"><?= nl2br(htmlspecialchars($feedback->message)) ?></p>

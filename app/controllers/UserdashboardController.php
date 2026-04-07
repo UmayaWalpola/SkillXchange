@@ -52,6 +52,7 @@ class UserdashboardController extends Controller {
             'projects' => $userProjects,
             'feedback' => $userFeedback,
             'badges' => $userBadges,
+            'is_own_profile' => true,
             'page' => 'profile'
         ];
         

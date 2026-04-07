@@ -7,6 +7,7 @@ class FeedbackController extends Controller {
     
     private $feedbackModel;
     private $notificationModel;
+    private $managerModel;
 
     public function __construct() {
         // Ensure user is logged in
@@ -17,6 +18,57 @@ class FeedbackController extends Controller {
 
         $this->feedbackModel = $this->model('Feedback');
         $this->notificationModel = $this->model('Notification');
+        $this->managerModel = $this->model('Manager');
+    }
+
+    /**
+     * Submit platform feedback to management
+     * POST /feedback/submit
+     * Expected: feedback_message, feedback_type
+     */
+    public function submit() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ' . URLROOT . '/users/userprofile');
+            exit;
+        }
+
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: ' . URLROOT . '/auth/signin');
+            exit;
+        }
+
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+        $message = trim($_POST['feedback_message'] ?? '');
+        $type = trim($_POST['feedback_type'] ?? 'other');
+
+        if ($userId <= 0 || $message === '') {
+            $_SESSION['error'] = 'Please provide your feedback message.';
+            header('Location: ' . URLROOT . '/users/userprofile');
+            exit;
+        }
+
+        $allowedTypes = ['suggestion', 'bug', 'feature', 'other'];
+        if (!in_array($type, $allowedTypes, true)) {
+            $type = 'other';
+        }
+
+        $subjectMap = [
+            'suggestion' => 'Suggestion',
+            'bug' => 'Bug Report',
+            'feature' => 'Feature Request',
+            'other' => 'Other'
+        ];
+        $subject = $subjectMap[$type] ?? 'Other';
+
+        $ok = $this->managerModel->submitPlatformFeedback($userId, $subject, $message);
+        if ($ok) {
+            $_SESSION['success'] = 'Feedback sent to management.';
+        } else {
+            $_SESSION['error'] = 'Failed to send feedback. Please try again.';
+        }
+
+        header('Location: ' . URLROOT . '/users/userprofile');
+        exit;
     }
 
     /**
