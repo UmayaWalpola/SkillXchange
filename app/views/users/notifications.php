@@ -27,20 +27,25 @@
                 <?php if (!empty($data['notifications'])): ?>
                     <?php foreach ($data['notifications'] as $notification): ?>
                         <div class="notification-item <?= $notification['read'] ? 'read' : 'unread'; ?>" data-status="<?= $notification['read'] ? 'read' : 'unread'; ?>">
-                            <div class="notification-icon <?= $notification['type']; ?>">
-                                <?= $notification['icon']; ?>
-                            </div>
+                            <?php if (!empty($notification['icon'])): ?>
+                                <div class="notification-icon <?= $notification['type']; ?>">
+                                    <?= htmlspecialchars($notification['icon']); ?>
+                                </div>
+                            <?php endif; ?>
                             <div class="notification-content">
-                                <h3><?= htmlspecialchars($notification['title']); ?></h3>
-                                <p><?= htmlspecialchars($notification['message']); ?></p>
+                                <?php if (!empty($notification['title'])): ?>
+                                    <h3><?= htmlspecialchars($notification['title']); ?></h3>
+                                <?php endif; ?>
+                                <p><?= nl2br(htmlspecialchars($notification['message'])); ?></p>
                                 <span class="notification-time"><?= htmlspecialchars($notification['time']); ?></span>
                             </div>
                             <?php if (!$notification['read']): ?>
                                 <div class="unread-dot"></div>
                             <?php endif; ?>
-                            <button class="delete-btn" onclick="deleteNotification(this)" title="Delete">
-                                ✕
-                            </button>
+                            <form method="POST" action="<?= URLROOT ?>/notification/delete/<?= (int)$notification['id'] ?>"
+                                  onsubmit="return confirm('Delete this notification?');">
+                                <button type="submit" class="delete-btn" title="Delete">✕</button>
+                            </form>
                         </div>
                     <?php endforeach; ?>
                 <?php else: ?>

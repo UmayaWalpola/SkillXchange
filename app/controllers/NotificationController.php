@@ -49,6 +49,27 @@ class NotificationController extends Controller
         exit();
     }
 
+    // /notification/delete/{id}
+    public function delete($id = null)
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ' . URLROOT . '/userdashboard/notifications');
+            exit();
+        }
+
+        if (!$id) {
+            header('Location: ' . URLROOT . '/userdashboard/notifications');
+            exit();
+        }
+
+        $userId = $_SESSION['user_id'];
+        $this->notificationModel->deleteNotification($id, $userId);
+
+        $redirect = $_SERVER['HTTP_REFERER'] ?? (URLROOT . '/userdashboard/notifications');
+        header('Location: ' . $redirect);
+        exit();
+    }
+
 }
 
 ?>

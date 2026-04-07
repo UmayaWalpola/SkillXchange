@@ -45,6 +45,13 @@ class Notification {
         return $this->db->execute();
     }
 
+    public function deleteNotification($id, $userId) {
+        $this->db->query("DELETE FROM notifications WHERE id = :id AND user_id = :user_id");
+        $this->db->bind(':id', (int)$id);
+        $this->db->bind(':user_id', (int)$userId);
+        return $this->db->execute();
+    }
+
 }
 
 ?>
