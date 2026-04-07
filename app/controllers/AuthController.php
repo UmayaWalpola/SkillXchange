@@ -175,16 +175,8 @@ class AuthController extends Controller {
 
             // 1. Check for Suspension String (Special return value we created)
             if (is_string($user) && strpos($user, 'suspended|') === 0) {
-                // Extract the date
-                $parts = explode('|', $user);
-                $endDate = $parts[1];
-                $formattedDate = date('F j, Y, g:i a', strtotime($endDate));
-                
-                $data = [
-                    'error' => "Your account is suspended until $formattedDate.",
-                    'email' => $email
-                ];
-                $this->view('auth/signin', $data);
+                http_response_code(404);
+                $this->view('errors/404');
                 return;
             }
 
