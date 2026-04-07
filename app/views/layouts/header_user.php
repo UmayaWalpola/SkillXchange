@@ -433,6 +433,7 @@ function sx_get_role_label($user) {
                                     <?php
                                         $iconClass = 'info';
                                         $iconSymbol = '<i class="ph ph-wrench"></i>';
+                                        if ($n->type === 'system_announcement') { $iconClass = ''; $iconSymbol = ''; }
                                         if ($n->type === 'application_accepted') { $iconClass = 'success'; $iconSymbol = '<i class="ph ph-confetti"></i>'; }
                                         elseif ($n->type === 'application_rejected') { $iconClass = 'danger'; $iconSymbol = '<i class="ph ph-x-circle"></i>'; }
                                         elseif ($n->type === 'project_invite') { $iconClass = 'info'; $iconSymbol = '<i class="ph ph-envelope"></i>'; }
@@ -445,7 +446,9 @@ function sx_get_role_label($user) {
                                         elseif ($n->type === 'account_ban') { $iconClass = 'danger'; $iconSymbol = '<i class="ph ph-x-circle"></i>'; }
                                     ?>
                                     <a href="<?= URLROOT ?>/notifications/read/<?= $n->id ?>" class="notif-item <?= $n->is_read ? '' : 'unread' ?>" style="text-decoration:none;">
-                                        <div class="notif-icon <?= $iconClass ?>"><?= $iconSymbol ?></div>
+                                        <?php if (!empty($iconSymbol)): ?>
+                                            <div class="notif-icon <?= $iconClass ?>"><?= $iconSymbol ?></div>
+                                        <?php endif; ?>
                                         <div class="notif-body">
                                             <div class="notif-text"><?= htmlspecialchars($n->message) ?></div>
                                             <div class="notif-meta"><?= date('M d, Y H:i', strtotime($n->created_at)) ?></div>

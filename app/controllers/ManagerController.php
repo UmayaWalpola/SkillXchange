@@ -411,9 +411,22 @@ class ManagerController extends Controller {
             exit;
         }
 
+        $excludeUserId = (int)($_SESSION['user_id'] ?? 0);
+        $announcement = $this->managerModel->getAnnouncementById((int)$announcementId);
+
         if ($this->managerModel->removeAnnouncement($announcementId)) {
             // Remove notifications for this announcement for all users except manager
-            $this->managerModel->removeAnnouncementNotifications((int)$announcementId, (int)($_SESSION['user_id'] ?? 0));
+            $this->managerModel->removeAnnouncementNotifications((int)$announcementId, $excludeUserId);
+
+            // Backward-compatible cleanup for legacy rows without announcement_id
+            if ($announcement && isset($announcement->content)) {
+                $this->managerModel->removeAnnouncementNotificationsByMessage((string)$announcement->content, $excludeUserId);
+            }
+
+            // Extra legacy cleanup: if content was edited after posting, match by time window
+            if ($announcement && isset($announcement->created_at)) {
+                $this->managerModel->removeAnnouncementNotificationsByCreatedAt((string)$announcement->created_at, $excludeUserId, 45);
+            }
             $_SESSION['success'] = 'Announcement removed successfully';
         } else {
             $_SESSION['error'] = 'Failed to remove announcement';

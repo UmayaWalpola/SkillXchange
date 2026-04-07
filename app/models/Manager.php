@@ -205,6 +205,12 @@ class Manager {
         return $this->db->resultSet();
     }
 
+    public function getAnnouncementById($announcementId) {
+        $this->db->query("SELECT id, title, content, created_by, created_at FROM announcements WHERE id = :id LIMIT 1");
+        $this->db->bind(':id', (int)$announcementId);
+        return $this->db->single();
+    }
+
     // Add a new announcement and return its new ID
     public function addAnnouncement($title, $content, $managerId) {
         $this->db->query("
@@ -303,6 +309,74 @@ class Manager {
             ");
             $this->db->bind(':announcement_id', $announcementId);
             $this->db->bind(':exclude_user_id', (int)$excludeUserId);
+            return $this->db->execute();
+        } catch (PDOException $e) {
+            return false;
+        }
+    }
+
+    // Backward-compatible cleanup for legacy system announcement notifications
+    // created before notifications.announcement_id existed.
+    public function removeAnnouncementNotificationsByMessage($message, $excludeUserId = 0) {
+        if ($message === null) {
+            return false;
+        }
+
+        $message = (string)$message;
+        if ($message === '') {
+            return false;
+        }
+
+        try {
+            $this->db->query("
+                DELETE FROM notifications
+                WHERE type = 'system_announcement'
+                  AND message = :message
+                  AND user_id != :exclude_user_id
+            ");
+            $this->db->bind(':message', $message);
+            $this->db->bind(':exclude_user_id', (int)$excludeUserId);
+            return $this->db->execute();
+        } catch (PDOException $e) {
+            return false;
+        }
+    }
+
+    // Legacy cleanup fallback: remove system announcements created around the announcement timestamp.
+    // Useful when legacy notification rows lack announcement_id and the announcement content was later edited.
+    public function removeAnnouncementNotificationsByCreatedAt($createdAt, $excludeUserId = 0, $windowSeconds = 30) {
+        if ($createdAt === null) {
+            return false;
+        }
+
+        $createdAt = (string)$createdAt;
+        if ($createdAt === '') {
+            return false;
+        }
+
+        $windowSeconds = (int)$windowSeconds;
+        if ($windowSeconds < 1) {
+            $windowSeconds = 30;
+        }
+
+        $timestamp = strtotime($createdAt);
+        if ($timestamp === false) {
+            return false;
+        }
+
+        $start = date('Y-m-d H:i:s', $timestamp - $windowSeconds);
+        $end = date('Y-m-d H:i:s', $timestamp + $windowSeconds);
+
+        try {
+            $this->db->query("
+                DELETE FROM notifications
+                WHERE type = 'system_announcement'
+                  AND user_id != :exclude_user_id
+                  AND created_at BETWEEN :start_time AND :end_time
+            ");
+            $this->db->bind(':exclude_user_id', (int)$excludeUserId);
+            $this->db->bind(':start_time', $start);
+            $this->db->bind(':end_time', $end);
             return $this->db->execute();
         } catch (PDOException $e) {
             return false;
