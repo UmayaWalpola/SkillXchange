@@ -53,7 +53,11 @@ button,
 .btn {
   font-size: 1rem;
 }
-
+header, .site-header, nav {
+    width: 100%;
+    margin: 0;
+    box-sizing: border-box;
+}
 .sidebar a,
 .sidebar li {
   font-size: 1rem;

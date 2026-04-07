@@ -1,11 +1,3 @@
-<?php if (!empty($data['errors'])): ?>
-    <div class="error-messages">
-        <?php foreach($data['errors'] as $error): ?>
-            <p><?= htmlspecialchars($error) ?></p>
-        <?php endforeach; ?>
-    </div>
-<?php endif; ?>
-
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/assets/css/global.css">
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/assets/css/auth.css">
 
@@ -73,7 +65,21 @@
     </div>
 </div>
 
-<!-- Tab switching & input effects -->
+<?php if (!empty($data['errors'])): ?>
+<div class="error-modal-overlay" id="errorModal">
+    <div class="error-modal-box">
+        <div class="error-modal-icon">!</div>
+        <h3>Registration Error</h3>
+        <ul>
+            <?php foreach ($data['errors'] as $error): ?>
+                <li><?php echo htmlspecialchars($error); ?></li>
+            <?php endforeach; ?>
+        </ul>
+        <button class="error-modal-close" onclick="document.getElementById('errorModal').style.display='none'">Got it</button>
+    </div>
+</div>
+<?php endif; ?>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const tabButtons = document.querySelectorAll('.tab-btn');
@@ -81,11 +87,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     tabButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-            // Toggle active tab
             tabButtons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
-            // Show only the corresponding form
             forms.forEach(f => f.classList.remove('active'));
             const targetForm = document.getElementById(btn.dataset.tab);
             if (targetForm) targetForm.classList.add('active');
@@ -118,8 +122,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     });
+
+    // Close modal on backdrop click
+    const modal = document.getElementById('errorModal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.style.display = 'none';
+        });
+    }
 });
 </script>
-
-
-

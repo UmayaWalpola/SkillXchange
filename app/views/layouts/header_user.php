@@ -10,6 +10,12 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
     <style>
+
+        header, .site-header, nav {
+    width: 100%;
+    margin: 0;
+    box-sizing: border-box;
+}
         .header {
             position: fixed;
             top: 0;
