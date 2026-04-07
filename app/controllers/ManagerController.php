@@ -271,7 +271,19 @@ class ManagerController extends Controller {
         }
 
         $result = $this->managerModel->updateUser($userId, $name, $email, $role, $password);
-        $_SESSION[$result['success'] ? 'success' : 'error'] = $result['message'];
+
+        if ($result['success']) {
+            $mailer = new Mailer();
+            $sent   = $mailer->sendUserUpdatedNotification($name, $email, $role, $password);
+
+            if ($sent) {
+                $_SESSION['success'] = 'User updated and email notification sent';
+            } else {
+                $_SESSION['success'] = 'User updated (email could not be sent)';
+            }
+        } else {
+            $_SESSION['error'] = $result['message'];
+        }
 
         header('Location: ' . URLROOT . '/manager/users');
         exit;
