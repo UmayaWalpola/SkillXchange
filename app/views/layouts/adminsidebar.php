@@ -16,23 +16,18 @@
         <!-- Admin Sidebar -->
         <nav class="sidebar">
             <a href="<?= URLROOT ?>/admin/dashboard" class="sidebar-item active">
-                <span class="icon"></span>
                 <span>Dashboard</span>
             </a>
             <a href="<?= URLROOT ?>/admin/users" class="sidebar-item">
-                <span class="icon"></span>
                 <span>User Management</span>
             </a>
             <a href="<?= URLROOT ?>/admin/skills" class="sidebar-item">
-                <span class="icon"></span>
                 <span>Skills Management</span>
             </a>
             <a href="<?= URLROOT ?>/admin/reports" class="sidebar-item">
-                <span class="icon"></span>
                 <span>Reports</span>
             </a>
             <a href="<?= URLROOT ?>/FeedbackReport/index" class="sidebar-item <?= (strpos($_SERVER['REQUEST_URI'], '/FeedbackReport') !== false) ? 'active' : '' ?>">
-                <span class="icon"></span>
                 <span>Reported Feedback</span>
             </a>
         </nav>
