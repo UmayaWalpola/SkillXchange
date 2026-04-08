@@ -14,7 +14,7 @@ class ProjectController extends Controller
     {
         $org_id = $_SESSION['user_id'];
 
-        $projects = $this->projectModel->getByOrg($org_id);
+        $projects = $this->projectModel->getProjectsByOrganization($org_id);
 
         $this->view('organization/projects', ['projects' => $projects]);
     }
