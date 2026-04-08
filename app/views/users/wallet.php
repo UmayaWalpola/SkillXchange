@@ -4,30 +4,9 @@
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/wallet.css">
 
-<style>
-    /* Ensure user wallet keeps boxed transaction layout */
-    .user-transactions {
-        max-width: 1100px;
-        margin: 0 auto;
-        padding: 0 1rem;
-    }
-
-    .user-transactions .transaction-list {
-        display: block;
-    }
-
-    .user-transactions .transaction-item {
-        width: 100%;
-        box-sizing: border-box;
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-</style>
-
 <main class="site-main">  
 <div class="dashboard-container">
 <div class="dashboard-main">
-<div class="container">
     
     <div class="page-header">
         <h1>Your Wallet</h1>
@@ -90,7 +69,13 @@
                 </div>
                 <div class="transaction-count"><?= count($data['sentTransactions']) ?></div>
             </div>
-            <div class="transaction-list">
+            <div class="transaction-table">
+                <div class="transaction-table-header" aria-hidden="true">
+                    <div>To</div>
+                    <div>Date</div>
+                    <div class="amount">Amount</div>
+                </div>
+                <div class="transaction-list">
                 <?php if (empty($data['sentTransactions'])): ?>
                     <div class="empty-state">
                         <p>No sent transactions yet</p>
@@ -98,25 +83,11 @@
                 <?php else: ?>
                     <?php foreach($data['sentTransactions'] as $tx): ?>
                         <div class="transaction-item">
-                            <div class="transaction-info">
-                                <div class="transaction-user">
-                                    <span class="user-icon">&#x1F464;</span>
-                                    <?= htmlspecialchars($tx->receiver) ?>
-                                </div>
-                                <?php if (isset($tx->transaction_type)): ?>
-                                    <div class="transaction-note">
-                                        <strong>Type:</strong>
-                                        <?= htmlspecialchars($tx->transaction_type === 'reward' ? 'Quiz Reward' : ucfirst($tx->transaction_type)) ?>
-                                    </div>
-                                <?php endif; ?>
-                                <?php if (!empty($tx->note)): ?>
-                                    <div class="transaction-note">
-                                        <strong>Reason:</strong> <?= htmlspecialchars($tx->note) ?>
-                                    </div>
-                                <?php endif; ?>
-                                <div class="transaction-time">
-                                    <?= htmlspecialchars($tx->timestamp) ?>
-                                </div>
+                            <div class="tx-user">
+                                <?= htmlspecialchars($tx->receiver) ?>
+                            </div>
+                            <div class="tx-date">
+                                <?= htmlspecialchars($tx->timestamp) ?>
                             </div>
                             <div class="transaction-amount sent">
                                 -<?= number_format($tx->amount, 2) ?> BuckX
@@ -124,6 +95,7 @@
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
+                </div>
             </div>
         </div>
 
@@ -136,7 +108,13 @@
                 </div>
                 <div class="transaction-count"><?= count($data['receivedTransactions']) ?></div>
             </div>
-            <div class="transaction-list">
+            <div class="transaction-table">
+                <div class="transaction-table-header" aria-hidden="true">
+                    <div>From</div>
+                    <div>Date</div>
+                    <div class="amount">Amount</div>
+                </div>
+                <div class="transaction-list">
                 <?php if (empty($data['receivedTransactions'])): ?>
                     <div class="empty-state">
                         <p>No received transactions yet</p>
@@ -144,23 +122,11 @@
                 <?php else: ?>
                     <?php foreach($data['receivedTransactions'] as $tx): ?>
                         <div class="transaction-item">
-                            <div class="transaction-info">
-                                <div class="transaction-user">
-                                    <?= htmlspecialchars($tx->sender) ?>
-                                </div>
-                                <?php if (isset($tx->transaction_type) && $tx->transaction_type !== 'reward'): ?>
-                                    <div class="transaction-note">
-                                        <strong>Type:</strong> <?= htmlspecialchars(ucfirst($tx->transaction_type)) ?>
-                                    </div>
-                                    <?php if (!empty($tx->note)): ?>
-                                        <div class="transaction-note">
-                                            <strong>Reason:</strong> <?= htmlspecialchars($tx->note) ?>
-                                        </div>
-                                    <?php endif; ?>
-                                <?php endif; ?>
-                                <div class="transaction-time">
-                                    <?= htmlspecialchars($tx->timestamp) ?>
-                                </div>
+                            <div class="tx-user">
+                                <?= htmlspecialchars($tx->sender) ?>
+                            </div>
+                            <div class="tx-date">
+                                <?= htmlspecialchars($tx->timestamp) ?>
                             </div>
                             <div class="transaction-amount received">
                                 +<?= number_format($tx->amount, 2) ?> BuckX
@@ -168,11 +134,11 @@
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
+                </div>
             </div>
         </div>
     </div>
 
-</div>
 </div>
 </div>
 </main>

@@ -5,16 +5,16 @@
 /* Stats Row */
 .stats-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 2rem;
-    margin-bottom: 3rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
 }
 
 .stat-card {
     background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-blue) 100%);
     color: var(--white-bg);
     border-radius: 15px;
-    padding: 2rem;
+    padding: 1.25rem 1.25rem;
     text-align: center;
     box-shadow: 0 4px 15px rgba(101, 131, 150, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -27,19 +27,19 @@
 }
 
 .stat-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
     opacity: 0.9;
 }
 
 .stat-value {
-    font-size: 3rem;
+    font-size: 2.1rem;
     font-weight: 700;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
 }
 
 .stat-label {
-    font-size: 1rem;
+    font-size: 0.95rem;
     opacity: 0.9;
     font-weight: 500;
 }
@@ -216,9 +216,15 @@ input.invalid {
 
 .transactions-container {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 2rem;
-    margin-bottom: 3rem;
+    margin: 0 auto 3rem;
+    width: 100%;
+}
+
+/* Organizations should only have a single (sent) table */
+.transactions-container.org-transactions {
+    grid-template-columns: minmax(0, 1fr);
 }
 
 .transaction-section {
@@ -227,6 +233,10 @@ input.invalid {
     padding: 2rem;
     box-shadow: 0 4px 15px rgba(18, 18, 13, 0.05);
     border: 1px solid var(--blue-bg);
+}
+
+.transaction-table {
+    overflow-x: hidden;
 }
 
 .transaction-header {
@@ -259,71 +269,109 @@ input.invalid {
 .transaction-list {
     max-height: 450px;
     overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Table-like header row for transactions */
+.transaction-table-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 2.2fr) minmax(0, 1fr) minmax(0, 0.75fr);
+    gap: 0.75rem;
+    padding: 0.6rem 1rem;
+    margin-bottom: 0.75rem;
+    background: rgba(101, 131, 150, 0.08);
+    border: 1px solid var(--blue-bg);
+    border-radius: 10px;
+    color: var(--dark-bg);
+    opacity: 0.8;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+/* User wallet: no Details column */
+.transactions-container.user-transactions .transaction-table-header {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.1fr) minmax(0, 0.75fr);
+}
+
+.transaction-table-header .amount {
+    text-align: right;
 }
 
 .transaction-item {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 2.2fr) minmax(0, 1fr) minmax(0, 0.75fr);
+    gap: 0.75rem;
     align-items: center;
-    justify-content: space-between;
-    padding: 1.25rem;
+    padding: 0.85rem 1rem;
     margin-bottom: 0.75rem;
-    background: var(--blue-bg);
+    background: var(--white-bg);
     border-radius: 12px;
     transition: all 0.3s ease;
-    border: 1px solid transparent;
+    border: 1px solid var(--blue-bg);
+}
+
+/* User wallet: 3-column rows */
+.transactions-container.user-transactions .transaction-item {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.1fr) minmax(0, 0.75fr);
 }
 
 .transaction-item:hover {
-    transform: translateX(5px);
-    box-shadow: 0 3px 10px rgba(101, 131, 150, 0.15);
-    border-color: var(--accent-blue);
-    background: rgba(213, 234, 246, 0.7);
+    box-shadow: none;
+    transform: none;
+    background: var(--white-bg);
 }
 
 .transaction-item:last-child {
     margin-bottom: 0;
 }
 
-.transaction-info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.transaction-user {
+.tx-user {
     font-weight: 600;
     color: var(--dark-bg);
-    font-size: 1.05rem;
+    font-size: 0.95rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    min-width: 0;
+    flex-wrap: wrap;
+    overflow-wrap: anywhere;
 }
 
-.transaction-note {
-    font-size: 0.9rem;
+.tx-details {
+    min-width: 0;
+}
+
+.tx-detail-line {
+    font-size: 0.82rem;
     color: var(--dark-bg);
     opacity: 0.85;
-    padding: 0.5rem;
+    padding: 0.35rem 0.5rem;
     background: rgba(101, 131, 150, 0.08);
     border-radius: 6px;
+    line-height: 1.25rem;
+    word-break: break-word;
 }
 
-.transaction-note strong {
+.tx-detail-line strong {
     color: var(--primary-blue);
 }
 
-.transaction-time {
-    font-size: 0.85rem;
+.tx-date {
+    font-size: 0.8rem;
     color: var(--dark-bg);
     opacity: 0.6;
     display: flex;
     align-items: center;
     gap: 0.25rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 .transaction-amount {
     font-weight: 700;
-    font-size: 1.3rem;
+    font-size: 1.05rem;
+    text-align: right;
+    white-space: nowrap;
 }
 
 .transaction-amount.sent {
@@ -337,6 +385,48 @@ input.invalid {
 /* Icons */
 .note-icon, .time-icon, .user-icon {
     font-size: 0.9rem;
+}
+
+@media (max-width: 900px) {
+    .transactions-container {
+        grid-template-columns: 1fr;
+    }
+
+    .transaction-table-header {
+        display: none;
+    }
+
+    .transaction-item {
+        min-width: 0;
+        grid-template-columns: 1fr auto;
+        grid-template-areas:
+            "user amount"
+            "details amount"
+            "date amount";
+        align-items: start;
+    }
+
+    .tx-user { grid-area: user; }
+    .tx-details { grid-area: details; }
+    .tx-date { grid-area: date; }
+    .transaction-amount { grid-area: amount; }
+
+    /* User wallet: no Details row on mobile */
+    .transactions-container.user-transactions .transaction-item {
+        grid-template-areas:
+            "user amount"
+            "date amount";
+    }
+}
+
+@media (max-width: 520px) {
+    .stat-value {
+        font-size: 1.85rem;
+    }
+
+    .stat-card {
+        padding: 1rem;
+    }
 }
 
 /* Role badge */
