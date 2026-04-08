@@ -30,7 +30,7 @@ function initFadeInObserver() {
 
 /* ===== ANIMATED COUNTERS ===== */
 function initCountersObserver() {
-  const cards = document.querySelectorAll('.stat-card');
+  const cards = document.querySelectorAll('.stat-card[data-count]');
   const observer = new IntersectionObserver((entries, observer) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
