@@ -17,10 +17,12 @@ class FeedbackReport extends Database {
             return false; // Prevent duplicate reports
         }
 
+        $conn = $this->connect();
+
         $sql = "INSERT INTO feedback_reports (feedback_id, reporter_id, reason, details, created_at) 
                 VALUES (:feedback_id, :reporter_id, :reason, :details, NOW())";
         
-        $stmt = $this->connect()->prepare($sql);
+        $stmt = $conn->prepare($sql);
         $stmt->bindValue(':feedback_id', $data['feedback_id']);
         $stmt->bindValue(':reporter_id', $data['reporter_id']);
         $stmt->bindValue(':reason', $data['reason']);
@@ -29,7 +31,30 @@ class FeedbackReport extends Database {
         if ($stmt->execute()) {
             // Increment report count on user_feedback
             $this->incrementReportCount($data['feedback_id']);
-            return $this->connect()->lastInsertId();
+
+            $reportId = (int)$conn->lastInsertId();
+            if ($reportId <= 0) {
+                $idStmt = $conn->query("SELECT LAST_INSERT_ID() AS id");
+                $idRow = $idStmt ? $idStmt->fetch(PDO::FETCH_ASSOC) : null;
+                $reportId = isset($idRow['id']) ? (int)$idRow['id'] : 0;
+            }
+
+            if ($reportId <= 0) {
+                $fallbackSql = "SELECT id
+                                FROM feedback_reports
+                                WHERE feedback_id = :feedback_id
+                                  AND reporter_id = :reporter_id
+                                ORDER BY id DESC
+                                LIMIT 1";
+                $fallbackStmt = $conn->prepare($fallbackSql);
+                $fallbackStmt->bindValue(':feedback_id', $data['feedback_id']);
+                $fallbackStmt->bindValue(':reporter_id', $data['reporter_id']);
+                $fallbackStmt->execute();
+                $fallbackRow = $fallbackStmt->fetch(PDO::FETCH_ASSOC);
+                $reportId = isset($fallbackRow['id']) ? (int)$fallbackRow['id'] : 0;
+            }
+
+            return $reportId > 0 ? $reportId : false;
         }
         
         return false;

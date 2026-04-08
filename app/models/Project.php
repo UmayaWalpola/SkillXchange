@@ -457,6 +457,17 @@ class Project {
         return $this->db->resultSet();
     }
 
+    // Get every project from DB (all statuses) for discover page
+    public function getAllProjects() {
+        $this->db->query(
+            "SELECT p.*, 
+            (SELECT COUNT(*) FROM project_members WHERE project_id = p.id AND status='active') AS current_members 
+            FROM projects p 
+            ORDER BY p.created_at DESC"
+        );
+        return $this->db->resultSet();
+    }
+
     /* ============================================================
        PROJECT PROGRESS (Tasks + Members)
     ============================================================ */

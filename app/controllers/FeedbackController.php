@@ -94,7 +94,7 @@ class FeedbackController extends Controller {
 
         // Get and validate inputs
         $userId = filter_var($_POST['user_id'] ?? 0, FILTER_VALIDATE_INT);
-        $contextType = filter_var($_POST['context_type'] ?? 'project', FILTER_SANITIZE_STRING);
+        $contextType = trim((string)($_POST['context_type'] ?? 'project'));
         $contextId = filter_var($_POST['context_id'] ?? 0, FILTER_VALIDATE_INT);
         $rating = filter_var($_POST['rating'] ?? 0, FILTER_VALIDATE_INT);
         $comment = trim($_POST['comment'] ?? '');
@@ -193,7 +193,7 @@ class FeedbackController extends Controller {
 
         // Get query parameters
         $userId = filter_var($_GET['user_id'] ?? 0, FILTER_VALIDATE_INT);
-        $contextType = filter_var($_GET['context_type'] ?? 'project', FILTER_SANITIZE_STRING);
+        $contextType = trim((string)($_GET['context_type'] ?? 'project'));
         $contextId = filter_var($_GET['context_id'] ?? null, FILTER_VALIDATE_INT);
 
         if (!$userId) {
@@ -306,13 +306,13 @@ class FeedbackController extends Controller {
 
         // Build filters array from query parameters
         $filters = [
-            'context_type' => filter_var($_GET['context_type'] ?? null, FILTER_SANITIZE_STRING),
+            'context_type' => isset($_GET['context_type']) ? trim((string)$_GET['context_type']) : null,
             'context_id' => filter_var($_GET['context_id'] ?? null, FILTER_VALIDATE_INT),
             'rating' => filter_var($_GET['rating'] ?? null, FILTER_VALIDATE_INT),
-            'tag' => filter_var($_GET['tag'] ?? null, FILTER_SANITIZE_STRING),
+            'tag' => isset($_GET['tag']) ? trim((string)$_GET['tag']) : null,
             'reviewer_id' => filter_var($_GET['reviewer_id'] ?? null, FILTER_VALIDATE_INT),
-            'search' => filter_var($_GET['search'] ?? null, FILTER_SANITIZE_STRING),
-            'sort' => filter_var($_GET['sort'] ?? 'newest', FILTER_SANITIZE_STRING),
+            'search' => isset($_GET['search']) ? trim((string)$_GET['search']) : null,
+            'sort' => trim((string)($_GET['sort'] ?? 'newest')),
             'page' => filter_var($_GET['page'] ?? 1, FILTER_VALIDATE_INT),
             'limit' => filter_var($_GET['limit'] ?? 10, FILTER_VALIDATE_INT)
         ];

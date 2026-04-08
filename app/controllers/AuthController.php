@@ -136,13 +136,18 @@ class AuthController extends Controller {
                     $_SESSION['profile_completed'] = 0;
                     
                     // Award "Early Adopter" badge
-                    $this->userModel->awardBadge($userId, 'Early Adopter', '🌟');
+                    try {
+                        $this->userModel->awardBadge($userId, 'Early Adopter', '🌟');
+                    } catch (Exception $e) {
+                        // Badge is optional; do not block account creation.
+                        error_log('Badge award failed during signup: ' . $e->getMessage());
+                    }
                     
                     // Redirect to profile setup
                     header("Location: " . URLROOT . "/users/profileSetup");
                     exit;
                 } else {
-                    $errors[] = "Registration failed. Email may already be in use.";
+                    $errors[] = "Registration failed. Email or username may already be in use.";
                 }
             }
 

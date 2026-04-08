@@ -3,34 +3,59 @@ class User extends Database {
 
     // 🔹 Register Organization
     public function registerOrganization($name, $email, $password, $certPath) {
+        $username = $this->generateUniqueUsername($name);
+        if (!$username) {
+            return false;
+        }
+
         $sql = "INSERT INTO users (username, email, password, role, org_cert)
-                VALUES (:name, :email, :password, 'organization', :cert)";
+                VALUES (:username, :email, :password, 'organization', :cert)";
         $stmt = $this->connect()->prepare($sql);
-        $stmt->bindValue(':name', $name);
+        $stmt->bindValue(':username', $username);
         $stmt->bindValue(':email', $email);
         $stmt->bindValue(':password', password_hash($password, PASSWORD_BCRYPT));
         $stmt->bindValue(':cert', $certPath);
-        return $stmt->execute();
+
+        try {
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            if ($e->getCode() === '23000') {
+                return false;
+            }
+            throw $e;
+        }
     }
 
     // 🔹 Register Individual
     public function registerIndividual($name, $email, $password) {
+        $username = $this->generateUniqueUsername($name);
+        if (!$username) {
+            return false;
+        }
+
+        $conn = $this->connect();
 
         $sql = "INSERT INTO users (username, email, password, role, profile_completed)
-                VALUES (:name, :email, :password, 'individual', 0)";
-        $stmt = $this->connect()->prepare($sql);
-        $stmt->bindValue(':name', $name);
+                VALUES (:username, :email, :password, 'individual', 0)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bindValue(':username', $username);
         $stmt->bindValue(':email', $email);
         $stmt->bindValue(':password', password_hash($password, PASSWORD_BCRYPT));
-        
-        
-        if ($stmt->execute()) {
-            $userId = $this->connect()->lastInsertId();
-            // Initialize user stats
-            $this->initializeUserStats($userId);
-            return $userId;
+
+        try {
+            if ($stmt->execute()) {
+                $userId = $conn->lastInsertId();
+                // Initialize user stats
+                $this->initializeUserStats($userId);
+                return $userId;
+            }
+            return false;
+        } catch (PDOException $e) {
+            if ($e->getCode() === '23000') {
+                return false;
+            }
+            throw $e;
         }
-        return false;
     }
 
     // 🔹 Login (Updated with Suspension Logic)
@@ -171,14 +196,32 @@ class User extends Database {
 
     // 🔹 Get User Badges
     public function getUserBadges($userId) {
-        $sql = "SELECT b.name as badge_name, b.icon as badge_icon, ub.earned_at 
-                FROM user_badges ub
-                JOIN badges b ON ub.badge_id = b.id
-                WHERE ub.user_id = :user_id 
-                ORDER BY ub.earned_at DESC";
-        $stmt = $this->connect()->prepare($sql);
-        $stmt->bindValue(':user_id', $userId);
-        $stmt->execute();
+        $conn = $this->connect();
+
+        try {
+            // Current schema: user_badges(user_id, badge_id) + badges table.
+            $sql = "SELECT b.name as badge_name, b.icon as badge_icon, ub.earned_at 
+                    FROM user_badges ub
+                    JOIN badges b ON ub.badge_id = b.id
+                    WHERE ub.user_id = :user_id 
+                    ORDER BY ub.earned_at DESC";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindValue(':user_id', $userId);
+            $stmt->execute();
+        } catch (PDOException $e) {
+            // Legacy fallback: user_badges stores badge_name and badge_icon directly.
+            if (!in_array($e->getCode(), ['42S22', '42S02'])) {
+                throw $e;
+            }
+
+            $sql = "SELECT badge_name, badge_icon, earned_at
+                    FROM user_badges
+                    WHERE user_id = :user_id
+                    ORDER BY earned_at DESC";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindValue(':user_id', $userId);
+            $stmt->execute();
+        }
         
         $badges = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -310,13 +353,48 @@ class User extends Database {
 
     // 🔹 Award Badge to User
     public function awardBadge($userId, $badgeName, $badgeIcon) {
-        $sql = "INSERT INTO user_badges (user_id, badge_name, badge_icon) 
-                VALUES (:user_id, :name, :icon)";
-        $stmt = $this->connect()->prepare($sql);
-        $stmt->bindValue(':user_id', $userId);
-        $stmt->bindValue(':name', $badgeName);
-        $stmt->bindValue(':icon', $badgeIcon);
-        return $stmt->execute();
+        $conn = $this->connect();
+
+        try {
+            // Current schema path: resolve/create badge, then link by badge_id.
+            $findBadge = $conn->prepare("SELECT id FROM badges WHERE name = :name LIMIT 1");
+            $findBadge->bindValue(':name', $badgeName);
+            $findBadge->execute();
+            $badgeId = $findBadge->fetchColumn();
+
+            if (!$badgeId) {
+                $createBadge = $conn->prepare(
+                    "INSERT INTO badges (name, description, icon, type)
+                     VALUES (:name, :description, :icon, 'community')"
+                );
+                $createBadge->bindValue(':name', $badgeName);
+                $createBadge->bindValue(':description', 'Platform achievement badge');
+                $createBadge->bindValue(':icon', $badgeIcon);
+                $createBadge->execute();
+                $badgeId = $conn->lastInsertId();
+            }
+
+            $linkBadge = $conn->prepare(
+                "INSERT IGNORE INTO user_badges (user_id, badge_id, earned_at)
+                 VALUES (:user_id, :badge_id, NOW())"
+            );
+            $linkBadge->bindValue(':user_id', $userId);
+            $linkBadge->bindValue(':badge_id', $badgeId);
+            return $linkBadge->execute();
+        } catch (PDOException $e) {
+            // Legacy fallback for environments where user_badges has badge_name/badge_icon.
+            if (!in_array($e->getCode(), ['42S22', '42S02'])) {
+                throw $e;
+            }
+
+            $sql = "INSERT INTO user_badges (user_id, badge_name, badge_icon) 
+                    VALUES (:user_id, :name, :icon)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bindValue(':user_id', $userId);
+            $stmt->bindValue(':name', $badgeName);
+            $stmt->bindValue(':icon', $badgeIcon);
+            return $stmt->execute();
+        }
     }
 
     // 🔹 Get User Activity
@@ -356,6 +434,34 @@ class User extends Database {
         }
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC) ? true : false;
+    }
+
+    // 🔹 Build a unique username for registration
+    private function generateUniqueUsername($preferredName) {
+        $baseUsername = trim((string)$preferredName);
+        if ($baseUsername === '') {
+            $baseUsername = 'user';
+        }
+
+        $baseUsername = preg_replace('/\s+/', ' ', $baseUsername);
+        $maxLength = 50;
+        $baseUsername = substr($baseUsername, 0, $maxLength);
+
+        $candidate = $baseUsername;
+        $counter = 1;
+
+        while ($this->usernameExists($candidate)) {
+            $suffix = '_' . $counter;
+            $trimmedBase = substr($baseUsername, 0, $maxLength - strlen($suffix));
+            $candidate = $trimmedBase . $suffix;
+            $counter++;
+
+            if ($counter > 9999) {
+                return false;
+            }
+        }
+
+        return $candidate;
     }
 
     // Get total users count

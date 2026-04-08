@@ -193,6 +193,43 @@
             </div>
         </div>
 
+        <?php
+            $formatSkillLabel = static function ($skill) {
+                $skill = trim((string)$skill);
+                if ($skill === '') {
+                    return '';
+                }
+
+                $normalized = strtolower(str_replace(['_', '-'], ' ', $skill));
+                $normalized = preg_replace('/\s+/', ' ', trim($normalized));
+
+                $special = [
+                    'ai' => 'AI',
+                    'api' => 'API',
+                    'qa' => 'QA',
+                    'ui' => 'UI',
+                    'ux' => 'UX',
+                    'ui ux' => 'UI/UX',
+                    'ui/ux' => 'UI/UX',
+                    'sql' => 'SQL',
+                    'ml' => 'ML',
+                    'github' => 'GitHub',
+                    'devops' => 'DevOps',
+                    'javascript' => 'JavaScript',
+                    'typescript' => 'TypeScript',
+                    'node js' => 'Node.js',
+                    'react js' => 'React.js',
+                    'next js' => 'Next.js'
+                ];
+
+                if (isset($special[$normalized])) {
+                    return $special[$normalized];
+                }
+
+                return ucwords($normalized);
+            };
+        ?>
+
         <!-- Members List -->
         <div class="members-list">
             <?php if(empty($data['members'])): ?>
@@ -233,10 +270,15 @@
                             <!-- Skills -->
                             <?php if (!empty($member->user_skills)): ?>
                                 <div class="member-skills">
-                                    <strong>Skills:</strong>
+                                    <span class="member-skills-label">Skills</span>
                                     <div class="skills-list">
                                         <?php foreach (explode(',', $member->user_skills) as $skill): ?>
-                                            <span class="skill-tag"><?= htmlspecialchars(trim($skill)) ?></span>
+                                            <?php $formattedSkill = $formatSkillLabel($skill); ?>
+                                            <?php if ($formattedSkill === '') continue; ?>
+                                            <span class="skill-tag member-skill-tag">
+                                                <span class="skill-dot"></span>
+                                                <?= htmlspecialchars($formattedSkill) ?>
+                                            </span>
                                         <?php endforeach; ?>
                                     </div>
                                 </div>
@@ -284,25 +326,28 @@
                                 // Fetch tasks for this member using taskModel from controller
                                 $memberTasks = $data['taskModel']->getTasksByMember($data['projectId'], $member->user_id);
                                 
-                                // Group tasks by status
+                                // Group tasks by status — DB stores: 'todo', 'in-progress', 'done'
                                 $tasksByStatus = [
-                                    'pending' => [],
+                                    'todo'        => [],
                                     'in_progress' => [],
-                                    'completed' => []
+                                    'done'        => []
                                 ];
                                 
                                 foreach ($memberTasks as $task) {
-                                    if ($task->status === 'pending') {
-                                        $tasksByStatus['pending'][] = $task;
-                                    } elseif ($task->status === 'in_progress' || $task->status === 'on_hold') {
+                                    $st = $task->status ?? 'todo';
+                                    if ($st === 'todo' || $st === 'pending') {
+                                        $tasksByStatus['todo'][] = $task;
+                                    } elseif ($st === 'in-progress' || $st === 'in_progress' || $st === 'on_hold') {
                                         $tasksByStatus['in_progress'][] = $task;
-                                    } elseif ($task->status === 'completed') {
-                                        $tasksByStatus['completed'][] = $task;
+                                    } elseif ($st === 'done' || $st === 'completed') {
+                                        $tasksByStatus['done'][] = $task;
+                                    } else {
+                                        $tasksByStatus['todo'][] = $task; // fallback
                                     }
                                 }
                                 
-                                $totalTasks = count($memberTasks);
-                                $completedCount = count($tasksByStatus['completed']);
+                                $totalTasks    = count($memberTasks);
+                                $completedCount = count($tasksByStatus['done']);
                                 ?>
 
                                 <?php if ($totalTasks === 0): ?>
@@ -312,7 +357,7 @@
                                 <?php else: ?>
                                     <div class="task-summary" style="display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap;">
                                         <span class="task-stat" style="background:#fff3cd;color:#856404;padding:6px 12px;border-radius:6px;font-size:13px;">
-                                            To-Do: <?= count($tasksByStatus['pending']) ?>
+                                            To-Do: <?= count($tasksByStatus['todo']) ?>
                                         </span>
                                         <span class="task-stat" style="background:#cfe2ff;color:#084298;padding:6px 12px;border-radius:6px;font-size:13px;">
                                             In Progress: <?= count($tasksByStatus['in_progress']) ?>
@@ -328,13 +373,14 @@
                                             <div class="column-header" style="background:#fff3cd;padding:8px;border-radius:6px;margin-bottom:8px;">
                                                 <strong style="font-size:13px;color:#856404;">To-Do</strong>
                                             </div>
-                                            <?php foreach ($tasksByStatus['pending'] as $task): ?>
+                                            <?php foreach ($tasksByStatus['todo'] as $task): ?>
                                                 <?php 
-                                                    $isOverdue = !empty($task->due_date) && strtotime($task->due_date) < time();
+                                                    $isOverdue = !empty($task->deadline) && strtotime($task->deadline) < time();
+                                                    $taskTitle = $task->title ?? $task->task_name ?? 'Untitled';
                                                 ?>
-                                                <div class="task-card" style="background:white;border:1px solid #e0e0e0;border-radius:6px;padding:10px;margin-bottom:8px;">
+                                                <div class="task-card" data-task-id="<?= $task->id ?>" style="background:white;border:1px solid #e0e0e0;border-radius:6px;padding:10px;margin-bottom:8px;">
                                                     <div style="font-weight:600;font-size:13px;color:#333;margin-bottom:5px;">
-                                                        <?= htmlspecialchars($task->task_name) ?>
+                                                        <?= htmlspecialchars($taskTitle) ?>
                                                     </div>
                                                     <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px;">
                                                         <?php if ($task->priority === 'high'): ?>
@@ -345,9 +391,9 @@
                                                             <span style="background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:4px;font-size:11px;">Low</span>
                                                         <?php endif; ?>
                                                         
-                                                        <?php if (!empty($task->due_date)): ?>
+                                                        <?php if (!empty($task->deadline)): ?>
                                                             <span style="background:<?= $isOverdue ? '#fee2e2' : '#e0e7ff' ?>;color:<?= $isOverdue ? '#991b1b' : '#4338ca' ?>;padding:2px 6px;border-radius:4px;font-size:11px;display:flex;align-items:center;gap:3px;">
-                                                                <i class="ph <?= $isOverdue ? 'ph-warning-circle' : 'ph-calendar' ?>" style="font-size:12px;"></i> <?= date('M d', strtotime($task->due_date)) ?>
+                                                                <i class="ph <?= $isOverdue ? 'ph-warning-circle' : 'ph-calendar' ?>" style="font-size:12px;"></i> <?= date('M d', strtotime($task->deadline)) ?>
                                                             </span>
                                                         <?php endif; ?>
                                                     </div>
@@ -357,10 +403,13 @@
                                                         </div>
                                                     <?php endif; ?>
                                                     <select class="task-status-select" data-task-id="<?= $task->id ?>" style="width:100%;padding:4px;border-radius:4px;border:1px solid #ddd;font-size:11px;">
-                                                        <option value="pending" selected>To-Do</option>
-                                                        <option value="in_progress">In Progress</option>
-                                                        <option value="completed">Completed</option>
+                                                        <option value="todo" selected>To-Do</option>
+                                                        <option value="in-progress">In Progress</option>
+                                                        <option value="done">Completed</option>
                                                     </select>
+                                                    <button onclick="removeOrgTask(<?= $task->id ?>, this.closest('.task-card'))" title="Remove this task (member will be notified)" style="margin-top:6px;width:100%;padding:5px;background:#fff1f2;border:1px solid #fca5a5;border-radius:4px;color:#dc2626;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.2s;" onmouseenter="this.style.background='#fee2e2'" onmouseleave="this.style.background='#fff1f2'">
+                                                        <i class="ph ph-trash" style="font-size:12px;"></i> Remove Task
+                                                    </button>
                                                 </div>
                                             <?php endforeach; ?>
                                         </div>
@@ -372,11 +421,12 @@
                                             </div>
                                             <?php foreach ($tasksByStatus['in_progress'] as $task): ?>
                                                 <?php 
-                                                    $isOverdue = !empty($task->due_date) && strtotime($task->due_date) < time();
+                                                    $isOverdue = !empty($task->deadline) && strtotime($task->deadline) < time();
+                                                    $taskTitle = $task->title ?? $task->task_name ?? 'Untitled';
                                                 ?>
-                                                <div class="task-card" style="background:white;border:1px solid #e0e0e0;border-radius:6px;padding:10px;margin-bottom:8px;">
+                                                <div class="task-card" data-task-id="<?= $task->id ?>" style="background:white;border:1px solid #e0e0e0;border-radius:6px;padding:10px;margin-bottom:8px;">
                                                     <div style="font-weight:600;font-size:13px;color:#333;margin-bottom:5px;">
-                                                        <?= htmlspecialchars($task->task_name) ?>
+                                                        <?= htmlspecialchars($taskTitle) ?>
                                                     </div>
                                                     <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px;">
                                                         <?php if ($task->priority === 'high'): ?>
@@ -386,10 +436,9 @@
                                                         <?php else: ?>
                                                             <span style="background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:4px;font-size:11px;">Low</span>
                                                         <?php endif; ?>
-                                                        
-                                                        <?php if (!empty($task->due_date)): ?>
+                                                        <?php if (!empty($task->deadline)): ?>
                                                             <span style="background:<?= $isOverdue ? '#fee2e2' : '#e0e7ff' ?>;color:<?= $isOverdue ? '#991b1b' : '#4338ca' ?>;padding:2px 6px;border-radius:4px;font-size:11px;display:flex;align-items:center;gap:3px;">
-                                                                <i class="ph <?= $isOverdue ? 'ph-warning-circle' : 'ph-calendar' ?>" style="font-size:12px;"></i> <?= date('M d', strtotime($task->due_date)) ?>
+                                                                <i class="ph <?= $isOverdue ? 'ph-warning-circle' : 'ph-calendar' ?>" style="font-size:12px;"></i> <?= date('M d', strtotime($task->deadline)) ?>
                                                             </span>
                                                         <?php endif; ?>
                                                     </div>
@@ -399,10 +448,13 @@
                                                         </div>
                                                     <?php endif; ?>
                                                     <select class="task-status-select" data-task-id="<?= $task->id ?>" style="width:100%;padding:4px;border-radius:4px;border:1px solid #ddd;font-size:11px;">
-                                                        <option value="pending">To-Do</option>
-                                                        <option value="in_progress" selected>In Progress</option>
-                                                        <option value="completed">Completed</option>
+                                                        <option value="todo">To-Do</option>
+                                                        <option value="in-progress" selected>In Progress</option>
+                                                        <option value="done">Completed</option>
                                                     </select>
+                                                    <button onclick="removeOrgTask(<?= $task->id ?>, this.closest('.task-card'))" title="Remove this task (member will be notified)" style="margin-top:6px;width:100%;padding:5px;background:#fff1f2;border:1px solid #fca5a5;border-radius:4px;color:#dc2626;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.2s;" onmouseenter="this.style.background='#fee2e2'" onmouseleave="this.style.background='#fff1f2'">
+                                                        <i class="ph ph-trash" style="font-size:12px;"></i> Remove Task
+                                                    </button>
                                                 </div>
                                             <?php endforeach; ?>
                                         </div>
@@ -412,10 +464,11 @@
                                             <div class="column-header" style="background:#d1e7dd;padding:8px;border-radius:6px;margin-bottom:8px;">
                                                 <strong style="font-size:13px;color:#0f5132;">Completed</strong>
                                             </div>
-                                            <?php foreach ($tasksByStatus['completed'] as $task): ?>
-                                                <div class="task-card" style="background:#f8f9fa;border:1px solid #e0e0e0;border-radius:6px;padding:10px;margin-bottom:8px;opacity:0.8;">
+                                            <?php foreach ($tasksByStatus['done'] as $task): ?>
+                                                <?php $taskTitle = $task->title ?? $task->task_name ?? 'Untitled'; ?>
+                                                <div class="task-card" data-task-id="<?= $task->id ?>" style="background:#f8f9fa;border:1px solid #e0e0e0;border-radius:6px;padding:10px;margin-bottom:8px;opacity:0.85;">
                                                     <div style="font-weight:600;font-size:13px;color:#333;margin-bottom:5px;text-decoration:line-through;">
-                                                        <?= htmlspecialchars($task->task_name) ?>
+                                                        <?= htmlspecialchars($taskTitle) ?>
                                                     </div>
                                                     <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px;">
                                                         <?php if ($task->priority === 'high'): ?>
@@ -425,12 +478,11 @@
                                                         <?php else: ?>
                                                             <span style="background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:4px;font-size:11px;">Low</span>
                                                         <?php endif; ?>
+                                                        <span style="background:#d1fae5;color:#059669;padding:2px 6px;border-radius:4px;font-size:11px;">✓ Done</span>
                                                     </div>
-                                                    <select class="task-status-select" data-task-id="<?= $task->id ?>" style="width:100%;padding:4px;border-radius:4px;border:1px solid #ddd;font-size:11px;">
-                                                        <option value="pending">To-Do</option>
-                                                        <option value="in_progress">In Progress</option>
-                                                        <option value="completed" selected>Completed</option>
-                                                    </select>
+                                                    <button onclick="removeOrgTask(<?= $task->id ?>, this.closest('.task-card'))" title="Remove this task record" style="margin-top:6px;width:100%;padding:5px;background:#fff1f2;border:1px solid #fca5a5;border-radius:4px;color:#dc2626;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all 0.2s;" onmouseenter="this.style.background='#fee2e2'" onmouseleave="this.style.background='#fff1f2'">
+                                                        <i class="ph ph-trash" style="font-size:12px;"></i> Remove Task
+                                                    </button>
                                                 </div>
                                             <?php endforeach; ?>
                                         </div>
@@ -668,21 +720,64 @@ document.getElementById('cancelModal').addEventListener('click', function() {
 document.getElementById('taskAssignForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
-    const formData = new FormData(this);
     const submitBtn = this.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Creating...';
+
+    const projectId = document.getElementById('modal_project_id').value;
+    const memberId  = document.getElementById('modal_assigned_to').value;
+    const taskName  = document.getElementById('modal_task_name').value.trim();
+    const description = document.getElementById('modal_description').value.trim();
+    const priority  = document.getElementById('modal_priority').value;
+    const dueDate   = document.getElementById('modal_deadline').value;
+
+    if (!taskName) {
+        alert('Task title is required');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Task';
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('project_id', projectId);
+    formData.append('member_id', memberId);
+    formData.append('task_name', taskName);
+    formData.append('description', description);
+    formData.append('priority', priority);
+    formData.append('due_date', dueDate);
     
-    fetch(URLROOT + '/TaskController/create', {
+    fetch(URLROOT + '/organization/assignTask', {
         method: 'POST',
         body: formData,
         credentials: 'same-origin',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
     })
-    .then(res => res.json())
+    .then(res => {
+        if (res.status === 401) {
+            return res.json().then(data => {
+                throw new Error(data.message || 'Your organization session has expired. Please sign in again.');
+            });
+        }
+        if (!res.ok) {
+            return res.text().then(txt => { throw new Error('Server returned ' + res.status + ': ' + txt.substring(0, 200)); });
+        }
+        const contentType = res.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+            return res.text().then(txt => {
+                const lower = txt.toLowerCase();
+                if (lower.includes('/auth/signin') || lower.includes('sign in') || lower.includes('login')) {
+                    throw new Error('Your organization session has expired. Please sign in again as the organization account.');
+                }
+                throw new Error('Expected JSON response but received: ' + txt.substring(0, 200));
+            });
+        }
+        return res.json();
+    })
     .then(data => {
         if (data.success) {
-            alert(data.message || 'Task created successfully');
+            alert(data.message || 'Task assigned successfully');
             location.reload();
         } else {
             alert('Error: ' + (data.message || 'Failed to create task'));
@@ -691,8 +786,8 @@ document.getElementById('taskAssignForm').addEventListener('submit', function(e)
         }
     })
     .catch(err => {
-        console.error(err);
-        alert('An error occurred while creating the task');
+        console.error('Task creation error:', err);
+        alert('An error occurred while creating the task: ' + err.message);
         submitBtn.disabled = false;
         submitBtn.textContent = 'Create Task';
     });
@@ -716,7 +811,7 @@ document.querySelectorAll('.task-status-select').forEach(select => {
         
         this.disabled = true;
         
-        fetch(URLROOT + '/TaskController/updateStatus', {
+        fetch(URLROOT + '/task/updateStatus', {
             method: 'POST',
             body: formData,
             credentials: 'same-origin',
@@ -741,6 +836,44 @@ document.querySelectorAll('.task-status-select').forEach(select => {
         });
     });
 });
+
+// Remove task (org only)
+function removeOrgTask(taskId, cardEl) {
+    if (!confirm('Remove this task? The member will be notified.')) return;
+
+    // Visual feedback — dim card
+    if (cardEl) { cardEl.style.opacity = '0.5'; cardEl.style.pointerEvents = 'none'; }
+
+    fetch(URLROOT + '/organization/removeTask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ task_id: taskId })
+    })
+    .then(r => {
+        if (!r.ok) return r.text().then(t => { throw new Error(t.substring(0, 200)); });
+        return r.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Animate removal
+            if (cardEl) {
+                cardEl.style.transition = 'all 0.3s ease';
+                cardEl.style.transform  = 'scale(0.95)';
+                cardEl.style.opacity    = '0';
+                setTimeout(() => cardEl.remove(), 300);
+            }
+        } else {
+            alert('Error: ' + (data.message || 'Failed to remove task'));
+            if (cardEl) { cardEl.style.opacity = '1'; cardEl.style.pointerEvents = ''; }
+        }
+    })
+    .catch(err => {
+        console.error('Remove task error:', err);
+        alert('An error occurred: ' + err.message);
+        if (cardEl) { cardEl.style.opacity = '1'; cardEl.style.pointerEvents = ''; }
+    });
+}
 </script>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>

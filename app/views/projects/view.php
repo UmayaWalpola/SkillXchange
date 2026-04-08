@@ -620,15 +620,17 @@
             <div class="card">
                 <h2 class="card-title"><i class="ph ph-chart-line-up"></i> Project Progress</h2>
                 <?php 
-                // Use task statistics passed from controller
-                $totalTasks = (int)($taskStats->total ?? 0);
-                $completedTasks = (int)($taskStats->completed ?? $taskStats->done ?? 0);
+                // Use task statistics passed from controller (guard against null/void)
+                $taskStats       = isset($taskStats) && is_object($taskStats) ? $taskStats : null;
+                $totalTasks      = (int)($taskStats->total      ?? 0);
+                $completedTasks  = (int)($taskStats->completed  ?? $taskStats->done ?? 0);
                 $inProgressTasks = (int)($taskStats->in_progress ?? 0);
-                $todoTasks = (int)($taskStats->pending ?? $taskStats->todo ?? 0);
-                $overdueTasks = (int)($taskStats->overdue ?? 0);
+                $todoTasks       = (int)($taskStats->pending    ?? $taskStats->todo ?? 0);
+                $overdueTasks    = (int)($taskStats->overdue    ?? 0);
                 
                 $percent = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100, 1) : 0;
                 ?>
+
                 <div class="progress-overview-grid">
                     <div class="progress-bar-wrapper">
                         <div class="progress-label-row">
@@ -706,29 +708,6 @@
                 <p class="description-text"><?= nl2br(htmlspecialchars($project->description ?? '')) ?></p>
             </div>
 
-            <!-- Project Details Section -->
-            <div class="card">
-                <h2 class="card-title"><i class="ph ph-info"></i> Project Details</h2>
-                <div class="details-grid">
-                    <div class="detail-item">
-                        <div class="detail-label">Status</div>
-                        <div class="detail-value"><?= ucfirst(str_replace('-', ' ', $project->status ?? 'pending')) ?></div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-label">Category</div>
-                        <div class="detail-value"><?= ucfirst(htmlspecialchars($project->category ?? 'other')) ?></div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-label">Team Size</div>
-                        <div class="detail-value"><?= intval($project->current_members ?? 0) ?>/<?= htmlspecialchars($project->max_members) ?></div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-label">Budget</div>
-                        <div class="detail-value"><?= htmlspecialchars($project->budget ?? 'Not specified') ?></div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Required Skills Section -->
             <div class="card">
                 <h2 class="card-title"><i class="ph ph-target"></i> Required Skills</h2>
@@ -750,16 +729,31 @@
                 <div class="members-grid">
                     <?php foreach ($members as $member): ?>
                         <?php 
-                            $fullName = ($member->first_name ?? '') . ' ' . ($member->last_name ?? '');
-                            $initials = strtoupper(
-                                substr($member->first_name ?? 'U', 0, 1) . 
-                                substr($member->last_name ?? '', 0, 1)
-                            );
+                            // Query returns u.username — use that as display name
+                            $displayName = trim($member->username ?? '');
+                            // Generate smart initials: first 1-2 chars of username
+                            $nameParts = array_filter(explode(' ', $displayName));
+                            if (count($nameParts) >= 2) {
+                                $initials = strtoupper(substr($nameParts[0], 0, 1) . substr(end($nameParts), 0, 1));
+                            } else {
+                                $initials = strtoupper(substr($displayName ?: '?', 0, 2));
+                            }
+                            $memberSkills = array_filter(array_map('trim', explode(',', $member->user_skills ?? '')));
                         ?>
                         <div class="member-card">
-                            <div class="member-avatar"><?= $initials ?></div>
-                            <div class="member-name"><?= htmlspecialchars(trim($fullName)) ?: 'Team Member' ?></div>
-                            <div class="member-role"><?= htmlspecialchars($member->role ?? 'Member') ?></div>
+                            <div class="member-avatar"><?= htmlspecialchars($initials) ?></div>
+                            <div class="member-name"><?= htmlspecialchars($displayName) ?: 'Unknown' ?></div>
+                            <div class="member-role"><?= htmlspecialchars(ucfirst($member->role ?? 'Member')) ?></div>
+                            <?php if (!empty($memberSkills)): ?>
+                            <div style="margin-top:0.5rem; display:flex; flex-wrap:wrap; gap:4px; justify-content:center;">
+                                <?php foreach (array_slice($memberSkills, 0, 3) as $sk): ?>
+                                    <span style="background:var(--blue-bg,#d5eaf6);color:var(--primary-blue,#658396);font-size:0.65rem;font-weight:600;padding:2px 7px;border-radius:10px;"><?= htmlspecialchars($sk) ?></span>
+                                <?php endforeach; ?>
+                                <?php if (count($memberSkills) > 3): ?>
+                                    <span style="background:#eee;color:#888;font-size:0.65rem;font-weight:600;padding:2px 7px;border-radius:10px;">+<?= count($memberSkills) - 3 ?></span>
+                                <?php endif; ?>
+                            </div>
+                            <?php endif; ?>
                             <?php if (isset($_SESSION['user_id']) && $_SESSION['user_id'] != $member->user_id): ?>
                             <button class="report-btn-small report-project-member-btn" 
                                     data-user-id="<?= $member->user_id ?>" 
@@ -771,11 +765,115 @@
                             <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
+
                 </div>
             </div>
             <?php endif; ?>
 
-            <!-- Application Section -->
+            <!-- MY TASKS — only visible to members -->
+            <?php if (!empty($is_member) && !empty($myTasks)): ?>
+            <div class="card" id="myTasksCard" style="border:2px solid #658396;position:relative;overflow:hidden;">
+                <div style="position:absolute;top:0;left:0;width:4px;height:100%;background:linear-gradient(180deg,#658396,#9cc7df);"></div>
+                <h2 class="card-title" style="cursor:pointer;user-select:none;" onclick="toggleMyTasks()">
+                    <i class="ph ph-clipboard-text"></i>
+                    My Tasks
+                    <span id="myTasksBadge" style="background:linear-gradient(135deg,#658396,#9cc7df);color:#fff;font-size:0.75rem;padding:4px 10px;border-radius:20px;font-weight:700;margin-left:8px;"><?= count($myTasks) ?></span>
+                    <i id="myTasksChevron" class="ph ph-caret-down" style="margin-left:auto;font-size:1.1rem;transition:transform 0.3s;"></i>
+                </h2>
+
+                <div id="myTasksList" style="margin-top:4px;">
+                    <div style="display:grid;gap:12px;">
+                    <?php foreach ($myTasks as $t):
+                        $status   = $t->status ?? 'todo';
+                        $priority = strtolower($t->priority ?? 'medium');
+                        $deadline = $t->deadline ?? null;
+                        $isOverdue = $deadline && $status !== 'done' && strtotime($deadline) < time();
+                        $isDone   = $status === 'done';
+
+                        $statusColor = match($status) {
+                            'done'        => '#356b86',
+                            'in-progress' => '#4f6d82',
+                            default       => '#b7791f'
+                        };
+                        $statusBg = match($status) {
+                            'done'        => '#dff0fa',
+                            'in-progress' => '#d5eaf6',
+                            default       => '#fff2cf'
+                        };
+                        $statusLabel = match($status) {
+                            'done'        => 'Completed',
+                            'in-progress' => 'In Progress',
+                            default       => 'To-Do'
+                        };
+                        $prioColor = match($priority) {
+                            'high'   => '#c24141',
+                            'low'    => '#4a6f86',
+                            default  => '#b7791f'
+                        };
+                        $prioBg = match($priority) {
+                            'high'   => '#fee6e6',
+                            'low'    => '#e5f2fa',
+                            default  => '#fff2cf'
+                        };
+                    ?>
+                    <div class="my-task-row" onclick="openTaskDetail(<?= $t->id ?>, <?= $project->id ?>)"
+                         style="display:flex;align-items:center;gap:14px;padding:16px 18px;background:<?= $isDone ? '#edf7fc' : ($isOverdue ? '#fef4f4' : '#f8fbfd') ?>;border:1.5px solid <?= $isDone ? '#b9d7e8' : ($isOverdue ? '#f2c8c8' : '#dde7ee') ?>;border-radius:12px;cursor:pointer;transition:all 0.2s;<?= $isDone ? 'opacity:0.7;' : '' ?>"
+                         onmouseenter="this.style.boxShadow='0 4px 16px rgba(101,131,150,0.15)';this.style.transform='translateY(-1px)'"
+                         onmouseleave="this.style.boxShadow='none';this.style.transform='none'"
+                         data-task-id="<?= $t->id ?>"
+                         data-task-title="<?= htmlspecialchars($t->title ?? '') ?>"
+                         data-task-desc="<?= htmlspecialchars($t->description ?? 'No description provided.') ?>"
+                         data-task-priority="<?= htmlspecialchars(ucfirst($priority)) ?>"
+                         data-task-deadline="<?= $deadline ? date('M d, Y', strtotime($deadline)) : 'No deadline' ?>"
+                         data-task-status="<?= htmlspecialchars($statusLabel) ?>"
+                         data-task-status-raw="<?= htmlspecialchars($status) ?>"
+                         data-task-done="<?= $isDone ? '1' : '0' ?>">
+
+                        <!-- Status icon -->
+                        <div style="width:38px;height:38px;border-radius:50%;background:<?= $statusBg ?>;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <?php if ($isDone): ?>
+                                <i class="ph ph-check-circle" style="font-size:20px;color:<?= $statusColor ?>;"></i>
+                            <?php elseif ($status === 'in-progress'): ?>
+                                <i class="ph ph-spinner" style="font-size:20px;color:<?= $statusColor ?>;"></i>
+                            <?php else: ?>
+                                <i class="ph ph-circle-dashed" style="font-size:20px;color:<?= $statusColor ?>;"></i>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Task info -->
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-weight:700;font-size:0.95rem;color:#1f2937;margin-bottom:4px;<?= $isDone ? 'text-decoration:line-through;color:#6b7280;' : '' ?>">
+                                <?= htmlspecialchars($t->title ?? 'Untitled Task') ?>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                                <span style="font-size:0.72rem;font-weight:700;padding:3px 8px;border-radius:20px;background:<?= $statusBg ?>;color:<?= $statusColor ?>;"><?= $statusLabel ?></span>
+                                <span style="font-size:0.72rem;font-weight:700;padding:3px 8px;border-radius:20px;background:<?= $prioBg ?>;color:<?= $prioColor ?>;"><?= ucfirst($priority) ?></span>
+                                <?php if ($deadline): ?>
+                                <span style="font-size:0.72rem;padding:3px 8px;border-radius:20px;background:<?= $isOverdue ? '#fbe5e5' : '#e5f2fa' ?>;color:<?= $isOverdue ? '#9d3c3c' : '#4a6f86' ?>;display:flex;align-items:center;gap:3px;">
+                                    <i class="ph <?= $isOverdue ? 'ph-warning-circle' : 'ph-calendar' ?>" style="font-size:11px;"></i>
+                                    <?= $isOverdue ? 'Overdue · ' : '' ?><?= date('M d', strtotime($deadline)) ?>
+                                </span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <i class="ph ph-caret-right" style="color:#7f95a5;font-size:1.1rem;flex-shrink:0;"></i>
+                    </div>
+                    <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- Application Section — ONLY shown to individual users, NEVER to organizations -->
+            <?php
+                $isOrgAccount      = isset($_SESSION['role']) && $_SESSION['role'] === 'organization';
+                $isProjectOwner    = isset($project->organization_id) && isset($_SESSION['user_id'])
+                                     && (int)$project->organization_id === (int)$_SESSION['user_id'];
+                $projectClosed     = in_array(strtolower($project->status ?? ''), ['completed','cancelled','closed']);
+                $hideJoinSection   = $isOrgAccount || $isProjectOwner || $projectClosed;
+            ?>
+            <?php if (!$hideJoinSection): ?>
             <div class="card">
                 <h2 class="card-title"><i class="ph ph-sparkle"></i> Join This Project</h2>
                 <div class="application-section">
@@ -893,12 +991,51 @@
                     <?php endif; ?>
                 </div>
             </div>
+            <?php endif; /* end !$hideJoinSection */ ?>
+
 
         </div>
+
 
     </div>
 </div>
 </main>
+
+<div id="projectMemberReportOverlay" class="modal-overlay" style="display:none;">
+    <div id="projectMemberReportModal" class="modal-container">
+        <div class="modal-header">
+            <h3 class="modal-title">Report Project Member</h3>
+            <button type="button" class="modal-close" id="projectMemberReportCloseBtn" aria-label="Close report modal">&times;</button>
+        </div>
+        <form id="projectMemberReportForm" class="modal-body">
+            <input type="hidden" name="reported_user_id" id="projectMemberReportedUserId">
+            <input type="hidden" name="project_id" value="<?= (int)$project->id ?>">
+
+            <div class="form-group">
+                <label for="projectMemberReportReason">Reason for report *</label>
+                <select name="reason" id="projectMemberReportReason" required class="form-control">
+                    <option value="">-- Select a reason --</option>
+                    <option value="spam">Spam</option>
+                    <option value="harassment">Harassment</option>
+                    <option value="hate_speech">Hate speech</option>
+                    <option value="fake_profile">Fake profile</option>
+                    <option value="inappropriate_content">Inappropriate content</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="projectMemberReportDescription">Additional details (optional)</label>
+                <textarea name="description" id="projectMemberReportDescription" rows="4" class="form-control" placeholder="Please provide any additional information that might help us review this report..."></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="projectMemberReportCancelBtn">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="projectMemberReportSubmitBtn">Submit Report</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -962,8 +1099,11 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (submitBtn) submitBtn.disabled = false;
             if (data.success) {
-                // Hide form and show status message block
+                // Hide form and the toggle button — application is submitted
                 applyForm.classList.remove('show');
+                const toggleBtn = document.getElementById('applyToggle');
+                if (toggleBtn) toggleBtn.style.display = 'none';
+
 
                 // Remove any existing status-message
                 const container = document.querySelector('.application-section');
@@ -1008,6 +1148,492 @@ document.addEventListener('DOMContentLoaded', function() {
 window.URLROOT = '<?= URLROOT ?>';
 </script>
 
-<script src="<?= URLROOT ?>/assets/js/reporting.js"></script>
+<!-- Task Detail Overlay Panel -->
+<div id="taskDetailOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:10000;align-items:center;justify-content:center;backdrop-filter:blur(3px);" onclick="closeTaskDetail(event)">
+    <div id="taskDetailPanel" style="background:#fff;border-radius:20px;padding:0;max-width:520px;width:92%;max-height:88vh;overflow:hidden;box-shadow:0 25px 60px rgba(15,23,42,0.25);display:flex;flex-direction:column;animation:slideUp 0.3s ease;">
+
+        <!-- Header -->
+        <div id="taskPanelHeader" style="padding:24px 28px 20px;background:linear-gradient(135deg,#658396,#5a7a8c);color:#fff;position:relative;">
+            <button onclick="closeTaskDetail()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;line-height:1;">×</button>
+            <div style="font-size:0.75rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;opacity:0.85;margin-bottom:8px;">Task Detail</div>
+            <h3 id="tdTitle" style="margin:0;font-size:1.25rem;font-weight:700;line-height:1.3;padding-right:40px;"></h3>
+        </div>
+
+        <!-- Badges row -->
+        <div id="tdBadges" style="padding:14px 28px;display:flex;gap:10px;flex-wrap:wrap;border-bottom:1px solid #e6edf2;background:#f6f9fc;"></div>
+
+        <!-- Body -->
+        <div style="padding:24px 28px;overflow-y:auto;flex:1;">
+            <div style="margin-bottom:20px;">
+                <div style="font-size:0.75rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Description</div>
+                <div id="tdDesc" style="color:#374151;line-height:1.7;font-size:0.95rem;white-space:pre-wrap;"></div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px;">
+                <div style="background:#f4f8fb;border-radius:10px;padding:14px;">
+                    <div style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Priority</div>
+                    <div id="tdPriority" style="font-size:1rem;font-weight:700;"></div>
+                </div>
+                <div style="background:#f4f8fb;border-radius:10px;padding:14px;">
+                    <div style="font-size:0.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Deadline</div>
+                    <div id="tdDeadline" style="font-size:1rem;font-weight:700;color:#1f2937;"></div>
+                </div>
+            </div>
+
+            <!-- Task action button -->
+            <div id="tdCompleteWrap">
+                <button id="tdCompleteBtn" onclick="markTaskDone()" style="width:100%;padding:15px;background:linear-gradient(135deg,#658396,#5a7a8c);color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all 0.2s;box-shadow:0 4px 15px rgba(101,131,150,0.35);" onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 20px rgba(101,131,150,0.45)'" onmouseleave="this.style.transform='none';this.style.boxShadow='0 4px 15px rgba(101,131,150,0.35)'">
+                    <i class="ph ph-check-circle" style="font-size:1.2rem;"></i>
+                    Mark as Complete
+                </button>
+                <p id="tdActionHint" style="text-align:center;font-size:0.8rem;color:#9ca3af;margin-top:10px;">Completing this task will notify the project organization.</p>
+            </div>
+            <div id="tdDoneMsg" style="display:none;text-align:center;padding:16px;background:#d5eaf6;border-radius:12px;color:#355266;font-weight:700;font-size:1rem;">
+                <i class="ph ph-check-circle" style="font-size:1.4rem;vertical-align:middle;margin-right:6px;"></i>
+                Task Completed!
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes slideUp {
+    from { opacity:0; transform:translateY(30px) scale(0.97); }
+    to   { opacity:1; transform:translateY(0)    scale(1); }
+}
+</style>
+
+<script>
+window.URLROOT = '<?= URLROOT ?>';
+
+/* ---- My Tasks collapse ---- */
+let myTasksOpen = true;
+function toggleMyTasks() {
+    const list = document.getElementById('myTasksList');
+    const chevron = document.getElementById('myTasksChevron');
+    if (!list) return;
+    myTasksOpen = !myTasksOpen;
+    list.style.display = myTasksOpen ? 'block' : 'none';
+    chevron.style.transform = myTasksOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
+}
+
+/* ---- Task Detail Panel ---- */
+let _currentTaskId = null;
+let _currentProjectId = null;
+let _currentTaskStatusRaw = 'todo';
+
+function openTaskDetail(taskId, projectId) {
+    const row = document.querySelector(`.my-task-row[data-task-id="${taskId}"]`);
+    if (!row) return;
+
+    _currentTaskId    = taskId;
+    _currentProjectId = projectId;
+
+    const title    = row.dataset.taskTitle;
+    const desc     = row.dataset.taskDesc;
+    const priority = row.dataset.taskPriority;
+    const deadline = row.dataset.taskDeadline;
+    const status   = row.dataset.taskStatus;
+    const statusRaw = row.dataset.taskStatusRaw || 'todo';
+    const isDone   = row.dataset.taskDone === '1';
+
+    document.getElementById('tdTitle').textContent   = title;
+    document.getElementById('tdDesc').textContent    = desc;
+    document.getElementById('tdDeadline').textContent = deadline;
+    _currentTaskStatusRaw = statusRaw;
+
+    // Priority pill
+    const prioColors = { High:'#c24141', Medium:'#b7791f', Low:'#4a6f86' };
+    const prioBgs    = { High:'#fee6e6', Medium:'#fff2cf', Low:'#e5f2fa' };
+    const pc = prioColors[priority] || '#6b7280';
+    const pb = prioBgs[priority]    || '#f3f4f6';
+    document.getElementById('tdPriority').innerHTML = `<span style="color:${pc};background:${pb};padding:4px 12px;border-radius:20px;font-size:0.85rem;">${priority}</span>`;
+
+    // Status badge
+    const stColors = { 'Completed':'#356b86', 'In Progress':'#4f6d82', 'To-Do':'#b7791f' };
+    const stBgs    = { 'Completed':'#dff0fa', 'In Progress':'#d5eaf6', 'To-Do':'#fff2cf' };
+    const sc = stColors[status] || '#6b7280';
+    const sb = stBgs[status]    || '#f3f4f6';
+    document.getElementById('tdBadges').innerHTML =
+        `<span style="font-size:0.78rem;font-weight:700;padding:5px 12px;border-radius:20px;background:${sb};color:${sc};">${status}</span>` +
+        `<span style="font-size:0.78rem;font-weight:700;padding:5px 12px;border-radius:20px;background:${pb};color:${pc};">${priority} Priority</span>`;
+
+    // Header gradient
+    if (isDone) {
+        document.getElementById('taskPanelHeader').style.background = 'linear-gradient(135deg,#5f7f92,#658396)';
+    } else if (status === 'In Progress') {
+        document.getElementById('taskPanelHeader').style.background = 'linear-gradient(135deg,#658396,#7c9bb0)';
+    } else {
+        document.getElementById('taskPanelHeader').style.background = 'linear-gradient(135deg,#658396,#5a7a8c)';
+    }
+
+    // Show/hide task action button
+    document.getElementById('tdCompleteWrap').style.display = isDone ? 'none' : 'block';
+    document.getElementById('tdDoneMsg').style.display = isDone ? 'block' : 'none';
+    syncTaskActionButton(statusRaw);
+
+    const overlay = document.getElementById('taskDetailOverlay');
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeTaskDetail(e) {
+    if (e && e.target !== document.getElementById('taskDetailOverlay')) return;
+    document.getElementById('taskDetailOverlay').style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+function syncTaskActionButton(statusRaw) {
+    const btn = document.getElementById('tdCompleteBtn');
+    const hint = document.getElementById('tdActionHint');
+    if (!btn || !hint) return;
+
+    if (statusRaw === 'in-progress') {
+        btn.innerHTML = '<i class="ph ph-check-circle" style="font-size:1.2rem;"></i> Mark as Complete';
+        btn.onclick = markTaskDone;
+        hint.textContent = 'Completing this task will notify the project organization.';
+    } else {
+        btn.innerHTML = '<i class="ph ph-play-circle" style="font-size:1.2rem;"></i> Start Task';
+        btn.onclick = startTaskProgress;
+        hint.textContent = 'Starting this task will notify the project organization.';
+    }
+}
+
+function updateTaskRowStatus(taskId, nextStatusRaw) {
+    const row = document.querySelector(`.my-task-row[data-task-id="${taskId}"]`);
+    if (!row) return;
+
+    const title = row.querySelector('div > div:first-child');
+    const iconWrap = row.querySelector('div:first-child');
+    const statusLabel = nextStatusRaw === 'done' ? 'Completed' : (nextStatusRaw === 'in-progress' ? 'In Progress' : 'To-Do');
+    const statusColor = nextStatusRaw === 'done' ? '#356b86' : (nextStatusRaw === 'in-progress' ? '#4f6d82' : '#b7791f');
+    const statusBg = nextStatusRaw === 'done' ? '#dff0fa' : (nextStatusRaw === 'in-progress' ? '#d5eaf6' : '#fff2cf');
+
+    row.dataset.taskStatusRaw = nextStatusRaw;
+    row.dataset.taskStatus = statusLabel;
+    row.dataset.taskDone = nextStatusRaw === 'done' ? '1' : '0';
+
+    if (nextStatusRaw === 'done') {
+        row.style.background = '#edf7fc';
+        row.style.border = '1.5px solid #b9d7e8';
+        row.style.opacity = '0.75';
+        if (title) {
+            title.style.textDecoration = 'line-through';
+            title.style.color = '#6b7280';
+        }
+        if (iconWrap) {
+            iconWrap.innerHTML = '<i class="ph ph-check-circle" style="font-size:20px;color:#356b86;"></i>';
+        }
+    } else if (nextStatusRaw === 'in-progress') {
+        row.style.background = '#f4f8fb';
+        row.style.border = '1.5px solid #c7d9e6';
+        row.style.opacity = '1';
+        if (title) {
+            title.style.textDecoration = 'none';
+            title.style.color = '#1f2937';
+        }
+        if (iconWrap) {
+            iconWrap.innerHTML = '<i class="ph ph-spinner" style="font-size:20px;color:#4f6d82;"></i>';
+        }
+    }
+
+    const statusChip = row.querySelector('div[style*="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"] span:first-child');
+    if (statusChip) {
+        statusChip.textContent = statusLabel;
+        statusChip.style.background = statusBg;
+        statusChip.style.color = statusColor;
+    }
+}
+
+function startTaskProgress() {
+    if (!_currentTaskId) return;
+
+    const btn = document.getElementById('tdCompleteBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph ph-spinner" style="font-size:1.1rem;"></i> Starting...';
+
+    const formData = new FormData();
+    formData.append('task_id', _currentTaskId);
+    formData.append('status', 'in-progress');
+
+    fetch(window.URLROOT + '/task/updateStatus', {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => {
+        if (r.status === 401) {
+            return r.json().then(data => { throw new Error(data.message || 'Your session has expired. Please sign in again.'); });
+        }
+        if (!r.ok) return r.text().then(t => { throw new Error(t.substring(0, 200)); });
+        const contentType = r.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+            return r.text().then(t => {
+                const lower = t.toLowerCase();
+                if (lower.includes('<!doctype') || lower.includes('/auth/signin') || lower.includes('sign in')) {
+                    throw new Error('Your session has expired. Please sign in again.');
+                }
+                throw new Error(t.substring(0, 200));
+            });
+        }
+        return r.json();
+    })
+    .then(data => {
+        if (data.success) {
+            _currentTaskStatusRaw = 'in-progress';
+            updateTaskRowStatus(_currentTaskId, 'in-progress');
+            document.getElementById('taskPanelHeader').style.background = 'linear-gradient(135deg,#658396,#7c9bb0)';
+            document.getElementById('tdBadges').innerHTML =
+                document.getElementById('tdBadges').innerHTML.replace(/To-Do|Completed|In Progress/, 'In Progress');
+            syncTaskActionButton('in-progress');
+            btn.disabled = false;
+            alert(data.message || 'Task moved to in progress');
+            setTimeout(() => location.reload(), 1200);
+        } else {
+            alert('Error: ' + (data.message || 'Failed to start task'));
+            btn.disabled = false;
+            syncTaskActionButton(_currentTaskStatusRaw);
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('An error occurred: ' + err.message);
+        btn.disabled = false;
+        syncTaskActionButton(_currentTaskStatusRaw);
+    });
+}
+
+function markTaskDone() {
+    if (!_currentTaskId || !_currentProjectId) return;
+
+    const btn = document.getElementById('tdCompleteBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ph ph-spinner" style="font-size:1.1rem;"></i> Completing...';
+
+    fetch(window.URLROOT + '/project/completeTask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ task_id: _currentTaskId, project_id: _currentProjectId })
+    })
+    .then(r => {
+        if (r.status === 401) {
+            return r.json().then(data => { throw new Error(data.message || 'Your session has expired. Please sign in again.'); });
+        }
+        if (!r.ok) return r.text().then(t => { throw new Error(t.substring(0, 200)); });
+        const contentType = r.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+            return r.text().then(t => {
+                const lower = t.toLowerCase();
+                if (lower.includes('<!doctype') || lower.includes('/auth/signin') || lower.includes('sign in')) {
+                    throw new Error('Your session has expired. Please sign in again.');
+                }
+                throw new Error(t.substring(0, 200));
+            });
+        }
+        return r.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Update the row in the list
+            _currentTaskStatusRaw = 'done';
+            updateTaskRowStatus(_currentTaskId, 'done');
+
+            // Show done state in panel
+            document.getElementById('tdCompleteWrap').style.display = 'none';
+            document.getElementById('tdDoneMsg').style.display      = 'block';
+            document.getElementById('taskPanelHeader').style.background = 'linear-gradient(135deg,#5f7f92,#658396)';
+            document.getElementById('tdBadges').innerHTML =
+                '<span style="font-size:0.78rem;font-weight:700;padding:5px 12px;border-radius:20px;background:#dff0fa;color:#356b86;">Completed ✓</span>';
+
+            // Reload after delay so progress stats update
+            setTimeout(() => location.reload(), 2200);
+        } else {
+            alert('Error: ' + (data.message || 'Failed to complete task'));
+            btn.disabled = false;
+            syncTaskActionButton(_currentTaskStatusRaw);
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('An error occurred: ' + err.message);
+        btn.disabled = false;
+        syncTaskActionButton(_currentTaskStatusRaw);
+    });
+}
+
+// Close panel on Escape key
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        document.getElementById('taskDetailOverlay').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const overlay = document.getElementById('projectMemberReportOverlay');
+    const modal = document.getElementById('projectMemberReportModal');
+    const form = document.getElementById('projectMemberReportForm');
+    const closeBtn = document.getElementById('projectMemberReportCloseBtn');
+    const cancelBtn = document.getElementById('projectMemberReportCancelBtn');
+    const submitBtn = document.getElementById('projectMemberReportSubmitBtn');
+    const reportedUserField = document.getElementById('projectMemberReportedUserId');
+    const reasonField = document.getElementById('projectMemberReportReason');
+    let lastTrigger = null;
+
+    function showProjectReportToast(message, type) {
+        const existing = document.querySelectorAll('.toast-notification');
+        existing.forEach((toast) => toast.remove());
+
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification toast-' + (type || 'info');
+        toast.textContent = message;
+        toast.style.cssText = [
+            'position:fixed',
+            'top:20px',
+            'right:20px',
+            'padding:16px 24px',
+            'background:' + (type === 'success' ? '#10b981' : '#ef4444'),
+            'color:#fff',
+            'border-radius:8px',
+            'box-shadow:0 10px 25px rgba(0,0,0,0.2)',
+            'z-index:10001',
+            'font-size:15px',
+            'font-weight:500',
+            'max-width:400px'
+        ].join(';');
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+
+    function openProjectMemberReportModal(trigger) {
+        if (!overlay || !form) return;
+
+        lastTrigger = trigger;
+        form.reset();
+        reportedUserField.value = trigger.dataset.userId || '';
+        overlay.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+
+        requestAnimationFrame(() => {
+            overlay.classList.add('show');
+            reasonField.focus();
+        });
+    }
+
+    function closeProjectMemberReportModal() {
+        if (!overlay) return;
+        overlay.classList.remove('show');
+        window.setTimeout(() => {
+            overlay.style.display = 'none';
+        }, 300);
+        document.body.style.overflow = '';
+        if (lastTrigger && typeof lastTrigger.focus === 'function') {
+            lastTrigger.focus();
+        }
+    }
+
+    document.querySelectorAll('.report-project-member-btn').forEach((btn) => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openProjectMemberReportModal(this);
+        });
+    });
+
+    if (overlay) {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) {
+                closeProjectMemberReportModal();
+            }
+        });
+    }
+
+    if (modal) {
+        ['click', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'touchstart', 'touchend'].forEach((eventName) => {
+            modal.addEventListener(eventName, function(e) {
+                e.stopPropagation();
+            });
+        });
+    }
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            closeProjectMemberReportModal();
+        });
+    }
+
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            closeProjectMemberReportModal();
+        });
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && overlay && overlay.style.display !== 'none') {
+            closeProjectMemberReportModal();
+        }
+    });
+
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
+            fetch(URLROOT + '/report/reportProjectUser', {
+                method: 'POST',
+                body: new FormData(form),
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(async (response) => {
+                const text = await response.text();
+                let data = null;
+
+                try {
+                    data = JSON.parse(text);
+                } catch (err) {
+                    throw new Error(text.substring(0, 200));
+                }
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to submit report.');
+                }
+
+                return data;
+            })
+            .then((data) => {
+                if (data.success) {
+                    showProjectReportToast(data.message || 'Your report has been submitted successfully.', 'success');
+                    closeProjectMemberReportModal();
+                } else {
+                    showProjectReportToast(data.message || 'Failed to submit report.', 'error');
+                }
+            })
+            .catch((error) => {
+                console.error('Project member report error:', error);
+                showProjectReportToast(error.message || 'An error occurred while submitting the report.', 'error');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            });
+        });
+    }
+});
+</script>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>
