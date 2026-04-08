@@ -255,6 +255,18 @@ class Manager {
         return $this->db->execute();
     }
 
+    public function deleteAnnouncement($announcementId) {
+        // Delete linked notifications first
+        $this->db->query("DELETE FROM notifications WHERE type = 'system_announcement' AND title IN (SELECT title FROM announcements WHERE id = :id)");
+        $this->db->bind(':id', $announcementId);
+        $this->db->execute();
+
+        // Delete the announcement
+        $this->db->query("DELETE FROM announcements WHERE id = :id");
+        $this->db->bind(':id', $announcementId);
+        return $this->db->execute();
+    }
+
 
     // FEEDBACK
 

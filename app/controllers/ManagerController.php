@@ -389,6 +389,30 @@ class ManagerController extends Controller {
         exit;
     }
 
+    public function deleteAnnouncement() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ' . URLROOT . '/manager/announcements');
+            exit;
+        }
+
+        $announcementId = $_POST['announcement_id'] ?? null;
+
+        if (empty($announcementId)) {
+            $_SESSION['error'] = 'Announcement ID is required';
+            header('Location: ' . URLROOT . '/manager/announcements');
+            exit;
+        }
+
+        if ($this->managerModel->deleteAnnouncement($announcementId)) {
+            $_SESSION['success'] = 'Announcement deleted';
+        } else {
+            $_SESSION['error'] = 'Failed to delete announcement';
+        }
+
+        header('Location: ' . URLROOT . '/manager/announcements');
+        exit;
+    }
+
     
     // FEEDBACK 
     public function feedback() {
