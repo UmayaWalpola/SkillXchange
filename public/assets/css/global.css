@@ -481,13 +481,13 @@ form button:hover {
         font-size: 0.9rem;
     }
 
-    .sidebar-item span:last-child {
-        display: none;
-    }
+  .sidebar-item span:last-child {
+    display: none;
+  }
 
-    .sidebar-item .icon {
-        font-size: 1.5rem;
-    }
+  .sidebar-item .icon {
+    font-size: 1.5rem;
+  }
 }
 
 /* ===== Dashboard Layout ===== */

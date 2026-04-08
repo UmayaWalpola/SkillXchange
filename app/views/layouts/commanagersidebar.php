@@ -17,7 +17,6 @@
             
             <div class="sidebar-menu">
                 <a href="<?= URLROOT ?>/admin/dashboard" class="sidebar-item active">
-                    <span class="icon"></span>
                     <span>Dashboard</span>
                 </a>
 </div>
