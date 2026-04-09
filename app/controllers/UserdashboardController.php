@@ -79,64 +79,148 @@ class UserdashboardController extends Controller {
         $userId = $this->checkAuth();
         
         $user = $this->getUserData($userId);
-        $chats = $this->getChats($userId);
-        
-        $data = [
-            'title' => 'Chats',
-            'user' => $user,
-            'page' => 'chats',
-            'chats' => $chats
-        ];
-        
-        $this->view('users/chats', $data);
-    }
+        $chatModel = $this->model('Chat');
 
-    public function matches() {
-        $userId = $this->checkAuth();
-        
-        $skillMatchModel = $this->model('SkillMatch');
-        $exchangeModel = $this->model('Exchange');
-        
-        $allMatches = $skillMatchModel->getAllMatchesWithScores($userId);
+       $rawChats = $chatModel->getUserChats($userId);
+       $allChats = $chatModel->formatChatsForDisplay($rawChats, $userId);
 
-        $pendingRequests = $exchangeModel->getExchangeRequests($userId);
 
-        $formattedRequests = [];
-        foreach ($pendingRequests as $request) {
-            $formattedRequests[] = [
-                'exchange_id' => $request->id,
-                'sender_id' => $request->sender_id,
-                'sender_name' => $request->sender_name,
-                'sender_email' => $request->sender_email,
-                'sender_avatar' => $request->sender_avatar ?? strtoupper(substr($request->sender_name, 0, 2)),
-                'skill_offered' => $request->skill_offered,
-                'skill_wanted' => $request->skill_wanted,
-                'time_ago' => $this->timeAgo($request->created_at)
-            ];
-        }   
+   $data = [
+       'title' => 'Chats',
+       'user' => $user,
+       'page' => 'chats',
+       'allChats' => $allChats,
+       'buckxBalance' => 0
+   ];
 
-        $userSkillsData = $skillMatchModel->getUserSkillsForFilter($userId);
-        $user = $this->getUserData($userId);
-        
-        $data = [
-            'title' => 'Matches',
-            'user' => $user,
-            'page' => 'matches',
-            'perfectMatches' => $allMatches['perfect'],
-            'greatMatches' => $allMatches['great'],
-            'goodMatches' => $allMatches['good'],
-            'matchStats' => [
-                'perfect_count' => count($allMatches['perfect']),
-                'great_count' => count($allMatches['great']),
-                'good_count' => count($allMatches['good']),
-                'total_count' => count($allMatches['perfect']) + count($allMatches['great']) + count($allMatches['good'])
-            ],
-            'userSkills' => $userSkillsData,
-            'pendingRequests' => $formattedRequests
-        ];
-        
-        $this->view('users/matches', $data);
-    } 
+
+   $this->view('users/chats', $data);
+}
+
+private function getActiveChats($userId) {
+   try {
+       $this->db->query("
+           SELECT
+               c.id as chat_id,
+               CASE
+                   WHEN c.user1_id = :user_id THEN c.user2_id
+                   ELSE c.user1_id
+               END as partner_id,
+               CASE
+                   WHEN c.user1_id = :user_id THEN u2.username
+                   ELSE u1.username
+               END as partner_name,
+               CASE
+                   WHEN c.user1_id = :user_id THEN u2.profile_picture
+                   ELSE u1.profile_picture
+               END as partner_avatar,
+               cm.message as last_message,
+               COALESCE(cm.created_at, c.created_at) as last_message_time,
+               (SELECT COUNT(*) FROM chat_messages
+                WHERE chat_id = c.id
+                AND sender_id != :user_id
+                AND read_status = 0) as unread_count
+           FROM chats c
+           INNER JOIN users u1 ON c.user1_id = u1.id
+           INNER JOIN users u2 ON c.user2_id = u2.id
+           LEFT JOIN (
+               SELECT chat_id, message, created_at
+               FROM chat_messages cm1
+               WHERE id = (
+                   SELECT MAX(id)
+                   FROM chat_messages cm2
+                   WHERE cm2.chat_id = cm1.chat_id
+               )
+           ) cm ON c.id = cm.chat_id
+           WHERE (c.user1_id = :user_id OR c.user2_id = :user_id)
+           ORDER BY last_message_time DESC
+       ");
+      
+       $this->db->bind(':user_id', $userId);
+       $results = $this->db->resultSet();
+      
+       $chats = [];
+       foreach ($results as $row) {
+           $chats[] = [
+               'id' => $row->chat_id,
+               'partner_id' => $row->partner_id,
+               'name' => $row->partner_name,
+               'avatar' => $row->partner_avatar ?? strtoupper(substr($row->partner_name, 0, 2)),
+               'lastMessage' => $row->last_message ?? 'No messages yet',
+               'time' => $this->timeAgo($row->last_message_time),
+               'unread' => $row->unread_count > 0,
+               'unreadCount' => $row->unread_count ?? 0,
+               'online' => false
+           ];
+       }
+      
+       return $chats;
+      
+   } catch (Exception $e) {
+       error_log("getActiveChats error: " . $e->getMessage());
+       return [];
+   }
+}
+
+
+public function matches() {
+   $userId = $this->checkAuth();
+  
+   $skillMatchModel = $this->model('SkillMatch');
+   $exchangeModel = $this->model('Exchange');
+  
+   // Get all matches with new tier system (mutual, multi, single)
+   $allMatches = $skillMatchModel->getAllMatchesWithScores($userId);
+
+
+   // Ensure arrays exist (in case model returns empty)
+   $mutual = isset($allMatches['mutual']) && is_array($allMatches['mutual']) ? $allMatches['mutual'] : [];
+   $multi = isset($allMatches['multi']) && is_array($allMatches['multi']) ? $allMatches['multi'] : [];
+   $single = isset($allMatches['single']) && is_array($allMatches['single']) ? $allMatches['single'] : [];
+  
+   // Get pending connection requests
+   $pendingRequests = $exchangeModel->getExchangeRequests($userId);
+
+
+   $formattedRequests = [];
+   foreach ($pendingRequests as $request) {
+       $formattedRequests[] = [
+           'exchange_id' => $request->id,
+           'sender_id' => $request->requester_id,
+           'sender_name' => $request->sender_name,
+           'sender_email' => $request->sender_email,
+           'sender_avatar' => $request->sender_avatar ?? strtoupper(substr($request->sender_name, 0, 2)),
+           'skill_offered' => $request->skill_offered,
+           'skill_wanted' => $request->skill_wanted,
+           'time_ago' => $this->timeAgo($request->created_at)
+       ];
+   }  
+  
+   $userSkillsData = $skillMatchModel->getUserSkillsForFilter($userId);
+   $user = $this->getUserData($userId);
+  
+   $data = [
+       'title' => 'Matches',
+       'user' => $user,
+       'page' => 'matches',
+       // Pass the three tier arrays
+       'mutual' => $mutual,
+       'multi' => $multi,
+       'single' => $single,
+       // Match statistics
+       'matchStats' => [
+           'total_count' => count($mutual) + count($multi) + count($single),
+           'mutual_count' => count($mutual),
+           'multi_count' => count($multi),
+           'single_count' => count($single)
+       ],
+       'userSkills' => $userSkillsData,
+       'pendingRequests' => $formattedRequests
+   ];
+  
+   $this->view('users/matches', $data);
+}
+
 
     public function handleRequest() {
         header('Content-Type: application/json');
@@ -1206,20 +1290,6 @@ class UserdashboardController extends Controller {
     return $notifications;
 }
 
-    private function getChats($userId) {
-        return [
-            [
-                'id'          => 1,
-                'name'        => 'Sophia Chen',
-                'lastMessage' => 'Hey! Would love to learn Web Development',
-                'time'        => '5 min ago',
-                'unread'      => true,
-                'unreadCount' => 3,
-                'online'      => true,
-                'messages'    => []
-            ]
-        ];
-    }
 
     private function getAllCommunities() {
         try {
@@ -1261,19 +1331,6 @@ class UserdashboardController extends Controller {
         }
     }
 
-    private function getTeachMatches($userId) {
-        return [
-            ['id' => 101, 'name' => 'Sophia Chen',   'skill' => 'Wants to learn Web Development'],
-            ['id' => 102, 'name' => 'Ethan Williams', 'skill' => 'Wants to learn UI/UX Design']
-        ];
-    }
-
-    private function getLearnMatches($userId) {
-        return [
-            ['id' => 201, 'name' => 'Dr. Kamal Silva', 'skill' => 'Teaches Data Science'],
-            ['id' => 202, 'name' => 'Linda Zhang',      'skill' => 'Teaches Machine Learning']
-        ];
-    }
 
     private function getUserBadges($userId) {
         try {
