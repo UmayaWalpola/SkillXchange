@@ -5,65 +5,18 @@
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/wallet.css">
 
 <style>
-    /* Center transactions container only for organization wallet page */
-    /* Keep the transactions block inside the main content area so it aligns with the cards above */
+    /* Organization wallet container - single column layout */
     .org-transactions {
         width: 100%;
         margin: 0;
-        padding: 0 1rem 0 250px; /* offset for fixed sidebar */
-        box-sizing: border-box;
-    }
-
-    /* Slightly larger transaction items for organization view */
-    .org-transactions .transaction-item {
-        padding: 1rem 1.25rem;
-        font-size: 1.06rem;
-    }
-
-    .org-transactions .transaction-amount {
-        font-size: 1.12rem;
-        font-weight: 600;
-    }
-    /* Center the inner content of the full-bleed area */
-    .org-transactions .transaction-section {
-        max-width: none;
-        margin: 0;
         padding: 0;
-    }
-
-    /* Make each transaction row span the full viewport (full-bleed) */
-    .org-transactions .transaction-list {
-        display: block;
-        gap: 0.75rem;
-    }
-
-    .org-transactions .transaction-item {
-        width: 100%;
-        box-sizing: border-box;
-        padding-left: 2rem;
-        padding-right: 2rem;
-        display: block;
-    }
-
-    /* Inner wrapper to center content inside full-bleed rows */
-    /* Match transaction width to top stat-cards area */
-    .org-transactions .transaction-inner {
-        max-width: 1200px;
-        margin: 0 auto;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
         box-sizing: border-box;
     }
 
-    /* Fallback for small or narrow screens */
-    @media (max-width: 1400px) {
-        .org-transactions .transaction-inner {
-            left: 0;
-            margin: 0 1rem;
-            padding: 0 1rem;
-        }
+    .org-transactions .transaction-section {
+        max-width: 100%;
+        margin: 0;
+        padding: 1.5rem;
     }
 </style>
 
@@ -105,7 +58,7 @@
             <div class="stat-icon">&#x1F4B0;</div>
             <div class="stat-value" id="currentBalance"><?= $data['balance'] ?></div>
             <div class="stat-label">Current BuckX Balance</div>
-            <a href="<?= URLROOT ?>/wallet/purchaseBuckx" class="btn-primary" style="margin-top: 1rem; padding: 0.7rem 1.5rem; font-size: 0.95rem;">
+            <a href="<?= URLROOT ?>/wallet/purchaseBuckx" class="btn-primary" style="margin-top: 0.8rem; padding: 0.6rem 1.2rem; font-size: 0.9rem;">
             <i class="ph ph-credit-card"></i> More BuckX
             </a>
         </div>
@@ -115,8 +68,6 @@
             <div class="stat-value"><?= $data['totalSent'] ?></div>
             <div class="stat-label">Total Sent BuckX</div>
         </div>
-        
-        <!-- Received transactions not applicable for organizations; removed -->
     </div>
 
     <!-- Transfer Section removed per request -->
@@ -132,44 +83,52 @@
                 </div>
                 <div class="transaction-count"><?= count($data['sentTransactions']) ?></div>
             </div>
-            <div class="transaction-list">
-                <?php if (empty($data['sentTransactions'])): ?>
-                    <div class="empty-state">
-                        <p>No sent transactions yet</p>
-                    </div>
-                <?php else: ?>
-                    <?php foreach($data['sentTransactions'] as $tx): ?>
-                        <div class="transaction-item">
-                            <div class="transaction-inner">
-                                <div class="transaction-info">
-                                    <div class="transaction-user">
-                                        <span class="user-icon">
-                                            <?= ($tx->receiver_role === 'organization') ? '&#x1F465;' : '&#x1F464;' ?>
-                                        </span>
-                                        <?= htmlspecialchars($tx->receiver) ?>
-                                        <?php if ($tx->receiver_role === 'organization'): ?>
-                                            <span class="role-badge">ORG</span>
-                                        <?php endif; ?>
-                                    </div>
-
-                                    <?php if (!empty($tx->note)): ?>
-                                        <div class="transaction-note">
-                                            <strong>Reason:</strong> <?= htmlspecialchars($tx->note) ?>
-                                        </div>
+            
+            <?php if (empty($data['sentTransactions'])): ?>
+                <div class="empty-state">
+                    <p>No sent transactions yet</p>
+                </div>
+            <?php else: ?>
+                <table class="transaction-table">
+                    <thead>
+                        <tr>
+                            <th>Recipient</th>
+                            <th>Note/Reason</th>
+                            <th>Date</th>
+                            <th style="text-align: right;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($data['sentTransactions'] as $tx): ?>
+                            <tr>
+                                <td>
+                                    <?= htmlspecialchars($tx->receiver) ?>
+                                    <?php if ($tx->receiver_role === 'organization'): ?>
+                                        <span class="role-badge">ORG</span>
                                     <?php endif; ?>
-
-                                    <div class="transaction-time">
+                                </td>
+                                <td>
+                                    <?php if (!empty($tx->note)): ?>
+                                        <?= htmlspecialchars($tx->note) ?>
+                                    <?php else: ?>
+                                        <span style="opacity: 0.6;">—</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <div class="transaction-date">
                                         <?= htmlspecialchars($tx->timestamp) ?>
                                     </div>
-                                </div>
-                                <div class="transaction-amount sent">
-                                    -<?= number_format($tx->amount, 2) ?> BuckX
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
+                                </td>
+                                <td>
+                                    <div class="transaction-amount sent">
+                                        -<?= number_format($tx->amount, 2) ?> BuckX
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
         </div>
 
         <!-- Received transactions removed for organizations (not applicable) -->

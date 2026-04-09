@@ -5,22 +5,18 @@
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/wallet.css">
 
 <style>
-    /* Ensure user wallet keeps boxed transaction layout */
+    /* User wallet container - single column layout for tables */
     .user-transactions {
-        max-width: 1100px;
-        margin: 0 auto;
-        padding: 0 1rem;
-    }
-
-    .user-transactions .transaction-list {
-        display: block;
-    }
-
-    .user-transactions .transaction-item {
         width: 100%;
+        margin: 0;
+        padding: 0;
         box-sizing: border-box;
-        padding-left: 1rem;
-        padding-right: 1rem;
+    }
+
+    .user-transactions .transaction-section {
+        width: 100%;
+        margin: 0 0 2rem 0;
+        padding: 1.5rem;
     }
 </style>
 
@@ -90,41 +86,41 @@
                 </div>
                 <div class="transaction-count"><?= count($data['sentTransactions']) ?></div>
             </div>
-            <div class="transaction-list">
-                <?php if (empty($data['sentTransactions'])): ?>
-                    <div class="empty-state">
-                        <p>No sent transactions yet</p>
-                    </div>
-                <?php else: ?>
-                    <?php foreach($data['sentTransactions'] as $tx): ?>
-                        <div class="transaction-item">
-                            <div class="transaction-info">
-                                <div class="transaction-user">
-                                    <span class="user-icon">&#x1F464;</span>
+            
+            <?php if (empty($data['sentTransactions'])): ?>
+                <div class="empty-state">
+                    <p>No sent transactions yet</p>
+                </div>
+            <?php else: ?>
+                <table class="transaction-table">
+                    <thead>
+                        <tr>
+                            <th>Recipient</th>
+                            <th>Date</th>
+                            <th style="text-align: right;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($data['sentTransactions'] as $tx): ?>
+                            <tr>
+                                <td>
                                     <?= htmlspecialchars($tx->receiver) ?>
-                                </div>
-                                <?php if (isset($tx->transaction_type)): ?>
-                                    <div class="transaction-note">
-                                        <strong>Type:</strong>
-                                        <?= htmlspecialchars($tx->transaction_type === 'reward' ? 'Quiz Reward' : ucfirst($tx->transaction_type)) ?>
+                                </td>
+                                <td>
+                                    <div class="transaction-date">
+                                        <?= htmlspecialchars($tx->timestamp) ?>
                                     </div>
-                                <?php endif; ?>
-                                <?php if (!empty($tx->note)): ?>
-                                    <div class="transaction-note">
-                                        <strong>Reason:</strong> <?= htmlspecialchars($tx->note) ?>
+                                </td>
+                                <td>
+                                    <div class="transaction-amount sent">
+                                        -<?= number_format($tx->amount, 2) ?> BuckX
                                     </div>
-                                <?php endif; ?>
-                                <div class="transaction-time">
-                                    <?= htmlspecialchars($tx->timestamp) ?>
-                                </div>
-                            </div>
-                            <div class="transaction-amount sent">
-                                -<?= number_format($tx->amount, 2) ?> BuckX
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
         </div>
 
         <!-- Received Transactions -->
@@ -136,39 +132,41 @@
                 </div>
                 <div class="transaction-count"><?= count($data['receivedTransactions']) ?></div>
             </div>
-            <div class="transaction-list">
-                <?php if (empty($data['receivedTransactions'])): ?>
-                    <div class="empty-state">
-                        <p>No received transactions yet</p>
-                    </div>
-                <?php else: ?>
-                    <?php foreach($data['receivedTransactions'] as $tx): ?>
-                        <div class="transaction-item">
-                            <div class="transaction-info">
-                                <div class="transaction-user">
+            
+            <?php if (empty($data['receivedTransactions'])): ?>
+                <div class="empty-state">
+                    <p>No received transactions yet</p>
+                </div>
+            <?php else: ?>
+                <table class="transaction-table">
+                    <thead>
+                        <tr>
+                            <th>Sender</th>
+                            <th>Date</th>
+                            <th style="text-align: right;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($data['receivedTransactions'] as $tx): ?>
+                            <tr>
+                                <td>
                                     <?= htmlspecialchars($tx->sender) ?>
-                                </div>
-                                <?php if (isset($tx->transaction_type) && $tx->transaction_type !== 'reward'): ?>
-                                    <div class="transaction-note">
-                                        <strong>Type:</strong> <?= htmlspecialchars(ucfirst($tx->transaction_type)) ?>
+                                </td>
+                                <td>
+                                    <div class="transaction-date">
+                                        <?= htmlspecialchars($tx->timestamp) ?>
                                     </div>
-                                    <?php if (!empty($tx->note)): ?>
-                                        <div class="transaction-note">
-                                            <strong>Reason:</strong> <?= htmlspecialchars($tx->note) ?>
-                                        </div>
-                                    <?php endif; ?>
-                                <?php endif; ?>
-                                <div class="transaction-time">
-                                    <?= htmlspecialchars($tx->timestamp) ?>
-                                </div>
-                            </div>
-                            <div class="transaction-amount received">
-                                +<?= number_format($tx->amount, 2) ?> BuckX
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
+                                </td>
+                                <td>
+                                    <div class="transaction-amount received">
+                                        +<?= number_format($tx->amount, 2) ?> BuckX
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
         </div>
     </div>
 
