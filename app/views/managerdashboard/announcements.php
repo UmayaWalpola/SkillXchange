@@ -38,7 +38,7 @@
                             placeholder="Enter announcement content..."></textarea>
                     </div>
                     <div class="form-footer">
-                        <button type="submit" class="btn-primary">Post Announcement</button>
+                        <button type="submit" class="btn-primary" onclick="this.disabled=true; this.form.submit();">Post Announcement</button>
                         <button type="button" onclick="toggleAddForm()" class="btn-cancel">Cancel</button>
                     </div>
                 </form>
@@ -89,7 +89,7 @@
                                         <textarea id="edit-content-<?= $announcement->id ?>" name="content" rows="4" required><?= htmlspecialchars($announcement->content) ?></textarea>
                                     </div>
                                     <div class="form-footer">
-                                        <button type="submit" class="btn-primary">Save Changes</button>
+                                        <button type="submit" class="btn-primary" onclick="this.disabled=true; this.form.submit();">Save Changes</button>
                                         <button type="button" onclick="toggleEditForm(<?= $announcement->id ?>)" class="btn-cancel">Cancel</button>
                                     </div>
                                 </form>
