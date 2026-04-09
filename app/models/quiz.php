@@ -138,42 +138,45 @@ class Quiz {
      * Get quizzes with user status
      */
     public function getQuizzesForUser($user_id) {
-        $this->db->query("
-            SELECT 
-                q.*,
-                q.id as quiz_id,
-                CASE 
-                    WHEN sq.id IS NOT NULL THEN 'saved'
-                    WHEN ua.status = 'completed' THEN 'completed'
-                    ELSE 'not_started'
-                END as user_status,
-                ua.score as last_score
-            FROM quizzes q
-            LEFT JOIN user_saved_quizzes sq ON q.id = sq.quiz_id AND sq.user_id = :user_id
-            LEFT JOIN (
-                SELECT quiz_id, user_id, score, status
-                FROM user_quiz_attempts
-                WHERE user_id = :user_id
-                ORDER BY completed_at DESC
-            ) ua ON q.id = ua.quiz_id
-            WHERE q.status = 'active'
-            GROUP BY q.id
-            ORDER BY q.created_at DESC
-        ");
-        
-        $this->db->bind(':user_id', $user_id);
-        $rows = $this->db->resultSet();
-        if (!$rows) return [];
+    $this->db->query("
+        SELECT 
+            q.*,
+            q.id as quiz_id,
+            CASE 
+                WHEN sq.id IS NOT NULL THEN 'saved'
+                WHEN ua.status = 'completed' THEN 'completed'
+                ELSE 'not_started'
+            END as user_status,
+            ua.score as last_score
+        FROM quizzes q
+        LEFT JOIN user_saved_quizzes sq 
+            ON q.id = sq.quiz_id AND sq.user_id = :user_id
+        LEFT JOIN user_quiz_attempts ua
+            ON ua.id = (
+                SELECT uqa.id
+                FROM user_quiz_attempts uqa
+                WHERE uqa.quiz_id = q.id
+                  AND uqa.user_id = :user_id
+                ORDER BY uqa.completed_at DESC
+                LIMIT 1
+            )
+        WHERE q.status = 'active'
+        ORDER BY q.created_at DESC
+    ");
+    
+    $this->db->bind(':user_id', $user_id);
+    $rows = $this->db->resultSet();
+    if (!$rows) return [];
 
-        foreach ($rows as $row) {
-            if (!is_object($row)) continue;
-            if (!isset($row->reward_amount) || (int)$row->reward_amount <= 0) {
-                $row->reward_amount = $this->computeRewardAmount($row->difficulty_level ?? '');
-            }
+    foreach ($rows as $row) {
+        if (!is_object($row)) continue;
+        if (!isset($row->reward_amount) || (int)$row->reward_amount <= 0) {
+            $row->reward_amount = $this->computeRewardAmount($row->difficulty_level ?? '');
         }
-
-        return $rows;
     }
+
+    return $rows;
+}
     
     /**
      * Get all quizzes for a manager
