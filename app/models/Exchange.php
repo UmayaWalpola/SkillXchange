@@ -51,13 +51,15 @@ class Exchange extends Database {
                 requester_id, 
                 receiver_id, 
                 skill_id, 
+                skill_offered, skill_wanted,
                 status, 
                 created_at
             ) VALUES (
                 :requester_id, 
                 :receiver_id, 
                 1, 
-                'active', 
+                :skill_offered, :skill_wanted,
+                'pending', 
                 NOW()
             )
         ");
