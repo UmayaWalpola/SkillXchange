@@ -240,4 +240,35 @@ class Wallet {
         }
     }
 
+    public function getDebts($userId) {
+        // Debts I OWE
+        $this->db->query("
+            SELECT sd.*, u.username AS creditor_name
+            FROM skill_debt sd
+            JOIN users u ON u.id = sd.creditor_id
+            WHERE sd.debtor_id = :uid
+            AND sd.status IN ('pending', 'active')
+            ORDER BY sd.created_at DESC
+        ");
+        $this->db->bind(':uid', $userId);
+        $owed = $this->db->resultSet();
+
+        // Debts OWED TO ME
+        $this->db->query("
+            SELECT sd.*, u.username AS debtor_name
+            FROM skill_debt sd
+            JOIN users u ON u.id = sd.debtor_id
+            WHERE sd.creditor_id = :uid
+            AND sd.status IN ('pending', 'active')
+            ORDER BY sd.created_at DESC
+        ");
+        $this->db->bind(':uid', $userId);
+        $owedToMe = $this->db->resultSet();
+
+        return [
+            'owed'       => $owed    ? array_map(fn($r) => (array)$r, $owed)      : [],
+            'owed_to_me' => $owedToMe ? array_map(fn($r) => (array)$r, $owedToMe) : []
+        ];
+    }
+
 }
