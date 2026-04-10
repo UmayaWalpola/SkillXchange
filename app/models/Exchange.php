@@ -177,7 +177,7 @@ class Exchange extends Database {
                 requester.profile_picture as sender_avatar
             FROM exchanges e
             INNER JOIN users requester ON e.requester_id = requester.id
-            WHERE e.receiver_id = :user_id AND e.status = 'active'
+            WHERE e.receiver_id = :user_id AND e.status = 'pending'
             ORDER BY e.created_at DESC
         ");
         
