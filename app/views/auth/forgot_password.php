@@ -1,5 +1,4 @@
 
-
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/auth.css">
 
@@ -10,8 +9,8 @@
         </div>
 
         <div class="login-right">
-            <h2>WELCOME BACK!</h2>
-            <p>LinkUp, SkillUp</p>
+            <h2>FORGOT PASSWORD</h2>
+            <p>Enter your email to receive a reset OTP</p>
 
             <?php if (!empty($data['error'])): ?>
                 <div style="background:#fee;color:#c33;padding:10px;border-radius:8px;margin-bottom:15px;">
@@ -23,18 +22,18 @@
                 <div style="background:#efe;color:#363;padding:10px;border-radius:8px;margin-bottom:15px;">
                     <?= htmlspecialchars($data['success']) ?>
                 </div>
+                <a href="<?= URLROOT ?>/auth/resetPassword?email=<?= urlencode($data['email']) ?>">
+                    <button type="button" style="width:100%;margin-bottom:10px;">Enter OTP & Reset Password</button>
+                </a>
+            <?php else: ?>
+                <form action="<?= URLROOT ?>/auth/forgotPassword" method="POST">
+                    <input type="email" name="email" placeholder="Enter your email" required
+                           value="<?= htmlspecialchars($data['email'] ?? '') ?>">
+                    <button type="submit">Send OTP</button>
+                </form>
             <?php endif; ?>
 
-            <form action="<?= URLROOT ?>/auth/signin" method="POST">
-                <input type="email" name="email" placeholder="Email" required>
-                <input type="password" name="password" placeholder="Password" required>
-                <button type="submit">Log In</button>
-
-                <p style="text-align: center !important;"><a href="http://localhost/SkillXchange/public/auth/forgotPassword">Forgot password?</a></p>
-            </form>
-
-            <p>Don't have an account? <a href="<?= URLROOT ?>/auth/register">Sign Up</a></p>
+            <p><a href="<?= URLROOT ?>/auth/signin">Back to Login</a></p>
         </div>
     </div>
 </div>
-

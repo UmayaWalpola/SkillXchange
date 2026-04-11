@@ -1,7 +1,7 @@
 <?php require_once "../app/views/layouts/header_user.php"; ?>
 <?php require_once "../app/views/layouts/managersidebar.php"; ?>
 
-<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/manager_dashboard.css">
+<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/dashboard.css">
 
 <main class="site-main">
     <div class="dashboard-container">
@@ -38,7 +38,7 @@
                             placeholder="Enter announcement content..."></textarea>
                     </div>
                     <div class="form-footer">
-                        <button type="submit" class="btn-primary">Post Announcement</button>
+                        <button type="submit" class="btn-primary" onclick="this.disabled=true; this.form.submit();">Post Announcement</button>
                         <button type="button" onclick="toggleAddForm()" class="btn-cancel">Cancel</button>
                     </div>
                 </form>
@@ -48,7 +48,7 @@
             <div class="announcements-container">
                 <?php if (!empty($data['announcements'])): ?>
                     <?php foreach ($data['announcements'] as $announcement): ?>
-                        <div class="announcement-card">
+                        <div class="announcement-card" id="card-<?= $announcement->id ?>">
 
                             <!-- Announcement Header -->
                             <div class="announcement-header">
@@ -59,9 +59,17 @@
                                         <?= date('M d, Y', strtotime($announcement->created_at)) ?>
                                     </p>
                                 </div>
-                                <button class="btn-outline" onclick="toggleEditForm(<?= $announcement->id ?>)">
-                                    Edit
-                                </button>
+                                <div class="announcement-actions">
+                                    <button class="btn-outline" onclick="toggleEditForm(<?= $announcement->id ?>)">
+                                        Edit
+                                    </button>
+                                    <form method="POST" action="<?= URLROOT ?>/manager/deleteAnnouncement"
+                                          style="display:inline;"
+                                          onsubmit="return confirm('Delete this announcement? All user notifications for this announcement will also be removed.')">
+                                        <input type="hidden" name="announcement_id" value="<?= $announcement->id ?>">
+                                        <button type="submit" class="btn-outline">Delete</button>
+                                    </form>
+                                </div>
                             </div>
 
                             <!-- Announcement Content -->
@@ -81,12 +89,8 @@
                                         <textarea id="edit-content-<?= $announcement->id ?>" name="content" rows="4" required><?= htmlspecialchars($announcement->content) ?></textarea>
                                     </div>
                                     <div class="form-footer">
-                                        <button type="submit" class="btn-primary">
-                                            Save Changes
-                                        </button>
-                                        <button type="button" onclick="toggleEditForm(<?= $announcement->id ?>)" class="btn-cancel">
-                                            Cancel
-                                        </button>
+                                        <button type="submit" class="btn-primary" onclick="this.disabled=true; this.form.submit();">Save Changes</button>
+                                        <button type="button" onclick="toggleEditForm(<?= $announcement->id ?>)" class="btn-cancel">Cancel</button>
                                     </div>
                                 </form>
                             </div>
@@ -111,6 +115,12 @@ function toggleAddForm() {
 }
 
 function toggleEditForm(id) {
+    // Close any other open edit forms first
+    document.querySelectorAll('.inline-form-panel.open').forEach(function(el) {
+        if (el.id !== 'edit-' + id && el.id !== 'addAnnouncementForm') {
+            el.classList.remove('open');
+        }
+    });
     const form = document.getElementById('edit-' + id);
     form.classList.toggle('open');
 }

@@ -4,7 +4,8 @@ class ManagerController extends Controller {
     private $managerModel;
 
     public function __construct() {
-        require_once '../app/models/Manager.php'; 
+        require_once '../app/models/Manager.php';
+        require_once '../app/helpers/Mailer.php'; 
         $this->managerModel = new Manager();
     }
 
@@ -256,7 +257,7 @@ class ManagerController extends Controller {
         $name     = trim($_POST['name'] ?? '');
         $email    = trim($_POST['email'] ?? '');
         $role     = trim($_POST['role'] ?? '');
-        $password = $_POST['password'] ?? '';
+        $password = $_POST['password'] ?? ''; // plain text, may be empty
 
         if (empty($userId) || empty($name) || empty($email) || empty($role)) {
             $_SESSION['error'] = 'All fields except password are required';
@@ -271,7 +272,20 @@ class ManagerController extends Controller {
         }
 
         $result = $this->managerModel->updateUser($userId, $name, $email, $role, $password);
-        $_SESSION[$result['success'] ? 'success' : 'error'] = $result['message'];
+
+        if ($result['success']) {
+            // Send email — always, whether password changed or not
+            $mailer = new Mailer();
+            $sent   = $mailer->sendUpdatedCredentials($name, $email, $role, $password);
+
+            if ($sent) {
+                $_SESSION['success'] = 'User updated and notification emailed successfully';
+            } else {
+                $_SESSION['success'] = 'User updated but email could not be sent';
+            }
+        } else {
+            $_SESSION['error'] = $result['message'];
+        }
 
         header('Location: ' . URLROOT . '/manager/users');
         exit;
@@ -383,6 +397,30 @@ class ManagerController extends Controller {
             $_SESSION['success'] = 'Announcement updated and all users notified';
         } else {
             $_SESSION['error'] = 'Failed to update announcement';
+        }
+
+        header('Location: ' . URLROOT . '/manager/announcements');
+        exit;
+    }
+
+    public function deleteAnnouncement() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ' . URLROOT . '/manager/announcements');
+            exit;
+        }
+
+        $announcementId = $_POST['announcement_id'] ?? null;
+
+        if (empty($announcementId)) {
+            $_SESSION['error'] = 'Announcement ID is required';
+            header('Location: ' . URLROOT . '/manager/announcements');
+            exit;
+        }
+
+        if ($this->managerModel->deleteAnnouncement($announcementId)) {
+            $_SESSION['success'] = 'Announcement deleted';
+        } else {
+            $_SESSION['error'] = 'Failed to delete announcement';
         }
 
         header('Location: ' . URLROOT . '/manager/announcements');

@@ -250,4 +250,89 @@ class AuthController extends Controller {
         header("Location: " . URLROOT . "/auth/signin");
         exit;
     }
+
+    public function forgotPassword() {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $email = trim($_POST['email'] ?? '');
+ 
+        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $data = ['error' => 'Please enter a valid email.', 'email' => $email];
+            $this->view('auth/forgot_password', $data);
+            return;
+        }
+ 
+        $otp = $this->userModel->createPasswordResetOTP($email);
+ 
+        if ($otp) {
+            // Send OTP email
+            require_once dirname(__DIR__) . '/helpers/Mailer.php';
+            $mailer = new Mailer();
+            $sent = $mailer->sendPasswordResetOTP($email, $otp);
+ 
+            if (!$sent) {
+                error_log("OTP email failed for {$email}, OTP: {$otp}");
+            }
+        }
+ 
+        // Always show success (don't reveal if email exists)
+        $_SESSION['reset_email'] = $email;
+        $data = [
+            'success' => 'If that email exists, an OTP has been sent. Check your inbox.',
+            'email' => $email
+        ];
+        $this->view('auth/forgot_password', $data);
+ 
+    } else {
+        $data = ['error' => '', 'email' => ''];
+        $this->view('auth/forgot_password', $data);
+    }
+}
+ 
+    // Handle OTP verification + password reset
+    public function resetPassword() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $email    = trim($_POST['email'] ?? '');
+            $otp      = trim($_POST['otp'] ?? '');
+            $password = $_POST['password'] ?? '';
+            $confirm  = $_POST['confirm_password'] ?? '';
+    
+            $errors = [];
+    
+            if (empty($otp) || strlen($otp) !== 6) {
+                $errors[] = 'Please enter the 6-digit OTP.';
+            }
+            if (strlen($password) < 8) {
+                $errors[] = 'Password must be at least 8 characters.';
+            }
+            if ($password !== $confirm) {
+                $errors[] = 'Passwords do not match.';
+            }
+    
+            if (empty($errors)) {
+                if ($this->userModel->resetPasswordByOTP($email, $otp, $password)) {
+                    $_SESSION['success'] = 'Password reset successful! Please log in.';
+                    header("Location: " . URLROOT . "/auth/signin");
+                    exit;
+                } else {
+                    $errors[] = 'Invalid or expired OTP. Please try again.';
+                }
+            }
+    
+            $data = [
+                'error' => implode(' ', $errors),
+                'email' => $email,
+                'otp'   => $otp
+            ];
+            $this->view('auth/reset_password', $data);
+    
+        } else {
+            $data = [
+            'error' => '',
+            'email' => $_GET['email'] ?? '',
+            'otp'   => ''
+        ];
+        $this->view('auth/reset_password', $data);
+            }
+    }
+ 
 }

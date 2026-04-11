@@ -26,7 +26,7 @@ class WalletController extends Controller {
         $transactions = $this->walletModel->getTransactions($userId);
         $totalSent = $this->walletModel->getTotalSent($userId);
         $totalReceived = $this->walletModel->getTotalReceived($userId);
-        
+        $debts = $this->walletModel->getDebts($userId);
         $unreadNotifications = $this->notificationModel->getUnreadCount($userId);
         
         $this->notificationModel->checkLowBalance($userId, $balance);
@@ -39,7 +39,9 @@ class WalletController extends Controller {
             'receivedTransactions' => $transactions['received'],
             'unreadNotifications' => $unreadNotifications,
             'lowBalanceThreshold' => 50.00,
-            'userRole' => $userRole
+            'userRole' => $userRole,
+            'debtsOwed'    => $debts['owed'],       // I owe these
+            'debtsOwedToMe' => $debts['owed_to_me'] // owed to me
         ];
 
         if ($userRole === 'organization') {
@@ -49,10 +51,7 @@ class WalletController extends Controller {
         }
     }
 
-    //Show transfer confirmation page
-    // Transfer flow removed: confirmation handled no longer here.
-
-    // Transfer processing removed.
+    
 
     //Show purchase BuckX page - STRIPE VERSION (Organizations only)
     public function purchaseBuckx() {

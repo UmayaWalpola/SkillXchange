@@ -445,4 +445,72 @@ class User extends Database {
     }
 
 
+    // 🔹 Create OTP for password reset
+    public function createPasswordResetOTP($email) {
+        $userSql = "SELECT id FROM users WHERE email = :email AND status != 'suspended'";
+        $stmt = $this->connect()->prepare($userSql);
+        $stmt->bindValue(':email', $email);
+        $stmt->execute();
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$user) return false;
+
+        // Delete any existing OTPs for this user
+        $deleteSql = "DELETE FROM password_reset_tokens WHERE user_id = :user_id";
+        $stmt = $this->connect()->prepare($deleteSql);
+        $stmt->bindValue(':user_id', $user['id']);
+        $stmt->execute();
+
+        // Generate 6-digit OTP
+        $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+
+        $insertSql = "INSERT INTO password_reset_tokens (user_id, otp, expires_at, used)
+                    VALUES (:user_id, :otp, :expires_at, 0)";
+        $stmt = $this->connect()->prepare($insertSql);
+        $stmt->bindValue(':user_id', $user['id']);
+        $stmt->bindValue(':otp', $otp);
+        $stmt->bindValue(':expires_at', $expiresAt);
+        $stmt->execute();
+
+        return $otp;
+    }
+
+    // 🔹 Verify OTP and get user
+    public function verifyPasswordResetOTP($email, $otp) {
+        $sql = "SELECT prt.id, prt.user_id, prt.expires_at
+                FROM password_reset_tokens prt
+                JOIN users u ON prt.user_id = u.id
+                WHERE u.email = :email
+                AND prt.otp = :otp
+                AND prt.used = 0
+                AND prt.expires_at > NOW()";
+        $stmt = $this->connect()->prepare($sql);
+        $stmt->bindValue(':email', $email);
+        $stmt->bindValue(':otp', $otp);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    // 🔹 Reset password and mark OTP as used
+    public function resetPasswordByOTP($email, $otp, $newPassword) {
+        $token = $this->verifyPasswordResetOTP($email, $otp);
+        if (!$token) return false;
+
+        // Update password
+        $updateSql = "UPDATE users SET password = :password WHERE id = :id";
+        $stmt = $this->connect()->prepare($updateSql);
+        $stmt->bindValue(':password', password_hash($newPassword, PASSWORD_BCRYPT));
+        $stmt->bindValue(':id', $token['user_id']);
+        $stmt->execute();
+
+        // Mark OTP as used
+        $markSql = "UPDATE password_reset_tokens SET used = 1 WHERE id = :id";
+        $stmt = $this->connect()->prepare($markSql);
+        $stmt->bindValue(':id', $token['id']);
+        $stmt->execute();
+
+        return true;
+    }
+
 }

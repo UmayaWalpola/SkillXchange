@@ -56,6 +56,5 @@ insert-test-data.sql
 app/config/db.local.php
 .DS_Store
 public/uploads/
-app/config/secrets.php
 app/config/mail.local.php
 
