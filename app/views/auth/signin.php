@@ -28,8 +28,9 @@
             <form action="<?= URLROOT ?>/auth/signin" method="POST">
                 <input type="email" name="email" placeholder="Email" required>
                 <input type="password" name="password" placeholder="Password" required>
-                <!--<p><a href="<?= URLROOT ?>/auth/forgot">Forgot password?</a></p>-->
                 <button type="submit">Log In</button>
+
+                <p style="text-align: center !important;"><a href="http://localhost/SkillXchange/public/auth/forgotPassword">Forgot password?</a></p>
             </form>
 
             <p>Don't have an account? <a href="<?= URLROOT ?>/auth/register">Sign Up</a></p>

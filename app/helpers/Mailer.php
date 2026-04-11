@@ -139,4 +139,35 @@ class Mailer {
             return false;
         }
     }
+
+    public function sendPasswordResetOTP(string $email, string $otp): bool {
+        try {
+            // Need to look up the name for the email greeting
+            // We'll just use a generic greeting since we only have email here
+            $mail = $this->buildMailer();
+            $mail->addAddress($email);
+            $mail->Subject = 'SkillXchange – Your Password Reset OTP';
+    
+            $body = $this->template('Password Reset Request', "
+                <p>Hi there,</p>
+                <p>We received a request to reset your SkillXchange password. Use the OTP below:</p>
+                <div style='text-align:center; margin: 30px 0;'>
+                    <span style='font-size: 36px; font-weight: bold; letter-spacing: 10px; color: #4A90D9; background: #f0f4ff; padding: 15px 30px; border-radius: 8px; display: inline-block;'>
+                        {$otp}
+                    </span>
+                </div>
+                <p style='color:#888; font-size:13px;'>This OTP expires in <strong>15 minutes</strong>.</p>
+                <p style='color:#e74c3c;'>If you did not request a password reset, please ignore this email.</p>
+            ");
+    
+            $mail->Body    = $body;
+            $mail->AltBody = "Your SkillXchange password reset OTP is: {$otp}\n\nThis OTP expires in 15 minutes.\n\nIf you did not request this, please ignore.";
+    
+            $mail->send();
+            return true;
+        } catch (Exception $e) {
+            error_log('Mailer::sendPasswordResetOTP failed: ' . $e->getMessage());
+            return false;
+        }
+    }
 }
