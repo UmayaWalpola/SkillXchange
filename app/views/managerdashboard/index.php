@@ -1,7 +1,7 @@
 <?php require_once "../app/views/layouts/header_user.php"; ?>
 <?php require_once "../app/views/layouts/managersidebar.php"; ?>
 
-<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/manager_dashboard.css">
+<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/dashboard.css">
 
 <main class="site-main">
     <div class="dashboard-container">
