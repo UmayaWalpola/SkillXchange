@@ -1,3 +1,9 @@
+<?php
+// Determine which tab should be active based on URL parameter
+$activeTab = isset($_GET['type']) && $_GET['type'] === 'individual' ? 'individual' : 'organization';
+$invertActiveTab = $activeTab === 'individual' ? 'organization' : 'individual';
+?>
+
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/assets/css/global.css">
 <link rel="stylesheet" href="<?php echo URLROOT; ?>/assets/css/auth.css">
 
@@ -16,14 +22,14 @@
 
             <!-- Tabs -->
             <div class="signup-tabs">
-                <button class="tab-btn active" data-tab="organization">Organization</button>
-                <button class="tab-btn" data-tab="individual">Individual</button>
+                <button class="tab-btn <?= $activeTab === 'organization' ? 'active' : '' ?>" data-tab="organization">Organization</button>
+                <button class="tab-btn <?= $activeTab === 'individual' ? 'active' : '' ?>" data-tab="individual">Individual</button>
             </div>
 
             <!-- Forms -->
             <div class="form-container">
                 <!-- Organization Form -->
-                <form id="organization" class="active" enctype="multipart/form-data" method="POST" action="<?php echo URLROOT; ?>/auth/registerOrganization">
+                <form id="organization" class="<?= $activeTab === 'organization' ? 'active' : '' ?>" enctype="multipart/form-data" method="POST" action="<?php echo URLROOT; ?>/auth/registerOrganization">
                     <p class="quote">Are you an organization?</p>
                     <label for="org-name">Organization Name</label>
                     <input type="text" id="org-name" name="org-name" required />
@@ -44,7 +50,7 @@
                 </form>
 
                 <!-- Individual Form -->
-                <form id="individual" enctype="multipart/form-data" method="POST" action="<?php echo URLROOT; ?>/auth/registerIndividual">
+                <form id="individual" class="<?= $activeTab === 'individual' ? 'active' : '' ?>" enctype="multipart/form-data" method="POST" action="<?php echo URLROOT; ?>/auth/registerIndividual">
                     <p class="quote">Are you an individual ready to teach, learn skills, and join exciting projects? Take quizzes and connect with others!</p>
                     <label for="ind-fullname">Full Name</label>
                     <input type="text" id="ind-fullname" name="ind-fullname" required />
