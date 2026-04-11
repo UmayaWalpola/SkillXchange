@@ -1,5 +1,5 @@
 <!-- Footer -->
-<footer class="footer-minimal">
+<footer class="footer-minimal" id="contact">
     <div class="footer-minimal-container">
         <!-- Top Section -->
         <div class="footer-minimal-top">
@@ -46,9 +46,8 @@
         <div class="footer-minimal-bottom">
             <p class="footer-copyright">© 2024 SkillXchange. All rights reserved.By IS25</p>
             <div class="footer-legal-links">
-                <a href="/terms.php">Terms of Service</a>
-                <a href="/privacy.php">Return Policy</a>
-                <a href="/privacy.php">Privacy Policy</a>
+                <a href="<?= URLROOT ?>/pages/terms">Terms of Service</a>
+                <a href="<?= URLROOT ?>/pages/privacy">Privacy Policy</a>
             </div>
         </div>
     </div>

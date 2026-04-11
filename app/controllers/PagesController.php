@@ -27,4 +27,12 @@ class PagesController extends Controller {
 
         $this->view('home', $data);
     }
+
+    public function privacy() {
+        $this->view('privacy');
+    }
+
+    public function terms() {
+        $this->view('terms');
+    }
 }
