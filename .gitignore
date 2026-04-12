@@ -7,6 +7,8 @@ database/migrations/2025_11_20_add_project_app_columns.sql
 database/migrations/2026_02_14_add_project_id_to_user_feedback.sql
 database/migrations/2026_02_17_add_context_support_to_feedback.sql
 database/migrations/2026_02_18_add_feedback_filtering_sorting.sql
+database/migrations/2026_04_11_120000_add_skill_matching_indexes.sql
+database/migrations/add_missing_posts_columns.sql
 database/migrations/alter_project_applications.sql
 database/migrations/create_content_reports_table.sql
 database/migrations/create_feedback_reports.sql
@@ -56,5 +58,5 @@ insert-test-data.sql
 app/config/db.local.php
 .DS_Store
 public/uploads/
-app/config/mail.local.php
+app/config/secrets.php
 

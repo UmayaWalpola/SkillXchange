@@ -120,7 +120,7 @@ class Quiz {
             GROUP BY q.id
             ORDER BY q.created_at DESC
         ");
-        
+
         $rows = $this->db->resultSet();
         if (!$rows) return [];
 
@@ -138,45 +138,45 @@ class Quiz {
      * Get quizzes with user status
      */
     public function getQuizzesForUser($user_id) {
-    $this->db->query("
-        SELECT 
-            q.*,
-            q.id as quiz_id,
-            CASE 
-                WHEN sq.id IS NOT NULL THEN 'saved'
-                WHEN ua.status = 'completed' THEN 'completed'
-                ELSE 'not_started'
-            END as user_status,
-            ua.score as last_score
-        FROM quizzes q
-        LEFT JOIN user_saved_quizzes sq 
-            ON q.id = sq.quiz_id AND sq.user_id = :user_id
-        LEFT JOIN user_quiz_attempts ua
-            ON ua.id = (
-                SELECT uqa.id
-                FROM user_quiz_attempts uqa
-                WHERE uqa.quiz_id = q.id
-                  AND uqa.user_id = :user_id
-                ORDER BY uqa.completed_at DESC
-                LIMIT 1
-            )
-        WHERE q.status = 'active'
-        ORDER BY q.created_at DESC
-    ");
-    
-    $this->db->bind(':user_id', $user_id);
-    $rows = $this->db->resultSet();
-    if (!$rows) return [];
+        $this->db->query("
+            SELECT 
+                q.*,
+                q.id as quiz_id,
+                CASE 
+                    WHEN sq.id IS NOT NULL THEN 'saved'
+                    WHEN ua.status = 'completed' THEN 'completed'
+                    ELSE 'not_started'
+                END as user_status,
+                ua.score as last_score
+            FROM quizzes q
+            LEFT JOIN user_saved_quizzes sq 
+                ON q.id = sq.quiz_id AND sq.user_id = :user_id
+            LEFT JOIN user_quiz_attempts ua
+                ON ua.id = (
+                    SELECT uqa.id
+                    FROM user_quiz_attempts uqa
+                    WHERE uqa.quiz_id = q.id
+                      AND uqa.user_id = :user_id
+                    ORDER BY uqa.completed_at DESC
+                    LIMIT 1
+                )
+            WHERE q.status = 'active'
+            ORDER BY q.created_at DESC
+        ");
+        
+        $this->db->bind(':user_id', $user_id);
+        $rows = $this->db->resultSet();
+        if (!$rows) return [];
 
-    foreach ($rows as $row) {
-        if (!is_object($row)) continue;
-        if (!isset($row->reward_amount) || (int)$row->reward_amount <= 0) {
-            $row->reward_amount = $this->computeRewardAmount($row->difficulty_level ?? '');
+        foreach ($rows as $row) {
+            if (!is_object($row)) continue;
+            if (!isset($row->reward_amount) || (int)$row->reward_amount <= 0) {
+                $row->reward_amount = $this->computeRewardAmount($row->difficulty_level ?? '');
+            }
         }
-    }
 
-    return $rows;
-}
+        return $rows;
+    }
     
     /**
      * Get all quizzes for a manager
@@ -343,29 +343,29 @@ class Quiz {
     /**
      * Complete quiz attempt
      */
-public function completeAttempt($attempt_id, $correct_answers, $total_questions, $time_taken) {
-    $score = ($correct_answers / $total_questions) * 100;
-    $passed = ($score >= 70) ? 1 : 0;
-    
-    $this->db->query("
-        UPDATE user_quiz_attempts 
-        SET score = :score, 
-            correct_answers = :correct,
-            time_taken = :time,
-            status = 'completed',
-            passed = :passed,
-            completed_at = NOW()
-        WHERE id = :id
-    ");
-    
-    $this->db->bind(':score', $score);
-    $this->db->bind(':correct', $correct_answers);
-    $this->db->bind(':time', $time_taken);
-    $this->db->bind(':passed', $passed);
-    $this->db->bind(':id', $attempt_id);
-    
-    return $this->db->execute();
-}
+    public function completeAttempt($attempt_id, $correct_answers, $total_questions, $time_taken) {
+        $score = ($correct_answers / $total_questions) * 100;
+        $passed = ($score >= 70) ? 1 : 0;
+        
+        $this->db->query("
+            UPDATE user_quiz_attempts 
+            SET score = :score, 
+                correct_answers = :correct,
+                time_taken = :time,
+                status = 'completed',
+                passed = :passed,
+                completed_at = NOW()
+            WHERE id = :id
+        ");
+        
+        $this->db->bind(':score', $score);
+        $this->db->bind(':correct', $correct_answers);
+        $this->db->bind(':time', $time_taken);
+        $this->db->bind(':passed', $passed);
+        $this->db->bind(':id', $attempt_id);
+        
+        return $this->db->execute();
+    }
     
     /**
      * Save individual answer

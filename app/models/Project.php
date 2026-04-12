@@ -8,9 +8,9 @@ class Project {
         $this->db = new Database();
     }
 
-    /* ============================================================
-       CREATE / READ / UPDATE / DELETE
-    ============================================================ */
+    
+       //CREATE / READ / UPDATE / DELETE
+
     public function createProject($data) {
         $this->db->query("INSERT INTO projects (organization_id, name, description, category, status, required_skills, max_members, start_date, end_date) VALUES (:organization_id, :name, :description, :category, :status, :required_skills, :max_members, :start_date, :end_date)");
         $this->db->bind(':organization_id', $data['org_id']);
@@ -25,13 +25,13 @@ class Project {
         if ($this->db->execute()) return $this->db->lastInsertId();
         return false;
     }
-
+        // 2. READ ALL
     public function getProjectsByOrganization($org_id) {
         $this->db->query("SELECT * FROM projects WHERE organization_id = :org_id ORDER BY created_at DESC");
         $this->db->bind(':org_id', $org_id);
         return $this->db->resultSet();
     }
-
+           // 3. READ SINGLE
     public function getProjectById($id) {
         $this->db->query("SELECT p.*, (SELECT COUNT(*) FROM project_members WHERE project_id = p.id AND status = 'active') AS current_members FROM projects p WHERE p.id = :id");
         $this->db->bind(':id', $id);
@@ -81,7 +81,7 @@ class Project {
         $this->db->bind(':org_id', $org_id);
         return $this->db->single();
     }
-
+           //Filter Logic
     public function searchProjects($org_id, $filters = []) {
         $query = "SELECT * FROM projects WHERE organization_id = :org_id";
         if (!empty($filters['search'])) $query .= " AND (name LIKE :search OR description LIKE :search)";
@@ -455,6 +455,277 @@ class Project {
             ORDER BY p.created_at DESC"
         );
         return $this->db->resultSet();
+    }
+
+    // Get every project from DB (all statuses) for discover page
+    public function getAllProjects() {
+        $this->db->query(
+            "SELECT p.*, 
+            (SELECT COUNT(*) FROM project_members WHERE project_id = p.id AND status='active') AS current_members 
+            FROM projects p 
+            ORDER BY p.created_at DESC"
+        );
+        return $this->db->resultSet();
+    }
+
+    /**
+     * Normalize skill labels for reliable matching (case-insensitive, dash/underscore tolerant).
+     */
+    private function normalizeSkillName($skill)
+    {
+        $skill = strtolower(trim((string)$skill));
+        $skill = str_replace(['_', '-'], ' ', $skill);
+        $skill = preg_replace('/\s+/', ' ', $skill);
+        $skill = trim($skill);
+
+        $aliases = [
+            'db management' => 'database management',
+            'database' => 'database management',
+            'database development' => 'database management',
+            'github & git' => 'github and git',
+            'git and github' => 'github and git',
+            'github' => 'github and git',
+            'dev ops' => 'devops',
+            'frontend' => 'frontend frameworks',
+            'front end frameworks' => 'frontend frameworks',
+            'backend' => 'backend development',
+            'back end development' => 'backend development',
+            'mobile' => 'mobile app development',
+            'cloud' => 'cloud computing',
+            'web dev' => 'web development',
+            'ai' => 'ai and ml',
+            'ai ml' => 'ai and ml',
+            'marketing' => 'digital marketing',
+            'data analytics' => 'data analysis & visualization',
+            'data analysis and visualization' => 'data analysis & visualization'
+        ];
+
+        if (isset($aliases[$skill])) {
+            return $aliases[$skill];
+        }
+
+        return $skill;
+    }
+
+    /**
+     * Split comma-separated skills into normalized key + display label pairs.
+     */
+    private function parseSkillEntries($csv)
+    {
+        $raw = explode(',', (string)$csv);
+        $entries = [];
+        $seen = [];
+
+        foreach ($raw as $item) {
+            $label = trim((string)$item);
+            $key = $this->normalizeSkillName($label);
+
+            if ($key === '' || isset($seen[$key])) {
+                continue;
+            }
+
+            $entries[] = [
+                'key' => $key,
+                'label' => $label !== '' ? $label : ucwords($key)
+            ];
+            $seen[$key] = true;
+        }
+
+        return $entries;
+    }
+
+    /**
+     * Split comma-separated skill string and normalize each token.
+     */
+    private function parseSkillList($csv)
+    {
+        $skills = [];
+
+        foreach ($this->parseSkillEntries($csv) as $entry) {
+            $skills[$entry['key']] = true;
+        }
+
+        return array_keys($skills);
+    }
+
+    /**
+     * Fetch user's teach skills with proficiency levels keyed by normalized skill.
+     */
+    public function getUserTeachSkillsWithLevel($userId)
+    {
+        $this->db->query("SELECT skill_name, proficiency_level FROM user_skills WHERE user_id = :user_id AND skill_type = 'teach'");
+        $this->db->bind(':user_id', (int)$userId);
+        $rows = $this->db->resultSet();
+
+        $rank = [
+            'beginner' => 1,
+            'intermediate' => 2,
+            'advanced' => 3
+        ];
+
+        $skills = [];
+        foreach ($rows as $row) {
+            $rawName = trim((string)($row->skill_name ?? ''));
+            $normalized = $this->normalizeSkillName($rawName);
+            if ($normalized === '') {
+                continue;
+            }
+
+            $levelRaw = strtolower(trim((string)($row->proficiency_level ?? '')));
+            $level = isset($rank[$levelRaw]) ? $levelRaw : 'beginner';
+
+            if (!isset($skills[$normalized])) {
+                $skills[$normalized] = [
+                    'name' => $rawName,
+                    'level' => $level
+                ];
+                continue;
+            }
+
+            $existing = strtolower((string)$skills[$normalized]['level']);
+            $existingRank = $rank[$existing] ?? 0;
+            $currentRank = $rank[$level] ?? 0;
+            if ($currentRank > $existingRank) {
+                $skills[$normalized]['level'] = $level;
+            }
+        }
+
+        return $skills;
+    }
+
+    /**
+     * Fetch user's teach skills as normalized values.
+     */
+    public function getUserTeachSkills($userId)
+    {
+        return array_keys($this->getUserTeachSkillsWithLevel($userId));
+    }
+
+    /**
+     * Return only projects whose required skills overlap with user's teach skills.
+     */
+    public function getSuggestedProjectsForUser($userId)
+    {
+        $projects = $this->getAllProjects();
+        $teachSkills = $this->getUserTeachSkillsWithLevel($userId);
+
+        if (empty($teachSkills)) {
+            return [];
+        }
+
+        $teachSkillSet = array_fill_keys(array_keys($teachSkills), true);
+        $suggested = [];
+
+        foreach ($projects as $project) {
+            $requiredEntries = $this->parseSkillEntries($project->required_skills ?? '');
+            $requiredSkills = [];
+            foreach ($requiredEntries as $entry) {
+                $requiredSkills[] = $entry['key'];
+            }
+            if (empty($requiredSkills)) {
+                continue;
+            }
+
+            $matched = [];
+            foreach ($requiredEntries as $requiredSkill) {
+                if (isset($teachSkillSet[$requiredSkill['key']])) {
+                    $matched[] = $requiredSkill['label'];
+                }
+            }
+
+            if (!empty($matched)) {
+                $project->matched_skills = $matched;
+                $project->matched_skill_count = count($matched);
+                $project->required_skill_count = count($requiredSkills);
+                $suggested[] = $project;
+            }
+        }
+
+        return $suggested;
+    }
+
+    /**
+     * Validate whether user is allowed to apply based on required skill overlap.
+     */
+    public function getSkillMatchSummaryForProject($projectId, $userId)
+    {
+        $project = $this->getProjectById((int)$projectId);
+        if (!$project) {
+            return [
+                'allowed' => false,
+                'required_skills' => [],
+                'user_teach_skills' => [],
+                'matched_skills' => []
+            ];
+        }
+
+        $requiredEntries = $this->parseSkillEntries($project->required_skills ?? '');
+        $requiredSkills = [];
+        foreach ($requiredEntries as $entry) {
+            $requiredSkills[] = $entry['key'];
+        }
+
+        $userTeachSkillMap = $this->getUserTeachSkillsWithLevel($userId);
+        $userTeachSkills = array_keys($userTeachSkillMap);
+
+        if (empty($requiredSkills) || empty($userTeachSkills)) {
+            return [
+                'allowed' => false,
+                'required_skills' => $requiredSkills,
+                'user_teach_skills' => $userTeachSkills,
+                'matched_skills' => []
+            ];
+        }
+
+        $userSkillSet = array_fill_keys($userTeachSkills, true);
+        $matched = [];
+        foreach ($requiredSkills as $requiredSkill) {
+            if (isset($userSkillSet[$requiredSkill])) {
+                $matched[] = $requiredSkill;
+            }
+        }
+
+        return [
+            'allowed' => !empty($matched),
+            'required_skills' => $requiredSkills,
+            'user_teach_skills' => $userTeachSkills,
+            'matched_skills' => $matched
+        ];
+    }
+
+    /**
+     * Return only project-matched teach skills with level labels for an organization view.
+     */
+    public function getMatchedTeachSkillsForProject($projectId, $userId)
+    {
+        $project = $this->getProjectById((int)$projectId);
+        if (!$project) {
+            return [];
+        }
+
+        $requiredEntries = $this->parseSkillEntries($project->required_skills ?? '');
+        if (empty($requiredEntries)) {
+            return [];
+        }
+
+        $userTeachMap = $this->getUserTeachSkillsWithLevel($userId);
+        if (empty($userTeachMap)) {
+            return [];
+        }
+
+        $matched = [];
+        foreach ($requiredEntries as $entry) {
+            $key = $entry['key'];
+            if (!isset($userTeachMap[$key])) {
+                continue;
+            }
+
+            $level = strtolower((string)($userTeachMap[$key]['level'] ?? 'beginner'));
+            $levelLabel = ucfirst($level);
+            $matched[] = $entry['label'] . ' (' . $levelLabel . ')';
+        }
+
+        return $matched;
     }
 
     /* ============================================================

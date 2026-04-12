@@ -4,22 +4,6 @@
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/wallet.css">
 
-<style>
-    /* Organization wallet container - single column layout */
-    .org-transactions {
-        width: 100%;
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
-    .org-transactions .transaction-section {
-        max-width: 100%;
-        margin: 0;
-        padding: 1.5rem;
-    }
-</style>
-
 <main class="site-main">  
 <div class="dashboard-container">
 <div class="dashboard-main">
@@ -58,7 +42,7 @@
             <div class="stat-icon">&#x1F4B0;</div>
             <div class="stat-value" id="currentBalance"><?= $data['balance'] ?></div>
             <div class="stat-label">Current BuckX Balance</div>
-            <a href="<?= URLROOT ?>/wallet/purchaseBuckx" class="btn-primary" style="margin-top: 0.8rem; padding: 0.6rem 1.2rem; font-size: 0.9rem;">
+            <a href="<?= URLROOT ?>/wallet/purchaseBuckx" class="btn-primary" style="margin-top: 1rem; padding: 0.7rem 1.5rem; font-size: 0.95rem;">
             <i class="ph ph-credit-card"></i> More BuckX
             </a>
         </div>
@@ -68,12 +52,84 @@
             <div class="stat-value"><?= $data['totalSent'] ?></div>
             <div class="stat-label">Total Sent BuckX</div>
         </div>
+        
+        <div class="stat-card received-card">
+            <div class="stat-icon">&#x1F4E5;</div>
+            <div class="stat-value"><?= $data['totalReceived'] ?></div>
+            <div class="stat-label">Total Received BuckX</div>
+        </div>
     </div>
 
-    <!-- Transfer Section removed per request -->
+    <!-- Transfer Section -->
+    <div class="transfer-section">
+        <div class="section-header">
+            <div>
+                <div class="section-title">Send BuckX</div>
+                <div class="section-subtitle">Transfer BuckX to your project contributors</div>
+            </div>
+        </div>
+        
+        <?php if (empty($data['allowedRecipients'])): ?>
+            <div class="no-recipients-notice">
+                <span class="notice-icon">&#x2139;&#xFE0F;</span>
+                <div class="notice-content">
+                    <h3>No Users Available</h3>
+                    <p>There are no users in the system yet.</p>
+                </div>
+            </div>
+        <?php else: ?>
+            <form class="transfer-form" id="transferForm" method="POST" action="<?= URLROOT ?>/wallet/confirmTransfer">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="recipient_id">Select User</label>
+                        <select id="recipient_id" 
+                                name="recipient_id" 
+                                required
+                                class="recipient-dropdown">
+                            <option value="">Select a user</option>
+                            <?php foreach($data['allowedRecipients'] as $recipient): ?>
+                                <option value="<?= $recipient->id ?>">
+                                    <?= htmlspecialchars($recipient->username) ?> 
+                                    (<?= htmlspecialchars($recipient->email) ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <div class="field-hint">Select the user you want to send BuckX to</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="amount">Amount (BuckX)</label>
+                        <input type="number" 
+                               id="amount" 
+                               name="amount" 
+                               min="1" 
+                               max="1000"
+                               step="0.01"
+                               placeholder="Enter amount" 
+                               required>
+                        <div class="field-hint">Maximum: 1000 BuckX per transaction</div>
+                    </div>
+                </div>
+                
+                <div class="form-group full-width">
+                    <label for="note">Reason for Transfer (Optional)</label>
+                    <input type="text" 
+                           id="note" 
+                           name="note" 
+                           placeholder="e.g., Payment for project work, Performance bonus, etc."
+                           maxlength="255">
+                    <div class="field-hint">This reason will be visible to the recipient</div>
+                </div>
+                
+                <button type="submit" class="send-btn">
+                <span>Review Transfer</span>
+                </button>
+            </form>
+        <?php endif; ?>
+    </div>
 
     <!-- Transactions Container -->
-    <div class="transactions-container org-transactions">
+    <div class="transactions-container">
         <!-- Sent Transactions -->
         <div class="transaction-section">
             <div class="transaction-header">
@@ -83,55 +139,86 @@
                 </div>
                 <div class="transaction-count"><?= count($data['sentTransactions']) ?></div>
             </div>
-            
-            <?php if (empty($data['sentTransactions'])): ?>
-                <div class="empty-state">
-                    <p>No sent transactions yet</p>
-                </div>
-            <?php else: ?>
-                <table class="transaction-table">
-                    <thead>
-                        <tr>
-                            <th>Recipient</th>
-                            <th>Note/Reason</th>
-                            <th>Date</th>
-                            <th style="text-align: right;">Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach($data['sentTransactions'] as $tx): ?>
-                            <tr>
-                                <td>
+            <div class="transaction-list">
+                <?php if (empty($data['sentTransactions'])): ?>
+                    <div class="empty-state">
+                        <p>No sent transactions yet</p>
+                    </div>
+                <?php else: ?>
+                    <?php foreach($data['sentTransactions'] as $tx): ?>
+                        <div class="transaction-item">
+                            <div class="transaction-info">
+                                <div class="transaction-user">
+                                    <span class="user-icon">
+                                        <?= ($tx->receiver_role === 'organization') ? '&#x1F465;' : '&#x1F464;' ?>
+                                    </span>
                                     <?= htmlspecialchars($tx->receiver) ?>
                                     <?php if ($tx->receiver_role === 'organization'): ?>
                                         <span class="role-badge">ORG</span>
                                     <?php endif; ?>
-                                </td>
-                                <td>
-                                    <?php if (!empty($tx->note)): ?>
-                                        <?= htmlspecialchars($tx->note) ?>
-                                    <?php else: ?>
-                                        <span style="opacity: 0.6;">—</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <div class="transaction-date">
-                                        <?= htmlspecialchars($tx->timestamp) ?>
+                                </div>
+                                <?php if (!empty($tx->note)): ?>
+                                    <div class="transaction-note">
+                                        <strong>Reason:</strong> <?= htmlspecialchars($tx->note) ?>
                                     </div>
-                                </td>
-                                <td>
-                                    <div class="transaction-amount sent">
-                                        -<?= number_format($tx->amount, 2) ?> BuckX
-                                    </div>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            <?php endif; ?>
+                                <?php endif; ?>
+                                <div class="transaction-time">
+                                    <?= htmlspecialchars($tx->timestamp) ?>
+                                </div>
+                            </div>
+                            <div class="transaction-amount sent">
+                                -<?= number_format($tx->amount, 2) ?> BuckX
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
         </div>
 
-        <!-- Received transactions removed for organizations (not applicable) -->
+        <!-- Received Transactions -->
+        <div class="transaction-section">
+            <div class="transaction-header">
+                <div class="transaction-title">
+                    <span>&#x1F4E5;</span>
+                    Received Transactions
+                </div>
+                <div class="transaction-count"><?= count($data['receivedTransactions']) ?></div>
+            </div>
+            <div class="transaction-list">
+                <?php if (empty($data['receivedTransactions'])): ?>
+                    <div class="empty-state">
+                        <p>No received transactions yet</p>
+                    </div>
+                <?php else: ?>
+                    <?php foreach($data['receivedTransactions'] as $tx): ?>
+                        <div class="transaction-item">
+                            <div class="transaction-info">
+                                <div class="transaction-user">
+                                    <span class="user-icon">
+                                        <?= ($tx->sender_role === 'organization') ? '&#x1F465;' : '&#x1F464;' ?>
+                                    </span>
+                                    <?= htmlspecialchars($tx->sender) ?>
+                                    <?php if ($tx->sender_role === 'organization'): ?>
+                                        <span class="role-badge">ORG</span>
+                                    <?php endif; ?>
+                                </div>
+                                <?php if (!empty($tx->note)): ?>
+                                    <div class="transaction-note">
+                                        <strong>Reason:</strong> <?= htmlspecialchars($tx->note) ?>
+                                    </div>
+                                <?php endif; ?>
+                                <div class="transaction-time">
+                                    <?= htmlspecialchars($tx->timestamp) ?>
+                                </div>
+                            </div>
+                            <div class="transaction-amount received">
+                                +<?= number_format($tx->amount, 2) ?> BuckX
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+        </div>
     </div>
 
 </div>

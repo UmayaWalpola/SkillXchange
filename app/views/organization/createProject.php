@@ -74,7 +74,9 @@
 
                     <div class="info-item">
                         <label>Skills Needed</label>
-                        <input type="text" name="required_skills" value="<?= $isEdit ? htmlspecialchars($project->required_skills) : '' ?>" placeholder="Example: HTML, CSS, JavaScript" required>
+                        <input id="requiredSkillsInput" type="text" name="required_skills" list="skillsSuggestionList" value="<?= $isEdit ? htmlspecialchars($project->required_skills) : '' ?>" placeholder="Example: Web Development, Frontend Frameworks" required>
+                        <datalist id="skillsSuggestionList"></datalist>
+                        <small id="skillsHint" style="display:block;margin-top:6px;color:#355a72;font-size:13px;line-height:1.45;"></small>
                     </div>
 
                     <div class="info-item">
@@ -125,8 +127,12 @@
 // UI polish for Create Project form: update header gradient/icon based on category
 document.addEventListener('DOMContentLoaded', function() {
     const categorySelect = document.getElementById('categorySelect');
+    const requiredSkillsInput = document.getElementById('requiredSkillsInput');
+    const skillsHint = document.getElementById('skillsHint');
+    const skillsSuggestionList = document.getElementById('skillsSuggestionList');
     const header = document.getElementById('projectCardHeader');
     const icon = document.getElementById('projIcon');
+    const categorySkillMap = <?= json_encode($categorySkillMap ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 
     const map = {
         'web': {class: 'web', icon: '<i class="ph ph-code"></i>'},
@@ -136,6 +142,38 @@ document.addEventListener('DOMContentLoaded', function() {
         'other': {class: 'other', icon: '<i class="ph ph-sparkle"></i>'}
     };
 
+    function updateSkillsHint() {
+        if (!categorySelect) return;
+
+        const category = categorySelect.value || 'web';
+        const suggestions = categorySkillMap[category] || [];
+
+        if (requiredSkillsInput) {
+            if (suggestions.length > 0) {
+                requiredSkillsInput.placeholder = 'Example: ' + suggestions.join(', ');
+            } else {
+                requiredSkillsInput.placeholder = 'Enter required skills separated by commas';
+            }
+        }
+
+        if (skillsHint) {
+            if (suggestions.length > 0) {
+                skillsHint.textContent = 'Allowed ' + category + ' skills: ' + suggestions.join(' | ');
+            } else {
+                skillsHint.textContent = '';
+            }
+        }
+
+        if (skillsSuggestionList) {
+            skillsSuggestionList.innerHTML = '';
+            suggestions.forEach(function(skill) {
+                const option = document.createElement('option');
+                option.value = skill;
+                skillsSuggestionList.appendChild(option);
+            });
+        }
+    }
+
     function updateHeader() {
         const val = categorySelect ? categorySelect.value : 'web';
         // remove existing category classes
@@ -143,6 +181,7 @@ document.addEventListener('DOMContentLoaded', function() {
         header.classList.add(map[val].class);
         icon.innerHTML = map[val].icon;
         icon.className = 'proj-icon ' + map[val].class;
+        updateSkillsHint();
     }
 
     if (categorySelect) {

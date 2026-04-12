@@ -368,7 +368,11 @@ public function editProfile() {
                 'learns' => $learnSkills
             ],
             'errors' => [],
-            'old' => []
+            'old' => [
+                'username' => $user['username'] ?? '',
+                'email' => $user['email'] ?? '',
+                'bio' => $user['bio'] ?? ''
+            ]
         ];
         
         $this->view('users/edit_profile', $data);
@@ -381,6 +385,7 @@ private function handleEditProfile($userId) {
     
     // Get form data
     $username = trim($_POST['username'] ?? '');
+    $email = trim($_POST['email'] ?? '');
     $bio = trim($_POST['bio'] ?? '');
     $teachSkills = $_POST['teach_skills'] ?? [];
     $teachLevels = $_POST['teach_levels'] ?? [];
@@ -394,6 +399,14 @@ private function handleEditProfile($userId) {
         $errors[] = "Username must be between 3 and 20 characters.";
     } elseif ($this->userModel->usernameExists($username, $userId)) {
         $errors[] = "Username already taken.";
+    }
+
+    if (empty($email)) {
+        $errors[] = "Email is required.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errors[] = "Please enter a valid email address.";
+    } elseif ($this->userModel->emailExists($email, $userId)) {
+        $errors[] = "Email already taken.";
     }
 
     // Validate Learn Skills (AT LEAST 1 REQUIRED)
@@ -490,6 +503,7 @@ private function handleEditProfile($userId) {
             if ($updateProfilePicture) {
                 $db->query("UPDATE users SET 
                     username = :username, 
+                    email = :email,
                     bio = :bio,
                     profile_picture = :profile_picture
                     WHERE id = :user_id");
@@ -497,11 +511,13 @@ private function handleEditProfile($userId) {
             } else {
                 $db->query("UPDATE users SET 
                     username = :username, 
+                    email = :email,
                     bio = :bio
                     WHERE id = :user_id");
             }
             
             $db->bind(':username', $username);
+            $db->bind(':email', $email);
             $db->bind(':bio', $bio);
             $db->bind(':user_id', $userId);
             
@@ -580,19 +596,39 @@ private function handleEditProfile($userId) {
 
     // If there are errors, show the form again with errors
     $user = $this->userModel->getUserById($userId);
-    $userSkills = $this->userModel->getUserSkills($userId);
     
     $data = [
         'user' => $user,
         'skills' => [
-            'teaches' => $userSkills['teaches'],
-            'learns' => $userSkills['learns']
+            'teaches' => $this->buildSkillRows($teachSkills, $teachLevels),
+            'learns' => $this->buildSkillRows($learnSkills, $learnLevels)
         ],
         'errors' => $errors,
         'old' => $_POST
     ];
     
     $this->view('users/edit_profile', $data);
+}
+
+private function buildSkillRows($skills, $levels) {
+    $rows = [];
+
+    foreach ($skills as $index => $skill) {
+        $name = trim((string)$skill);
+        $level = $levels[$index] ?? '';
+        if ($name !== '' || $level !== '') {
+            $rows[] = [
+                'name' => $name,
+                'level' => $level
+            ];
+        }
+    }
+
+    if (empty($rows)) {
+        $rows[] = ['name' => '', 'level' => ''];
+    }
+
+    return $rows;
 }
 
 }

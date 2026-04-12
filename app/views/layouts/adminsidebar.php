@@ -1,29 +1,44 @@
-<?php
-$uri = $_SERVER['REQUEST_URI'];
-function sidebarActive($path) {
-    global $uri;
-    return strpos($uri, $path) !== false ? 'active' : '';
-}
-?>
-<nav class="sidebar">
-    <a href="<?= URLROOT ?>/admin/dashboard" class="sidebar-item <?= sidebarActive('/admin/dashboard') ?>">
-        <span class="icon"><i class="ph ph-gauge"></i></span>
-        <span>Dashboard</span>
-    </a>
-    <a href="<?= URLROOT ?>/admin/users" class="sidebar-item <?= sidebarActive('/admin/users') ?>">
-        <span class="icon"><i class="ph ph-users"></i></span>
-        <span>User Management</span>
-    </a>
-    <a href="<?= URLROOT ?>/admin/activityLogs" class="sidebar-item <?= sidebarActive('/admin/activityLogs') ?>">
-        <span class="icon"><i class="ph ph-list-checks"></i></span>
-        <span>Activity Logs</span>
-    </a>
-    <a href="<?= URLROOT ?>/admin/reports" class="sidebar-item <?= sidebarActive('/admin/reports') ?>">
-        <span class="icon"><i class="ph ph-flag"></i></span>
-        <span>Reports</span>
-    </a>
-    <a href="<?= URLROOT ?>/FeedbackReport/index" class="sidebar-item <?= sidebarActive('/FeedbackReport') ?>">
-        <span class="icon"><i class="ph ph-chat-circle-dots"></i></span>
-        <span>Feedback Reports</span>
-    </a>
-</nav>
+<?php require_once "../app/views/layouts/header_user.php"; ?>
+
+<link rel="stylesheet" href="<?= URLROOT; ?>/assets/css/global.css">
+<link rel="stylesheet" href="<?= URLROOT; ?>/assets/css/admin.css">
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - SkillXchange</title>
+    
+</head>
+<body>
+    <div>
+        <!-- Admin Sidebar -->
+        <nav class="sidebar">
+            <a href="<?= URLROOT ?>/admin/dashboard" class="sidebar-item active">
+                <span class="icon"></span>
+                <span>Dashboard</span>
+            </a>
+            <a href="<?= URLROOT ?>/admin/users" class="sidebar-item">
+                <span class="icon"></span>
+                <span>User Management</span>
+            </a>
+            <a href="<?= URLROOT ?>/admin/skills" class="sidebar-item">
+                <span class="icon"></span>
+                <span>Skills Management</span>
+            </a>
+            <a href="<?= URLROOT ?>/admin/reports" class="sidebar-item">
+                <span class="icon"></span>
+                <span>Reports</span>
+            </a>
+            <a href="<?= URLROOT ?>/FeedbackReport/index" class="sidebar-item <?= (strpos($_SERVER['REQUEST_URI'], '/FeedbackReport') !== false) ? 'active' : '' ?>">
+                <span class="icon"></span>
+                <span>Reported Feedback</span>
+            </a>
+        </nav>
+    </div>
+
+    <script src="<?= URLROOT ?>/assets/js/admin.js" defer></script>
+    
+</body>
+</html>

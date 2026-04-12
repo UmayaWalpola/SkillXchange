@@ -73,11 +73,14 @@
                                     </div>
                                 </div>
 
+                                <?php $matchedSkills = (isset($app->matched_skills_with_level) && is_array($app->matched_skills_with_level)) ? $app->matched_skills_with_level : []; ?>
                                 <div class="app-skills">
-                                    <?php if (!empty($app->user_skills)): ?>
-                                        <?php foreach (explode(',', $app->user_skills) as $sk): ?>
+                                    <?php if (!empty($matchedSkills)): ?>
+                                        <?php foreach ($matchedSkills as $sk): ?>
                                             <span class="skill-tag"><?= htmlspecialchars(trim($sk)) ?></span>
                                         <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <span class="skill-tag" style="opacity:0.8;">No matched required skills</span>
                                     <?php endif; ?>
                                 </div>
 
@@ -192,11 +195,14 @@
                                     </div>
                                 </div>
 
+                                <?php $matchedSkills = (isset($app->matched_skills_with_level) && is_array($app->matched_skills_with_level)) ? $app->matched_skills_with_level : []; ?>
                                 <div class="app-skills">
-                                    <?php if (!empty($app->user_skills)): ?>
-                                        <?php foreach (explode(',', $app->user_skills) as $sk): ?>
+                                    <?php if (!empty($matchedSkills)): ?>
+                                        <?php foreach ($matchedSkills as $sk): ?>
                                             <span class="skill-tag"><?= htmlspecialchars(trim($sk)) ?></span>
                                         <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <span class="skill-tag" style="opacity:0.8;">No matched required skills</span>
                                     <?php endif; ?>
                                 </div>
 
@@ -253,11 +259,14 @@
                                     </div>
                                 </div>
 
+                                <?php $matchedSkills = (isset($app->matched_skills_with_level) && is_array($app->matched_skills_with_level)) ? $app->matched_skills_with_level : []; ?>
                                 <div class="app-skills">
-                                    <?php if (!empty($app->user_skills)): ?>
-                                        <?php foreach (explode(',', $app->user_skills) as $sk): ?>
+                                    <?php if (!empty($matchedSkills)): ?>
+                                        <?php foreach ($matchedSkills as $sk): ?>
                                             <span class="skill-tag"><?= htmlspecialchars(trim($sk)) ?></span>
                                         <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <span class="skill-tag" style="opacity:0.8;">No matched required skills</span>
                                     <?php endif; ?>
                                 </div>
 

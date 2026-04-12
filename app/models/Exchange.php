@@ -51,15 +51,13 @@ class Exchange extends Database {
                 requester_id, 
                 receiver_id, 
                 skill_id, 
-                skill_offered, skill_wanted,
                 status, 
                 created_at
             ) VALUES (
                 :requester_id, 
                 :receiver_id, 
                 1, 
-                :skill_offered, :skill_wanted,
-                'pending', 
+                'active', 
                 NOW()
             )
         ");
@@ -177,7 +175,7 @@ class Exchange extends Database {
                 requester.profile_picture as sender_avatar
             FROM exchanges e
             INNER JOIN users requester ON e.requester_id = requester.id
-            WHERE e.receiver_id = :user_id AND e.status = 'pending'
+            WHERE e.receiver_id = :user_id AND e.status = 'active'
             ORDER BY e.created_at DESC
         ");
         

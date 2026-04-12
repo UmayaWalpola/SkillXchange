@@ -1,100 +1,39 @@
 <?php require_once "../app/views/layouts/header_user.php"; ?>
 <?php require_once "../app/views/layouts/managersidebar.php"; ?>
 
-<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/dashboard.css">
+<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/manager_dashboard.css">
 
 <main class="site-main">
     <div class="dashboard-container">
         <div class="dashboard-main">
-
+            
             <!-- Page Header -->
             <div class="page-header">
                 <div>
                     <h1>System Announcements</h1>
                     <p>Post and manage platform announcements</p>
                 </div>
-                <button class="btn-primary" onclick="toggleAddForm()">+ New Announcement</button>
-            </div>
-
-            <!-- Success / Error Messages -->
-            <?php if (!empty($data['success'])): ?>
-                <div class="success-message"><?= htmlspecialchars($data['success']) ?></div>
-            <?php endif; ?>
-            <?php if (!empty($data['error'])): ?>
-                <div class="error-message"><?= htmlspecialchars($data['error']) ?></div>
-            <?php endif; ?>
-
-            <!-- Add Announcement Form (hidden by default) -->
-            <div id="addAnnouncementForm" class="section-card inline-form-panel">
-                <h2 class="section-title">New Announcement</h2>
-                <form method="POST" action="<?= URLROOT ?>/manager/addAnnouncement">
-                    <div class="form-group">
-                        <label for="announcement-title">Title</label>
-                        <input id="announcement-title" type="text" name="title" required placeholder="Enter announcement title">
-                    </div>
-                    <div class="form-group">
-                        <label for="announcement-content">Content</label>
-                        <textarea id="announcement-content" name="content" rows="5" required
-                            placeholder="Enter announcement content..."></textarea>
-                    </div>
-                    <div class="form-footer">
-                        <button type="submit" class="btn-primary" onclick="this.disabled=true; this.form.submit();">Post Announcement</button>
-                        <button type="button" onclick="toggleAddForm()" class="btn-cancel">Cancel</button>
-                    </div>
-                </form>
+                <button class="btn-primary" onclick="openAddAnnouncementModal()">+ New Announcement</button>
             </div>
 
             <!-- Announcements List -->
             <div class="announcements-container">
-                <?php if (!empty($data['announcements'])): ?>
-                    <?php foreach ($data['announcements'] as $announcement): ?>
-                        <div class="announcement-card" id="card-<?= $announcement->id ?>">
-
-                            <!-- Announcement Header -->
+                <?php if(!empty($data['announcements'])): ?>
+                    <?php foreach($data['announcements'] as $announcement): ?>
+                        <div class="announcement-card" data-announcement-id="<?= $announcement['id'] ?>">
                             <div class="announcement-header">
                                 <div>
-                                    <h3 class="announcement-title"><?= htmlspecialchars($announcement->title) ?></h3>
+                                    <h3 class="announcement-title"><?= htmlspecialchars($announcement['title']) ?></h3>
                                     <p class="announcement-meta">
-                                        By <?= htmlspecialchars($announcement->author) ?> &bull;
-                                        <?= date('M d, Y', strtotime($announcement->created_at)) ?>
+                                        By <?= htmlspecialchars($announcement['author']) ?> • 
+                                        <?= date('M d, Y', strtotime($announcement['created_at'])) ?>
                                     </p>
                                 </div>
-                                <div class="announcement-actions">
-                                    <button class="btn-outline" onclick="toggleEditForm(<?= $announcement->id ?>)">
-                                        Edit
-                                    </button>
-                                    <form method="POST" action="<?= URLROOT ?>/manager/deleteAnnouncement"
-                                          style="display:inline;"
-                                          onsubmit="return confirm('Delete this announcement? All user notifications for this announcement will also be removed.')">
-                                        <input type="hidden" name="announcement_id" value="<?= $announcement->id ?>">
-                                        <button type="submit" class="btn-outline">Delete</button>
-                                    </form>
-                                </div>
+                                <button class="btn-icon btn-delete" title="Delete Announcement" onclick="deleteAnnouncement(<?= $announcement['id'] ?>, '<?= htmlspecialchars($announcement['title']) ?>')">
+                                    Remove
+                                </button>
                             </div>
-
-                            <!-- Announcement Content -->
-                            <p class="announcement-content"><?= nl2br(htmlspecialchars($announcement->content)) ?></p>
-
-                            <!-- Inline Edit Form -->
-                            <div id="edit-<?= $announcement->id ?>" class="inline-form-panel">
-                                <form method="POST" action="<?= URLROOT ?>/manager/updateAnnouncement">
-                                    <input type="hidden" name="announcement_id" value="<?= $announcement->id ?>">
-                                    <div class="form-group">
-                                        <label for="edit-title-<?= $announcement->id ?>">Title</label>
-                                        <input id="edit-title-<?= $announcement->id ?>" type="text" name="title" required
-                                            value="<?= htmlspecialchars($announcement->title) ?>">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="edit-content-<?= $announcement->id ?>">Content</label>
-                                        <textarea id="edit-content-<?= $announcement->id ?>" name="content" rows="4" required><?= htmlspecialchars($announcement->content) ?></textarea>
-                                    </div>
-                                    <div class="form-footer">
-                                        <button type="submit" class="btn-primary" onclick="this.disabled=true; this.form.submit();">Save Changes</button>
-                                        <button type="button" onclick="toggleEditForm(<?= $announcement->id ?>)" class="btn-cancel">Cancel</button>
-                                    </div>
-                                </form>
-                            </div>
-
+                            <p class="announcement-content"><?= nl2br(htmlspecialchars($announcement['content'])) ?></p>
                         </div>
                     <?php endforeach; ?>
                 <?php else: ?>
@@ -108,21 +47,105 @@
     </div>
 </main>
 
+<!-- Add Announcement Modal -->
+<div id="addAnnouncementModal" class="modal">
+    <div class="modal-content" style="max-width: 700px;">
+        <span class="close" onclick="closeAddAnnouncementModal()">&times;</span>
+        <h2>Post New Announcement</h2>
+        <form id="addAnnouncementForm" style="margin-top: 20px;">
+            <div style="margin-bottom: 15px;">
+                <label for="announcementTitle">Announcement Title</label>
+                <input type="text" id="announcementTitle" name="title" required placeholder="Enter announcement title">
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label for="announcementContent">Content</label>
+                <textarea id="announcementContent" name="content" required rows="8" style="width: 100%; padding: 15px 20px; border-radius: 10px; border: 2px solid var(--primary-blue); font-size: 1rem; background-color: var(--blue-bg); font-family: Arial, sans-serif; resize: vertical;" placeholder="Enter announcement content"></textarea>
+            </div>
+            
+            <button type="submit" class="btn-primary" style="width: 100%;">Post Announcement</button>
+        </form>
+    </div>
+</div>
+
 <script>
-function toggleAddForm() {
-    const form = document.getElementById('addAnnouncementForm');
-    form.classList.toggle('open');
+function openAddAnnouncementModal() {
+    document.getElementById('addAnnouncementModal').style.display = 'block';
 }
 
-function toggleEditForm(id) {
-    // Close any other open edit forms first
-    document.querySelectorAll('.inline-form-panel.open').forEach(function(el) {
-        if (el.id !== 'edit-' + id && el.id !== 'addAnnouncementForm') {
-            el.classList.remove('open');
+function closeAddAnnouncementModal() {
+    document.getElementById('addAnnouncementModal').style.display = 'none';
+    document.getElementById('addAnnouncementForm').reset();
+}
+
+document.getElementById('addAnnouncementForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch('<?= URLROOT ?>/managerdashboard/addAnnouncement', {
+        method: 'POST',
+        body: new URLSearchParams(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            closeAddAnnouncementModal();
+            location.reload(); // Reload to show new announcement
+        } else {
+            alert('Error posting announcement');
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error posting announcement');
     });
-    const form = document.getElementById('edit-' + id);
-    form.classList.toggle('open');
+});
+
+function deleteAnnouncement(announcementId, title) {
+<<<<<<< HEAD
+    if (confirm(Are you sure you want to delete "${title}"? This action cannot be undone.)) {
+=======
+    if (confirm(`Are you sure you want to delete "${title}"? This action cannot be undone.`)) {
+>>>>>>> origin/feature/manager
+        fetch('<?= URLROOT ?>/managerdashboard/deleteAnnouncement', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+<<<<<<< HEAD
+            body: announcement_id=${announcementId}
+=======
+            body: `announcement_id=${announcementId}`
+>>>>>>> origin/feature/manager
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+<<<<<<< HEAD
+                document.querySelector(div[data-announcement-id="${announcementId}"]).remove();
+=======
+                document.querySelector(`div[data-announcement-id="${announcementId}"]`).remove();
+>>>>>>> origin/feature/manager
+            } else {
+                alert('Error deleting announcement');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting announcement');
+        });
+    }
+}
+
+// Close modal when clicking outside of it
+window.onclick = function(event) {
+    const modal = document.getElementById('addAnnouncementModal');
+    if (event.target == modal) {
+        modal.style.display = 'none';
+    }
 }
 </script>
 

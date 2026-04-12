@@ -58,19 +58,18 @@ class AuthController extends Controller {
                 }
                 
                 if (empty($errors)) {
-                    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-                    $fileName = uniqid('org_', true) . '.' . $extension;
-                    $diskDir = __DIR__ . '/../../public/uploads/org_certs/';
-                    if (!is_dir($diskDir)) {
-                        mkdir($diskDir, 0755, true);
+                    $uploadDir = '../public/uploads/org_certs/';
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0755, true);
                     }
 
-                    $diskPath = $diskDir . $fileName;
-                    $publicRelativePath = 'uploads/org_certs/' . $fileName;
+                    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+                    $fileName = uniqid('org_', true) . '.' . $extension;
+                    $filePath = $uploadDir . $fileName;
                     
-                    if (!move_uploaded_file($file['tmp_name'], $diskPath)) {
+                    if (!move_uploaded_file($file['tmp_name'], $filePath)) {
                         $errors[] = "Failed to upload certificate.";
-                        $publicRelativePath = null;
+                        $filePath = null;
                     }
                 }
             } else {
@@ -79,15 +78,15 @@ class AuthController extends Controller {
 
             // Register if no errors
             if (empty($errors)) {
-                if ($this->userModel->registerOrganization($name, $email, $password, $publicRelativePath)) {
+                if ($this->userModel->registerOrganization($name, $email, $password, $filePath)) {
                     $_SESSION['success'] = "Organization registered successfully! Please login.";
                     header("Location: " . URLROOT . "/auth/signin");
                     exit;
                 } else {
                     $errors[] = "Registration failed. Email may already be in use.";
                     // Delete uploaded file if registration failed
-                    if (!empty($diskPath) && file_exists($diskPath)) {
-                        unlink($diskPath);
+                    if ($filePath && file_exists($filePath)) {
+                        unlink($filePath);
                     }
                 }
             }
@@ -136,13 +135,18 @@ class AuthController extends Controller {
                     $_SESSION['profile_completed'] = 0;
                     
                     // Award "Early Adopter" badge
-                    $this->userModel->awardBadge($userId, 'Early Adopter', '🌟');
+                    try {
+                        $this->userModel->awardBadge($userId, 'Early Adopter', '🌟');
+                    } catch (Exception $e) {
+                        // Badge is optional; do not block account creation.
+                        error_log('Badge award failed during signup: ' . $e->getMessage());
+                    }
                     
                     // Redirect to profile setup
                     header("Location: " . URLROOT . "/users/profileSetup");
                     exit;
                 } else {
-                    $errors[] = "Registration failed. Email may already be in use.";
+                    $errors[] = "Registration failed. Email or username may already be in use.";
                 }
             }
 
@@ -176,8 +180,16 @@ class AuthController extends Controller {
 
             // 1. Check for Suspension String (Special return value we created)
             if (is_string($user) && strpos($user, 'suspended|') === 0) {
-                http_response_code(404);
-                $this->view('errors/404');
+                // Extract the date
+                $parts = explode('|', $user);
+                $endDate = $parts[1];
+                $formattedDate = date('F j, Y, g:i a', strtotime($endDate));
+                
+                $data = [
+                    'error' => "Your account is suspended until $formattedDate.",
+                    'email' => $email
+                ];
+                $this->view('auth/signin', $data);
                 return;
             }
 
@@ -206,7 +218,7 @@ class AuthController extends Controller {
                     exit;
                 } elseif ($user['role'] === 'manager') {
                     // Manager go to manager dashboard
-                    header("Location: " . URLROOT . "/manager");
+                    header("Location: " . URLROOT . "/managerdashboard");
                     exit;
                 } elseif ($user['role'] === 'admin') {
                     // Admins go to admin dashboard
@@ -250,89 +262,4 @@ class AuthController extends Controller {
         header("Location: " . URLROOT . "/auth/signin");
         exit;
     }
-
-    public function forgotPassword() {
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $email = trim($_POST['email'] ?? '');
- 
-        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $data = ['error' => 'Please enter a valid email.', 'email' => $email];
-            $this->view('auth/forgot_password', $data);
-            return;
-        }
- 
-        $otp = $this->userModel->createPasswordResetOTP($email);
- 
-        if ($otp) {
-            // Send OTP email
-            require_once dirname(__DIR__) . '/helpers/Mailer.php';
-            $mailer = new Mailer();
-            $sent = $mailer->sendPasswordResetOTP($email, $otp);
- 
-            if (!$sent) {
-                error_log("OTP email failed for {$email}, OTP: {$otp}");
-            }
-        }
- 
-        // Always show success (don't reveal if email exists)
-        $_SESSION['reset_email'] = $email;
-        $data = [
-            'success' => 'If that email exists, an OTP has been sent. Check your inbox.',
-            'email' => $email
-        ];
-        $this->view('auth/forgot_password', $data);
- 
-    } else {
-        $data = ['error' => '', 'email' => ''];
-        $this->view('auth/forgot_password', $data);
-    }
-}
- 
-    // Handle OTP verification + password reset
-    public function resetPassword() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $email    = trim($_POST['email'] ?? '');
-            $otp      = trim($_POST['otp'] ?? '');
-            $password = $_POST['password'] ?? '';
-            $confirm  = $_POST['confirm_password'] ?? '';
-    
-            $errors = [];
-    
-            if (empty($otp) || strlen($otp) !== 6) {
-                $errors[] = 'Please enter the 6-digit OTP.';
-            }
-            if (strlen($password) < 8) {
-                $errors[] = 'Password must be at least 8 characters.';
-            }
-            if ($password !== $confirm) {
-                $errors[] = 'Passwords do not match.';
-            }
-    
-            if (empty($errors)) {
-                if ($this->userModel->resetPasswordByOTP($email, $otp, $password)) {
-                    $_SESSION['success'] = 'Password reset successful! Please log in.';
-                    header("Location: " . URLROOT . "/auth/signin");
-                    exit;
-                } else {
-                    $errors[] = 'Invalid or expired OTP. Please try again.';
-                }
-            }
-    
-            $data = [
-                'error' => implode(' ', $errors),
-                'email' => $email,
-                'otp'   => $otp
-            ];
-            $this->view('auth/reset_password', $data);
-    
-        } else {
-            $data = [
-            'error' => '',
-            'email' => $_GET['email'] ?? '',
-            'otp'   => ''
-        ];
-        $this->view('auth/reset_password', $data);
-            }
-    }
- 
 }

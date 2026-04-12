@@ -45,6 +45,16 @@
                        required>
             </div>
 
+            <!-- Email -->
+            <div class="form-group">
+                <label for="email">Email *</label>
+                <input type="email"
+                       id="email"
+                       name="email"
+                       value="<?= htmlspecialchars($data['old']['email'] ?? $data['user']['email'] ?? '') ?>"
+                       required>
+            </div>
+
             <!-- Bio -->
             <div class="form-group">
                 <label for="bio">Bio</label>

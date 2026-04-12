@@ -8,10 +8,24 @@ class OrganizationController extends Controller {
     private $notificationModel;
 
     public function __construct() {
+        $isAjaxRequest = isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
         // Require login + role check
         if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'organization') {
-            header('Location: ' . URLROOT . '/auth/signin');
+            if ($isAjaxRequest) {
+                while (ob_get_level() > 0) {
+                    ob_end_clean();
+                }
+                header('Content-Type: application/json');
+                http_response_code(401);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Your organization session has expired. Please sign in again as the organization account.'
+                ]);
+            } else {
+                header('Location: ' . URLROOT . '/auth/signin');
+            }
             exit();
         }
 
@@ -95,15 +109,19 @@ class OrganizationController extends Controller {
         $this->view('organization/projects', $data);
     }
 
-    /* ============================================================
+    /* 
        CREATE PROJECT (GET + POST)
-    ============================================================ */
+   */
     public function createProject() {
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $errors = [];
+            $category = strtolower(trim((string)($_POST['category'] ?? '')));
+            $rawRequiredSkills = trim((string)($_POST['required_skills'] ?? ''));
+            $skillsValidation = null;
 
+             //Required Fields
             if (empty(trim($_POST['name']))) {
                 $errors['name'] = 'Project name is required';
             }
@@ -112,16 +130,25 @@ class OrganizationController extends Controller {
                 $errors['description'] = 'Project description is required';
             }
 
-            if (empty(trim($_POST['required_skills']))) {
+            if ($rawRequiredSkills === '') {
                 $errors['required_skills'] = 'Please specify required skills';
             }
-
-            if (empty($_POST['category'])) {
+                      //Category checking
+            if ($category === '') {
                 $errors['category'] = 'Project category is required';
+            } elseif (!isset($this->getCategorySkillMap()[$category])) {
+                $errors['category'] = 'Invalid project category';
             }
-
+                       //member number checking
             if (empty($_POST['max_members']) || $_POST['max_members'] < 1) {
                 $errors['max_members'] = 'Max members must be at least 1';
+            }
+                    //Skills Validation
+            if (!isset($errors['required_skills']) && !isset($errors['category'])) {
+                $skillsValidation = $this->validateRequiredSkillsForCategory($category, $rawRequiredSkills);
+                if (!$skillsValidation['valid']) {
+                    $errors['required_skills'] = 'Use only ' . ucfirst($category) . ' related skills. Invalid: ' . implode(', ', $skillsValidation['invalid']);
+                }
             }
 
             if (empty($errors)) {
@@ -129,16 +156,16 @@ class OrganizationController extends Controller {
                 $projectData = [
                     'org_id'          => $_SESSION['user_id'],
                     'name'            => trim($_POST['name']),
-                    'category'        => trim($_POST['category']),
+                    'category'        => $category,
                     'status'          => !empty($_POST['status']) ? trim($_POST['status']) : 'active',
                     'description'     => trim($_POST['description']),
                     'max_members'     => (int)$_POST['max_members'],
                     'start_date'      => $_POST['start_date'] ?? null,
                     'end_date'        => $_POST['end_date'] ?? null,
-                    'required_skills' => trim($_POST['required_skills']) // NO htmlspecialchars()
+                    'required_skills' => $skillsValidation ? $skillsValidation['formatted'] : $rawRequiredSkills
                 ];
-
-                if ($this->projectModel->createProject($projectData)) {
+                        // created array put in to the DB
+                if ($this->projectModel->createProject($projectData)) {   // enter to if, when  model return true after creating project(preoject create save to the DB)
                     $_SESSION['success'] = 'Project created successfully!';
                     header('Location: ' . URLROOT . '/organization/projects');
                     exit();
@@ -153,7 +180,8 @@ class OrganizationController extends Controller {
         $data = [
             'title' => 'Create Project',
             'errors' => $_SESSION['errors'] ?? [],
-            'project' => null
+            'project' => null,
+            'categorySkillMap' => $this->getCategorySkillMap()
         ];
 
         unset($_SESSION['errors']);
@@ -182,6 +210,9 @@ class OrganizationController extends Controller {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $errors = [];
+            $category = strtolower(trim((string)($_POST['category'] ?? '')));
+            $rawRequiredSkills = trim((string)($_POST['required_skills'] ?? ''));
+            $skillsValidation = null;
 
             if (empty(trim($_POST['name']))) {
                 $errors['name'] = 'Project name is required';
@@ -191,8 +222,21 @@ class OrganizationController extends Controller {
                 $errors['description'] = 'Description required';
             }
 
-            if (empty(trim($_POST['required_skills']))) {
+            if ($rawRequiredSkills === '') {
                 $errors['required_skills'] = 'Required skills missing';
+            }
+
+            if ($category === '') {
+                $errors['category'] = 'Project category is required';
+            } elseif (!isset($this->getCategorySkillMap()[$category])) {
+                $errors['category'] = 'Invalid project category';
+            }
+
+            if (!isset($errors['required_skills']) && !isset($errors['category'])) {
+                $skillsValidation = $this->validateRequiredSkillsForCategory($category, $rawRequiredSkills);
+                if (!$skillsValidation['valid']) {
+                    $errors['required_skills'] = 'Use only ' . ucfirst($category) . ' related skills. Invalid: ' . implode(', ', $skillsValidation['invalid']);
+                }
             }
 
             if (empty($errors)) {
@@ -201,13 +245,13 @@ class OrganizationController extends Controller {
                     'id'              => $projectId,
                     'org_id'          => $_SESSION['user_id'],
                     'name'            => trim($_POST['name']),
-                    'category'        => trim($_POST['category']),
+                    'category'        => $category,
                     'status'          => trim($_POST['status']),
                     'description'     => trim($_POST['description']),
                     'max_members'     => (int)$_POST['max_members'],
                     'start_date'      => $_POST['start_date'] ?? null,
                     'end_date'        => $_POST['end_date'] ?? null,
-                    'required_skills' => trim($_POST['required_skills'])
+                    'required_skills' => $skillsValidation ? $skillsValidation['formatted'] : $rawRequiredSkills
                 ];
 
                 if ($this->projectModel->updateProject($projectData)) {
@@ -225,7 +269,8 @@ class OrganizationController extends Controller {
         $data = [
             'title' => 'Edit Project',
             'project' => $project,
-            'errors' => $_SESSION['errors'] ?? []
+            'errors' => $_SESSION['errors'] ?? [],
+            'categorySkillMap' => $this->getCategorySkillMap()
         ];
 
         unset($_SESSION['errors']);
@@ -274,6 +319,16 @@ class OrganizationController extends Controller {
     public function applications() {
         // Fetch all applications across this organization's projects
         $applications = $this->projectModel->getAllApplicationsForOrganization($_SESSION['user_id']);
+
+        if (!empty($applications)) {
+            foreach ($applications as $application) {
+                $application->matched_skills_with_level = $this->projectModel->getMatchedTeachSkillsForProject(
+                    (int)($application->project_id ?? 0),
+                    (int)($application->user_id ?? 0)
+                );
+            }
+        }
+
         $stats = $this->projectModel->getApplicationStats($_SESSION['user_id']);
 
         $data = [
@@ -353,6 +408,15 @@ class OrganizationController extends Controller {
 
         // Get all active members for this project
         $members = $this->projectModel->getMembersByProject($projectId);
+
+        if (!empty($members)) {
+            foreach ($members as $member) {
+                $member->matched_skills_with_level = $this->projectModel->getMatchedTeachSkillsForProject(
+                    (int)$projectId,
+                    (int)($member->user_id ?? 0)
+                );
+            }
+        }
 
         // Get comprehensive progress metrics
         $projectMetrics = $this->taskModel->getProjectMetrics($projectId);
@@ -758,7 +822,9 @@ class OrganizationController extends Controller {
     
     public function assignTask() {
         // Prevent any output before JSON
-        ob_clean();
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
         header('Content-Type: application/json');
         
         try {
@@ -768,12 +834,12 @@ class OrganizationController extends Controller {
                 exit;
             }
 
-            // Get POST data
-            $rawInput = file_get_contents('php://input');
-            $data = json_decode($rawInput, true);
-            
-            if (!$data) {
-                $data = $_POST;
+            // Prefer standard form data, but still support JSON payloads.
+            $data = $_POST;
+            if (empty($data)) {
+                $rawInput = file_get_contents('php://input');
+                $decoded = json_decode($rawInput, true);
+                $data = is_array($decoded) ? $decoded : [];
             }
 
             // Validate required fields
@@ -786,8 +852,8 @@ class OrganizationController extends Controller {
                 exit;
             }
 
-            $memberId = $data['member_id'];
-            $projectId = $data['project_id'];
+            $memberId = (int)$data['member_id'];
+            $projectId = (int)$data['project_id'];
             
             // Get project details
             $project = $this->projectModel->getProjectById($projectId);
@@ -808,17 +874,14 @@ class OrganizationController extends Controller {
                 exit;
             }
 
-            // Verify the assignee is a member of the project
-            $members = $this->projectModel->getMembersByProject($projectId);
-            $isMember = false;
-            foreach ($members as $member) {
-                if ($member->user_id == $memberId) {
-                    $isMember = true;
-                    break;
-                }
-            }
+            // Verify the assignee is an active member of the project
+            $db = new Database();
+            $db->query("SELECT id FROM project_members WHERE project_id = :project_id AND user_id = :user_id AND status = 'active' LIMIT 1");
+            $db->bind(':project_id', $projectId);
+            $db->bind(':user_id', $memberId);
+            $memberRow = $db->single();
 
-            if (!$isMember) {
+            if (!$memberRow) {
                 echo json_encode(['success' => false, 'message' => 'User is not a member of this project']);
                 exit;
             }
@@ -840,14 +903,14 @@ class OrganizationController extends Controller {
             if ($taskId) {
                 // Send notification to assigned user
                 try {
-                    $this->notificationModel->create([
-                        'user_id' => $memberId,
-                        'type' => 'task_assigned',
-                        'content' => 'You have been assigned a new task: ' . $taskData['title'],
-                        'related_id' => $taskId,
-                        'related_type' => 'task'
+                    $this->notificationModel->createNotification([
+                        'user_id'    => $memberId,
+                        'type'       => 'task_assigned',
+                        'message'    => 'You have been assigned a new task: ' . $taskData['title'],
+                        'project_id' => $projectId,
+                        'task_id'    => $taskId
                     ]);
-                } catch (Exception $e) {
+                } catch (Throwable $e) {
                     // Log but don't fail if notification fails
                     error_log("Notification error: " . $e->getMessage());
                 }
@@ -861,7 +924,7 @@ class OrganizationController extends Controller {
                 echo json_encode(['success' => false, 'message' => 'Failed to create task in database']);
             }
             
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             error_log("Task assignment exception: " . $e->getMessage());
             echo json_encode([
                 'success' => false, 
@@ -869,6 +932,176 @@ class OrganizationController extends Controller {
             ]);
         }
         exit;
+    }
+
+    /**
+     * AJAX: Remove (delete) a task — org only
+     * Accepts JSON: { task_id }
+     */
+    public function removeTask() {
+        ob_clean();
+        header('Content-Type: application/json');
+
+        try {
+            $rawInput = file_get_contents('php://input');
+            $data     = json_decode($rawInput, true) ?: $_POST;
+            $taskId   = (int)($data['task_id'] ?? 0);
+
+            if (!$taskId) {
+                echo json_encode(['success' => false, 'message' => 'Task ID required']);
+                exit;
+            }
+
+            // Fetch the task to verify project ownership
+            $task = $this->taskModel->getTaskById($taskId);
+            if (!$task) {
+                echo json_encode(['success' => false, 'message' => 'Task not found']);
+                exit;
+            }
+
+            $project = $this->projectModel->getProjectById($task->project_id);
+            if (!$project || (int)$project->organization_id !== (int)$_SESSION['user_id']) {
+                echo json_encode(['success' => false, 'message' => 'Permission denied']);
+                exit;
+            }
+
+            // Delete
+            if ($this->taskModel->deleteTask($taskId)) {
+                // Notify the assigned member (if any)
+                if (!empty($task->assigned_to)) {
+                    try {
+                        $this->notificationModel->createNotification([
+                            'user_id'    => $task->assigned_to,
+                            'type'       => 'task_removed',
+                            'message'    => 'A task assigned to you was removed: ' . $task->title,
+                            'project_id' => $task->project_id,
+                            'task_id'    => null
+                        ]);
+                    } catch (Exception $e) {
+                        error_log('Notify member on task remove: ' . $e->getMessage());
+                    }
+                }
+                echo json_encode(['success' => true, 'message' => 'Task removed successfully']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Failed to remove task']);
+            }
+        } catch (Exception $e) {
+            error_log('removeTask error: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Server error: ' . $e->getMessage()]);
+        }
+        exit;
+    }
+
+    private function getCategorySkillMap()
+    {
+        return [
+            'web' => [
+                'Web Development',
+                'Frontend Frameworks',
+                'Backend Development',
+                'Database Management',
+                'GitHub and Git'
+            ],
+            'mobile' => [
+                'Mobile App Development',
+                'Frontend Frameworks',
+                'Backend Development',
+                'Database Management',
+                'GitHub and Git'
+            ],
+            'data' => [
+                'Data Science',
+                'Data Analysis & Visualization',
+                'Database Management',
+                'AI and ML',
+                'GitHub and Git'
+            ],
+            'design' => [
+                'Web Development',
+                'Frontend Frameworks',
+                'Digital Marketing',
+                'GitHub and Git'
+            ],
+            'other' => [
+                'Cloud Computing',
+                'Cybersecurity',
+                'Devops',
+                'AI and ML',
+                'GitHub and Git'
+            ]
+        ];
+    }
+
+    private function normalizeSkillName($skill)
+    {
+        $skill = strtolower(trim((string)$skill));
+        $skill = str_replace(['_', '-'], ' ', $skill);
+        $skill = preg_replace('/\s+/', ' ', $skill);
+        $skill = trim($skill);
+
+        $aliases = [
+            'db management' => 'database management',
+            'database' => 'database management',
+            'database development' => 'database management',
+            'github & git' => 'github and git',
+            'git and github' => 'github and git',
+            'github' => 'github and git',
+            'dev ops' => 'devops',
+            'frontend' => 'frontend frameworks',
+            'front end frameworks' => 'frontend frameworks',
+            'backend' => 'backend development',
+            'back end development' => 'backend development',
+            'mobile' => 'mobile app development',
+            'cloud' => 'cloud computing',
+            'web dev' => 'web development',
+            'ai' => 'ai and ml',
+            'ai ml' => 'ai and ml',
+            'marketing' => 'digital marketing',
+            'data analytics' => 'data analysis & visualization',
+            'data analysis and visualization' => 'data analysis & visualization'
+        ];
+
+        return $aliases[$skill] ?? $skill;
+    }
+
+    private function validateRequiredSkillsForCategory($category, $requiredSkillsCsv)
+    {
+        $categoryMap = $this->getCategorySkillMap();
+        $allowedSkills = $categoryMap[$category] ?? [];
+
+        $allowedByKey = [];
+        foreach ($allowedSkills as $skillLabel) {
+            $allowedByKey[$this->normalizeSkillName($skillLabel)] = $skillLabel;
+        }
+
+        $rawSkills = array_filter(array_map('trim', explode(',', (string)$requiredSkillsCsv)));
+        $invalid = [];
+        $validLabels = [];
+        $seen = [];
+
+        foreach ($rawSkills as $skill) {
+            $key = $this->normalizeSkillName($skill);
+            if ($key === '') {
+                continue;
+            }
+
+            if (!isset($allowedByKey[$key])) {
+                $invalid[] = $skill;
+                continue;
+            }
+
+            if (!isset($seen[$key])) {
+                $validLabels[] = $allowedByKey[$key];
+                $seen[$key] = true;
+            }
+        }
+
+        return [
+            'valid' => empty($invalid) && !empty($validLabels),
+            'invalid' => $invalid,
+            'formatted' => implode(', ', $validLabels),
+            'allowed' => $allowedSkills
+        ];
     }
 
 }

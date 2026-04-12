@@ -2721,12 +2721,22 @@
 .member-skills {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
 }
 
-.member-skills strong {
-    font-size: 13px;
-    color: var(--dark-bg);
+.member-skills-label {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #32414a;
+    background: #eef4f8;
+    border: 1px solid rgba(101, 131, 150, 0.25);
+    border-radius: 999px;
+    padding: 4px 10px;
 }
 
 .skills-list {
@@ -2735,14 +2745,33 @@
     gap: 8px;
 }
 
-.skill-tag {
-    background: linear-gradient(135deg, rgba(101, 131, 150, 0.1), rgba(164, 196, 217, 0.1));
-    color: var(--primary-blue);
-    padding: 6px 12px;
-    border-radius: 20px;
+.member-skill-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: linear-gradient(135deg, #edf4f9, #e5f0f7);
+    color: #355a72;
+    padding: 7px 13px;
+    border-radius: 999px;
     font-size: 12px;
-    font-weight: 500;
-    border: 1px solid rgba(101, 131, 150, 0.2);
+    font-weight: 600;
+    border: 1px solid rgba(101, 131, 150, 0.24);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+    transition: all 0.2s ease;
+}
+
+.member-skill-tag:hover {
+    transform: translateY(-1px);
+    border-color: rgba(101, 131, 150, 0.36);
+    box-shadow: 0 4px 10px rgba(101, 131, 150, 0.12);
+}
+
+.member-skill-tag .skill-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-blue), var(--accent-blue));
+    flex-shrink: 0;
 }
 
 .role-assignment {

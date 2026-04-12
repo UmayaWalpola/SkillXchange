@@ -21,7 +21,7 @@
         <span class="icon"><i class="ph ph-notepad"></i></span>
         <span>Take a Quiz</span>
     </a>
-    <a href="<?= URLROOT ?>/userdashboard/projects" class="sidebar-item <?= (isset($page) && $page == 'projects') ? 'active' : '' ?>">
+    <a href="<?= URLROOT ?>/project/browse" class="sidebar-item <?= (isset($page) && ($page == 'projects' || $page == 'discover-projects')) ? 'active' : '' ?>">
         <span class="icon"><i class="ph ph-folder-open"></i></span>
         <span>Projects</span>
     </a>

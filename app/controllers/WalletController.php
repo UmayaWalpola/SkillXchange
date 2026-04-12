@@ -26,8 +26,9 @@ class WalletController extends Controller {
         $transactions = $this->walletModel->getTransactions($userId);
         $totalSent = $this->walletModel->getTotalSent($userId);
         $totalReceived = $this->walletModel->getTotalReceived($userId);
-        $debts = $this->walletModel->getDebts($userId);
+        
         $unreadNotifications = $this->notificationModel->getUnreadCount($userId);
+        $allowedRecipients = $this->walletModel->getAllowedRecipients($userId, $userRole);
         
         $this->notificationModel->checkLowBalance($userId, $balance);
 
@@ -38,10 +39,9 @@ class WalletController extends Controller {
             'sentTransactions' => $transactions['sent'],
             'receivedTransactions' => $transactions['received'],
             'unreadNotifications' => $unreadNotifications,
+            'allowedRecipients' => $allowedRecipients,
             'lowBalanceThreshold' => 50.00,
-            'userRole' => $userRole,
-            'debtsOwed'    => $debts['owed'],       // I owe these
-            'debtsOwedToMe' => $debts['owed_to_me'] // owed to me
+            'userRole' => $userRole
         ];
 
         if ($userRole === 'organization') {
@@ -51,7 +51,122 @@ class WalletController extends Controller {
         }
     }
 
+    //Show transfer confirmation page
+    public function confirmTransfer() {
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: ' . URLROOT . '/auth/signin');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ' . URLROOT . '/wallet');
+            exit;
+        }
+
+        $recipientId = intval($_POST['recipient_id'] ?? 0);
+        $amount = floatval($_POST['amount'] ?? 0);
+        $note = trim($_POST['note'] ?? '');
+
+        $errors = $this->validateTransferInputs($recipientId, $amount);
+        
+        if (!empty($errors)) {
+            $_SESSION['error'] = implode('<br>', $errors);
+            header('Location: ' . URLROOT . '/wallet');
+            exit;
+        }
+
+        $userModel = $this->model('User');
+        $recipientUser = $userModel->getUserById($recipientId);
+        
+        if (!$recipientUser) {
+            $_SESSION['error'] = 'User not found';
+            header('Location: ' . URLROOT . '/wallet');
+            exit;
+        }
+
+        if (is_array($recipientUser)) {
+        $recipientUser = (object) $recipientUser;
+        }
+        
+        $senderBalance = $this->walletModel->getBalance($_SESSION['user_id']);
+
+        $data = [
+            'recipient' => $recipientUser,
+            'amount' => $amount,
+            'note' => $note,
+            'senderBalance' => $senderBalance,
+            'remainingBalance' => $senderBalance - $amount,
+            'userRole' => $_SESSION['role']
+        ];
+
+        if ($_SESSION['role'] === 'organization') {
+            $this->view('organization/confirm_transfer', $data);
+        } else {
+            $this->view('users/confirm_transfer', $data);
+        }
+    }
+
+    //Process transfer after confirmation (AJAX)
+
+    public function processTransfer() {
+    if (!isset($_SESSION['user_id'])) {
+        header('Location: ' . URLROOT . '/auth/signin');
+        exit;
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        $_SESSION['error'] = 'Invalid request';
+        header('Location: ' . URLROOT . '/wallet');
+        exit;
+    }
+
+    $recipientId = intval($_POST['recipient_id'] ?? 0);
+    $amount = floatval($_POST['amount'] ?? 0);
+    $note = trim($_POST['note'] ?? '');
+
+    $errors = $this->validateTransferInputs($recipientId, $amount);
     
+    if (!empty($errors)) {
+        $_SESSION['error'] = implode('<br>', $errors);
+        header('Location: ' . URLROOT . '/wallet');
+        exit;
+    }
+
+    $result = $this->walletModel->transferMoney($_SESSION['user_id'], $recipientId, $amount, $note);
+
+    if ($result['success']) {
+        $userModel = $this->model('User');
+        $sender = $userModel->getUserById($_SESSION['user_id']);
+        $receiver = $userModel->getUserById($recipientId);
+
+        $this->notificationModel->create(
+            $_SESSION['user_id'],
+            $result['transaction_id'],
+            'sent',
+            'BuckX Sent Successfully ✅',
+            "You sent {$amount} BuckX to {$receiver->username}" . ($note ? " - Reason: {$note}" : "")
+        );
+
+        $this->notificationModel->create(
+            $recipientId,
+            $result['transaction_id'],
+            'received',
+            'BuckX Received! 💰',
+            "You received {$amount} BuckX from {$sender->username}" . ($note ? " - Reason: {$note}" : "")
+        );
+
+        $this->notificationModel->checkLowBalance($_SESSION['user_id'], $result['new_balance']);
+        
+        // ✅ Set success message and redirect
+        $_SESSION['success'] = $result['message'];
+    } else {
+        // ✅ Set error message and redirect
+        $_SESSION['error'] = $result['message'];
+    }
+    
+    header('Location: ' . URLROOT . '/wallet');
+    exit;
+}
 
     //Show purchase BuckX page - STRIPE VERSION (Organizations only)
     public function purchaseBuckx() {
@@ -302,5 +417,22 @@ class WalletController extends Controller {
         exit;
     }
 
-    // Transfer validation removed.
+    // VALIDATION HELPERS
+    private function validateTransferInputs($recipientId, $amount) {
+        $errors = [];
+        
+        if ($recipientId <= 0) {
+            $errors[] = 'Please select a valid recipient';
+        }
+        
+        if ($amount <= 0) {
+            $errors[] = 'Amount must be greater than 0';
+        }
+        
+        if ($amount > 1000) {
+            $errors[] = 'Amount cannot exceed 1000 BuckX per transaction';
+        }
+        
+        return $errors;
+    }
 }

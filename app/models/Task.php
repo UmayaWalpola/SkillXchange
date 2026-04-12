@@ -94,7 +94,7 @@ class Task {
         return false;
     }
 
-    public function updateTaskStatus($taskId, $status) {
+    public function updateTaskStatus($taskId, $status, $userId = null) {
         // Validate status
         $validStatuses = ['todo', 'in-progress', 'done'];
         if (!in_array($status, $validStatuses)) {
@@ -114,7 +114,16 @@ class Task {
                 $this->clearProjectCache($projectId);
             }
             $action = 'marked_' . str_replace('-', '_', $status);
-            $this->logHistory($taskId, null, $action);
+
+            // Some flows update task status without an explicit actor.
+            // Skip history logging rather than breaking the main status update.
+            if ($userId !== null) {
+                try {
+                    $this->logHistory($taskId, $userId, $action);
+                } catch (Throwable $e) {
+                    error_log("Task history logging failed for task {$taskId}: " . $e->getMessage());
+                }
+            }
             return true;
         }
         return false;
