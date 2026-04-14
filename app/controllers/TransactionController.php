@@ -111,19 +111,6 @@ class TransactionController extends Controller
        }
 
 
-       // For BuckX, check if learner has sufficient balance
-       if ($paymentType === 'buckx') {
-           $this->db->query("SELECT buckx_balance, buckx_frozen FROM users WHERE id = :learner_id");
-           $this->db->bind(':learner_id', $learnerId);
-           $learner = $this->db->single();
-          
-           $availableBalance = $learner->buckx_balance - $learner->buckx_frozen;
-           if ($availableBalance < $amount) {
-               echo json_encode(['success' => false, 'message' => 'Insufficient BuckX balance.']);
-               return;
-           }
-       }
-
 
        // Create transaction event
        $this->db->query("
@@ -250,7 +237,8 @@ class TransactionController extends Controller
            $this->db->bind(':expires_at', $expiresAt);
            $this->db->bind(':event_id', $eventId);
            $this->db->execute();
-
+           
+           
 
            // Handle BuckX freezing
            if ($event->payment_type === 'buckx') {

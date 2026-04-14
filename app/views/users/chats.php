@@ -81,6 +81,7 @@
                                    <span class="status-online">Active</span>
                                </div>
                            </div>
+                           
                            <div class="chat-actions">
                                <!-- NEW: Transaction Button -->
                                <?php if (!isset($data['activeTransaction'])): ?>
@@ -104,12 +105,19 @@
 
                        <!-- NEW: Transaction Status Banner -->
                        <?php if (isset($data['activeTransaction'])): ?>
-                           <div class="transaction-banner" id="transactionBanner" data-transaction='<?= json_encode($data['activeTransaction']); ?>'>
-                               <?php
-                               $tx = $data['activeTransaction'];
-                               $status = $tx['status'];
-                               $userRole = $tx['user_role'];
-                               ?>
+    <div class="transaction-banner" id="transactionBanner" data-transaction='<?= json_encode($data['activeTransaction']); ?>'>
+        <?php
+        $tx = $data['activeTransaction'];
+        $status = $tx['status'];
+        $userRole = $tx['user_role'];
+
+        $timeframeLabel = '';
+        if (!empty($tx['timeframe_hours'])) {
+            $timeframeLabel = ($tx['timeframe_hours'] % 24 === 0)
+                ? ($tx['timeframe_hours'] / 24) . ' day(s)'
+                : $tx['timeframe_hours'] . ' hour(s)';
+        }
+        ?>
                               
                                <?php if ($status === 'pending_learner' || $status === 'pending_teacher'): ?>
                                    <!-- Pending Offer -->
@@ -118,11 +126,12 @@
                                            <strong>Transaction Offer</strong>
                                            <p>
                                                <?php if ($tx['payment_type'] === 'buckx'): ?>
-                                                   <?= number_format($tx['amount'], 2); ?> BuckX
-                                               <?php else: ?>
-                                                   <?= $tx['skill_debt_hours']; ?> hours of <?= htmlspecialchars($tx['skill_name']); ?>
-                                               <?php endif; ?>
-                                               • <?= $tx['timeframe_hours']; ?> hour timeframe
+    <?= number_format($tx['amount'], 2); ?> BuckX
+<?php else: ?>
+    <?= $tx['skill_debt_hours']; ?> hours of <?= htmlspecialchars($tx['skill_name']); ?>
+<?php endif; ?>
+• <?= htmlspecialchars($timeframeLabel ?: 'Unknown'); ?> timeframe
+                                                     
                                            </p>
                                        </div>
                                        <div class="transaction-actions">
@@ -141,13 +150,16 @@
                                        <div class="transaction-info">
                                            <strong>Active Session</strong>
                                            <p>
-                                               <?php if ($tx['payment_type'] === 'buckx'): ?>
-                                                   <?= number_format($tx['amount'], 2); ?> BuckX
-                                               <?php else: ?>
-                                                   <?= $tx['skill_debt_hours']; ?> hours
-                                               <?php endif; ?>
-                                               • Expires: <?= date('M j, g:i A', strtotime($tx['expires_at'])); ?>
-                                           </p>
+    <?php if ($tx['payment_type'] === 'buckx'): ?>
+        <?= number_format($tx['amount'], 2); ?> BuckX
+    <?php else: ?>
+        <?= $tx['skill_debt_hours']; ?> hours
+    <?php endif; ?>
+    • <?= htmlspecialchars($timeframeLabel); ?> session
+</p>
+<p id="sessionCountdown" data-expires-at="<?= htmlspecialchars($tx['expires_at']); ?>">
+    Calculating remaining time...
+</p>
                                        </div>
                                        <div class="transaction-actions">
                                            <?php if ($userRole === 'teacher'): ?>
@@ -273,12 +285,17 @@
            </div>
 
 
-           <div class="form-group">
-               <label>Timeframe (Hours)</label>
-               <input type="number" name="timeframe_hours" id="timeframeHours" required min="1" value="24">
-               <small>How long until the session must be completed</small>
-           </div>
-
+          <div class="form-group">
+    <label>Timeframe</label>
+    <div style="display:flex; gap:10px;">
+        <input type="number" id="timeframeValue" required min="1" value="24">
+        <select id="timeframeUnit" required>
+            <option value="hours">Hours</option>
+            <option value="days">Days</option>
+        </select>
+    </div>
+    <small>How long until the session must be completed</small>
+</div>
 
            <div class="modal-actions">
                <button type="button" class="btn-secondary" onclick="closeTransactionModal()">Cancel</button>

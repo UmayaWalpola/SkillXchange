@@ -261,6 +261,22 @@
     color: var(--primary-blue);
 }
 
+.btn-icon svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    display: block;
+    flex-shrink: 0;
+}
+
+.btn-icon {
+    color: var(--primary-blue);
+}
+
+.btn-icon:hover {
+    color: var(--dark-bg);
+}
+
 /* ============================================
    NEW: TRANSACTION UI STYLING
    ============================================ */

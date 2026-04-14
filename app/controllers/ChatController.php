@@ -11,62 +11,89 @@ class ChatController extends Controller
 
 
    public function user($partnerId = null)
-   {
-       $currentUserId = $_SESSION['user_id'];
+{
+    $currentUserId = $_SESSION['user_id'];
 
+    if (!$partnerId) {
+        header('Location: ' . URLROOT . '/userdashboard/chats');
+        exit();
+    }
 
-       if (!$partnerId) {
-           header('Location: ' . URLROOT . '/userdashboard/chats');
-           exit();
-       }
+    $chatModel = $this->model('Chat');
+    $userModel = $this->model('User');
 
+    $chatId = $chatModel->getOrCreateChat($currentUserId, $partnerId);
 
-       $chatModel = $this->model('Chat');
-       $userModel = $this->model('User');
+    $rawChats = $chatModel->getUserChats($currentUserId);
+    $allChats = $chatModel->formatChatsForDisplay($rawChats, $currentUserId);
 
+    $partner = $userModel->getUserById($partnerId);
+    if (!$partner) {
+        header('Location: ' . URLROOT . '/userdashboard/chats');
+        exit();
+    }
 
-       $chatId = $chatModel->getOrCreateChat($currentUserId, $partnerId);
+    $partnerName = $partner['username'] ?? 'Unknown User';
+    $partnerAvatar = !empty($partner['profile_picture'])
+        ? $partner['profile_picture']
+        : strtoupper(substr($partnerName, 0, 2));
 
+    $db = new Database();
 
-       $rawChats = $chatModel->getUserChats($currentUserId);
-       $allChats = $chatModel->formatChatsForDisplay($rawChats, $currentUserId);
+    $db->query("SELECT buckx_balance FROM users WHERE id = :id");
+    $db->bind(':id', $currentUserId);
+    $me = $db->single();
 
+    $db->query("
+        SELECT *
+        FROM chat_transaction_events
+        WHERE chat_id = :chat_id
+          AND status IN ('pending_learner', 'pending_teacher', 'active', 'teacher_completed')
+        ORDER BY created_at DESC
+        LIMIT 1
+    ");
+    $db->bind(':chat_id', $chatId);
+    $event = $db->single();
 
-       $partner = $userModel->getUserById($partnerId);
-       if (!$partner) {
-           header('Location: ' . URLROOT . '/userdashboard/chats');
-           exit();
-       }
+    $activeTransaction = null;
 
+    if ($event) {
+        $activeTransaction = [
+            'id' => $event->id,
+            'payment_type' => $event->payment_type,
+            'amount' => $event->amount,
+            'skill_debt_hours' => $event->skill_debt_hours,
+            'skill_name' => $event->skill_name,
+            'timeframe_hours' => $event->agreed_timeframe_hours,
+            'status' => $event->status,
+            'expires_at' => $event->expires_at,
+            'teacher_completed_at' => $event->teacher_completed_at,
+            'user_role' => ($event->teacher_id == $currentUserId) ? 'teacher' : 'learner',
+            'is_creator' => false
+        ];
 
-       $partnerName = $partner['username'] ?? 'Unknown User';
-       $partnerAvatar = !empty($partner['profile_picture'])
-           ? $partner['profile_picture']
-           : strtoupper(substr($partnerName, 0, 2));
+        if (
+            ($event->status === 'pending_learner' && $event->teacher_id == $currentUserId) ||
+            ($event->status === 'pending_teacher' && $event->learner_id == $currentUserId)
+        ) {
+            $activeTransaction['is_creator'] = true;
+        }
+    }
 
+    $data = [
+        'title' => 'Chats',
+        'page' => 'chats',
+        'allChats' => $allChats,
+        'partnerId' => $partnerId,
+        'partnerName' => $partnerName,
+        'partnerAvatar' => $partnerAvatar,
+        'chatId' => $chatId,
+        'buckxBalance' => $me->buckx_balance ?? 0,
+        'activeTransaction' => $activeTransaction
+    ];
 
-       // optional: current user balance for transaction modal
-       $db = new Database();
-       $db->query("SELECT buckx_balance FROM users WHERE id = :id");
-       $db->bind(':id', $currentUserId);
-       $me = $db->single();
-
-
-       $data = [
-           'title' => 'Chats',
-           'page' => 'chats',
-           'allChats' => $allChats,
-           'partnerId' => $partnerId,
-           'partnerName' => $partnerName,
-           'partnerAvatar' => $partnerAvatar,
-           'chatId' => $chatId,
-           'buckxBalance' => $me->buckx_balance ?? 0
-       ];
-
-
-       $this->view('users/chats', $data);
-   }
-
+    $this->view('users/chats', $data);
+}
 
    public function fetchUserMessages()
    {
