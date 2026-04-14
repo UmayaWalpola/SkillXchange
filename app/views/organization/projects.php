@@ -67,13 +67,13 @@
                             <div class="project-icon">
                                 <?php 
                                     $icons = [
-                                        'web' => '<i class="ph ph-desktop"></i>',
-                                        'mobile' => '<i class="ph ph-device-mobile"></i>',
-                                        'data' => '<i class="ph ph-chart-line"></i>',
-                                        'design' => '<i class="ph ph-palette"></i>',
-                                        'other' => '<i class="ph ph-folder"></i>'
+                                        'web' => '💻',
+                                        'mobile' => '📱',
+                                        'data' => '📊',
+                                        'design' => '🎨',
+                                        'other' => '📁'
                                     ];
-                                    echo $icons[$project->category] ?? '<i class="ph ph-folder"></i>';
+                                    echo $icons[$project->category] ?? '📁';
                                 ?>
                             </div>
                             <span class="status-badge <?= $project->status ?>">
@@ -89,8 +89,8 @@
                             </p>
                             
                             <div class="project-meta">
-                                <span class="meta-item"><i class="ph ph-folder"></i> <?= ucfirst($project->category) ?></span>
-                                <span class="meta-item"><i class="ph ph-users"></i> <?= $project->current_members ?? 0 ?>/<?= $project->max_members ?> Members</span>
+                                <span class="meta-item">📂 <?= ucfirst($project->category) ?></span>
+                                <span class="meta-item">👥 <?= $project->current_members ?? 0 ?>/<?= $project->max_members ?> Members</span>
                             </div>
 
                             <div class="project-skills">
@@ -122,9 +122,9 @@
                                     <div class="progress-bar-fill" style="width: <?= $completionPct ?>%"></div>
                                 </div>
                                 <div class="progress-metrics-mini">
-                                    <span class="metric-mini"><?= $completedTasks ?>/<?= $totalTasks ?> Tasks</span>
+                                    <span class="metric-mini">✅ <?= $completedTasks ?>/<?= $totalTasks ?> Tasks</span>
                                     <?php if($overdueTasks > 0): ?>
-                                        <span class="metric-mini overdue"><?= $overdueTasks ?> Overdue</span>
+                                        <span class="metric-mini overdue">⚠️ <?= $overdueTasks ?> Overdue</span>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -135,8 +135,8 @@
                                     Created: <?= date('M d, Y', strtotime($project->created_at)) ?>
                                 </span>
                                 <div class="project-actions">
-                                    <button class="action-btn members-btn" onclick="manageMembers(<?= $project->id ?>)">Members</button>
-                                    <button class="action-btn chat-open-btn" onclick="openChat(<?= $project->id ?>)">Chat</button>
+                                    <button class="action-btn members-btn" onclick="manageMembers(<?= $project->id ?>)">👥 Members</button>
+                                    <button class="action-btn chat-open-btn" onclick="openChat(<?= $project->id ?>)">💬 Chat</button>
                                     <button class="action-btn edit-btn" onclick="editProject(<?= $project->id ?>)">Edit</button>
                                     <button class="action-btn delete-btn"
                                         data-project-id="<?= $project->id ?>"
@@ -152,7 +152,7 @@
                 <?php endforeach; ?>
             <?php else: ?>
                 <div class="empty-state">
-                    <div class="empty-icon"><i class="ph ph-folder"></i></div>
+                    <div class="empty-icon">📁</div>
                     <h3>No Projects Found</h3>
                     <p>Create your first project to start collaborating!</p>
                     <button class="create-btn" onclick="window.location.href='<?= URLROOT ?>/organization/createProject'">

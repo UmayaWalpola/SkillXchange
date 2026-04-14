@@ -514,22 +514,6 @@ class Project {
             'active_members' => $activeMembers
         ];
     }
-  
-// tasks assignining fixing
-    public function getMemberRole($projectId, $userId) {
-        $this->db->query("SELECT role FROM project_members WHERE project_id = :project_id AND user_id = :user_id AND status = 'active'");
-        $this->db->bind(':project_id', $projectId);
-        $this->db->bind(':user_id', $userId);
-        $result = $this->db->single();
-        return $result ? $result->role : null;
-    }
-
-    public function isProjectMember($projectId, $userId) {
-        $this->db->query("SELECT id FROM project_members WHERE project_id = :project_id AND user_id = :user_id AND status = 'active'");
-        $this->db->bind(':project_id', $projectId);
-        $this->db->bind(':user_id', $userId);
-        return $this->db->single() ? true : false;
-    }
 
 }
 

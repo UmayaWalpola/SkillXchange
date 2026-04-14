@@ -17,7 +17,7 @@
                 <?php if (!empty($data['project'])): ?>
                     <div class="chat-header">
                         <div class="chat-project-info">
-                            <div class="project-avatar web"><i class="ph ph-code"></i></div>
+                            <div class="project-avatar web">💻</div>
                             <div>
                                 <h3 class="chat-project-name" id="chatProjectName"><?= htmlspecialchars($data['project']->name) ?></h3>
                                 <p class="members-count" id="membersCount"><?= count($data['members'] ?? []) ?> members</p>
@@ -96,7 +96,7 @@ function renderMessages(payload) {
             reportBtn.setAttribute('data-content-id', m.id);
             reportBtn.title = 'Report this message';
             reportBtn.style.marginTop = '0.5rem';
-            reportBtn.innerHTML = '<span><i class="ph ph-warning"></i></span>';
+            reportBtn.innerHTML = '<span>⚠</span>';
             bubble.appendChild(reportBtn);
         }
 

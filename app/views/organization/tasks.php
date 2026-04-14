@@ -53,7 +53,7 @@
             <!-- TO DO COLUMN -->
             <div class="kanban-column">
                 <div class="column-header">
-                    <h2><i class="ph ph-list"></i> To Do</h2>
+                    <h2>📋 To Do</h2>
                     <span class="column-count"><?= count(array_filter($data['tasks'], fn($t) => $t->status === 'todo')) ?></span>
                 </div>
                 <div class="tasks-column">
@@ -69,7 +69,7 @@
 
                                 <div class="task-meta">
                                     <?php if ($task->deadline): ?>
-                                        <span class="deadline"><i class="ph ph-calendar"></i> Due: <?= date('M d, Y', strtotime($task->deadline)) ?></span>
+                                        <span class="deadline">📅 Due: <?= date('M d, Y', strtotime($task->deadline)) ?></span>
                                     <?php endif; ?>
                                 </div>
 
@@ -102,7 +102,7 @@
             <!-- IN PROGRESS COLUMN -->
             <div class="kanban-column">
                 <div class="column-header">
-                    <h2><i class="ph ph-gear"></i> In Progress</h2>
+                    <h2>⚙️ In Progress</h2>
                     <span class="column-count"><?= count(array_filter($data['tasks'], fn($t) => $t->status === 'in-progress')) ?></span>
                 </div>
                 <div class="tasks-column">
@@ -118,7 +118,7 @@
 
                                 <div class="task-meta">
                                     <?php if ($task->deadline): ?>
-                                        <span class="deadline"><i class="ph ph-calendar"></i> Due: <?= date('M d, Y', strtotime($task->deadline)) ?></span>
+                                        <span class="deadline">📅 Due: <?= date('M d, Y', strtotime($task->deadline)) ?></span>
                                     <?php endif; ?>
                                 </div>
 
@@ -151,7 +151,7 @@
             <!-- DONE COLUMN -->
             <div class="kanban-column">
                 <div class="column-header">
-                    <h2><i class="ph ph-check-circle"></i> Done</h2>
+                    <h2>✅ Done</h2>
                     <span class="column-count"><?= count(array_filter($data['tasks'], fn($t) => $t->status === 'done')) ?></span>
                 </div>
                 <div class="tasks-column">
@@ -167,7 +167,7 @@
 
                                 <div class="task-meta">
                                     <?php if ($task->deadline): ?>
-                                        <span class="deadline"><i class="ph ph-calendar"></i> Due: <?= date('M d, Y', strtotime($task->deadline)) ?></span>
+                                        <span class="deadline">📅 Due: <?= date('M d, Y', strtotime($task->deadline)) ?></span>
                                     <?php endif; ?>
                                 </div>
 

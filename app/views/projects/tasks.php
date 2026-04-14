@@ -37,7 +37,7 @@
             <?php else: ?>
                 <!-- To Do Tasks -->
                 <div class="task-section">
-                    <h2><i class="ph ph-list"></i> To Do</h2>
+                    <h2>📋 To Do</h2>
                     <div class="tasks-grid">
                         <?php foreach ($data['tasks'] as $task): ?>
                             <?php if ($task->status === 'todo'): ?>
@@ -51,7 +51,7 @@
 
                                     <div class="task-meta">
                                         <?php if ($task->deadline): ?>
-                                            <span class="deadline"><i class="ph ph-calendar"></i> Due: <?= date('M d, Y', strtotime($task->deadline)) ?></span>
+                                            <span class="deadline">📅 Due: <?= date('M d, Y', strtotime($task->deadline)) ?></span>
                                         <?php endif; ?>
                                     </div>
 
@@ -66,7 +66,7 @@
 
                 <!-- In Progress Tasks -->
                 <div class="task-section">
-                    <h2><i class="ph ph-gear"></i> In Progress</h2>
+                    <h2>⚙️ In Progress</h2>
                     <div class="tasks-grid">
                         <?php foreach ($data['tasks'] as $task): ?>
                             <?php if ($task->status === 'in-progress'): ?>
@@ -80,7 +80,7 @@
 
                                     <div class="task-meta">
                                         <?php if ($task->deadline): ?>
-                                            <span class="deadline"><i class="ph ph-calendar"></i> Due: <?= date('M d, Y', strtotime($task->deadline)) ?></span>
+                                            <span class="deadline">📅 Due: <?= date('M d, Y', strtotime($task->deadline)) ?></span>
                                         <?php endif; ?>
                                     </div>
 
@@ -95,7 +95,7 @@
 
                 <!-- Completed Tasks -->
                 <div class="task-section">
-                    <h2><i class="ph ph-check-circle"></i> Completed</h2>
+                    <h2>✅ Completed</h2>
                     <div class="tasks-grid">
                         <?php foreach ($data['tasks'] as $task): ?>
                             <?php if ($task->status === 'done'): ?>
@@ -109,7 +109,7 @@
 
                                     <div class="task-meta">
                                         <?php if ($task->deadline): ?>
-                                            <span class="deadline"><i class="ph ph-calendar"></i> Due: <?= date('M d, Y', strtotime($task->deadline)) ?></span>
+                                            <span class="deadline">📅 Due: <?= date('M d, Y', strtotime($task->deadline)) ?></span>
                                         <?php endif; ?>
                                     </div>
                                 </div>

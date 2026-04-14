@@ -579,13 +579,13 @@
             <div class="project-icon-wrapper">
                 <?php 
                     $icons = [
-                        'web' => '<i class="ph ph-code" style="font-size: 2.5rem;"></i>',
-                        'mobile' => '<i class="ph ph-device-mobile" style="font-size: 2.5rem;"></i>',
-                        'data' => '<i class="ph ph-chart-bar" style="font-size: 2.5rem;"></i>',
-                        'design' => '<i class="ph ph-paint-brush" style="font-size: 2.5rem;"></i>',
-                        'other' => '<i class="ph ph-folder-open" style="font-size: 2.5rem;"></i>'
+                        'web' => '💻',
+                        'mobile' => '📱',
+                        'data' => '📊',
+                        'design' => '🎨',
+                        'other' => '📁'
                     ];
-                    echo $icons[$project->category] ?? '<i class="ph ph-folder-open" style="font-size: 2.5rem;"></i>';
+                    echo $icons[$project->category] ?? '📁';
                 ?>
             </div>
             <div class="project-header-content">
@@ -618,7 +618,7 @@
 
             <!-- Project Progress Section -->
             <div class="card">
-                <h2 class="card-title"><i class="ph ph-chart-line-up"></i> Project Progress</h2>
+                <h2 class="card-title">📈 Project Progress</h2>
                 <?php 
                 // Use task statistics passed from controller
                 $totalTasks = (int)($taskStats->total ?? 0);
@@ -673,7 +673,7 @@
                 <?php if ($totalTasks > 0 && !empty($members)): ?>
                     <!-- Tasks per Member -->
                     <div style="margin-top:30px;padding-top:30px;border-top:2px solid #f3f4f6;">
-                        <h3 style="font-size:1.1rem;margin-bottom:15px;color:#1f2937;"><i class="ph ph-chart-bar"></i> Tasks per Member</h3>
+                        <h3 style="font-size:1.1rem;margin-bottom:15px;color:#1f2937;">📊 Tasks per Member</h3>
                         <?php 
                         foreach ($members as $member) {
                             $memberTasks = $taskModel->getTasksByMember($project->id, $member->user_id);
@@ -702,13 +702,13 @@
 
             <!-- About Section -->
             <div class="card">
-                <h2 class="card-title"><i class="ph ph-notepad"></i> About This Project</h2>
+                <h2 class="card-title">📝 About This Project</h2>
                 <p class="description-text"><?= nl2br(htmlspecialchars($project->description ?? '')) ?></p>
             </div>
 
             <!-- Project Details Section -->
             <div class="card">
-                <h2 class="card-title"><i class="ph ph-info"></i> Project Details</h2>
+                <h2 class="card-title">ℹ️ Project Details</h2>
                 <div class="details-grid">
                     <div class="detail-item">
                         <div class="detail-label">Status</div>
@@ -731,7 +731,7 @@
 
             <!-- Required Skills Section -->
             <div class="card">
-                <h2 class="card-title"><i class="ph ph-target"></i> Required Skills</h2>
+                <h2 class="card-title">🎯 Required Skills</h2>
                 <div class="skills-grid">
                     <?php if (!empty($project->required_skills)): ?>
                         <?php foreach (explode(',', $project->required_skills) as $skill): ?>
@@ -746,7 +746,7 @@
             <!-- Team Members Section -->
             <?php if (!empty($members)): ?>
             <div class="card">
-                <h2 class="card-title"><i class="ph ph-users"></i> Team Members</h2>
+                <h2 class="card-title">👥 Team Members</h2>
                 <div class="members-grid">
                     <?php foreach ($members as $member): ?>
                         <?php 
@@ -766,7 +766,7 @@
                                     data-project-id="<?= $project->id ?>"
                                     title="Report this member" 
                                     style="margin-top: 0.5rem;">
-                                <span><i class="ph ph-warning"></i></span>
+                                <span>⚠</span>
                             </button>
                             <?php endif; ?>
                         </div>
@@ -777,7 +777,7 @@
 
             <!-- Application Section -->
             <div class="card">
-                <h2 class="card-title"><i class="ph ph-sparkle"></i> Join This Project</h2>
+                <h2 class="card-title">✨ Join This Project</h2>
                 <div class="application-section">
                     <?php if (isset($_SESSION['user_id'])): ?>
                         <?php if (!empty($is_member)): ?>
@@ -816,28 +816,28 @@
                                 
                                 <!-- Personal Statement Section -->
                                 <div class="form-section">
-                                    <h4 style="color: #658396; margin-bottom: 1rem;"><i class="ph ph-notepad"></i> Your Application</h4>
+                                    <h4 style="color: #658396; margin-bottom: 1rem;">📝 Your Application</h4>
                                     
                                     <div class="form-group">
-                                        <label for="relevant_experience"><i class="ph ph-books"></i> Relevant Experience *</label>
+                                        <label for="relevant_experience">📚 Relevant Experience *</label>
                                         <textarea name="relevant_experience" id="relevant_experience" placeholder="Describe your relevant experience, past projects, and achievements in this field..." rows="4" required></textarea>
                                         <small style="color: #888;">Tell us about similar projects you've worked on</small>
                                     </div>
 
                                     <div class="form-group">
-                                        <label for="matching_skills"><i class="ph ph-wrench"></i> How Your Skills Match This Project *</label>
+                                        <label for="matching_skills">🛠️ How Your Skills Match This Project *</label>
                                         <textarea name="matching_skills" id="matching_skills" placeholder="Explain which of the required skills you have and at what level (beginner/intermediate/advanced)..." rows="4" required></textarea>
                                         <small style="color: #888;">Match your skills with the project requirements</small>
                                     </div>
 
                                     <div class="form-group">
-                                        <label for="contribution"><i class="ph ph-lightbulb"></i> How Will You Contribute? *</label>
+                                        <label for="contribution">💡 How Will You Contribute? *</label>
                                         <textarea name="contribution" id="contribution" placeholder="Describe specific ways you can contribute to this project's success..." rows="4" required></textarea>
                                         <small style="color: #888;">Be specific about your potential contributions</small>
                                     </div>
 
                                     <div class="form-group">
-                                        <label for="availability"><i class="ph ph-clock"></i> Time Commitment *</label>
+                                        <label for="availability">⏱️ Time Commitment *</label>
                                         <select name="availability" id="availability" required style="padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
                                             <option value="">-- Select Your Available Time --</option>
                                             <option value="5-10">5-10 hours per week</option>
@@ -849,7 +849,7 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <label for="expected_duration"><i class="ph ph-calendar"></i> Expected Duration of Involvement *</label>
+                                        <label for="expected_duration">📅 Expected Duration of Involvement *</label>
                                         <select name="expected_duration" id="expected_duration" required style="padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
                                             <option value="">-- Select Duration --</option>
                                             <option value="1-3">1-3 months</option>
@@ -861,13 +861,13 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <label for="motivation"><i class="ph ph-target"></i> Why Are You Interested in This Project? *</label>
+                                        <label for="motivation">🎯 Why Are You Interested in This Project? *</label>
                                         <textarea name="motivation" id="motivation" placeholder="Share your passion and motivation for this particular project..." rows="4" required></textarea>
                                         <small style="color: #888;">Help us understand your genuine interest</small>
                                     </div>
 
                                     <div class="form-group">
-                                        <label for="portfolio"><i class="ph ph-link"></i> Portfolio/GitHub Link (Optional)</label>
+                                        <label for="portfolio">🔗 Portfolio/GitHub Link (Optional)</label>
                                         <input type="url" name="portfolio" id="portfolio" placeholder="https://github.com/yourprofile or your portfolio website">
                                         <small style="color: #888;">Share your work to strengthen your application</small>
                                     </div>

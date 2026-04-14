@@ -16,7 +16,7 @@
                 <?php if (!empty($data['project'])): ?>
                     <div class="chat-header">
                         <div class="chat-project-info">
-                            <div class="project-avatar web"><i class="ph ph-code"></i></div>
+                            <div class="project-avatar web">💻</div>
                             <div>
                                 <h3 class="chat-project-name" id="chatProjectName"><?= htmlspecialchars($data['project']->name) ?></h3>
                                 <p class="members-count" id="membersCount"><?= count($data['members'] ?? []) ?> members</p>

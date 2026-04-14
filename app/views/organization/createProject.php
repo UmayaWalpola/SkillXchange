@@ -34,7 +34,7 @@
             <!-- Card-style header with category icon and inline status -->
             <div id="projectCardHeader" class="project-card-header <?= $isEdit ? ($project->category ?? 'web') : 'web'?>">
                 <div class="header-left">
-                    <div id="projIcon" class="proj-icon web"><i class="ph ph-code"></i></div>
+                    <div id="projIcon" class="proj-icon web">💻</div>
                     <div>
                         <div class="proj-title"><?= $title ?></div>
                         <div class="proj-sub">Fill in the details below to create your project</div>
@@ -129,11 +129,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const icon = document.getElementById('projIcon');
 
     const map = {
-        'web': {class: 'web', icon: '<i class="ph ph-code"></i>'},
-        'mobile': {class: 'mobile', icon: '<i class="ph ph-device-mobile"></i>'},
-        'data': {class: 'data', icon: '<i class="ph ph-chart-bar"></i>'},
-        'design': {class: 'design', icon: '<i class="ph ph-paint-brush"></i>'},
-        'other': {class: 'other', icon: '<i class="ph ph-sparkle"></i>'}
+        'web': {class: 'web', icon: '💻'},
+        'mobile': {class: 'mobile', icon: '📱'},
+        'data': {class: 'data', icon: '📊'},
+        'design': {class: 'design', icon: '🎨'},
+        'other': {class: 'other', icon: '✨'}
     };
 
     function updateHeader() {
@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // remove existing category classes
         header.classList.remove('web','mobile','data','design','other');
         header.classList.add(map[val].class);
-        icon.innerHTML = map[val].icon;
+        icon.textContent = map[val].icon;
         icon.className = 'proj-icon ' + map[val].class;
     }
 

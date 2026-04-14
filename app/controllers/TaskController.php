@@ -86,68 +86,61 @@ class TaskController extends Controller {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Handle AJAX request
             if ($isAjax) {
-                ob_clean(); // Clear any output buffer
-                header('Content-Type: application/json');
+                $projectId = (int)($_POST['project_id'] ?? 0);
                 
-                try {
-                    $projectId = (int)($_POST['project_id'] ?? 0);
-                    
-                    if (!$projectId) {
-                        echo json_encode(['success' => false, 'message' => 'Project ID required']);
-                        exit;
-                    }
-
-                    // Verify organization owns the project
-                    $project = $this->projectModel->getProjectById($projectId);
-                    if (!$project || $project->organization_id != $_SESSION['user_id']) {
-                        echo json_encode(['success' => false, 'message' => 'Access denied']);
-                        exit;
-                    }
-
-                    $taskData = [
-                        'project_id' => $projectId,
-                        'title' => trim($_POST['task_name'] ?? ''),
-                        'description' => trim($_POST['description'] ?? ''),
-                        'assigned_to' => !empty($_POST['member_id']) ? (int)$_POST['member_id'] : null,
-                        'priority' => strtolower(trim($_POST['priority'] ?? 'medium')),
-                        'deadline' => !empty($_POST['due_date']) ? $_POST['due_date'] : null,
-                        'status' => 'todo'
-                    ];
-
-                    if (empty($taskData['title'])) {
-                        echo json_encode(['success' => false, 'message' => 'Task name is required']);
-                        exit;
-                    }
-
-                    $taskId = $this->taskModel->createTask($taskData);
-                    if ($taskId) {
-                        // Notify assigned user about new task
-                        if (!empty($taskData['assigned_to'])) {
-                            try {
-                                $this->notificationModel->create([
-                                    'user_id' => $taskData['assigned_to'],
-                                    'type' => 'task_assigned',
-                                    'content' => "You have been assigned the task: {$taskData['title']}",
-                                    'related_id' => $taskId,
-                                    'related_type' => 'task'
-                                ]);
-                            } catch (Exception $e) {
-                                error_log("Notification error: " . $e->getMessage());
-                            }
-                        }
-
-                        echo json_encode(['success' => true, 'message' => 'Task created successfully', 'task_id' => $taskId]);
-                        exit;
-                    }
-
-                    echo json_encode(['success' => false, 'message' => 'Failed to create task']);
-                    exit;
-                    
-                } catch (Exception $e) {
-                    error_log("Task creation error: " . $e->getMessage());
-                    echo json_encode(['success' => false, 'message' => 'Server error: ' . $e->getMessage()]);
-                    exit;
+                if (!$projectId) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Project ID required']);
+                    return;
                 }
+
+                // Verify organization owns the project
+                $project = $this->projectModel->getProjectById($projectId);
+                if (!$project || $project->organization_id != $_SESSION['user_id']) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Access denied']);
+                    return;
+                }
+
+                $taskData = [
+                    'project_id' => $projectId,
+                    'task_name' => trim($_POST['task_name'] ?? ''),
+                    'description' => trim($_POST['description'] ?? ''),
+                    'assigned_to' => !empty($_POST['assigned_to']) ? (int)$_POST['assigned_to'] : null,
+                    'priority' => trim($_POST['priority'] ?? 'medium'),
+                    'due_date' => !empty($_POST['due_date']) ? $_POST['due_date'] : null,
+                    'status' => 'pending',
+                    'created_by' => $_SESSION['user_id']
+                ];
+
+                if (empty($taskData['task_name'])) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Task name is required']);
+                    return;
+                }
+
+                $taskId = $this->taskModel->createTask($taskData);
+                if ($taskId) {
+                    // Notify assigned user about new task
+                    if (!empty($taskData['assigned_to'])) {
+                        $msg = "You have been assigned the task: {$taskData['task_name']}";
+                        $this->notificationModel->createNotification([
+                            'user_id' => $taskData['assigned_to'],
+                            'type' => 'task_assigned',
+                            'message' => $msg,
+                            'project_id' => $projectId,
+                            'task_id' => $taskId
+                        ]);
+                    }
+
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => true, 'message' => 'Task created successfully', 'task_id' => $taskId]);
+                    return;
+                }
+
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => 'Failed to create task']);
+                return;
             }
             
             // Handle regular form submission
@@ -199,7 +192,11 @@ class TaskController extends Controller {
             if ($taskId) {
                 // Notify assigned user about new task
                 if (!empty($taskData['assigned_to'])) {
+<<<<<<< HEAD
                     $msg = "You have been assigned the task: {$taskData['task_name']}";
+=======
+                    $msg = "You have been assigned the task: {$taskData['title']}";
+>>>>>>> dc8d8d6d35a9005a610d0a7b06967ac0ededd82d
                     $this->notificationModel->createNotification([
                         'user_id' => $taskData['assigned_to'],
                         'type' => 'task_assigned',
