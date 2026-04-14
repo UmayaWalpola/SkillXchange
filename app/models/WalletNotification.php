@@ -77,7 +77,7 @@ class WalletNotification {
                     $userId,
                     null,
                     'low_balance',
-                    'Low Balance Alert ⚠️',
+                    'Low Balance Alert',
                     "Your BuckX balance is running low: " . number_format($balance, 2) . " BuckX remaining"
                 );
             }

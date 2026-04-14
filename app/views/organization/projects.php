@@ -32,9 +32,11 @@
         </div>
 
         <!-- Filters -->
+
         <div class="filters-section">
             <input type="text" class="search-input" placeholder="Search projects..." id="searchInput">
-            
+              
+              
             <select class="filter-select" id="statusFilter">
                 <option value="all">All Status</option>
                 <option value="active">Active</option>
@@ -63,88 +65,28 @@
                          data-status="<?= $project->status ?>" 
                          data-category="<?= $project->category ?>">
 
-                        <div class="project-header <?= $project->category ?>">
-                            <div class="project-icon">
-                                <?php 
-                                    $icons = [
-                                        'web' => '<i class="ph ph-desktop"></i>',
-                                        'mobile' => '<i class="ph ph-device-mobile"></i>',
-                                        'data' => '<i class="ph ph-chart-line"></i>',
-                                        'design' => '<i class="ph ph-palette"></i>',
-                                        'other' => '<i class="ph ph-folder"></i>'
-                                    ];
-                                    echo $icons[$project->category] ?? '<i class="ph ph-folder"></i>';
-                                ?>
+                        <div class="project-content simple-project-content">
+                            <div class="simple-project-top">
+                                <h3 class="project-title"><?= htmlspecialchars($project->name) ?></h3>
+                                <span class="status-badge <?= $project->status ?>">
+                                    <?= ucfirst(str_replace('-', ' ', $project->status)) ?>
+                                </span>
                             </div>
-                            <span class="status-badge <?= $project->status ?>">
-                                <?= ucfirst(str_replace('-', ' ', $project->status)) ?>
-                            </span>
-                        </div>
-                        
-                        <div class="project-content">
-                            <h3 class="project-title"><?= htmlspecialchars($project->name) ?></h3>
-                            <p class="project-description">
-                                <?= htmlspecialchars(substr($project->description, 0, 120)) ?>
-                                <?= strlen($project->description) > 120 ? '...' : '' ?>
-                            </p>
-                            
-                            <div class="project-meta">
+
+                            <div class="simple-project-meta">
                                 <span class="meta-item"><i class="ph ph-folder"></i> <?= ucfirst($project->category) ?></span>
                                 <span class="meta-item"><i class="ph ph-users"></i> <?= $project->current_members ?? 0 ?>/<?= $project->max_members ?> Members</span>
                             </div>
 
-                            <div class="project-skills">
-                                <?php 
-                                    $skills = explode(',', $project->required_skills);
-                                    foreach(array_slice($skills, 0, 3) as $skill): 
-                                ?>
-                                    <span class="skill-tag"><?= trim(htmlspecialchars($skill)) ?></span>
-                                <?php endforeach; ?>
-                                <?php if(count($skills) > 3): ?>
-                                    <span class="skill-tag">+<?= count($skills) - 3 ?> more</span>
-                                <?php endif; ?>
-                            </div>
-
-                            <!-- Project Progress Metrics -->
-                            <?php if(isset($project->metrics) && $project->metrics): 
-                                $metrics = $project->metrics;
-                                $totalTasks = (int)($metrics->total_tasks ?? 0);
-                                $completedTasks = (int)($metrics->completed_tasks ?? 0);
-                                $overdueTasks = (int)($metrics->overdue_tasks ?? 0);
-                                $completionPct = $metrics->completion_percentage ?? 0;
-                            ?>
-                            <div class="project-progress-section">
-                                <div class="progress-header">
-                                    <span class="progress-label">Progress</span>
-                                    <span class="progress-percentage"><?= number_format($completionPct, 1) ?>%</span>
-                                </div>
-                                <div class="progress-bar-container">
-                                    <div class="progress-bar-fill" style="width: <?= $completionPct ?>%"></div>
-                                </div>
-                                <div class="progress-metrics-mini">
-                                    <span class="metric-mini"><?= $completedTasks ?>/<?= $totalTasks ?> Tasks</span>
-                                    <?php if($overdueTasks > 0): ?>
-                                        <span class="metric-mini overdue"><?= $overdueTasks ?> Overdue</span>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                            <?php endif; ?>
-
-                            <div class="project-footer">
-                                <span class="project-date">
-                                    Created: <?= date('M d, Y', strtotime($project->created_at)) ?>
-                                </span>
-                                <div class="project-actions">
-                                    <button class="action-btn members-btn" onclick="manageMembers(<?= $project->id ?>)">Members</button>
-                                    <button class="action-btn chat-open-btn" onclick="openChat(<?= $project->id ?>)">Chat</button>
-                                    <button class="action-btn edit-btn" onclick="editProject(<?= $project->id ?>)">Edit</button>
-                                    <button class="action-btn delete-btn"
-                                        data-project-id="<?= $project->id ?>"
-                                        data-project-name="<?= htmlspecialchars($project->name, ENT_QUOTES) ?>"
-                                        onclick="deleteProject(this, <?= $project->id ?>, '<?= htmlspecialchars($project->name, ENT_QUOTES) ?>')">
-                                        Delete
-                                    </button>
-                                </div>
+                            <div class="simple-project-actions">
+                                <button class="action-btn more-btn" onclick="manageMembers(<?= $project->id ?>)">View Details</button>
+                                <button class="action-btn edit-btn" onclick="editProject(<?= $project->id ?>)">Edit</button>
+                                <button class="action-btn delete-btn"
+                                    data-project-id="<?= $project->id ?>"
+                                    data-project-name="<?= htmlspecialchars($project->name, ENT_QUOTES) ?>"
+                                    onclick="deleteProject(this, <?= $project->id ?>, '<?= htmlspecialchars($project->name, ENT_QUOTES) ?>')">
+                                    Delete
+                                </button>
                             </div>
                         </div>
 
@@ -174,10 +116,6 @@ function manageMembers(id) {
 
 function editProject(id) {
     window.location.href = URLROOT + '/organization/editProject/' + id;
-}
-
-function openChat(id) {
-    window.location.href = URLROOT + '/chat/index/' + id;
 }
 
 function deleteProject(btn, id, name) {
@@ -219,7 +157,7 @@ function deleteProject(btn, id, name) {
         if (btn) btn.disabled = false;
     });
 }
-
+   //Oragnization side Filtering
 function filterProjects() {
     let search = document.getElementById('searchInput').value.toLowerCase();
     let status = document.getElementById('statusFilter').value;
@@ -227,9 +165,9 @@ function filterProjects() {
 
     document.querySelectorAll('.project-card').forEach(card => {
         let title = card.querySelector('.project-title').textContent.toLowerCase();
-        let desc = card.querySelector('.project-description').textContent.toLowerCase();
+        let categoryText = card.dataset.category.toLowerCase();
         
-        let matchesSearch = title.includes(search) || desc.includes(search);
+        let matchesSearch = title.includes(search) || categoryText.includes(search);
         let matchesStatus = (status === 'all') || (card.dataset.status === status);
         let matchesCategory = (category === 'all') || (card.dataset.category === category);
 

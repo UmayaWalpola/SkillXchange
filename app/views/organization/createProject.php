@@ -73,7 +73,7 @@
                     </div>
 
                     <div class="info-item">
-                        <label>Skills Needed</label>
+                        <label>Skills Needed</label>  //This shows a list of skill suggestions below when the user types
                         <input id="requiredSkillsInput" type="text" name="required_skills" list="skillsSuggestionList" value="<?= $isEdit ? htmlspecialchars($project->required_skills) : '' ?>" placeholder="Example: Web Development, Frontend Frameworks" required>
                         <datalist id="skillsSuggestionList"></datalist>
                         <small id="skillsHint" style="display:block;margin-top:6px;color:#355a72;font-size:13px;line-height:1.45;"></small>
@@ -124,16 +124,16 @@
 <?php require_once "../app/views/layouts/footer_user.php"; ?>
 
 <script>
-// UI polish for Create Project form: update header gradient/icon based on category
+// UI polish for Create Project form: update icon and skill hints based on category
 document.addEventListener('DOMContentLoaded', function() {
     const categorySelect = document.getElementById('categorySelect');
     const requiredSkillsInput = document.getElementById('requiredSkillsInput');
     const skillsHint = document.getElementById('skillsHint');
     const skillsSuggestionList = document.getElementById('skillsSuggestionList');
-    const header = document.getElementById('projectCardHeader');
     const icon = document.getElementById('projIcon');
     const categorySkillMap = <?= json_encode($categorySkillMap ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 
+      //create a map of category to icon and css class for easy reference
     const map = {
         'web': {class: 'web', icon: '<i class="ph ph-code"></i>'},
         'mobile': {class: 'mobile', icon: '<i class="ph ph-device-mobile"></i>'},
@@ -176,11 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateHeader() {
         const val = categorySelect ? categorySelect.value : 'web';
-        // remove existing category classes
-        header.classList.remove('web','mobile','data','design','other');
-        header.classList.add(map[val].class);
         icon.innerHTML = map[val].icon;
-        icon.className = 'proj-icon ' + map[val].class;
         updateSkillsHint();
     }
 

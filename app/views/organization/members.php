@@ -18,7 +18,13 @@
                 <h1>Manage Team Members</h1>
                 <p>Project: <strong><?= htmlspecialchars($data['project']->name) ?></strong></p>
             </div>
-            <a href="<?= URLROOT ?>/organization/projects" class="btn btn-secondary">← Back to Projects</a>
+            <div class="page-header-actions">
+                <a href="<?= URLROOT ?>/chat/index/<?= (int)$data['projectId'] ?>" class="btn btn-primary btn-chat-entry">
+                    <i class="ph ph-chat-circle-dots"></i>
+                    Enter Project Chat
+                </a>
+                <a href="<?= URLROOT ?>/organization/projects" class="btn btn-secondary">← Back to Projects</a>
+            </div>
         </div>
 
         <!-- Success/Error Messages -->

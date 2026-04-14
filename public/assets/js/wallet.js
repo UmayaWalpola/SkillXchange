@@ -30,19 +30,19 @@ document.getElementById('transferForm')?.addEventListener('submit', function(e) 
     
     if (!recipientId) {
         e.preventDefault();
-        alert('❌ Please select a recipient');
+        alert('Please select a recipient');
         return false;
     }
     
     if (amount > currentBalance) {
         e.preventDefault();
-        alert('❌ Insufficient balance! You cannot send more than your current balance.');
+        alert('Insufficient balance! You cannot send more than your current balance.');
         return false;
     }
     
     if (amount <= 0) {
         e.preventDefault();
-        alert('❌ Please enter a valid amount greater than 0');
+        alert('Please enter a valid amount greater than 0');
         return false;
     }
 });

@@ -21,7 +21,7 @@ if ($isLocalhost) {
 define('SITENAME', 'SkillXchange');
 
 // Database configuration
-// Localhost එකේදී db.local.php run වෙයි, Live එකේදී db.php run වෙයි
+// On localhost, db.local.php will run, and on the live environment, db.php will run.
 $localDbConfig = __DIR__ . '/db.local.php';
 $liveDbConfig = __DIR__ . '/db.php';
 

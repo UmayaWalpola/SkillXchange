@@ -8,7 +8,7 @@ class UserService {
         $this->db = (new Database())->connect();
     }
 
-    // ✅ Get total individual users
+    // Get total individual users
     public function getTotalUsers() {
         $sql = "SELECT COUNT(*) as count FROM users WHERE role = 'individual'";
         $stmt = $this->db->prepare($sql);
@@ -17,7 +17,7 @@ class UserService {
         return $result['count'] ?? 0;
     }
 
-    // ✅ Get total organizations
+    // Get total organizations
     public function getTotalOrganizations() {
         $sql = "SELECT COUNT(*) as count FROM users WHERE role = 'organization'";
         $stmt = $this->db->prepare($sql);
@@ -26,7 +26,7 @@ class UserService {
         return $result['count'] ?? 0;
     }
 
-    // ✅ Get total active projects
+    // Get total active projects
     public function getTotalProjects() {
         $sql = "SELECT COUNT(*) as count FROM projects WHERE status = 'active'";
         $stmt = $this->db->prepare($sql);
@@ -35,7 +35,7 @@ class UserService {
         return $result['count'] ?? 0;
     }
 
-    // ✅ Get recent users
+    // Get recent users
     public function getRecentUsers($limit = 5) {
         $sql = "SELECT id, username, email, created_at, status 
                 FROM users 

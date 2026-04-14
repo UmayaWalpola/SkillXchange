@@ -19,7 +19,7 @@
     try {
         quizData = JSON.parse(quizDataElement.dataset.quiz);
         urlRoot = quizDataElement.dataset.urlroot;
-        console.log('✅ Quiz loaded:', quizData);
+        console.log('Quiz loaded:', quizData);
     } catch (error) {
         console.error('Parse error:', error);
         alert('Error loading quiz data');
@@ -231,7 +231,7 @@
                 }
             }
         } catch (error) {
-            console.error('❌ Submit error:', error);
+            console.error('Submit error:', error);
             alert('Error submitting quiz. Please try again.');
             if (submitBtn) {
                 submitBtn.disabled = false;
@@ -263,7 +263,7 @@
             badgeHTML = `
                 <div class="badge-earned">
                     <div class="badge-icon-large">${result.badgeEarned.icon || '🏆'}</div>
-                    <h3>🎉 Badge Earned!</h3>
+                    <h3>Badge Earned!</h3>
                     <p class="badge-name">${result.badgeEarned.name}</p>
                     <p class="badge-description">${result.badgeEarned.description || 'Congratulations!'}</p>
                 </div>
@@ -279,7 +279,7 @@
                     </div>
                     
                     <div class="score-details">
-                        <h2>${passed ? '🎉 Congratulations!' : '😔 Keep Trying!'}</h2>
+                        <h2>${passed ? 'Congratulations!' : 'Keep Trying!'}</h2>
                         <p class="score-text">
                             You got <strong>${result.correct}</strong> out of 
                             <strong>${result.total}</strong> questions correct!

@@ -174,29 +174,32 @@ class ReportController extends Controller
         }
     }
 
-    /**
-     * Report content (community posts or chat messages)
-     * POST /report/content
-     */
+    // ============================================================
+    // REPORT CONTENT (Messages, Posts) (Assigned to: Kithsara)
+    // Task 2: Create backend to log reports with timestamp and reasons
+    // ============================================================
     public function reportContent()
     {
+        // Step 1: Security check - must be logged in
         if (!isset($_SESSION['user_id'])) {
             echo json_encode(['success' => false, 'message' => 'You must be logged in to report.']);
             exit;
         }
 
+        // Must be a POST request
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
             exit;
         }
 
+        // Step 2: Grab the report details from the frontend
         $reporterId = $_SESSION['user_id'];
-        $contentType = trim($_POST['content_type'] ?? '');
+        $contentType = trim($_POST['content_type'] ?? ''); // 'post' or 'chat_message'
         $contentId = filter_var($_POST['content_id'] ?? 0, FILTER_VALIDATE_INT);
         $reason = trim($_POST['reason'] ?? '');
         $description = trim($_POST['description'] ?? '');
 
-        // Validation
+        // Step 3: Validation checks
         if (!in_array($contentType, ['post', 'chat_message'])) {
             echo json_encode(['success' => false, 'message' => 'Invalid content type.']);
             exit;
@@ -422,10 +425,15 @@ class ReportController extends Controller
      * Update report status AND notify user
      * POST /report/updateStatus
      */
+    // ============================================================
+    // MODERATE REPORTS & ENFORCE BANS (Assigned to: Kithsara)
+    // Tasks 5, 7, 9, 10, 11: Mark reports, restrict accounts, notify users, delete content
+    // ============================================================
     public function updateStatus()
     {
         header('Content-Type: application/json');
 
+        // Step 1: Security - Only Admins, Organizations, or Managers can do this
         if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['admin', 'organization', 'manager'])) {
             echo json_encode(['success' => false, 'message' => 'Unauthorized access.']);
             exit;
@@ -436,73 +444,73 @@ class ReportController extends Controller
             exit;
         }
 
+        // Step 2: Grab the Report ID, Type of report, and what Action the admin wants to take
         $reportId = filter_var($_POST['report_id'] ?? 0, FILTER_VALIDATE_INT);
-        $reportType = trim($_POST['report_type'] ?? '');
-        $action = trim($_POST['status'] ?? ''); 
+        $reportType = trim($_POST['report_type'] ?? ''); // 'user', 'project_member', 'content'
+        $action = trim($_POST['status'] ?? ''); // 'banned', 'warned', 'content_removed', 'resolved', 'dismissed'
 
-        // 1. Identify the Table and get the Offender's ID
-        // We need to know WHO we are warning/banning!
+        // Step 3: Find out WHO was reported (Offender ID)
         $table = '';
         $offenderId = null;
-        $offenderName = 'User';
 
+        // If the report was against a User Profile
         if ($reportType === 'user') {
             $table = 'reports';
-            // Fetch the reported user's ID
             $this->db->query("SELECT reported_user_id FROM reports WHERE id = :id");
             $this->db->bind(':id', $reportId);
             $report = $this->db->single();
             if ($report) $offenderId = $report->reported_user_id;
 
-        } elseif ($reportType === 'content') {
-            $table = 'content_reports';
-            // For content, we need to join with the content table to find the author
-            // This is complex, so for now let's assume we fetch it via a separate query if needed.
-            // Simplified for learning: We will focus on User Reports for notifications.
+        // If the report was against a Project Member
         } elseif ($reportType === 'project_member') {
             $table = 'user_reports';
-            // Fetch the reported user's ID from project member reports
             $this->db->query("SELECT reported_user_id FROM user_reports WHERE id = :id");
             $this->db->bind(':id', $reportId);
             $report = $this->db->single();
             if ($report) $offenderId = $report->reported_user_id;
+        
+        // Content report (Posts/Messages) will be handled separately below
+        } elseif ($reportType === 'content') {
+            $table = 'content_reports';
         }
 
-        // 2. Handle The Logic
+        // Step 4: Handle the Admin's Action Setup Variables
         $newStatus = $action;
         $notificationMessage = "";
         $notificationType = "";
 
+        // --- ACTION: BAN USER (Task 7 & 10) ---
         if ($action === 'banned') {
             if ($offenderId) {
-                // Update User Table to SUSPENDED
+                // Update User Table: Change their status to 'suspended' for 30 days
                 $this->db->query("UPDATE users SET status = 'suspended', suspended_until = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE id = :uid");
                 $this->db->bind(':uid', $offenderId);
                 $this->db->execute();
 
-                // Prepare Notification (They will see this if they ever get unbanned or via email)
+                // Prepare Notification for the suspended user
                 $notificationType = 'account_ban';
                 $notificationMessage = "Your account has been suspended due to severe policy violations.";
             }
-            $newStatus = 'resolved';
+            $newStatus = 'resolved'; // Mark report itself as 'resolved' in the reports table
         } 
+        
+        // --- ACTION: WARN USER (Task 5 & 9) ---
         elseif ($action === 'warned') {
             if ($offenderId) {
-                // Prepare Warning Notification
+                // Prepare Warning Notification to show in their bell icon
                 $notificationType = 'system_warning';
-                $notificationMessage = "⚠️ Official Warning: Your recent activity violated our community guidelines. Please review our rules to avoid suspension.";
+                $notificationMessage = "Official Warning: Your recent activity violated our community guidelines. Please review our rules to avoid suspension.";
             }
-            $newStatus = 'warned';
+            $newStatus = 'warned'; // Mark report table status as 'warned'
         }
 
+        // --- ACTION: DELETE CONTENT (Task 9 & 11) ---
         elseif ($action === 'content_removed') {
             if ($reportType === 'content') {
-                // 1. Fetch the content first (to get the author ID for notification)
                 $authorId = null;
                 $contentTable = '';
                 
-                // We need to know if it's a 'post' or 'chat_message'
-                // For this example, we'll query the content_reports table to find out the specific subtype
+                // First, find what specific content it was (post or chat message)
                 $this->db->query("SELECT content_type, content_id FROM content_reports WHERE id = :id");
                 $this->db->bind(':id', $reportId);
                 $cr = $this->db->single();
@@ -510,27 +518,29 @@ class ReportController extends Controller
                 if ($cr) {
                     if ($cr->content_type === 'post') {
                         $contentTable = 'posts';
-                        // Get Author ID before deleting
+                        
+                        // We need the Author's ID *before* we delete the post, so we can notify them!
                         $this->db->query("SELECT user_id FROM posts WHERE id = :id");
                         $this->db->bind(':id', $cr->content_id);
                         $post = $this->db->single();
                         if ($post) $authorId = $post->user_id;
                     } 
-                    // Add chat_message logic here if needed later
+                    // (Chat messages logic goes here if implemented)
                 }
 
-                // 2. Delete the Content
+                // Actually Delete the Content from the DB!
                 if ($contentTable && $cr->content_id) {
                     $this->db->query("DELETE FROM $contentTable WHERE id = :id");
                     $this->db->bind(':id', $cr->content_id);
                     $this->db->execute();
                 }
 
-                // 3. Notify the Author
+                // Notify the Author that their post was deleted (Task 9)
                 if ($authorId) {
-                    $notificationType = 'system_warning'; // Or create a new type 'content_removed'
+                    $notificationType = 'system_warning'; 
                     $notificationMessage = "Your content was removed because it violated our community guidelines.";
                     
+                    // Insert into notifications table immediately
                     $this->notificationModel->createNotification([
                         'user_id' => $authorId,
                         'type' => $notificationType,
@@ -541,20 +551,18 @@ class ReportController extends Controller
                     ]);
                 }
                 
-                $newStatus = 'resolved';
+                $newStatus = 'resolved'; // Complete the report
             }
         }
         
-        elseif ($action === 'resolved') {
-             // Optional: You could notify them that "No action was taken" or just leave it silent.
-             $newStatus = 'resolved';
-        }
-        elseif ($action === 'dismissed') {
-             $newStatus = 'dismissed';
+        // --- ACTION: RESOLVED OR DISMISSED (Task 5) ---
+        elseif ($action === 'resolved' || $action === 'dismissed') {
+             $newStatus = $action;
         }
 
-        // 3. Send the Notification (If message is set and we found the user)
+        // Step 5: Send the Warning/Ban Notification to the user (Task 9)
         if ($offenderId && !empty($notificationMessage)) {
+            // Save notification into the DB
             $this->notificationModel->createNotification([
                 'user_id' => $offenderId,
                 'type' => $notificationType,
@@ -565,7 +573,7 @@ class ReportController extends Controller
             ]);
         }
 
-        // 4. Update the Report Status in DB
+        // Step 6: Finally, Update the Report Status as "resolved", "warned" etc. 
         if ($table) {
             $this->db->query("UPDATE $table SET status = :status WHERE id = :id");
             $this->db->bind(':status', $newStatus);
