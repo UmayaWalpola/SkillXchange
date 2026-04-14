@@ -232,7 +232,11 @@ function leaveLesson(eventId) {
         method: 'POST',
         body: formData
     })
-        .then(response => response.json())
+        .then(async response => {
+            const text = await response.text();
+            console.log('Raw leaveLesson response:', text);
+            return JSON.parse(text);
+        })
         .then(data => {
             if (data.success) {
                 showNotification(data.message || 'Lesson left successfully.', 'success');
