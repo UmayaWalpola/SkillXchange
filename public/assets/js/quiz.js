@@ -6,7 +6,8 @@ const urlRoot = quizDataElement.dataset.urlroot;
 let currentFilter = { 
     search: '', 
     category: 'All', 
-    status: 'all' 
+    status: 'all' ,
+    sort: 'default' 
 };
 
 // DOM Elements
@@ -37,6 +38,11 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         currentFilter.status = e.target.dataset.status;
         renderQuizzes();
     });
+});
+
+document.getElementById('sortSelect').addEventListener('change', (e) => {
+    currentFilter.sort = e.target.value;
+    renderQuizzes();
 });
 
 // Functions
@@ -155,6 +161,7 @@ function filterQuizzes() {
 
 function renderQuizzes() {
     const filteredQuizzes = filterQuizzes();
+    const sortedQuizzes = sortQuizzes(filteredQuizzes);
     if (filteredQuizzes.length === 0) {
         quizGrid.style.display = 'none';
         noResults.style.display = 'block';
@@ -189,6 +196,38 @@ function showNotification(message, type = 'info') {
         notification.style.animation = 'slideOut 0.3s ease-out';
         setTimeout(() => notification.remove(), 300);
     }, 3000);
+}
+
+function sortQuizzes(quizList) {
+    const difficultyOrder = { 'Easy': 1, 'Medium': 2, 'Hard': 3 };
+    
+    const sorted = [...quizList]; // copy so we don't mutate original
+    
+    switch (currentFilter.sort) {
+        case 'difficulty-asc':
+            sorted.sort((a, b) => 
+                (difficultyOrder[a.difficulty] || 0) - (difficultyOrder[b.difficulty] || 0)
+            );
+            break;
+        case 'difficulty-desc':
+            sorted.sort((a, b) => 
+                (difficultyOrder[b.difficulty] || 0) - (difficultyOrder[a.difficulty] || 0)
+            );
+            break;
+        case 'date-asc':
+            sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+            break;
+        case 'date-desc':
+            sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            break;
+        case 'score-desc':
+            sorted.sort((a, b) => (b.lastScore ?? -1) - (a.lastScore ?? -1));
+            break;
+        default:
+            break; // no sorting, keep original order
+    }
+    
+    return sorted;
 }
 
 // Add CSS animations

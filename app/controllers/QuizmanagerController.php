@@ -1,3 +1,4 @@
+
 <?php
 // app/controllers/QuizmanagerController.php
 
