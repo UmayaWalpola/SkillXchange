@@ -89,14 +89,6 @@
                         <p class="disc-member-card__desc">
                             <?= htmlspecialchars(substr((string)($proj->description ?? ''), 0, 100)) ?><?= strlen((string)($proj->description ?? '')) > 100 ? '…' : '' ?>
                         </p>
-                        <?php if (!empty($skills)): ?>
-                        <div class="disc-skills">
-                            <?php foreach (array_slice($skills, 0, 3) as $sk): ?>
-                            <span class="disc-skill-tag"><?= htmlspecialchars($sk) ?></span>
-                            <?php endforeach; ?>
-                            <?php if (count($skills) > 3): ?><span class="disc-skill-tag disc-skill-more">+<?= count($skills)-3 ?></span><?php endif; ?>
-                        </div>
-                        <?php endif; ?>
                         <div class="disc-member-card__meta">
                             <span><i class="ph ph-users"></i> <?= (int)($proj->current_members ?? 0) ?>/<?= (int)($proj->max_members ?? 0) ?> Members</span>
                             <span><i class="ph ph-calendar-check"></i> Joined <?= $joinDate ?></span>

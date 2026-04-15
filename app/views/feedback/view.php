@@ -25,7 +25,7 @@ if (isset($_SESSION['role'])) {
         <!-- Stats Overview -->
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-bottom:30px;">
             <div style="background:linear-gradient(135deg,var(--primary-blue),var(--accent-blue));border-radius:16px;padding:25px;color:white;">
-                <div style="font-size:14px;opacity:0.9;margin-bottom:8px;">Average Rating</div>
+                <div style="font-size:14px;opacity:0.9;margin-bottom:6px;">Average Rating</div>
                 <div style="font-size:42px;font-weight:700;margin-bottom:5px;"><?= number_format($data['stats']->avg_rating ?? 0, 1) ?></div>
                 <div style="font-size:13px;opacity:0.9;">out of 5.0</div>
             </div>
@@ -73,12 +73,6 @@ if (isset($_SESSION['role'])) {
                         <option value="ontime">On-time</option>
                         <option value="teamwork">Teamwork</option>
                     </select>
-                </div>
-
-                <!-- Search Input -->
-                <div style="flex:2;min-width:200px;">
-                    <label style="display:block;font-weight:600;margin-bottom:8px;font-size:14px;color:#1a1a1a;">Search Comments</label>
-                    <input type="text" id="searchInput" placeholder="Search in comments..." style="width:100%;padding:10px 12px;border:2px solid #e1eefb;border-radius:8px;font-size:14px;">
                 </div>
 
                 <!-- Clear Filters Button -->

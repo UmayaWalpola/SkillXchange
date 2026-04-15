@@ -296,6 +296,9 @@ class FeedbackController extends Controller {
      * Route: /Feedback/index or /Feedback
      */
     public function index($userId = null) {
+        if (!$userId && isset($_GET['user_id'])) {
+            $userId = filter_var($_GET['user_id'], FILTER_VALIDATE_INT);
+        }
         if (!$userId) {
             $userId = $_SESSION['user_id'];
         }

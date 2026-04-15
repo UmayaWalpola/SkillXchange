@@ -268,7 +268,7 @@ class Feedback extends Database {
      * @param int|null $context_id - Optional: specific context
      * @return object - Contains avg_rating, total_count, and rating distribution
      */
-    public function getUserStats($user_id, $context_type = 'project', $context_id = null) {
+    public function getUserStats($user_id, $context_type = null, $context_id = null) {
         $sql = "SELECT 
                     COUNT(*) as total_count,
                     IFNULL(ROUND(AVG(rating), 2), 0) as avg_rating,
@@ -278,8 +278,11 @@ class Feedback extends Database {
                     SUM(CASE WHEN rating = 2 THEN 1 ELSE 0 END) as two_star,
                     SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) as one_star
                 FROM user_feedback 
-                WHERE user_id = :user_id 
-                AND context_type = :context_type";
+                WHERE user_id = :user_id";
+        
+        if ($context_type !== null) {
+            $sql .= " AND context_type = :context_type";
+        }
         
         if ($context_id !== null) {
             $sql .= " AND context_id = :context_id";
@@ -287,7 +290,10 @@ class Feedback extends Database {
         
         $stmt = $this->connect()->prepare($sql);
         $stmt->bindValue(':user_id', $user_id);
-        $stmt->bindValue(':context_type', $context_type);
+        
+        if ($context_type !== null) {
+            $stmt->bindValue(':context_type', $context_type);
+        }
         
         if ($context_id !== null) {
             $stmt->bindValue(':context_id', $context_id);

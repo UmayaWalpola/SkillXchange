@@ -44,11 +44,6 @@ function loadFiltersFromURL() {
         document.getElementById('tagFilter').value = currentFilters.tag;
     }
     
-    if (params.get('search')) {
-        currentFilters.search = params.get('search');
-        document.getElementById('searchInput').value = currentFilters.search;
-    }
-    
     if (params.get('page')) {
         currentFilters.page = parseInt(params.get('page'));
     }
@@ -66,6 +61,7 @@ function attachEventListeners() {
     });
     
     // Rating filter change
+    //Listening to changes 
     document.getElementById('ratingFilter').addEventListener('change', function() {
         if (this.value) {
             currentFilters.rating = this.value;
@@ -83,23 +79,8 @@ function attachEventListeners() {
         } else {
             delete currentFilters.tag;
         }
-        currentFilters.page = 1;
+        currentFilters.page = 1;          // Reset to first page when changing filters
         loadFeedback();
-    });
-    
-    // Search input (debounced)
-    let searchTimeout;
-    document.getElementById('searchInput').addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-            if (this.value.trim()) {
-                currentFilters.search = this.value.trim();
-            } else {
-                delete currentFilters.search;
-            }
-            currentFilters.page = 1;
-            loadFeedback();
-        }, 500);
     });
     
     // Clear filters button
@@ -111,12 +92,11 @@ function attachEventListeners() {
             limit: 10
         };
         
-        document.getElementById('sortSelect').value = 'newest';
-        document.getElementById('ratingFilter').value = '';
-        document.getElementById('tagFilter').value = '';
-        document.getElementById('searchInput').value = '';
+        document.getElementById('sortSelect').value = 'newest'; // Reset sort to default
+        document.getElementById('ratingFilter').value = '';    // Clear rating filter
+        document.getElementById('tagFilter').value = '';          // Clear tag filter
         
-        loadFeedback();
+        loadFeedback();            // Load feedback with default filters
     });
     
     // Pagination buttons

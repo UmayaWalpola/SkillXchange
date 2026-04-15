@@ -9,6 +9,9 @@
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
+    <!-- Local Phosphor Icons එකතු කිරීම -->
+<link rel="stylesheet" type="text/css" href="<?= URLROOT ?>/assets/phosphor/regular/style.css" />
+
     <style>
         .header {
             position: fixed;
