@@ -1,5 +1,6 @@
 <?php
-
+ 
+ //Controller  Template 
 class ProjectController extends Controller
 {
     private $projectModel;
@@ -9,7 +10,7 @@ class ProjectController extends Controller
         $this->projectModel = $this->model('Project');
     }
 
-    // List all projects for logged org
+   // 1. READ ALL (List) - For organization to view their projects
     public function index()
     {
         $org_id = $_SESSION['user_id'];
@@ -19,7 +20,7 @@ class ProjectController extends Controller
         $this->view('organization/projects', ['projects' => $projects]);
     }
 
-    // Show create form
+     // 2. CREATE - Show form
     public function create()
     {
         $this->view('organization/createProject');
@@ -80,6 +81,142 @@ class ProjectController extends Controller
         exit;
     }
 
+    /*<?php
+// app/controllers/Books.php
+    ******Controller Template ***********
+
+class Books extends Controller {
+    private $bookModel;
+
+    public function __construct() {
+        // Load the model
+        $this->bookModel = $this->model('Book');
+    }
+
+    // 1. READ ALL (List)
+    public function index() {
+        $books = $this->bookModel->getAll();
+        $this->view('books/index', ['books' => $books]);
+    }
+
+    // 2. CREATE
+    public function create() {
+        // If the form is submitted (POST)
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            
+            $title = trim($_POST['title'] ?? '');
+            
+            // Validation
+            if (empty($title)) {
+                $data = ['error' => 'Title is required!'];
+                $this->view('books/create', $data); // If invalid, show the form again
+            } else {
+                // Send to model and save
+                if ($this->bookModel->create($title)) {
+                    $_SESSION['success'] = "Book added successfully!";
+                    header("Location: " . URLROOT . "/books/index"); // Redirect to main page
+                    exit;
+                }
+            }
+        } 
+        // If the form is not submitted (GET) - just show empty form
+        else {
+            $this->view('books/create');
+        }
+    }
+
+    // 3. UPDATE
+    public function edit($id) {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $title = trim($_POST['title']);
+            
+            if ($this->bookModel->update($id, $title)) {
+                $_SESSION['success'] = "Changes saved!";
+                header("Location: " . URLROOT . "/books/index");
+                exit;
+            }
+        } else {
+            // GET request: fetch existing data and send to form
+            $book = $this->bookModel->getById($id);
+            $this->view('books/edit', ['book' => $book]);
+        }
+    }
+
+    // 4. DELETE
+    public function delete($id) {
+        if ($this->bookModel->delete($id)) {
+            $_SESSION['success'] = "Book deleted!";
+        }
+        header("Location: " . URLROOT . "/books/index");
+        exit;
+    }
+}*/
+
+    // Public project detail view (user-facing)
+    public function browse()
+    {
+        if (!isset($_SESSION['user_id'])) {
+            $_SESSION['error'] = 'Please sign in to browse projects.';
+            header('Location: ' . URLROOT . '/auth/signin');
+            exit();
+        }
+
+        if (isset($_SESSION['role']) && $_SESSION['role'] === 'organization') {
+            header('Location: ' . URLROOT . '/organization/projects');
+            exit();
+        }
+
+        $userId = (int)$_SESSION['user_id'];
+        $db = new Database();
+
+        // Fetch the latest application status per project for the current user.
+        $db->query("SELECT pa.project_id, pa.status
+                    FROM project_applications pa
+                    INNER JOIN (
+                        SELECT project_id, MAX(id) AS latest_id
+                        FROM project_applications
+                        WHERE user_id = :user_id
+                        GROUP BY project_id
+                    ) latest ON latest.latest_id = pa.id");
+        $db->bind(':user_id', $userId);
+        $applicationRows = $db->resultSet();
+        $applicationStatusByProject = [];
+        foreach ($applicationRows as $row) {
+            $applicationStatusByProject[(int)$row->project_id] = strtolower($row->status);
+        }
+
+        // Fetch member projects with join date for top banner
+        $db->query("SELECT p.*, pm.joined_at, pm.role,
+                    (SELECT COUNT(*) FROM project_members WHERE project_id = p.id AND status='active') AS current_members
+                    FROM projects p
+                    JOIN project_members pm ON pm.project_id = p.id
+                    WHERE pm.user_id = :user_id AND pm.status = 'active'
+                    ORDER BY pm.joined_at DESC");
+        $db->bind(':user_id', $userId);
+        $memberProjects = $db->resultSet();
+
+        $memberProjectIds = [];
+        foreach ($memberProjects as $mp) {
+            $memberProjectIds[(int)$mp->id] = true;
+        }
+
+        // Suggest only projects that match user's teach skills and have required skills.
+        $userTeachSkills = $this->projectModel->getUserTeachSkills($userId);
+        $allProjects = $this->projectModel->getSuggestedProjectsForUser($userId);
+
+        $data = [
+            'title'                      => 'Discover Projects',
+            'projects'                   => $allProjects,       // all projects (bottom grid)
+            'memberProjects'             => $memberProjects,    // user's member projects (top)
+            'page'                       => 'discover-projects',
+            'applicationStatusByProject' => $applicationStatusByProject,
+            'memberProjectIds'           => $memberProjectIds,
+            'userTeachSkills'            => $userTeachSkills
+        ];
+
+        $this->view('projects/browse', $data);
+    }
+
     // Public project detail view (user-facing)
     public function detail($id = null)
     {
@@ -114,15 +251,22 @@ class ProjectController extends Controller
         $taskModel = $this->model('Task');
         $taskStats = $taskModel->getTaskStats($id);
 
+        // Load tasks assigned to the current user for this project (member view)
+        $myTasks = [];
+        if (isset($_SESSION['user_id']) && $is_member) {
+            $myTasks = $taskModel->getTasksByMember($id, $_SESSION['user_id']);
+        }
+
         $data = [
-            'title' => $project->name,
-            'project' => $project,
+            'title'       => $project->name,
+            'project'     => $project,
             'application' => $application,
-            'is_member' => $is_member,
-            'members' => $members ?? [],
-            'progress' => $progress,
-            'taskModel' => $taskModel,
-            'taskStats' => $taskStats
+            'is_member'   => $is_member,
+            'members'     => $members ?? [],
+            'progress'    => $progress,
+            'taskModel'   => $taskModel,
+            'taskStats'   => $taskStats,
+            'myTasks'     => $myTasks
         ];
 
         parent::view('projects/view', $data);
@@ -166,6 +310,20 @@ class ProjectController extends Controller
             }
             $_SESSION['error'] = 'You must be logged in to apply.';
             header('Location: ' . URLROOT . '/auth/signin');
+            exit();
+        }
+
+        // Enforce required-skill overlap before accepting an application.
+        $skillMatch = $this->projectModel->getSkillMatchSummaryForProject((int)$projectId, (int)$_SESSION['user_id']);
+        if (empty($skillMatch['allowed'])) {
+            $msg = 'You can only join projects where required skills match your teach skills.';
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $msg]);
+                return;
+            }
+            $_SESSION['error'] = $msg;
+            header('Location: ' . URLROOT . '/project/detail/' . $projectId);
             exit();
         }
 
@@ -241,5 +399,73 @@ class ProjectController extends Controller
 
         header('Location: ' . URLROOT . '/project/detail/' . $projectId);
         exit();
+    }
+
+    /**
+     * AJAX: Mark a task as complete (called by member)
+     * POST JSON: { task_id, project_id }
+     */
+    public function completeTask()
+    {
+        ob_clean();
+        header('Content-Type: application/json');
+
+        try {
+            if (!isset($_SESSION['user_id'])) {
+                echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+                exit;
+            }
+
+            $rawInput = file_get_contents('php://input');
+            $input    = json_decode($rawInput, true) ?: $_POST;
+
+            $taskId    = (int)($input['task_id'] ?? 0);
+            $projectId = (int)($input['project_id'] ?? 0);
+
+            if (!$taskId || !$projectId) {
+                echo json_encode(['success' => false, 'message' => 'Missing task_id or project_id']);
+                exit;
+            }
+
+            $taskModel = $this->model('Task');
+            $task = $taskModel->getTaskById($taskId);
+
+            if (!$task || (int)$task->project_id !== $projectId) {
+                echo json_encode(['success' => false, 'message' => 'Task not found']);
+                exit;
+            }
+
+            if ((int)$task->assigned_to !== (int)$_SESSION['user_id']) {
+                echo json_encode(['success' => false, 'message' => 'You are not assigned to this task']);
+                exit;
+            }
+
+            if ($taskModel->updateTaskStatus($taskId, 'done', (int)$_SESSION['user_id'])) {
+                try {
+                    $project = $this->projectModel->getProjectById($projectId);
+                    if ($project && !empty($project->organization_id)) {
+                        $notifModel = $this->model('Notification');
+                        $memberName = $_SESSION['username'] ?? 'A member';
+                        $notifModel->createNotification([
+                            'user_id'    => $project->organization_id,
+                            'type'       => 'task_completed',
+                            'message'    => "{$memberName} completed the task: {$task->title}",
+                            'project_id' => $projectId,
+                            'task_id'    => $taskId
+                        ]);
+                    }
+                } catch (Throwable $e) {
+                    error_log('Notify org on task complete: ' . $e->getMessage());
+                }
+
+                echo json_encode(['success' => true, 'message' => 'Task marked as complete!']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Failed to update task status']);
+            }
+        } catch (Throwable $e) {
+            error_log('Project completeTask error: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Failed to complete task. Please try again.']);
+        }
+        exit;
     }
 }

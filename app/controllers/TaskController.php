@@ -8,8 +8,23 @@ class TaskController extends Controller {
     private $notificationModel;
 
     public function __construct() {
+        $isAjaxRequest = isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
         if (!isset($_SESSION['user_id'])) {
-            header('Location: ' . URLROOT . '/auth/signin');
+            if ($isAjaxRequest) {
+                while (ob_get_level() > 0) {
+                    ob_end_clean();
+                }
+                header('Content-Type: application/json');
+                http_response_code(401);
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Your session has expired. Please sign in again.'
+                ]);
+            } else {
+                header('Location: ' . URLROOT . '/auth/signin');
+            }
             exit();
         }
 
@@ -86,61 +101,68 @@ class TaskController extends Controller {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Handle AJAX request
             if ($isAjax) {
-                $projectId = (int)($_POST['project_id'] ?? 0);
+                ob_clean(); // Clear any output buffer
+                header('Content-Type: application/json');
                 
-                if (!$projectId) {
-                    header('Content-Type: application/json');
-                    echo json_encode(['success' => false, 'message' => 'Project ID required']);
-                    return;
-                }
-
-                // Verify organization owns the project
-                $project = $this->projectModel->getProjectById($projectId);
-                if (!$project || $project->organization_id != $_SESSION['user_id']) {
-                    header('Content-Type: application/json');
-                    echo json_encode(['success' => false, 'message' => 'Access denied']);
-                    return;
-                }
-
-                $taskData = [
-                    'project_id' => $projectId,
-                    'task_name' => trim($_POST['task_name'] ?? ''),
-                    'description' => trim($_POST['description'] ?? ''),
-                    'assigned_to' => !empty($_POST['assigned_to']) ? (int)$_POST['assigned_to'] : null,
-                    'priority' => trim($_POST['priority'] ?? 'medium'),
-                    'due_date' => !empty($_POST['due_date']) ? $_POST['due_date'] : null,
-                    'status' => 'pending',
-                    'created_by' => $_SESSION['user_id']
-                ];
-
-                if (empty($taskData['task_name'])) {
-                    header('Content-Type: application/json');
-                    echo json_encode(['success' => false, 'message' => 'Task name is required']);
-                    return;
-                }
-
-                $taskId = $this->taskModel->createTask($taskData);
-                if ($taskId) {
-                    // Notify assigned user about new task
-                    if (!empty($taskData['assigned_to'])) {
-                        $msg = "You have been assigned the task: {$taskData['task_name']}";
-                        $this->notificationModel->createNotification([
-                            'user_id' => $taskData['assigned_to'],
-                            'type' => 'task_assigned',
-                            'message' => $msg,
-                            'project_id' => $projectId,
-                            'task_id' => $taskId
-                        ]);
+                try {
+                    $projectId = (int)($_POST['project_id'] ?? 0);
+                    
+                    if (!$projectId) {
+                        echo json_encode(['success' => false, 'message' => 'Project ID required']);
+                        exit;
                     }
 
-                    header('Content-Type: application/json');
-                    echo json_encode(['success' => true, 'message' => 'Task created successfully', 'task_id' => $taskId]);
-                    return;
-                }
+                    // Verify organization owns the project
+                    $project = $this->projectModel->getProjectById($projectId);
+                    if (!$project || $project->organization_id != $_SESSION['user_id']) {
+                        echo json_encode(['success' => false, 'message' => 'Access denied']);
+                        exit;
+                    }
 
-                header('Content-Type: application/json');
-                echo json_encode(['success' => false, 'message' => 'Failed to create task']);
-                return;
+                    $taskData = [
+                        'project_id' => $projectId,
+                        'title' => trim($_POST['task_name'] ?? ''),
+                        'description' => trim($_POST['description'] ?? ''),
+                        'assigned_to' => !empty($_POST['assigned_to']) ? (int)$_POST['assigned_to'] : (!empty($_POST['member_id']) ? (int)$_POST['member_id'] : null),
+                        'priority' => strtolower(trim($_POST['priority'] ?? 'medium')),
+                        'deadline' => !empty($_POST['due_date']) ? $_POST['due_date'] : null,
+                        'status' => 'todo'
+                    ];
+
+                    if (empty($taskData['title'])) {
+                        echo json_encode(['success' => false, 'message' => 'Task name is required']);
+                        exit;
+                    }
+
+                    $taskId = $this->taskModel->createTask($taskData);
+                    if ($taskId) {
+                        // Notify assigned user about new task
+                        if (!empty($taskData['assigned_to'])) {
+                            try {
+                                $this->notificationModel->createNotification([
+                                    'user_id'    => $taskData['assigned_to'],
+                                    'type'       => 'task_assigned',
+                                    'message'    => "You have been assigned the task: {$taskData['title']}",
+                                    'project_id' => $taskData['project_id'],
+                                    'task_id'    => $taskId
+                                ]);
+                            } catch (Exception $e) {
+                                error_log("Notification error: " . $e->getMessage());
+                            }
+                        }
+
+                        echo json_encode(['success' => true, 'message' => 'Task created successfully', 'task_id' => $taskId]);
+                        exit;
+                    }
+
+                    echo json_encode(['success' => false, 'message' => 'Failed to create task']);
+                    exit;
+                    
+                } catch (Exception $e) {
+                    error_log("Task creation error: " . $e->getMessage());
+                    echo json_encode(['success' => false, 'message' => 'Server error: ' . $e->getMessage()]);
+                    exit;
+                }
             }
             
             // Handle regular form submission
@@ -192,11 +214,7 @@ class TaskController extends Controller {
             if ($taskId) {
                 // Notify assigned user about new task
                 if (!empty($taskData['assigned_to'])) {
-<<<<<<< HEAD
                     $msg = "You have been assigned the task: {$taskData['task_name']}";
-=======
-                    $msg = "You have been assigned the task: {$taskData['title']}";
->>>>>>> dc8d8d6d35a9005a610d0a7b06967ac0ededd82d
                     $this->notificationModel->createNotification([
                         'user_id' => $taskData['assigned_to'],
                         'type' => 'task_assigned',
@@ -352,7 +370,7 @@ class TaskController extends Controller {
             return;
         }
 
-        if ($this->taskModel->updateTaskStatus($taskId, $status)) {
+        if ($this->taskModel->updateTaskStatus($taskId, $status, (int)$_SESSION['user_id'])) {
             // Notify assignee about status change (org-side move)
             if ($task->assigned_to) {
                 $msg = "Status of task '{$task->title}' changed to " . ucfirst(str_replace('-', ' ', $status));
@@ -498,66 +516,75 @@ class TaskController extends Controller {
         $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAjax) {
-            $taskId = (int)($_POST['task_id'] ?? 0);
-            $status = $_POST['status'] ?? null;
-            
-            if (!$taskId || !$status) {
-                header('Content-Type: application/json');
-                echo json_encode(['success' => false, 'message' => 'Invalid request']);
-                return;
+            while (ob_get_level() > 0) {
+                ob_end_clean();
             }
-
-            $task = $this->taskModel->getTaskById($taskId);
-            if (!$task) {
-                header('Content-Type: application/json');
-                echo json_encode(['success' => false, 'message' => 'Task not found']);
-                return;
-            }
-
-            // Verify organization owns the project OR user is assigned
-            $project = $this->projectModel->getProjectById($task->project_id);
-            $isOwner = ($project && $project->organization_id == $_SESSION['user_id']);
-            $isAssigned = ($task->assigned_to == $_SESSION['user_id']);
-            
-            if (!$isOwner && !$isAssigned) {
-                header('Content-Type: application/json');
-                echo json_encode(['success' => false, 'message' => 'Access denied']);
-                return;
-            }
-
-            if ($this->taskModel->updateTaskStatus($taskId, $status)) {
-                // Notify project owner if updated by member
-                if (!$isOwner && $isAssigned) {
-                    $msg = "Task '{$task->task_name}' status changed to " . ucfirst(str_replace('_', ' ', $status));
-                    $this->notificationModel->createNotification([
-                        'user_id' => $project->organization_id,
-                        'type' => 'task_update',
-                        'message' => $msg,
-                        'project_id' => $task->project_id,
-                        'task_id' => $taskId
-                    ]);
-                }
-                
-                // Notify assigned user if updated by owner
-                if ($isOwner && $task->assigned_to) {
-                    $msg = "Task '{$task->task_name}' status changed to " . ucfirst(str_replace('_', ' ', $status));
-                    $this->notificationModel->createNotification([
-                        'user_id' => $task->assigned_to,
-                        'type' => 'task_update',
-                        'message' => $msg,
-                        'project_id' => $task->project_id,
-                        'task_id' => $taskId
-                    ]);
-                }
-
-                header('Content-Type: application/json');
-                echo json_encode(['success' => true, 'message' => 'Task status updated']);
-                return;
-            }
-
             header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'message' => 'Failed to update status']);
-            return;
+
+            try {
+                $taskId = (int)($_POST['task_id'] ?? 0);
+                $status = $_POST['status'] ?? null;
+
+                if (!$taskId || !$status) {
+                    echo json_encode(['success' => false, 'message' => 'Invalid request']);
+                    exit;
+                }
+
+                $task = $this->taskModel->getTaskById($taskId);
+                if (!$task) {
+                    echo json_encode(['success' => false, 'message' => 'Task not found']);
+                    exit;
+                }
+
+                // Verify organization owns the project OR user is assigned
+                $project = $this->projectModel->getProjectById($task->project_id);
+                $isOwner = ($project && $project->organization_id == $_SESSION['user_id']);
+                $isAssigned = ($task->assigned_to == $_SESSION['user_id']);
+
+                if (!$isOwner && !$isAssigned) {
+                    echo json_encode(['success' => false, 'message' => 'Access denied']);
+                    exit;
+                }
+
+                if ($this->taskModel->updateTaskStatus($taskId, $status, (int)$_SESSION['user_id'])) {
+                    $taskLabel = $task->title ?? $task->task_name ?? 'Task';
+                    $statusLabel = ucwords(str_replace(['_', '-'], ' ', $status));
+                    $msg = "Task '{$taskLabel}' status changed to {$statusLabel}";
+
+                    try {
+                        if (!$isOwner && $isAssigned && $project && !empty($project->organization_id)) {
+                            $this->notificationModel->createNotification([
+                                'user_id' => $project->organization_id,
+                                'type' => 'task_update',
+                                'message' => $msg,
+                                'project_id' => $task->project_id,
+                                'task_id' => $taskId
+                            ]);
+                        }
+
+                        if ($isOwner && $task->assigned_to) {
+                            $this->notificationModel->createNotification([
+                                'user_id' => $task->assigned_to,
+                                'type' => 'task_update',
+                                'message' => $msg,
+                                'project_id' => $task->project_id,
+                                'task_id' => $taskId
+                            ]);
+                        }
+                    } catch (Throwable $notificationError) {
+                        error_log('Task update notification error: ' . $notificationError->getMessage());
+                    }
+
+                    echo json_encode(['success' => true, 'message' => 'Task status updated']);
+                    exit;
+                }
+
+                echo json_encode(['success' => false, 'message' => 'Failed to update status']);
+            } catch (Throwable $e) {
+                error_log('TaskController updateStatus AJAX error: ' . $e->getMessage());
+                echo json_encode(['success' => false, 'message' => 'Failed to update task status. Please try again.']);
+            }
+            exit;
         }
         
         // Handle regular form submission
@@ -582,7 +609,7 @@ class TaskController extends Controller {
             return;
         }
 
-        if ($this->taskModel->updateTaskStatus($taskId, $status)) {
+        if ($this->taskModel->updateTaskStatus($taskId, $status, (int)$_SESSION['user_id'])) {
             $_SESSION['success'] = 'Task status updated!';
         } else {
             $_SESSION['error'] = 'Failed to update task status';

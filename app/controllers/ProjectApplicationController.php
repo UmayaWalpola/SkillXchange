@@ -45,6 +45,20 @@ class ProjectApplicationController extends Controller {
             exit();
         }
 
+        // Enforce required skill matching (project required skills vs user's teach skills).
+        $skillMatch = $this->projectModel->getSkillMatchSummaryForProject((int)$projectId, (int)$_SESSION['user_id']);
+        if (empty($skillMatch['allowed'])) {
+            $msg = 'You can only apply to projects where required skills match your teach skills.';
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $msg]);
+                return;
+            }
+            $_SESSION['error'] = $msg;
+            header('Location: ' . URLROOT . '/project/detail/' . $projectId);
+            exit();
+        }
+
         // Accept both legacy and new field names for compatibility
         $experience = trim($_POST['experience'] ?? $_POST['relevant_experience'] ?? '');
         $skills = trim($_POST['skills'] ?? $_POST['matching_skills'] ?? '');

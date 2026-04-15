@@ -21,7 +21,7 @@
                 <input type="text" id="searchProjects" placeholder="Search projects..." class="search-box" />
                 <div class="filter-buttons">
                     <button class="filter-btn active" onclick="filterProjects('all')">All Projects</button>
-                    <button class="filter-btn" onclick="filterProjects('active')">Active</button>
+                    <button class="filter-btn" onclick="filterProjects('open')">Open</button>
                     <button class="filter-btn" onclick="filterProjects('in-progress')">In Progress</button>
                     <button class="filter-btn" onclick="filterProjects('completed')">Completed</button>
                 </div>
@@ -36,49 +36,40 @@
                         <?php 
                             if (is_array($project)) $project = (object)$project;
                             
-                            $icons = [
-                                'web' => '💻',
-                                'mobile' => '📱',
-                                'data' => '📊',
-                                'design' => '🎨',
-                                'other' => '📁'
-                            ];
-                            $icon = $icons[$project->category] ?? '📁';
-                            $categoryClass = $project->category ?? 'other';
+                            $statusClass = strtolower(str_replace('_', '-', $project->status));
+                            $roleColor = $project->member_role === 'leader' ? '#10b981' : '#3b82f6';
                         ?>
-                        <div class="project-card" data-status="<?= htmlspecialchars($project->status) ?>">
-                            <div class="project-banner <?= htmlspecialchars($categoryClass) ?>">
-                                <?= $icon ?>
+                        <div class="project-card" data-status="<?= htmlspecialchars($statusClass) ?>">
+                            <div class="project-banner" style="display: flex; align-items: center; justify-content: center;">
+                                <i class="ph ph-folder-open" style="font-size: 2rem;"></i>
                             </div>
-                            <span class="status-badge <?= htmlspecialchars($project->status) ?>">
-                                <?= ucfirst(str_replace('-', ' ', $project->status)) ?>
+                            <span class="status-badge <?= htmlspecialchars($statusClass) ?>">
+                                <?= ucfirst(str_replace('_', ' ', $project->status)) ?>
                             </span>
                             <div class="project-content">
-                                <h3 class="project-title"><?= htmlspecialchars($project->name) ?></h3>
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                                    <h3 class="project-title"><?= htmlspecialchars($project->name) ?></h3>
+                                    <span style="background: <?= $roleColor ?>; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
+                                        <?= ucfirst($project->member_role) ?>
+                                    </span>
+                                </div>
                                 <p class="project-description"><?= htmlspecialchars(substr($project->description, 0, 120)) ?><?= strlen($project->description) > 120 ? '...' : '' ?></p>
-                                <div class="project-meta">
-                                    <span class="project-category"><?= ucfirst(htmlspecialchars($project->category)) ?></span>
-                                    <span><?= intval($project->current_members ?? 0) ?>/<?= htmlspecialchars($project->max_members) ?> Members</span>
+                                
+                                <div class="project-meta" style="margin-top: 1rem;">
+                                    <span><i class="ph ph-users"></i> <?= $project->team_size ?> Members</span>
+                                    <span><i class="ph ph-calendar"></i> Created: <?= date('M Y', strtotime($project->created_at)) ?></span>
                                 </div>
-                                <div class="project-skills">
-                                    <?php 
-                                        $skills = array_slice(explode(',', $project->required_skills), 0, 3);
-                                        foreach ($skills as $skill): 
-                                    ?>
-                                        <span class="skill-tag"><?= htmlspecialchars(trim($skill)) ?></span>
-                                    <?php endforeach; ?>
-                                    <?php if(count(explode(',', $project->required_skills)) > 3): ?>
-                                        <span class="skill-tag">+<?= count(explode(',', $project->required_skills)) - 3 ?> more</span>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="project-footer">
-                                    <span class="members-count"><?= intval($project->current_members ?? 0) ?> Members</span>
+                                
+                                <div class="project-footer" style="margin-top: 1.5rem;">
+                                    <span style="font-size: 0.875rem; color: #888;">
+                                        Joined: <?= date('M d, Y', strtotime($project->joined_at)) ?>
+                                    </span>
                                     <div style="display:flex; gap:8px;">
                                         <a href="<?= URLROOT ?>/project/detail/<?= htmlspecialchars($project->id) ?>" class="view-details-btn">
                                             View Details
                                         </a>
-                                        <a href="<?= URLROOT ?>/chat/index/<?= htmlspecialchars($project->id) ?>" class="view-details-btn" style="background:#0ea5e9;border-color:#0ea5e9;">
-                                            💬 Open Chat
+                                        <a href="<?= URLROOT ?>/userdashboard/chats?partnerId=<?= htmlspecialchars($project->id) ?>" class="view-details-btn" style="background:#0ea5e9;border-color:#0ea5e9;">
+                                            <i class="ph ph-chat-circle-dots"></i> Chat
                                         </a>
                                     </div>
                                 </div>
@@ -87,9 +78,12 @@
                     <?php endforeach; ?>
                 <?php else: ?>
                     <div style="grid-column: 1/-1; text-align: center; padding: 3rem 1rem; color: #666;">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">📁</div>
+                        <div style="font-size: 3rem; margin-bottom: 1rem;"><i class="ph ph-folder-open" style="font-size: 4rem; color: #ccc;"></i></div>
                         <h3 style="color: #333; margin-bottom: 0.5rem;">No Projects Yet</h3>
-                        <p>You haven't joined any projects yet. Browse available projects or ask your organization to invite you!</p>
+                        <p>You haven't joined any projects yet. Check available projects or wait for an organization to invite you!</p>
+                        <a href="<?= URLROOT ?>/project/browse" style="display: inline-block; margin-top: 1rem; padding: 0.75rem 1.5rem; background: #3b82f6; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                            Browse Projects
+                        </a>
                     </div>
                 <?php endif; ?>
             </div>

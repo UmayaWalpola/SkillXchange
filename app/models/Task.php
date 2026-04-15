@@ -32,24 +32,31 @@ class Task {
 
     // Requested API: createTask($data)
     public function createTask($data) {
-        $this->db->query("INSERT INTO project_tasks (project_id, assigned_to, title, description, status, priority, deadline) VALUES (:project_id, :assigned_to, :title, :description, :status, :priority, :deadline)");
-        $this->db->bind(':project_id', $data['project_id']);
-        $this->db->bind(':assigned_to', $data['assigned_to'] ?? null);
-        $this->db->bind(':title', $data['task_name'] ?? $data['title'] ?? '');
-        $this->db->bind(':description', $data['description'] ?? null);
-        $this->db->bind(':status', $data['status'] ?? 'todo');
-        $this->db->bind(':priority', $data['priority'] ?? 'medium');
-        $this->db->bind(':deadline', $data['due_date'] ?? $data['deadline'] ?? null);
-        
-        if ($this->db->execute()) {
-            $taskId = $this->db->lastInsertId();
-            // Clear cache for this project
-            $this->clearProjectCache($data['project_id']);
-            // Log history
-            $this->logHistory($taskId, $data['created_by'] ?? null, 'created');
-            return $taskId;
+        try {
+            $this->db->query("INSERT INTO project_tasks 
+                (project_id, assigned_to, title, description, status, priority, deadline, created_at) 
+                VALUES 
+                (:project_id, :assigned_to, :title, :description, :status, :priority, :deadline, NOW())");
+            
+            $this->db->bind(':project_id', $data['project_id']);
+            $this->db->bind(':assigned_to', $data['assigned_to']);
+            $this->db->bind(':title', $data['title']);
+            $this->db->bind(':description', $data['description']);
+            $this->db->bind(':status', $data['status']);
+            $this->db->bind(':priority', $data['priority']);
+            $this->db->bind(':deadline', $data['deadline']);
+            
+            if ($this->db->execute()) {
+                $taskId = $this->db->lastInsertId();
+                $this->clearProjectCache($data['project_id']);
+                return $taskId;
+            }
+            
+            return false;
+        } catch (Exception $e) {
+            error_log("Task creation error in model: " . $e->getMessage());
+            throw $e;
         }
-        return false;
     }
 
     // Backwards-compatible wrapper for existing code
@@ -87,7 +94,7 @@ class Task {
         return false;
     }
 
-    public function updateTaskStatus($taskId, $status) {
+    public function updateTaskStatus($taskId, $status, $userId = null) {
         // Validate status
         $validStatuses = ['todo', 'in-progress', 'done'];
         if (!in_array($status, $validStatuses)) {
@@ -107,7 +114,16 @@ class Task {
                 $this->clearProjectCache($projectId);
             }
             $action = 'marked_' . str_replace('-', '_', $status);
-            $this->logHistory($taskId, null, $action);
+
+            // Some flows update task status without an explicit actor.
+            // Skip history logging rather than breaking the main status update.
+            if ($userId !== null) {
+                try {
+                    $this->logHistory($taskId, $userId, $action);
+                } catch (Throwable $e) {
+                    error_log("Task history logging failed for task {$taskId}: " . $e->getMessage());
+                }
+            }
             return true;
         }
         return false;

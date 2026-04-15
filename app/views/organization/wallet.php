@@ -43,7 +43,7 @@
             <div class="stat-value" id="currentBalance"><?= $data['balance'] ?></div>
             <div class="stat-label">Current BuckX Balance</div>
             <a href="<?= URLROOT ?>/wallet/purchaseBuckx" class="btn-primary" style="margin-top: 1rem; padding: 0.7rem 1.5rem; font-size: 0.95rem;">
-            💳 More BuckX
+            <i class="ph ph-credit-card"></i> More BuckX
             </a>
         </div>
         

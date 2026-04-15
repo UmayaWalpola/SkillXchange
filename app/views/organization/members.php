@@ -3,6 +3,13 @@
 
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/organizations.css">
+<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/feedback.css">
+
+<!-- Include Feedback Modal early so elements exist -->
+<?php require_once "../app/views/partials/modals/feedback_modal.php"; ?>
+
+<!-- Load Feedback JavaScript after modal HTML -->
+<script src="<?= URLROOT ?>/assets/js/feedback.js"></script>
 
 <main class="site-main">
     <div class="container org-dashboard">
@@ -11,7 +18,13 @@
                 <h1>Manage Team Members</h1>
                 <p>Project: <strong><?= htmlspecialchars($data['project']->name) ?></strong></p>
             </div>
-            <a href="<?= URLROOT ?>/organization/projects" class="btn btn-secondary">← Back to Projects</a>
+            <div class="page-header-actions">
+                <a href="<?= URLROOT ?>/chat/index/<?= (int)$data['projectId'] ?>" class="btn btn-primary btn-chat-entry">
+                    <i class="ph ph-chat-circle-dots"></i>
+                    Enter Project Chat
+                </a>
+                <a href="<?= URLROOT ?>/organization/projects" class="btn btn-secondary">← Back to Projects</a>
+            </div>
         </div>
 
         <!-- Success/Error Messages -->
@@ -38,66 +51,43 @@
             $activeMembers = (int)($metrics->active_members ?? 0);
             $completionPct = $metrics->completion_percentage ?? 0;
         ?>
-        <div class="progress-overview-container" style="margin-bottom:30px;background:#ffffff;border:2px solid var(--blue-bg);border-radius:16px;padding:35px;">
-            <h2 style="font-size:22px;margin-bottom:25px;color:var(--dark-bg);font-weight:600;padding-bottom:15px;border-bottom:2px solid var(--blue-bg);">📊 Project Progress Overview</h2>
+        <div style="margin-bottom: 30px; padding: 25px; background: #fff; border: 2px solid var(--blue-bg, #e5e7eb); border-radius: 12px;">
+            <h2 style="font-size: 20px; margin-bottom: 20px; color: var(--dark-bg, #111827); font-weight: 600; display: flex; align-items: center; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--blue-bg, #e5e7eb);">
+                <i class="ph ph-chart-bar" style="color: var(--primary-blue, #2563eb); font-size: 24px;"></i> Project Progress Overview
+            </h2>
             
-            <!-- Main Metrics Grid -->
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-bottom:25px;">
-                <!-- Overall Progress Card -->
-                <div style="background:linear-gradient(135deg,var(--primary-blue),var(--accent-blue));border-radius:12px;padding:25px;color:white;box-shadow:0 8px 20px rgba(101,131,150,0.2);">
-                    <div style="font-size:14px;opacity:0.9;margin-bottom:8px;font-weight:600;">Overall Progress</div>
-                    <div style="font-size:36px;font-weight:700;margin-bottom:5px;"><?= number_format($completionPct, 1) ?>%</div>
-                    <div style="font-size:13px;opacity:0.9;"><?= $completedTasks ?> of <?= $totalTasks ?> tasks</div>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 140px; padding: 20px; background: var(--blue-bg, #f4f6f8); border-radius: 8px; border: 1px solid #d1d9e6; display: flex; flex-direction: column; align-items: center;">
+                    <div style="font-size: 14px; color: #555; margin-bottom: 8px; font-weight: 500;">Overall</div>
+                    <div style="font-size: 28px; font-weight: bold; color: var(--primary-blue, #0f172a);"><?= number_format($completionPct, 1) ?>%</div>
                 </div>
                 
-                <!-- Total Tasks Card -->
-                <div style="background:white;border:2px solid var(--blue-bg);border-radius:12px;padding:25px;transition:all 0.3s ease;">
-                    <div style="font-size:14px;color:#666;margin-bottom:8px;font-weight:600;">📋 Total Tasks</div>
-                    <div style="font-size:36px;font-weight:700;color:var(--dark-bg);margin-bottom:5px;"><?= $totalTasks ?></div>
-                    <div style="font-size:13px;color:#666;">All assigned tasks</div>
+                <div style="flex: 1; min-width: 140px; padding: 20px; background: #fff; border-radius: 8px; border: 1px solid #d1d9e6; display: flex; flex-direction: column; align-items: center;">
+                    <div style="font-size: 14px; color: #555; margin-bottom: 8px; font-weight: 500;">Total Tasks</div>
+                    <div style="font-size: 28px; font-weight: bold; color: #333;"><?= $totalTasks ?></div>
                 </div>
                 
-                <!-- To-Do Tasks Card -->
-                <div style="background:white;border:2px solid var(--blue-bg);border-radius:12px;padding:25px;transition:all 0.3s ease;">
-                    <div style="font-size:14px;color:#666;margin-bottom:8px;font-weight:600;">📌 To-Do</div>
-                    <div style="font-size:36px;font-weight:700;color:#f59e0b;margin-bottom:5px;"><?= $todoTasks ?></div>
-                    <div style="font-size:13px;color:#666;">Pending tasks</div>
+                <div style="flex: 1; min-width: 140px; padding: 20px; background: #fffdf5; border-radius: 8px; border: 1px solid #fde68a; display: flex; flex-direction: column; align-items: center;">
+                    <div style="font-size: 14px; color: #b45309; margin-bottom: 8px; font-weight: 500;">To-Do</div>
+                    <div style="font-size: 28px; font-weight: bold; color: #d97706;"><?= $todoTasks ?></div>
                 </div>
                 
-                <!-- In Progress Card -->
-                <div style="background:white;border:2px solid var(--blue-bg);border-radius:12px;padding:25px;transition:all 0.3s ease;">
-                    <div style="font-size:14px;color:#666;margin-bottom:8px;font-weight:600;">🔄 In Progress</div>
-                    <div style="font-size:36px;font-weight:700;color:var(--primary-blue);margin-bottom:5px;"><?= $inProgressTasks ?></div>
-                    <div style="font-size:13px;color:#666;">Active work</div>
+                <div style="flex: 1; min-width: 140px; padding: 20px; background: #f0f7ff; border-radius: 8px; border: 1px solid #bfdbfe; display: flex; flex-direction: column; align-items: center;">
+                    <div style="font-size: 14px; color: #1d4ed8; margin-bottom: 8px; font-weight: 500;">In Progress</div>
+                    <div style="font-size: 28px; font-weight: bold; color: #2563eb;"><?= $inProgressTasks ?></div>
                 </div>
                 
-                <!-- Completed Card -->
-                <div style="background:white;border:2px solid var(--blue-bg);border-radius:12px;padding:25px;transition:all 0.3s ease;">
-                    <div style="font-size:14px;color:#666;margin-bottom:8px;font-weight:600;">✅ Completed</div>
-                    <div style="font-size:36px;font-weight:700;color:#10b981;margin-bottom:5px;"><?= $completedTasks ?></div>
-                    <div style="font-size:13px;color:#666;">Finished tasks</div>
-                </div>
-                
-                <!-- Overdue Card -->
-                <div style="background:white;border:2px solid <?= $overdueTasks > 0 ? '#ef4444' : 'var(--blue-bg)' ?>;border-radius:12px;padding:25px;transition:all 0.3s ease;<?= $overdueTasks > 0 ? 'background:#fee2e2;' : '' ?>">
-                    <div style="font-size:14px;color:#666;margin-bottom:8px;font-weight:600;">⚠️ Overdue</div>
-                    <div style="font-size:36px;font-weight:700;color:#ef4444;margin-bottom:5px;"><?= $overdueTasks ?></div>
-                    <div style="font-size:13px;color:#666;">Needs attention</div>
-                </div>
-                
-                <!-- Active Members Card -->
-                <div style="background:white;border:2px solid var(--blue-bg);border-radius:12px;padding:25px;transition:all 0.3s ease;">
-                    <div style="font-size:14px;color:#666;margin-bottom:8px;font-weight:600;">👥 Active Members</div>
-                    <div style="font-size:36px;font-weight:700;color:var(--primary-blue);margin-bottom:5px;"><?= $activeMembers ?></div>
-                    <div style="font-size:13px;color:#666;">Team members</div>
+                <div style="flex: 1; min-width: 140px; padding: 20px; background: #f2fdf5; border-radius: 8px; border: 1px solid #bbf7d0; display: flex; flex-direction: column; align-items: center;">
+                    <div style="font-size: 14px; color: #15803d; margin-bottom: 8px; font-weight: 500;">Completed</div>
+                    <div style="font-size: 28px; font-weight: bold; color: #16a34a;"><?= $completedTasks ?></div>
                 </div>
             </div>
 
             <!-- Member Performance Breakdown -->
             <?php if(isset($data['memberBreakdown']) && !empty($data['memberBreakdown'])): ?>
-            <div style="background:white;border:2px solid var(--blue-bg);border-radius:12px;padding:25px;margin-bottom:25px;">
-                <h3 style="font-size:18px;margin-bottom:20px;color:var(--dark-bg);font-weight:600;display:flex;align-items:center;gap:10px;">
-                    <span style="background:linear-gradient(135deg,var(--primary-blue),var(--accent-blue));color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">👤</span>
+            <div style="background:white;border:2px solid var(--blue-bg);border-radius:12px;padding:25px;margin-top:25px;margin-bottom:25px;">
+                <h3 style="font-size:18px;margin-bottom:20px;color:var(--dark-bg);font-weight:600;display:flex;align-items:center;gap:10px;border-bottom: 1px solid var(--blue-bg);padding-bottom: 12px;">
+                    <i class="ph ph-users" style="color: var(--primary-blue); font-size: 24px;"></i>
                     Member Task Performance
                 </h3>
                 <div style="display:grid;gap:15px;">
@@ -107,11 +97,11 @@
                         $memberCompleted = (int)($member->completed_tasks ?? 0);
                         $memberOverdue = (int)($member->overdue_tasks ?? 0);
                     ?>
-                    <div style="display:flex;align-items:center;gap:15px;padding:15px;background:white;border:2px solid var(--blue-bg);border-radius:12px;transition:all 0.3s ease;">
+                    <div style="display:flex;align-items:center;gap:15px;padding:15px;background:white;border:1px solid #d1d9e6;border-radius:8px;">
                         <?php if (!empty($member->profile_picture)): ?>
                             <img src="<?= URLROOT . '/' . $member->profile_picture ?>" alt="<?= htmlspecialchars($member->username) ?>" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--blue-bg);">
                         <?php else: ?>
-                            <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--primary-blue),var(--accent-blue));color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;border:2px solid var(--blue-bg);">
+                            <div style="width:48px;height:48px;border-radius:50%;background:var(--blue-bg);color:var(--primary-blue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;border:1px solid #d1d9e6;">
                                 <?= strtoupper(substr($member->username ?? 'U', 0, 1)) ?>
                             </div>
                         <?php endif; ?>
@@ -123,16 +113,16 @@
                             </div>
                             
                             <div style="display:flex;align-items:center;gap:15px;margin-bottom:10px;">
-                                <span style="font-size:13px;color:#666;font-weight:500;">📋 <?= $memberTotal ?> tasks</span>
-                                <span style="font-size:13px;color:#10b981;font-weight:500;">✓ <?= $memberCompleted ?> done</span>
+                                <span style="font-size:13px;color:#666;font-weight:500;display:flex;align-items:center;gap:4px;"><i class="ph ph-list-bullets" style="font-size:14px;"></i> <?= $memberTotal ?> tasks</span>
+                                <span style="font-size:13px;color:#16a34a;font-weight:500;display:flex;align-items:center;gap:4px;"><i class="ph ph-check" style="font-size:14px;"></i> <?= $memberCompleted ?> done</span>
                                 <?php if($memberOverdue > 0): ?>
-                                    <span style="font-size:13px;color:#ef4444;font-weight:600;">⚠️ <?= $memberOverdue ?> overdue</span>
+                                    <span style="font-size:13px;color:#ef4444;font-weight:600;display:flex;align-items:center;gap:4px;"><i class="ph ph-warning-circle" style="font-size:14px;"></i> <?= $memberOverdue ?> overdue</span>
                                 <?php endif; ?>
                             </div>
                             
                             <?php if($memberTotal > 0): ?>
-                            <div style="background:var(--blue-bg);height:10px;border-radius:6px;overflow:hidden;">
-                                <div style="background:linear-gradient(90deg,var(--primary-blue),var(--accent-blue));height:100%;width:<?= $memberPct ?>%;transition:width 0.4s ease;box-shadow:0 2px 4px rgba(101,131,150,0.2);"></div>
+                            <div style="background:#e5e7eb;height:8px;border-radius:6px;overflow:hidden;">
+                                <div style="background:var(--primary-blue);height:100%;width:<?= $memberPct ?>%;"></div>
                             </div>
                             <div style="font-size:13px;color:#666;margin-top:5px;font-weight:600;"><?= number_format($memberPct, 1) ?>% complete</div>
                             <?php else: ?>
@@ -149,7 +139,7 @@
             <?php if($overdueTasks > 0 && isset($data['overdueTasks']) && !empty($data['overdueTasks'])): ?>
             <div style="background:#fee2e2;border:2px solid #ef4444;border-radius:12px;padding:25px;box-shadow:0 4px 12px rgba(239,68,68,0.15);">
                 <h3 style="font-size:18px;margin-bottom:20px;color:#ef4444;font-weight:600;display:flex;align-items:center;gap:10px;">
-                    <span style="background:#ef4444;color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">⚠️</span>
+                    <span style="background:#ef4444;color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;"><i class="ph-bold ph-warning"></i></span>
                     Overdue Tasks (<?= $overdueTasks ?>)
                 </h3>
                 <div style="display:grid;gap:12px;">
@@ -186,12 +176,49 @@
             </div>
         </div>
 
+        <?php
+            $formatSkillLabel = static function ($skill) {
+                $skill = trim((string)$skill);
+                if ($skill === '') {
+                    return '';
+                }
+
+                $normalized = strtolower(str_replace(['_', '-'], ' ', $skill));
+                $normalized = preg_replace('/\s+/', ' ', trim($normalized));
+
+                $special = [
+                    'ai' => 'AI',
+                    'api' => 'API',
+                    'qa' => 'QA',
+                    'ui' => 'UI',
+                    'ux' => 'UX',
+                    'ui ux' => 'UI/UX',
+                    'ui/ux' => 'UI/UX',
+                    'sql' => 'SQL',
+                    'ml' => 'ML',
+                    'github' => 'GitHub',
+                    'devops' => 'DevOps',
+                    'javascript' => 'JavaScript',
+                    'typescript' => 'TypeScript',
+                    'node js' => 'Node.js',
+                    'react js' => 'React.js',
+                    'next js' => 'Next.js'
+                ];
+
+                if (isset($special[$normalized])) {
+                    return $special[$normalized];
+                }
+
+                return ucwords($normalized);
+            };
+        ?>
+
         <!-- Members List -->
         <div class="members-list">
             <?php if(empty($data['members'])): ?>
                 <div class="card empty-card">
                     <div class="card-body">
-                        <div class="empty-icon">👥</div>
+                        <div class="empty-icon"><i class="ph ph-users" style="font-size:64px;color:#9ca3af;"></i></div>
                         <h3>No Members Yet</h3>
                         <p>Once you accept project applications, members will appear here for role assignment.</p>
                     </div>
@@ -215,22 +242,33 @@
                                 </div>
                                 <div class="member-stats">
                                     <span class="stat-item">
-                                        <span class="icon">⭐</span> Rating: <?= $member->user_rating ?? '0' ?>
+                                        <span class="icon"><i class="ph ph-star"></i></span> Rating: <?= $member->user_rating ?? '0' ?>
                                     </span>
                                     <span class="stat-item">
-                                        <span class="icon">✓</span> Completed: <?= $member->completed_projects ?? 0 ?>
+                                        <span class="icon"><i class="ph ph-check"></i></span> Completed: <?= $member->completed_projects ?? 0 ?>
                                     </span>
                                 </div>
                             </div>
 
-                            <!-- Skills -->
-                            <?php if (!empty($member->user_skills)): ?>
+                            <!-- Skills matched to this project's required skills -->
+                            <?php $matchedSkillsWithLevel = (isset($member->matched_skills_with_level) && is_array($member->matched_skills_with_level)) ? $member->matched_skills_with_level : []; ?>
+                            <?php if (!empty($matchedSkillsWithLevel)): ?>
                                 <div class="member-skills">
-                                    <strong>Skills:</strong>
+                                    <span class="member-skills-label">Matched Skills</span>
                                     <div class="skills-list">
-                                        <?php foreach (explode(',', $member->user_skills) as $skill): ?>
-                                            <span class="skill-tag"><?= htmlspecialchars(trim($skill)) ?></span>
+                                        <?php foreach ($matchedSkillsWithLevel as $skillWithLevel): ?>
+                                            <span class="skill-tag member-skill-tag">
+                                                <span class="skill-dot"></span>
+                                                <?= htmlspecialchars($skillWithLevel) ?>
+                                            </span>
                                         <?php endforeach; ?>
+                                    </div>
+                                </div>
+                            <?php else: ?>
+                                <div class="member-skills">
+                                    <span class="member-skills-label">Matched Skills</span>
+                                    <div class="skills-list">
+                                        <span class="skill-tag member-skill-tag" style="opacity:0.8;">No matched required skills</span>
                                     </div>
                                 </div>
                             <?php endif; ?>
@@ -264,173 +302,112 @@
 
                             <!-- Tasks Section for this Member -->
                             <div class="member-tasks-section" style="margin-top:20px;padding-top:20px;border-top:2px solid #f0f0f0;">
-                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-                                    <h4 style="margin:0;color:#1a1a1a;font-size:16px;">📋 Tasks for this Member</h4>
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:10px;">
+                                    <h4 style="margin:0;color:#1a1a1a;font-size:16px;">Tasks for this Member</h4>
                                     <button class="btn btn-primary assign-task-btn" data-member-id="<?= $member->user_id ?>" data-member-name="<?= htmlspecialchars($member->username) ?>">
-                                        ➕ Assign Task
+                                        Assign Task
                                     </button>
                                 </div>
 
                                 <?php 
-                                // Fetch tasks for this member using taskModel from controller
                                 $memberTasks = $data['taskModel']->getTasksByMember($data['projectId'], $member->user_id);
-                                
-                                // Group tasks by status
-                                $tasksByStatus = [
-                                    'pending' => [],
-                                    'in_progress' => [],
-                                    'completed' => []
-                                ];
-                                
+                                $totalTasks = count($memberTasks);
+                                $todoCount = 0;
+                                $inProgressCount = 0;
+                                $doneCount = 0;
+
                                 foreach ($memberTasks as $task) {
-                                    if ($task->status === 'pending') {
-                                        $tasksByStatus['pending'][] = $task;
-                                    } elseif ($task->status === 'in_progress' || $task->status === 'on_hold') {
-                                        $tasksByStatus['in_progress'][] = $task;
-                                    } elseif ($task->status === 'completed') {
-                                        $tasksByStatus['completed'][] = $task;
+                                    $st = $task->status ?? 'todo';
+                                    if ($st === 'todo' || $st === 'pending') {
+                                        $todoCount++;
+                                    } elseif ($st === 'in-progress' || $st === 'in_progress' || $st === 'on_hold') {
+                                        $inProgressCount++;
+                                    } elseif ($st === 'done' || $st === 'completed') {
+                                        $doneCount++;
                                     }
                                 }
-                                
-                                $totalTasks = count($memberTasks);
-                                $completedCount = count($tasksByStatus['completed']);
                                 ?>
 
                                 <?php if ($totalTasks === 0): ?>
-                                    <p style="color:#999;font-size:14px;padding:15px;background:#f9f9f9;border-radius:8px;text-align:center;">
-                                        No tasks assigned yet
+                                    <p style="color:#6b7280;font-size:14px;padding:14px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;">
+                                        No tasks assigned yet.
                                     </p>
                                 <?php else: ?>
-                                    <div class="task-summary" style="display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap;">
-                                        <span class="task-stat" style="background:#fff3cd;color:#856404;padding:6px 12px;border-radius:6px;font-size:13px;">
-                                            📌 To-Do: <?= count($tasksByStatus['pending']) ?>
-                                        </span>
-                                        <span class="task-stat" style="background:#cfe2ff;color:#084298;padding:6px 12px;border-radius:6px;font-size:13px;">
-                                            🔄 In Progress: <?= count($tasksByStatus['in_progress']) ?>
-                                        </span>
-                                        <span class="task-stat" style="background:#d1e7dd;color:#0f5132;padding:6px 12px;border-radius:6px;font-size:13px;">
-                                            ✓ Completed: <?= $completedCount ?>
-                                        </span>
+                                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+                                        <span style="background:#eef4f8;color:#355a72;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:600;">To-Do: <?= $todoCount ?></span>
+                                        <span style="background:#eef4f8;color:#355a72;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:600;">In Progress: <?= $inProgressCount ?></span>
+                                        <span style="background:#eef4f8;color:#355a72;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:600;">Completed: <?= $doneCount ?></span>
                                     </div>
 
-                                    <div class="tasks-container" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
-                                        <!-- To-Do Column -->
-                                        <div class="task-column">
-                                            <div class="column-header" style="background:#fff3cd;padding:8px;border-radius:6px;margin-bottom:8px;">
-                                                <strong style="font-size:13px;color:#856404;">To-Do</strong>
-                                            </div>
-                                            <?php foreach ($tasksByStatus['pending'] as $task): ?>
-                                                <?php 
-                                                    $isOverdue = !empty($task->due_date) && strtotime($task->due_date) < time();
-                                                ?>
-                                                <div class="task-card" style="background:white;border:1px solid #e0e0e0;border-radius:6px;padding:10px;margin-bottom:8px;">
-                                                    <div style="font-weight:600;font-size:13px;color:#333;margin-bottom:5px;">
-                                                        <?= htmlspecialchars($task->task_name) ?>
-                                                    </div>
-                                                    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px;">
-                                                        <?php if ($task->priority === 'high'): ?>
-                                                            <span style="background:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:4px;font-size:11px;">🔴 High</span>
-                                                        <?php elseif ($task->priority === 'medium'): ?>
-                                                            <span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:11px;">🟡 Medium</span>
-                                                        <?php else: ?>
-                                                            <span style="background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:4px;font-size:11px;">🟢 Low</span>
-                                                        <?php endif; ?>
-                                                        
-                                                        <?php if (!empty($task->due_date)): ?>
-                                                            <span style="background:<?= $isOverdue ? '#fee2e2' : '#e0e7ff' ?>;color:<?= $isOverdue ? '#991b1b' : '#4338ca' ?>;padding:2px 6px;border-radius:4px;font-size:11px;">
-                                                                <?= $isOverdue ? '⚠️' : '📅' ?> <?= date('M d', strtotime($task->due_date)) ?>
+                                    <div style="overflow-x:auto;border:1px solid #e1eefb;border-radius:8px;">
+                                        <table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;min-width:620px;">
+                                            <thead>
+                                                <tr style="background:#f7fbff;border-bottom:1px solid #e1eefb;">
+                                                    <th style="text-align:left;padding:10px;color:#355a72;font-weight:700;">Task</th>
+                                                    <th style="text-align:left;padding:10px;color:#355a72;font-weight:700;">Priority</th>
+                                                    <th style="text-align:left;padding:10px;color:#355a72;font-weight:700;">Deadline</th>
+                                                    <th style="text-align:left;padding:10px;color:#355a72;font-weight:700;">Status</th>
+                                                    <th style="text-align:left;padding:10px;color:#355a72;font-weight:700;">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ($memberTasks as $task): ?>
+                                                    <?php
+                                                        $taskTitle = $task->title ?? $task->task_name ?? 'Untitled';
+                                                        $isOverdue = !empty($task->deadline) && strtotime($task->deadline) < time() && !in_array(($task->status ?? ''), ['done', 'completed']);
+                                                        $priority = strtolower((string)($task->priority ?? 'low'));
+                                                        if ($priority === 'high') {
+                                                            $priorityStyle = 'background:#fee2e2;color:#991b1b;border:1px solid #fecaca;';
+                                                        } elseif ($priority === 'medium') {
+                                                            $priorityStyle = 'background:#fef3c7;color:#92400e;border:1px solid #fde68a;';
+                                                        } else {
+                                                            $priorityStyle = 'background:#e0f2fe;color:#0c4a6e;border:1px solid #bae6fd;';
+                                                        }
+                                                    ?>
+                                                    <tr style="border-bottom:1px solid #edf2f7;">
+                                                        <td style="padding:10px;color:#1f2937;font-weight:600;max-width:260px;">
+                                                            <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><?= htmlspecialchars($taskTitle) ?></div>
+                                                        </td>
+                                                        <td style="padding:10px;">
+                                                            <span style="<?= $priorityStyle ?>padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;text-transform:capitalize;">
+                                                                <?= htmlspecialchars($priority) ?>
                                                             </span>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                    <?php if (!empty($task->description)): ?>
-                                                        <div style="font-size:11px;color:#666;margin-bottom:8px;max-height:40px;overflow:hidden;">
-                                                            <?= htmlspecialchars(substr($task->description, 0, 60)) ?><?= strlen($task->description) > 60 ? '...' : '' ?>
-                                                        </div>
-                                                    <?php endif; ?>
-                                                    <select class="task-status-select" data-task-id="<?= $task->id ?>" style="width:100%;padding:4px;border-radius:4px;border:1px solid #ddd;font-size:11px;">
-                                                        <option value="pending" selected>To-Do</option>
-                                                        <option value="in_progress">In Progress</option>
-                                                        <option value="completed">Completed</option>
-                                                    </select>
-                                                </div>
-                                            <?php endforeach; ?>
-                                        </div>
-
-                                        <!-- In Progress Column -->
-                                        <div class="task-column">
-                                            <div class="column-header" style="background:#cfe2ff;padding:8px;border-radius:6px;margin-bottom:8px;">
-                                                <strong style="font-size:13px;color:#084298;">In Progress</strong>
-                                            </div>
-                                            <?php foreach ($tasksByStatus['in_progress'] as $task): ?>
-                                                <?php 
-                                                    $isOverdue = !empty($task->due_date) && strtotime($task->due_date) < time();
-                                                ?>
-                                                <div class="task-card" style="background:white;border:1px solid #e0e0e0;border-radius:6px;padding:10px;margin-bottom:8px;">
-                                                    <div style="font-weight:600;font-size:13px;color:#333;margin-bottom:5px;">
-                                                        <?= htmlspecialchars($task->task_name) ?>
-                                                    </div>
-                                                    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px;">
-                                                        <?php if ($task->priority === 'high'): ?>
-                                                            <span style="background:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:4px;font-size:11px;">🔴 High</span>
-                                                        <?php elseif ($task->priority === 'medium'): ?>
-                                                            <span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:11px;">🟡 Medium</span>
-                                                        <?php else: ?>
-                                                            <span style="background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:4px;font-size:11px;">🟢 Low</span>
-                                                        <?php endif; ?>
-                                                        
-                                                        <?php if (!empty($task->due_date)): ?>
-                                                            <span style="background:<?= $isOverdue ? '#fee2e2' : '#e0e7ff' ?>;color:<?= $isOverdue ? '#991b1b' : '#4338ca' ?>;padding:2px 6px;border-radius:4px;font-size:11px;">
-                                                                <?= $isOverdue ? '⚠️' : '📅' ?> <?= date('M d', strtotime($task->due_date)) ?>
-                                                            </span>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                    <?php if (!empty($task->description)): ?>
-                                                        <div style="font-size:11px;color:#666;margin-bottom:8px;max-height:40px;overflow:hidden;">
-                                                            <?= htmlspecialchars(substr($task->description, 0, 60)) ?><?= strlen($task->description) > 60 ? '...' : '' ?>
-                                                        </div>
-                                                    <?php endif; ?>
-                                                    <select class="task-status-select" data-task-id="<?= $task->id ?>" style="width:100%;padding:4px;border-radius:4px;border:1px solid #ddd;font-size:11px;">
-                                                        <option value="pending">To-Do</option>
-                                                        <option value="in_progress" selected>In Progress</option>
-                                                        <option value="completed">Completed</option>
-                                                    </select>
-                                                </div>
-                                            <?php endforeach; ?>
-                                        </div>
-
-                                        <!-- Completed Column -->
-                                        <div class="task-column">
-                                            <div class="column-header" style="background:#d1e7dd;padding:8px;border-radius:6px;margin-bottom:8px;">
-                                                <strong style="font-size:13px;color:#0f5132;">Completed</strong>
-                                            </div>
-                                            <?php foreach ($tasksByStatus['completed'] as $task): ?>
-                                                <div class="task-card" style="background:#f8f9fa;border:1px solid #e0e0e0;border-radius:6px;padding:10px;margin-bottom:8px;opacity:0.8;">
-                                                    <div style="font-weight:600;font-size:13px;color:#333;margin-bottom:5px;text-decoration:line-through;">
-                                                        <?= htmlspecialchars($task->task_name) ?>
-                                                    </div>
-                                                    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:5px;">
-                                                        <?php if ($task->priority === 'high'): ?>
-                                                            <span style="background:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:4px;font-size:11px;">🔴 High</span>
-                                                        <?php elseif ($task->priority === 'medium'): ?>
-                                                            <span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:11px;">🟡 Medium</span>
-                                                        <?php else: ?>
-                                                            <span style="background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:4px;font-size:11px;">🟢 Low</span>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                    <select class="task-status-select" data-task-id="<?= $task->id ?>" style="width:100%;padding:4px;border-radius:4px;border:1px solid #ddd;font-size:11px;">
-                                                        <option value="pending">To-Do</option>
-                                                        <option value="in_progress">In Progress</option>
-                                                        <option value="completed" selected>Completed</option>
-                                                    </select>
-                                                </div>
-                                            <?php endforeach; ?>
-                                        </div>
+                                                        </td>
+                                                        <td style="padding:10px;color:<?= $isOverdue ? '#b91c1c' : '#4b5563' ?>;font-weight:<?= $isOverdue ? '600' : '400' ?>;">
+                                                            <?= !empty($task->deadline) ? date('M d, Y', strtotime($task->deadline)) : '-' ?>
+                                                        </td>
+                                                        <td style="padding:10px;">
+                                                            <select class="task-status-select" data-task-id="<?= $task->id ?>" style="width:130px;padding:5px 8px;border-radius:6px;border:1px solid #d1d5db;font-size:12px;background:#fff;">
+                                                                <option value="todo" <?= (($task->status ?? '') === 'todo' || ($task->status ?? '') === 'pending') ? 'selected' : '' ?>>To-Do</option>
+                                                                <option value="in-progress" <?= (($task->status ?? '') === 'in-progress' || ($task->status ?? '') === 'in_progress' || ($task->status ?? '') === 'on_hold') ? 'selected' : '' ?>>In Progress</option>
+                                                                <option value="done" <?= (($task->status ?? '') === 'done' || ($task->status ?? '') === 'completed') ? 'selected' : '' ?>>Completed</option>
+                                                            </select>
+                                                        </td>
+                                                        <td style="padding:10px;">
+                                                            <button onclick="removeOrgTask(<?= $task->id ?>, this.closest('tr'))" title="Remove task" style="padding:5px 8px;background:#fff;border:1px solid #fca5a5;border-radius:6px;color:#dc2626;font-size:12px;cursor:pointer;">
+                                                                <i class="ph ph-trash"></i>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
                                     </div>
                                 <?php endif; ?>
                             </div>
 
-                            <!-- Owner actions: Remove / Report -->
-                            <div class="member-actions" style="margin-top:20px;">
+                            <!-- Owner actions: Remove / Report / Give Feedback -->
+                            <div class="member-actions" style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;">
+                                <button class="btn btn-feedback give-feedback-btn" 
+                                    data-user-id="<?= $member->user_id ?>" 
+                                    data-user-name="<?= htmlspecialchars($member->username) ?>" 
+                                    data-user-avatar="<?= !empty($member->profile_picture) ? URLROOT . '/' . $member->profile_picture : '' ?>" 
+                                    data-context-type="project"
+                                    data-context-id="<?= $data['projectId'] ?>"
+                                    data-context-name="<?= htmlspecialchars($data['project']->name) ?>"
+                                    onclick="openFeedbackModal(<?= $member->user_id ?>, '<?= addslashes($member->username) ?>', '<?= !empty($member->profile_picture) ? addslashes(URLROOT . '/' . $member->profile_picture) : '' ?>', 'project', <?= $data['projectId'] ?>, '<?= addslashes($data['project']->name) ?>')">
+                                    <i class="ph ph-star" style="font-size:16px;"></i> Give Feedback
+                                </button>
                                 <button class="btn btn-danger remove-member-btn" data-member-id="<?= $member->id ?>" data-user-id="<?= $member->user_id ?>" data-project-id="<?= $data['projectId'] ?>">Remove</button>
                                 <button class="btn btn-warning report-member-btn" data-member-id="<?= $member->id ?>" data-user-id="<?= $member->user_id ?>" data-project-id="<?= $data['projectId'] ?>">Report</button>
                             </div>
@@ -451,7 +428,7 @@
 <div id="taskModal" class="modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
     <div class="modal-content" style="background:white;border-radius:12px;padding:30px;max-width:500px;width:90%;max-height:90vh;overflow-y:auto;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-            <h2 style="margin:0;font-size:20px;">➕ Assign New Task</h2>
+            <h2 style="margin:0;font-size:20px;">Assign New Task</h2>
             <button id="closeModal" style="background:none;border:none;font-size:24px;cursor:pointer;color:#999;">&times;</button>
         </div>
         
@@ -478,9 +455,9 @@
                 <div class="form-group">
                     <label style="display:block;font-weight:600;margin-bottom:5px;">Priority *</label>
                     <select name="priority" id="modal_priority" required style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;">
-                        <option value="low">🟢 Low</option>
-                        <option value="medium" selected>🟡 Medium</option>
-                        <option value="high">🔴 High</option>
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
                     </select>
                 </div>
                 
@@ -500,6 +477,10 @@
 
 <script>
     window.URLROOT = window.URLROOT || '<?= URLROOT ?>';
+    
+    // Debug: Test if feedback buttons exist
+    console.log('URLROOT:', window.URLROOT);
+    console.log('Feedback buttons on load:', document.querySelectorAll('.give-feedback-btn').length);
 
 // Handle custom role input visibility
 document.querySelectorAll('.role-select').forEach(select => {
@@ -645,21 +626,64 @@ document.getElementById('cancelModal').addEventListener('click', function() {
 document.getElementById('taskAssignForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
-    const formData = new FormData(this);
     const submitBtn = this.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Creating...';
+
+    const projectId = document.getElementById('modal_project_id').value;
+    const memberId  = document.getElementById('modal_assigned_to').value;
+    const taskName  = document.getElementById('modal_task_name').value.trim();
+    const description = document.getElementById('modal_description').value.trim();
+    const priority  = document.getElementById('modal_priority').value;
+    const dueDate   = document.getElementById('modal_deadline').value;
+
+    if (!taskName) {
+        alert('Task title is required');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Task';
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('project_id', projectId);
+    formData.append('member_id', memberId);
+    formData.append('task_name', taskName);
+    formData.append('description', description);
+    formData.append('priority', priority);
+    formData.append('due_date', dueDate);
     
-    fetch(URLROOT + '/TaskController/create', {
+    fetch(URLROOT + '/organization/assignTask', {
         method: 'POST',
         body: formData,
         credentials: 'same-origin',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
     })
-    .then(res => res.json())
+    .then(res => {
+        if (res.status === 401) {
+            return res.json().then(data => {
+                throw new Error(data.message || 'Your organization session has expired. Please sign in again.');
+            });
+        }
+        if (!res.ok) {
+            return res.text().then(txt => { throw new Error('Server returned ' + res.status + ': ' + txt.substring(0, 200)); });
+        }
+        const contentType = res.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+            return res.text().then(txt => {
+                const lower = txt.toLowerCase();
+                if (lower.includes('/auth/signin') || lower.includes('sign in') || lower.includes('login')) {
+                    throw new Error('Your organization session has expired. Please sign in again as the organization account.');
+                }
+                throw new Error('Expected JSON response but received: ' + txt.substring(0, 200));
+            });
+        }
+        return res.json();
+    })
     .then(data => {
         if (data.success) {
-            alert(data.message || 'Task created successfully');
+            alert(data.message || 'Task assigned successfully');
             location.reload();
         } else {
             alert('Error: ' + (data.message || 'Failed to create task'));
@@ -668,8 +692,8 @@ document.getElementById('taskAssignForm').addEventListener('submit', function(e)
         }
     })
     .catch(err => {
-        console.error(err);
-        alert('An error occurred while creating the task');
+        console.error('Task creation error:', err);
+        alert('An error occurred while creating the task: ' + err.message);
         submitBtn.disabled = false;
         submitBtn.textContent = 'Create Task';
     });
@@ -693,7 +717,7 @@ document.querySelectorAll('.task-status-select').forEach(select => {
         
         this.disabled = true;
         
-        fetch(URLROOT + '/TaskController/updateStatus', {
+        fetch(URLROOT + '/task/updateStatus', {
             method: 'POST',
             body: formData,
             credentials: 'same-origin',
@@ -718,6 +742,44 @@ document.querySelectorAll('.task-status-select').forEach(select => {
         });
     });
 });
+
+// Remove task (org only)
+function removeOrgTask(taskId, cardEl) {
+    if (!confirm('Remove this task? The member will be notified.')) return;
+
+    // Visual feedback — dim card
+    if (cardEl) { cardEl.style.opacity = '0.5'; cardEl.style.pointerEvents = 'none'; }
+
+    fetch(URLROOT + '/organization/removeTask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ task_id: taskId })
+    })
+    .then(r => {
+        if (!r.ok) return r.text().then(t => { throw new Error(t.substring(0, 200)); });
+        return r.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Animate removal
+            if (cardEl) {
+                cardEl.style.transition = 'all 0.3s ease';
+                cardEl.style.transform  = 'scale(0.95)';
+                cardEl.style.opacity    = '0';
+                setTimeout(() => cardEl.remove(), 300);
+            }
+        } else {
+            alert('Error: ' + (data.message || 'Failed to remove task'));
+            if (cardEl) { cardEl.style.opacity = '1'; cardEl.style.pointerEvents = ''; }
+        }
+    })
+    .catch(err => {
+        console.error('Remove task error:', err);
+        alert('An error occurred: ' + err.message);
+        if (cardEl) { cardEl.style.opacity = '1'; cardEl.style.pointerEvents = ''; }
+    });
+}
 </script>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>
