@@ -671,35 +671,6 @@
                         </div>
                     </div>
                 </div>
-                
-                <?php if ($totalTasks > 0 && !empty($members)): ?>
-                    <!-- Tasks per Member -->
-                    <div style="margin-top:30px;padding-top:30px;border-top:2px solid #f3f4f6;">
-                        <h3 style="font-size:1.1rem;margin-bottom:15px;color:#1f2937;"><i class="ph ph-chart-bar"></i> Tasks per Member</h3>
-                        <?php 
-                        foreach ($members as $member) {
-                            $memberTasks = $taskModel->getTasksByMember($project->id, $member->user_id);
-                            $memberTaskCount = count($memberTasks);
-                            $memberCompleted = count(array_filter($memberTasks, fn($t) => $t->status === 'done'));
-                            $memberPercent = $memberTaskCount > 0 ? round(($memberCompleted / $memberTaskCount) * 100) : 0;
-                            
-                            if ($memberTaskCount > 0):
-                        ?>
-                            <div style="margin-bottom:12px;">
-                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                                    <span style="font-weight:500;font-size:0.9rem;"><?= htmlspecialchars($member->username ?? 'Unknown') ?></span>
-                                    <span style="font-size:0.85rem;color:#6b7280;"><?= $memberCompleted ?>/<?= $memberTaskCount ?> tasks</span>
-                                </div>
-                                <div class="progress-container" style="height:8px;">
-                                    <div class="progress-bar" style="width: <?= $memberPercent ?>%;height:100%;"></div>
-                                </div>
-                            </div>
-                        <?php 
-                            endif;
-                        }
-                        ?>
-                    </div>
-                <?php endif; ?>
             </div>
 
             <!-- About Section -->
@@ -738,22 +709,11 @@
                             } else {
                                 $initials = strtoupper(substr($displayName ?: '?', 0, 2));
                             }
-                            $memberSkills = array_filter(array_map('trim', explode(',', $member->user_skills ?? '')));
                         ?>
                         <div class="member-card">
                             <div class="member-avatar"><?= htmlspecialchars($initials) ?></div>
                             <div class="member-name"><?= htmlspecialchars($displayName) ?: 'Unknown' ?></div>
                             <div class="member-role"><?= htmlspecialchars(ucfirst($member->role ?? 'Member')) ?></div>
-                            <?php if (!empty($memberSkills)): ?>
-                            <div style="margin-top:0.5rem; display:flex; flex-wrap:wrap; gap:4px; justify-content:center;">
-                                <?php foreach (array_slice($memberSkills, 0, 3) as $sk): ?>
-                                    <span style="background:var(--blue-bg,#d5eaf6);color:var(--primary-blue,#658396);font-size:0.65rem;font-weight:600;padding:2px 7px;border-radius:10px;"><?= htmlspecialchars($sk) ?></span>
-                                <?php endforeach; ?>
-                                <?php if (count($memberSkills) > 3): ?>
-                                    <span style="background:#eee;color:#888;font-size:0.65rem;font-weight:600;padding:2px 7px;border-radius:10px;">+<?= count($memberSkills) - 3 ?></span>
-                                <?php endif; ?>
-                            </div>
-                            <?php endif; ?>
                             <?php if (isset($_SESSION['user_id']) && $_SESSION['user_id'] != $member->user_id): ?>
                             <button class="report-btn-small report-project-member-btn" 
                                     data-user-id="<?= $member->user_id ?>" 
