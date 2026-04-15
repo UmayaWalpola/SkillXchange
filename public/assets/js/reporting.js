@@ -10,6 +10,8 @@
     let reportModal = null;
     let reportForm = null;
     let reportOverlay = null;
+    let reportCloseBtn = null;
+    let lastActiveElement = null;
 
     // Initialize when DOM is ready
     document.addEventListener('DOMContentLoaded', function() {
@@ -29,21 +31,61 @@
 
         reportForm = document.getElementById('reportForm');
         reportOverlay = document.getElementById('reportOverlay');
+        reportModal = document.getElementById('reportModal');
+        reportCloseBtn = reportModal ? reportModal.querySelector('.modal-close') : null;
 
         // Close modal on overlay click
-        if (reportOverlay) {
-            reportOverlay.addEventListener('click', closeReportModal);
+        if (reportOverlay && !reportOverlay.dataset.reportingBound) {
+            reportOverlay.addEventListener('click', function(e) {
+                // Only close when clicking the backdrop, not when interacting with the modal.
+                if (e.target === reportOverlay) {
+                    closeReportModal();
+                }
+            });
+            reportOverlay.dataset.reportingBound = 'true';
+        }
+
+        // Prevent interactions inside the modal from bubbling to the overlay.
+        if (reportModal && !reportModal.dataset.reportingBound) {
+            ['click', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'touchstart', 'touchend'].forEach(function(eventName) {
+                reportModal.addEventListener(eventName, function(e) {
+                    e.stopPropagation();
+                });
+            });
+            reportModal.dataset.reportingBound = 'true';
         }
 
         // Close modal on cancel button
         const cancelBtn = document.getElementById('reportCancelBtn');
-        if (cancelBtn) {
-            cancelBtn.addEventListener('click', closeReportModal);
+        if (cancelBtn && !cancelBtn.dataset.reportingBound) {
+            cancelBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                closeReportModal();
+            });
+            cancelBtn.dataset.reportingBound = 'true';
+        }
+
+        if (reportCloseBtn && !reportCloseBtn.dataset.reportingBound) {
+            reportCloseBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                closeReportModal();
+            });
+            reportCloseBtn.dataset.reportingBound = 'true';
         }
 
         // Handle form submission
-        if (reportForm) {
+        if (reportForm && !reportForm.dataset.reportingBound) {
             reportForm.addEventListener('submit', handleReportSubmit);
+            reportForm.dataset.reportingBound = 'true';
+        }
+
+        if (!document.body.dataset.reportingEscBound) {
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && reportOverlay && reportOverlay.style.display !== 'none') {
+                    closeReportModal();
+                }
+            });
+            document.body.dataset.reportingEscBound = 'true';
         }
     }
 
@@ -96,6 +138,7 @@
         reportModal = document.getElementById('reportModal');
         reportOverlay = document.getElementById('reportOverlay');
         reportForm = document.getElementById('reportForm');
+        reportCloseBtn = reportModal ? reportModal.querySelector('.modal-close') : null;
     }
 
     /**
@@ -105,6 +148,8 @@
     function attachReportButtonListeners() {
         // Use event delegation on document body for dynamic content
         document.body.addEventListener('click', function(e) {
+            if (reportOverlay && reportOverlay.contains(e.target)) return;
+
             // Check if clicked element or its parent is a report button
             const target = e.target.closest('.report-user-btn, .report-project-member-btn, .report-content-btn');
             if (!target) return;
@@ -134,11 +179,19 @@
             initializeReportModal();
         }
 
+        if (!reportForm) return;
+
+        lastActiveElement = document.activeElement;
+
         // Reset form
         reportForm.reset();
 
         // Set hidden fields based on report type
         document.getElementById('reportType').value = type;
+        document.getElementById('reportedUserId').value = '';
+        document.getElementById('reportContentType').value = '';
+        document.getElementById('reportContentId').value = '';
+        document.getElementById('reportProjectId').value = '';
 
         if (type === 'user') {
             document.getElementById('reportedUserId').value = data.userId || '';
@@ -156,9 +209,14 @@
 
         // Show modal
         reportOverlay.style.display = 'flex';
-        setTimeout(() => {
+        document.body.style.overflow = 'hidden';
+        requestAnimationFrame(() => {
             reportOverlay.classList.add('show');
-        }, 10);
+            const reasonField = document.getElementById('reportReason');
+            if (reasonField) {
+                reasonField.focus();
+            }
+        });
     };
 
     /**
@@ -170,6 +228,10 @@
             setTimeout(() => {
                 reportOverlay.style.display = 'none';
             }, 300);
+        }
+        document.body.style.overflow = '';
+        if (lastActiveElement && typeof lastActiveElement.focus === 'function') {
+            lastActiveElement.focus();
         }
     };
 
@@ -195,6 +257,13 @@
             endpoint = window.URLROOT + '/report/reportProjectUser';
         } else if (reportType === 'content') {
             endpoint = window.URLROOT + '/report/reportContent';
+        }
+
+        if (!endpoint) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+            showToast('Unable to submit this report right now.', 'error');
+            return;
         }
 
         // Submit via AJAX

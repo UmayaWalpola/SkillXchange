@@ -97,6 +97,14 @@ class UserdashboardController extends Controller {
    $this->view('users/chats', $data);
 }
 
+public function projects() {
+        $this->checkAuth();
+        // Unified Projects page — redirect to discover/browse
+        header('Location: ' . URLROOT . '/project/browse');
+        exit;
+    }
+
+    
 private function getActiveChats($userId) {
    try {
        $this->db->query("
@@ -1028,7 +1036,7 @@ public function matches() {
             
             foreach ($results as $project) {
                 $projectData = [
-                    'title'       => $project->title,
+                    'title' => $project->title,
                     'description' => $project->description
                 ];
                 
@@ -1045,6 +1053,7 @@ public function matches() {
             return $this->getProjectsForMatch($userId);
         }
     }
+
 
     private function getUserFeedbackFromDB($userId) {
         try {
