@@ -593,16 +593,7 @@ class TaskController extends Controller {
                     }
 
                     try {
-                        if (!$isOwner && $isAssigned && $project && !empty($project->organization_id)) {
-                            $this->notificationModel->createNotification([
-                                'user_id' => $project->organization_id,
-                                'type' => 'task_update',
-                                'message' => $msg . $buckxTransferMessage,
-                                'project_id' => $task->project_id,
-                                'task_id' => $taskId
-                            ]);
-                        }
-
+                        // Only notify the assigned user on task status update (no org notification for auto-transfer)
                         if ($isOwner && $task->assigned_to) {
                             $this->notificationModel->createNotification([
                                 'user_id' => $task->assigned_to,

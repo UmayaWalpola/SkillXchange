@@ -17,14 +17,14 @@
     <!-- Flash Messages -->
     <?php if (isset($_SESSION['success'])): ?>
         <div class="alert alert-success">
-            <span>&#x2705;</span> <?= $_SESSION['success'] ?>
+            <?= $_SESSION['success'] ?>
         </div>
         <?php unset($_SESSION['success']); ?>
     <?php endif; ?>
 
     <?php if (isset($_SESSION['error'])): ?>
         <div class="alert alert-error">
-            <span>&#x274C;</span> <?= $_SESSION['error'] ?>
+            <?= $_SESSION['error'] ?>
         </div>
         <?php unset($_SESSION['error']); ?>
     <?php endif; ?>
@@ -32,14 +32,13 @@
     <!-- Low Balance Warning -->
     <?php if (floatval(str_replace(',', '', $data['balance'])) <= $data['lowBalanceThreshold']): ?>
         <div class="alert alert-warning">
-            <span>&#x26A0;&#xFE0F;</span> Your BuckX balance is running low!
+            Your BuckX balance is running low!
         </div>
     <?php endif; ?>
     
     <!-- Top Statistics Row -->
     <div class="stats-row">
         <div class="stat-card balance-card">
-            <div class="stat-icon">&#x1F4B0;</div>
             <div class="stat-value" id="currentBalance"><?= $data['balance'] ?></div>
             <div class="stat-label">Current BuckX Balance</div>
             <a href="<?= URLROOT ?>/wallet/purchaseBuckx" class="btn-primary" style="margin-top: 1rem; padding: 0.7rem 1.5rem; font-size: 0.95rem;">
@@ -48,13 +47,11 @@
         </div>
         
         <div class="stat-card sent-card">
-            <div class="stat-icon"> &#x1F4E4;</div>
             <div class="stat-value"><?= $data['totalSent'] ?></div>
             <div class="stat-label">Total Sent BuckX</div>
         </div>
         
         <div class="stat-card received-card">
-            <div class="stat-icon">&#x1F4E5;</div>
             <div class="stat-value"><?= $data['totalReceived'] ?></div>
             <div class="stat-label">Total Received BuckX</div>
         </div>
