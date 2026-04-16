@@ -44,6 +44,17 @@ class WalletController extends Controller {
             'debtsOwedToMe' => $debts['owed_to_me'] // owed to me
         ];
 
+        // Add pending BuckX allocations for organizations
+        if ($userRole === 'organization') {
+            $pendingAllocations = $this->walletModel->getPendingAllocations($userId);
+            $totalPending = $this->walletModel->getTotalPendingAllocation($userId);
+            $availableBalance = $this->walletModel->getAvailableBalance($userId, $userRole);
+            
+            $data['pendingAllocations'] = $pendingAllocations;
+            $data['totalPendingAllocation'] = number_format($totalPending, 2);
+            $data['availableBalance'] = number_format($availableBalance, 2);
+        }
+
         if ($userRole === 'organization') {
             $this->view('organization/wallet', $data);
         } else {

@@ -93,6 +93,11 @@
                                         <?php if ($task->deadline): ?>
                                             <span class="deadline"><i class="ph ph-calendar"></i> <?= date('M d, Y', strtotime($task->deadline)) ?></span>
                                         <?php endif; ?>
+                                        
+                                        <!-- BuckX Badge -->
+                                        <?php if (!empty($task->buckx_allocated) && $task->buckx_allocated > 0): ?>
+                                            <span class="buckx-badge"><?= (int)$task->buckx_allocated ?> BuckX</span>
+                                        <?php endif; ?>
                                     </div>
                                     <div class="task-assignee">
                                         <?php if ($task->assigned_to): ?>

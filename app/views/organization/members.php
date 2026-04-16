@@ -346,6 +346,7 @@
                                                     <th style="text-align:left;padding:10px;color:#355a72;font-weight:700;">Task</th>
                                                     <th style="text-align:left;padding:10px;color:#355a72;font-weight:700;">Priority</th>
                                                     <th style="text-align:left;padding:10px;color:#355a72;font-weight:700;">Deadline</th>
+                                                    <th style="text-align:left;padding:10px;color:#355a72;font-weight:700;">Buckx</th>
                                                     <th style="text-align:left;padding:10px;color:#355a72;font-weight:700;">Status</th>
                                                     <th style="text-align:left;padding:10px;color:#355a72;font-weight:700;">Action</th>
                                                 </tr>
@@ -375,6 +376,12 @@
                                                         </td>
                                                         <td style="padding:10px;color:<?= $isOverdue ? '#b91c1c' : '#4b5563' ?>;font-weight:<?= $isOverdue ? '600' : '400' ?>;">
                                                             <?= !empty($task->deadline) ? date('M d, Y', strtotime($task->deadline)) : '-' ?>
+                                                        </td>
+                                                        <td style="padding:10px;color:#1f2937;">
+                                                            <?php 
+                                                                $buckxAmount = !empty($task->buckx_allocated) ? (int)$task->buckx_allocated : 0;
+                                                                echo $buckxAmount > 0 ? $buckxAmount : '-';
+                                                            ?>
                                                         </td>
                                                         <td style="padding:10px;">
                                                             <select class="task-status-select" data-task-id="<?= $task->id ?>" style="width:130px;padding:5px 8px;border-radius:6px;border:1px solid #d1d5db;font-size:12px;background:#fff;">
@@ -465,6 +472,12 @@
                     <label style="display:block;font-weight:600;margin-bottom:5px;">Deadline</label>
                     <input type="date" name="due_date" id="modal_deadline" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;">
                 </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:15px;">
+                <label style="display:block;font-weight:600;margin-bottom:5px;">BuckX Reward (Optional)</label>
+                <input type="number" name="buckx_allocated" id="modal_buckx_allocated" min="0" step="0.01" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;" placeholder="Amount of BuckX to reward">
+                <small style="display:block;margin-top:5px;color:#666;font-size:0.85rem;">Amount of BuckX to reward when task is completed. Leave empty or 0 for no reward.</small>
             </div>
             
             <div style="display:flex;gap:10px;margin-top:20px;">
@@ -608,6 +621,7 @@ document.querySelectorAll('.assign-task-btn').forEach(btn => {
         document.getElementById('modal_description').value = '';
         document.getElementById('modal_priority').value = 'medium';
         document.getElementById('modal_deadline').value = '';
+        document.getElementById('modal_buckx_allocated').value = '';
         
         document.getElementById('taskModal').style.display = 'flex';
     });
@@ -636,6 +650,7 @@ document.getElementById('taskAssignForm').addEventListener('submit', function(e)
     const description = document.getElementById('modal_description').value.trim();
     const priority  = document.getElementById('modal_priority').value;
     const dueDate   = document.getElementById('modal_deadline').value;
+    const buckxAllocated = document.getElementById('modal_buckx_allocated').value.trim() || '0';
 
     if (!taskName) {
         alert('Task title is required');
@@ -651,6 +666,7 @@ document.getElementById('taskAssignForm').addEventListener('submit', function(e)
     formData.append('description', description);
     formData.append('priority', priority);
     formData.append('due_date', dueDate);
+    formData.append('buckx_allocated', buckxAllocated);
     
     fetch(URLROOT + '/organization/assignTask', {
         method: 'POST',

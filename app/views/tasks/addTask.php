@@ -66,6 +66,16 @@
                         </select>
                     </div>
                 </div>
+                <div class="form-section">
+                    <h3>Reward (Optional)</h3>
+                    <div class="form-group">
+                        <label for="buckx_allocated"><strong>BuckX Reward</strong></label>
+                        <div class="input-wrapper">
+                            <input type="number" id="buckx_allocated" name="buckx_allocated" class="form-control" min="0" step="0.01" value="<?= $_POST['buckx_allocated'] ?? '' ?>" placeholder="Amount of BuckX to reward">
+                            <small class="form-help">Amount of BuckX to reward when task is completed. Leave empty or 0 for no reward.</small>
+                        </div>
+                    </div>
+                </div>
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Create Task</button>
                     <a href="<?= URLROOT ?>/tasks/project/<?= $projectId ?>" class="btn btn-secondary">Cancel</a>

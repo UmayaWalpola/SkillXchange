@@ -33,10 +33,12 @@ class Task {
     // Requested API: createTask($data)
     public function createTask($data) {
         try {
+            $buckxAllocated = isset($data['buckx_allocated']) ? (float)$data['buckx_allocated'] : 0;
+            
             $this->db->query("INSERT INTO project_tasks 
-                (project_id, assigned_to, title, description, status, priority, deadline, created_at) 
+                (project_id, assigned_to, title, description, status, priority, deadline, buckx_allocated, buckx_distributed, created_at) 
                 VALUES 
-                (:project_id, :assigned_to, :title, :description, :status, :priority, :deadline, NOW())");
+                (:project_id, :assigned_to, :title, :description, :status, :priority, :deadline, :buckx_allocated, 0, NOW())");
             
             $this->db->bind(':project_id', $data['project_id']);
             $this->db->bind(':assigned_to', $data['assigned_to']);
@@ -45,6 +47,7 @@ class Task {
             $this->db->bind(':status', $data['status']);
             $this->db->bind(':priority', $data['priority']);
             $this->db->bind(':deadline', $data['deadline']);
+            $this->db->bind(':buckx_allocated', $buckxAllocated);
             
             if ($this->db->execute()) {
                 $taskId = $this->db->lastInsertId();
@@ -79,7 +82,15 @@ class Task {
 
     // Requested API: updateTask($data) – keep old signature for compatibility
     public function updateTask($taskId, $data) {
-        $this->db->query("UPDATE project_tasks SET title = :title, description = :description, assigned_to = :assigned_to, priority = :priority, deadline = :deadline, updated_at = CURRENT_TIMESTAMP WHERE id = :id");
+        $buckxAllocated = isset($data['buckx_allocated']) ? (float)$data['buckx_allocated'] : null;
+        
+        if ($buckxAllocated !== null) {
+            $this->db->query("UPDATE project_tasks SET title = :title, description = :description, assigned_to = :assigned_to, priority = :priority, deadline = :deadline, buckx_allocated = :buckx_allocated, updated_at = CURRENT_TIMESTAMP WHERE id = :id");
+            $this->db->bind(':buckx_allocated', $buckxAllocated);
+        } else {
+            $this->db->query("UPDATE project_tasks SET title = :title, description = :description, assigned_to = :assigned_to, priority = :priority, deadline = :deadline, updated_at = CURRENT_TIMESTAMP WHERE id = :id");
+        }
+        
         $this->db->bind(':id', $taskId);
         $this->db->bind(':title', $data['task_name'] ?? $data['title'] ?? '');
         $this->db->bind(':description', $data['description'] ?? null);
@@ -467,6 +478,77 @@ class Task {
         $this->db->bind(':id', $taskId);
         $result = $this->db->single();
         return $result ? $result->project_id : null;
+    }
+
+    /* ============================================================
+       BUCKX ALLOCATION & REWARD SYSTEM
+    ============================================================ */
+
+    /**
+     * Get all pending Buckx allocations for a project
+     */
+    public function getAllocatedTasks($projectId) {
+        $this->db->query("
+            SELECT pt.*, u.username, u.profile_picture, p.name as project_name
+            FROM project_tasks pt 
+            LEFT JOIN users u ON pt.assigned_to = u.id
+            LEFT JOIN projects p ON pt.project_id = p.id
+            WHERE pt.project_id = :project_id 
+            AND pt.buckx_allocated > 0 
+            AND pt.buckx_distributed = 0
+            ORDER BY pt.created_at DESC
+        ");
+        $this->db->bind(':project_id', $projectId);
+        return $this->db->resultSet();
+    }
+
+    /**
+     * Get total pending Buckx allocation for an organization
+     */
+    public function getPendingBuckXAllocation($organizationId) {
+        $this->db->query("
+            SELECT COALESCE(SUM(pt.buckx_allocated), 0) as total_pending
+            FROM project_tasks pt
+            INNER JOIN projects p ON pt.project_id = p.id
+            WHERE p.organization_id = :org_id 
+            AND pt.buckx_allocated > 0 
+            AND pt.buckx_distributed = 0
+        ");
+        $this->db->bind(':org_id', $organizationId);
+        $result = $this->db->single();
+        return $result ? floatval($result->total_pending) : 0;
+    }
+
+    /**
+     * Mark Buckx as distributed for a task
+     */
+    public function markBuckXDistributed($taskId) {
+        try {
+            $this->db->query("
+                UPDATE project_tasks 
+                SET buckx_distributed = 1, buckx_distributed_at = NOW() 
+                WHERE id = :id
+            ");
+            $this->db->bind(':id', $taskId);
+            return $this->db->execute();
+        } catch (Exception $e) {
+            error_log("Error marking BuckX as distributed for task $taskId: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get task with Buckx details
+     */
+    public function getTaskWithBuckX($taskId) {
+        $this->db->query("
+            SELECT pt.*, u.username, u.email, u.profile_picture, u.id as user_id
+            FROM project_tasks pt 
+            LEFT JOIN users u ON pt.assigned_to = u.id 
+            WHERE pt.id = :id
+        ");
+        $this->db->bind(':id', $taskId);
+        return $this->db->single();
     }
 
 }

@@ -74,6 +74,22 @@
                         </select>
                     </div>
                 </div>
+                <div class="form-section">
+                    <h3>Reward (Optional)</h3>
+                    <div class="form-group">
+                        <label for="buckx_allocated"><strong>BuckX Reward</strong></label>
+                        <div class="input-wrapper">
+                            <input type="number" id="buckx_allocated" name="buckx_allocated" class="form-control" min="0" step="0.01" value="<?= $task->buckx_allocated ?? '' ?>" placeholder="Amount of BuckX to reward">
+                            <small class="form-help">Amount of BuckX to reward when task is completed. Leave empty or 0 for no reward.
+                            <?php if ($task->buckx_allocated > 0 && !$task->buckx_distributed): ?>
+                                <br><strong>Current allocation: <?= htmlspecialchars($task->buckx_allocated) ?> BuckX (Pending)</strong>
+                            <?php elseif ($task->buckx_distributed): ?>
+                                <br><strong>Reward distributed: <?= htmlspecialchars($task->buckx_allocated) ?> BuckX</strong>
+                            <?php endif; ?>
+                            </small>
+                        </div>
+                    </div>
+                </div>
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Update Task</button>
                     <a href="<?= URLROOT ?>/tasks/project/<?= $task->project_id ?>" class="btn btn-secondary">Cancel</a>

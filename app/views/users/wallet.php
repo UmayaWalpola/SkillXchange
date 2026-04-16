@@ -124,7 +124,7 @@
                 <thead>
                     <tr>
                         <th>Type</th>
-                        <th>User</th>
+                        <th>User / Source</th>
                         <th>Date</th>
                         <th style="text-align:right;">Amount</th>
                     </tr>
@@ -141,8 +141,27 @@
 
                     <?php foreach ($data['receivedTransactions'] as $tx): ?>
                     <tr>
-                        <td><span class="type-label" style="color:#16a34a;">RECEIVED</span></td>
-                        <td><?= htmlspecialchars($tx->sender) ?></td>
+                        <td>
+                            <?php 
+                                $txType = $tx->transaction_type ?? 'transfer';
+                                if ($txType === 'task_reward') {
+                                    echo '<span class="type-label" style="background: linear-gradient(135deg, #3b82f6 0%, #0ea5e9 100%); color: white;">TASK REWARD</span>';
+                                } else {
+                                    echo '<span class="type-label" style="color:#16a34a;">RECEIVED</span>';
+                                }
+                            ?>
+                        </td>
+                        <td>
+                            <?php 
+                                $txType = $tx->transaction_type ?? 'transfer';
+                                if ($txType === 'task_reward') {
+                                    // Extract task ID from note if available
+                                    echo '<strong>Task Reward</strong><br><small style="color:#666;">' . htmlspecialchars($tx->note ?? '') . '</small>';
+                                } else {
+                                    echo htmlspecialchars($tx->sender);
+                                }
+                            ?>
+                        </td>
                         <td><span class="transaction-date"><?= htmlspecialchars($tx->timestamp) ?></span></td>
                         <td><div class="transaction-amount received">+<?= number_format($tx->amount, 2) ?> BuckX</div></td>
                     </tr>

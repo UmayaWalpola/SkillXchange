@@ -271,4 +271,133 @@ class Wallet {
         ];
     }
 
+    /* ============================================================
+       BUCKX TASK ALLOCATION & REWARD TRANSFER
+    ============================================================ */
+
+    /**
+     * Get pending Buckx allocations for an organization
+     */
+    public function getPendingAllocations($organizationId) {
+        $this->db->query("
+            SELECT pt.id, pt.title, pt.assigned_to, pt.buckx_allocated, 
+                   u.username as assigned_user, u.profile_picture,
+                   p.name as project_name, p.id as project_id
+            FROM project_tasks pt
+            INNER JOIN projects p ON pt.project_id = p.id
+            LEFT JOIN users u ON pt.assigned_to = u.id
+            WHERE p.organization_id = :org_id 
+            AND pt.buckx_allocated > 0 
+            AND pt.buckx_distributed = 0
+            AND pt.status != 'done'
+            ORDER BY pt.created_at DESC
+        ");
+        $this->db->bind(':org_id', $organizationId);
+        return $this->db->resultSet();
+    }
+
+    /**
+     * Get total pending Buckx allocation for an organization
+     */
+    public function getTotalPendingAllocation($organizationId) {
+        $this->db->query("
+            SELECT COALESCE(SUM(pt.buckx_allocated), 0) as total_pending
+            FROM project_tasks pt
+            INNER JOIN projects p ON pt.project_id = p.id
+            WHERE p.organization_id = :org_id 
+            AND pt.buckx_allocated > 0 
+            AND pt.buckx_distributed = 0
+        ");
+        $this->db->bind(':org_id', $organizationId);
+        $result = $this->db->single();
+        return $result ? floatval($result->total_pending) : 0;
+    }
+
+    /**
+     * Get available balance (actual balance minus pending allocations)
+     */
+    public function getAvailableBalance($userId, $userRole = 'organization') {
+        $actualBalance = $this->getBalance($userId);
+        
+        // Only applicable for organizations
+        if ($userRole === 'organization') {
+            $pendingAllocation = $this->getTotalPendingAllocation($userId);
+            return max(0, $actualBalance - $pendingAllocation);
+        }
+        
+        return $actualBalance;
+    }
+
+    /**
+     * Transfer Buckx reward to a user when task is completed
+     * Called when task status is marked as 'done'
+     */
+    public function transferTaskReward($taskId, $orgId, $userId, $amount) {
+        $amount = (float)$amount;
+        
+        if ($amount <= 0) {
+            return ['success' => false, 'message' => 'Reward amount must be greater than 0'];
+        }
+
+        try {
+            // Start transaction
+            $this->db->query('START TRANSACTION');
+
+            // Ensure both wallets exist
+            $this->ensureWalletExists($orgId, 'organization');
+            $this->ensureWalletExists($userId, 'individual');
+
+            // Check if organization has enough balance
+            $orgBalance = $this->getBalance($orgId);
+            if ($orgBalance < $amount) {
+                $this->db->query('ROLLBACK');
+                return [
+                    'success' => false, 
+                    'message' => 'Organization does not have sufficient BuckX balance'
+                ];
+            }
+
+            // Deduct from organization wallet
+            if (!$this->updateBalance($orgId, $amount, 'subtract')) {
+                throw new Exception('Failed to deduct from organization wallet');
+            }
+
+            // Credit to user wallet
+            if (!$this->updateBalance($userId, $amount, 'add')) {
+                throw new Exception('Failed to credit user wallet');
+            }
+
+            // Create transaction record
+            $this->db->query("
+                INSERT INTO wallet_transactions 
+                (sender_id, receiver_id, amount, note, transaction_type, status, created_at) 
+                VALUES (:sender_id, :receiver_id, :amount, :note, 'task_reward', 'completed', NOW())
+            ");
+            $this->db->bind(':sender_id', $orgId);
+            $this->db->bind(':receiver_id', $userId);
+            $this->db->bind(':amount', $amount);
+            $this->db->bind(':note', "Task Reward - Task ID: {$taskId}");
+
+            if (!$this->db->execute()) {
+                throw new Exception('Failed to create transaction record');
+            }
+
+            $this->db->query('COMMIT');
+
+            return [
+                'success' => true,
+                'message' => "Successfully transferred {$amount} BuckX to user",
+                'transaction_id' => $this->db->lastInsertId()
+            ];
+
+        } catch (Exception $e) {
+            $this->db->query('ROLLBACK');
+            error_log("Task reward transfer error: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Failed to transfer reward: ' . $e->getMessage()
+            ];
+        }
+    }
+
 }

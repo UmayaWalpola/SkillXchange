@@ -32,45 +32,6 @@
     opacity: 0.9;
 }
 
-/* Debt Summary Cards */
-.debt-cards-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.debt-card {
-    background: var(--white-bg);
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 4px 15px rgba(18, 18, 13, 0.05);
-    border: 1px solid var(--blue-bg);
-}
-
-.debt-card-label {
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    opacity: 0.6;
-    margin-bottom: 0.4rem;
-}
-
-.debt-card-value {
-    font-size: 1.8rem;
-    font-weight: 700;
-}
-
-.debt-card-value.owe     { color: #dc2626; }
-.debt-card-value.receive { color: #16a34a; }
-
-.debt-card-sub {
-    font-size: 0.85rem;
-    opacity: 0.55;
-    margin-top: 0.2rem;
-}
-
 /* Section Wrapper */
 .transaction-section {
     background: var(--white-bg);
@@ -96,16 +57,7 @@
     color: var(--dark-bg);
 }
 
-.transaction-count {
-    background: var(--primary-blue);
-    color: var(--white-bg);
-    padding: 0.3rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 600;
-}
-
-/* Shared Table — used for both debt and transaction tables */
+/* Table Styles */
 .transaction-table {
     width: 100%;
     border-collapse: collapse;
@@ -149,7 +101,7 @@
     text-align: right;
 }
 
-.transaction-amount.sent     { color: #dc2626; }
+.transaction-amount.sent { color: #dc2626; }
 .transaction-amount.received { color: #16a34a; }
 
 .type-label {
@@ -158,7 +110,7 @@
     letter-spacing: 0.03em;
 }
 
-/* Status Badges — debt statuses */
+/* Status Badges */
 .status-badge {
     display: inline-block;
     padding: 0.18rem 0.55rem;
@@ -168,10 +120,20 @@
     text-transform: capitalize;
 }
 
-.status-pending   { background: #fef9c3; color: #854d0e; }
-.status-active    { background: #dcfce7; color: #166534; }
-.status-voided    { background: #fee2e2; color: #991b1b; }
+.status-pending { background: #fef9c3; color: #854d0e; }
+.status-active { background: #dcfce7; color: #166534; }
+.status-voided { background: #fee2e2; color: #991b1b; }
 .status-fulfilled { background: #ede9fe; color: #5b21b6; }
+
+/* BuckX Badge */
+.buckx-badge {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #0c4a6e;
+    background: #e0f2fe;
+}
 
 /* Empty State */
 .empty-state {
@@ -180,65 +142,8 @@
     opacity: 0.55;
 }
 
-/* Purchase Page */
-.purchase-summary {
-    background: var(--blue-bg);
-    border: 2px solid var(--primary-blue);
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin: 1.5rem 0;
-}
-
-.summary-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.65rem 0;
-    font-size: 1rem;
-    color: var(--dark-bg);
-    opacity: 0.85;
-}
-
-.total-row {
-    border-top: 2px solid var(--primary-blue);
-    margin-top: 0.5rem;
-    padding-top: 0.75rem;
-    opacity: 1;
-}
-
-.total-row strong { color: var(--primary-blue); font-size: 1.4rem; }
-
-.send-btn {
-    background: var(--primary-blue);
-    color: var(--white-bg);
-    border: none;
-    padding: 1rem 3rem;
-    border-radius: 10px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: block;
-    width: 100%;
-    max-width: 350px;
-    margin: 1rem auto 0;
-}
-
-.send-btn:hover {
-    background: var(--accent-blue);
-    color: var(--dark-bg);
-    transform: translateY(-2px);
-}
-
-.send-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-}
-
 /* Responsive */
 @media (max-width: 768px) {
-    .debt-cards-row { grid-template-columns: 1fr; }
-
     .transaction-table th,
     .transaction-table td { padding: 0.65rem 0.5rem; }
 
@@ -249,11 +154,129 @@
         align-items: flex-start;
         gap: 0.5rem;
     }
-
-    .send-btn { max-width: 100%; }
 }
 
 @media (max-width: 480px) {
-    .stat-value        { font-size: 1.4rem; }
+    .stat-value { font-size: 1.4rem; }
     .transaction-table { font-size: 0.85rem; }
+}
+
+.allocations-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.allocations-table th {
+    background: var(--blue-bg);
+    color: var(--dark-bg);
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    border: 1px solid var(--blue-bg);
+}
+
+.allocations-table td {
+    padding: 1rem;
+    border: 1px solid var(--blue-bg);
+    vertical-align: middle;
+}
+
+.allocations-table tr:hover {
+    background: rgba(101, 131, 150, 0.05);
+}
+
+.user-badge {
+    background: var(--blue-bg);
+    color: var(--dark-bg);
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.unassigned-badge {
+    background: #f3f4f6;
+    color: #6b7280;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.buckx-badge {
+    background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-blue) 100%);
+    color: var(--white-bg);
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.status-badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+}
+
+.status-badge.pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge.distributed {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.btn-link {
+    color: var(--primary-blue);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-link:hover {
+    color: var(--accent-blue);
+    text-decoration: underline;
+}
+
+.allocation-summary {
+    background: rgba(101, 131, 150, 0.1);
+    padding: 1rem;
+    border-radius: 8px;
+    text-align: right;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--dark-bg);
+}
+
+.allocation-summary strong {
+    color: var(--primary-blue);
+}
+
+.allocation-total {
+    color: var(--primary-blue);
+    font-size: 1.3rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: #999;
+    font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+    .allocations-table th,
+    .allocations-table td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .allocation-summary {
+        text-align: left;
+    }
 }

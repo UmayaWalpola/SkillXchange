@@ -979,7 +979,8 @@ class OrganizationController extends Controller {
                 'description' => $data['description'] ?? '',
                 'priority' => strtolower($data['priority'] ?? 'medium'),
                 'status' => 'todo',
-                'deadline' => !empty($data['due_date']) ? $data['due_date'] : null
+                'deadline' => !empty($data['due_date']) ? $data['due_date'] : null,
+                'buckx_allocated' => !empty($data['buckx_allocated']) ? (float)$data['buckx_allocated'] : 0
             ];
 
             // Send task data to Database Model to create

@@ -65,6 +65,21 @@
                             <h3><?= htmlspecialchars($task->title) ?></h3>
                             <p class="text-muted">Project: <?= htmlspecialchars($task->project_name) ?></p>
                             <p><?= htmlspecialchars(substr($task->description ?? '', 0, 140)) ?></p>
+                            
+                            <!-- BuckX Reward Display -->
+                            <?php if (!empty($task->buckx_allocated) && $task->buckx_allocated > 0): ?>
+                                <div>
+                                    <div>
+                                        <strong><?= (int)$task->buckx_allocated ?> BuckX Reward</strong>
+                                        <?php if ($task->status === 'done' && $task->buckx_distributed): ?>
+                                            <br><small>✓ Reward received!</small>
+                                        <?php elseif ($task->status !== 'done'): ?>
+                                            <br><small>Complete this task to earn the reward</small>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                            
                             <div class="badge-row">
                                 <span class="badge">Priority: <?= ucfirst($task->priority) ?></span>
                                 <?php if ($task->deadline): ?>

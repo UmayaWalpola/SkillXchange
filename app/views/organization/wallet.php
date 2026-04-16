@@ -60,164 +60,107 @@
         </div>
     </div>
 
-    <!-- Transfer Section -->
-    <div class="transfer-section">
-        <div class="section-header">
-            <div>
-                <div class="section-title">Send BuckX</div>
-                <div class="section-subtitle">Transfer BuckX to your project contributors</div>
-            </div>
+    <!-- Pending Task Allocations Section -->
+    <div class="transaction-section">
+        <div class="transaction-header">
+            <div class="transaction-title">Pending Task Allocations (Assigned for Future Transfer)</div>
         </div>
-        
-        <?php if (empty($data['allowedRecipients'])): ?>
-            <div class="no-recipients-notice">
-                <span class="notice-icon">&#x2139;&#xFE0F;</span>
-                <div class="notice-content">
-                    <h3>No Users Available</h3>
-                    <p>There are no users in the system yet.</p>
+        <div class="transaction-list">
+            <?php 
+                if (!empty($data['pendingAllocations']) && is_array($data['pendingAllocations'])): 
+                    $totalPending = 0;
+            ?>
+                <table class="transaction-table">
+                    <thead>
+                        <tr>
+                            <th>Project</th>
+                            <th>Task</th>
+                            <th>Assigned To</th>
+                            <th>BuckX Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($data['pendingAllocations'] as $alloc): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($alloc->project_name ?? '') ?></td>
+                            <td><?= htmlspecialchars($alloc->title ?? '') ?></td>
+                            <td><?= htmlspecialchars($alloc->assigned_user ?? 'Unassigned') ?></td>
+                            <td><?= (int)$alloc->buckx_allocated ?> BuckX</td>
+                            <td><span class="status-badge status-pending">Pending</span></td>
+                        </tr>
+                        <?php 
+                            $totalPending += (int)$alloc->buckx_allocated;
+                        endforeach; 
+                        ?>
+                    </tbody>
+                </table>
+                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #d5eaf6; text-align: right;">
+                    <strong>Total Pending: </strong>
+                    <span style="font-weight: 600;"><?= $totalPending ?> BuckX</span>
                 </div>
-            </div>
-        <?php else: ?>
-            <form class="transfer-form" id="transferForm" method="POST" action="<?= URLROOT ?>/wallet/confirmTransfer">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="recipient_id">Select User</label>
-                        <select id="recipient_id" 
-                                name="recipient_id" 
-                                required
-                                class="recipient-dropdown">
-                            <option value="">Select a user</option>
-                            <?php foreach($data['allowedRecipients'] as $recipient): ?>
-                                <option value="<?= $recipient->id ?>">
-                                    <?= htmlspecialchars($recipient->username) ?> 
-                                    (<?= htmlspecialchars($recipient->email) ?>)
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <div class="field-hint">Select the user you want to send BuckX to</div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="amount">Amount (BuckX)</label>
-                        <input type="number" 
-                               id="amount" 
-                               name="amount" 
-                               min="1" 
-                               max="1000"
-                               step="0.01"
-                               placeholder="Enter amount" 
-                               required>
-                        <div class="field-hint">Maximum: 1000 BuckX per transaction</div>
-                    </div>
+            <?php else: ?>
+                <div class="empty-state">
+                    <p>No pending task allocations</p>
                 </div>
-                
-                <div class="form-group full-width">
-                    <label for="note">Reason for Transfer (Optional)</label>
-                    <input type="text" 
-                           id="note" 
-                           name="note" 
-                           placeholder="e.g., Payment for project work, Performance bonus, etc."
-                           maxlength="255">
-                    <div class="field-hint">This reason will be visible to the recipient</div>
-                </div>
-                
-                <button type="submit" class="send-btn">
-                <span>Review Transfer</span>
-                </button>
-            </form>
-        <?php endif; ?>
+            <?php endif; ?>
+        </div>
     </div>
 
-    <!-- Transactions Container -->
-    <div class="transactions-container">
-        <!-- Sent Transactions -->
-        <div class="transaction-section">
-            <div class="transaction-header">
-                <div class="transaction-title">
-                    <span>&#x1F4E4;</span>
-                    Sent Transactions
-                </div>
-                <div class="transaction-count"><?= count($data['sentTransactions']) ?></div>
-            </div>
-            <div class="transaction-list">
-                <?php if (empty($data['sentTransactions'])): ?>
-                    <div class="empty-state">
-                        <p>No sent transactions yet</p>
-                    </div>
-                <?php else: ?>
-                    <?php foreach($data['sentTransactions'] as $tx): ?>
-                        <div class="transaction-item">
-                            <div class="transaction-info">
-                                <div class="transaction-user">
-                                    <span class="user-icon">
-                                        <?= ($tx->receiver_role === 'organization') ? '&#x1F465;' : '&#x1F464;' ?>
-                                    </span>
-                                    <?= htmlspecialchars($tx->receiver) ?>
-                                    <?php if ($tx->receiver_role === 'organization'): ?>
-                                        <span class="role-badge">ORG</span>
-                                    <?php endif; ?>
-                                </div>
-                                <?php if (!empty($tx->note)): ?>
-                                    <div class="transaction-note">
-                                        <strong>Reason:</strong> <?= htmlspecialchars($tx->note) ?>
-                                    </div>
-                                <?php endif; ?>
-                                <div class="transaction-time">
-                                    <?= htmlspecialchars($tx->timestamp) ?>
-                                </div>
-                            </div>
-                            <div class="transaction-amount sent">
-                                -<?= number_format($tx->amount, 2) ?> BuckX
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
+    <!-- Transaction History -->
+    <div class="transaction-section">
+        <div class="transaction-header">
+            <div class="transaction-title">Transaction History</div>
         </div>
-
-        <!-- Received Transactions -->
-        <div class="transaction-section">
-            <div class="transaction-header">
-                <div class="transaction-title">
-                    <span>&#x1F4E5;</span>
-                    Received Transactions
+        <div class="transaction-list">
+            <?php 
+                $allTransactions = array_merge($data['sentTransactions'] ?? [], $data['receivedTransactions'] ?? []);
+                usort($allTransactions, function($a, $b) {
+                    return strtotime($b->timestamp) - strtotime($a->timestamp);
+                });
+            ?>
+            <?php if (empty($allTransactions)): ?>
+                <div class="empty-state">
+                    <p>No transactions yet</p>
                 </div>
-                <div class="transaction-count"><?= count($data['receivedTransactions']) ?></div>
-            </div>
-            <div class="transaction-list">
-                <?php if (empty($data['receivedTransactions'])): ?>
-                    <div class="empty-state">
-                        <p>No received transactions yet</p>
-                    </div>
-                <?php else: ?>
-                    <?php foreach($data['receivedTransactions'] as $tx): ?>
-                        <div class="transaction-item">
-                            <div class="transaction-info">
-                                <div class="transaction-user">
-                                    <span class="user-icon">
-                                        <?= ($tx->sender_role === 'organization') ? '&#x1F465;' : '&#x1F464;' ?>
-                                    </span>
-                                    <?= htmlspecialchars($tx->sender) ?>
-                                    <?php if ($tx->sender_role === 'organization'): ?>
-                                        <span class="role-badge">ORG</span>
-                                    <?php endif; ?>
-                                </div>
-                                <?php if (!empty($tx->note)): ?>
-                                    <div class="transaction-note">
-                                        <strong>Reason:</strong> <?= htmlspecialchars($tx->note) ?>
-                                    </div>
+            <?php else: ?>
+                <table class="transaction-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Note</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($allTransactions as $tx): ?>
+                        <tr>
+                            <td>
+                                <?= isset($tx->receiver) ? htmlspecialchars($tx->receiver) : htmlspecialchars($tx->sender) ?>
+                            </td>
+                            <td>
+                                <?php if (isset($tx->receiver)): ?>
+                                    <span class="type-label" style="color: #dc2626;">Sent</span>
+                                <?php else: ?>
+                                    <span class="type-label" style="color: #059669;">Received</span>
                                 <?php endif; ?>
-                                <div class="transaction-time">
-                                    <?= htmlspecialchars($tx->timestamp) ?>
-                                </div>
-                            </div>
-                            <div class="transaction-amount received">
-                                +<?= number_format($tx->amount, 2) ?> BuckX
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
+                            </td>
+                            <td class="transaction-amount <?= isset($tx->receiver) ? 'sent' : 'received' ?>">
+                                <?php if (isset($tx->receiver)): ?>
+                                    -<?= (int)$tx->amount ?> BuckX
+                                <?php else: ?>
+                                    +<?= (int)$tx->amount ?> BuckX
+                                <?php endif; ?>
+                            </td>
+                            <td><?= htmlspecialchars($tx->note ?? '-') ?></td>
+                            <td class="transaction-date"><?= htmlspecialchars($tx->timestamp) ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
         </div>
     </div>
 

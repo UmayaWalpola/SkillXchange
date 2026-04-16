@@ -126,6 +126,7 @@ class TaskController extends Controller {
                         'assigned_to' => !empty($_POST['assigned_to']) ? (int)$_POST['assigned_to'] : (!empty($_POST['member_id']) ? (int)$_POST['member_id'] : null),
                         'priority' => strtolower(trim($_POST['priority'] ?? 'medium')),
                         'deadline' => !empty($_POST['due_date']) ? $_POST['due_date'] : null,
+                        'buckx_allocated' => !empty($_POST['buckx_allocated']) ? (float)$_POST['buckx_allocated'] : 0,
                         'status' => 'todo'
                     ];
 
@@ -206,6 +207,7 @@ class TaskController extends Controller {
                 'assigned_to' => (int)$_POST['assigned_to'],
                 'priority' => trim($_POST['priority']),
                 'due_date' => !empty($_POST['deadline']) ? $_POST['deadline'] : null,
+                'buckx_allocated' => !empty($_POST['buckx_allocated']) ? (float)$_POST['buckx_allocated'] : 0,
                 'status' => 'pending',
                 'created_by' => $_SESSION['user_id']
             ];
@@ -307,6 +309,7 @@ class TaskController extends Controller {
                 'assigned_to' => !empty($_POST['assigned_to']) ? (int)$_POST['assigned_to'] : null,
                 'priority' => trim($_POST['priority']),
                 'deadline' => !empty($_POST['deadline']) ? $_POST['deadline'] : null,
+                'buckx_allocated' => !empty($_POST['buckx_allocated']) ? (float)$_POST['buckx_allocated'] : null,
                 'updated_by' => $_SESSION['user_id']
             ];
 
@@ -551,12 +554,50 @@ class TaskController extends Controller {
                     $statusLabel = ucwords(str_replace(['_', '-'], ' ', $status));
                     $msg = "Task '{$taskLabel}' status changed to {$statusLabel}";
 
+                    // Handle Buckx transfer if task is marked as complete
+                    $buckxTransferMessage = '';
+                    if ($status === 'done' && $task->buckx_allocated > 0 && !$task->buckx_distributed && $task->assigned_to) {
+                        try {
+                            $walletModel = $this->model('Wallet');
+                            $project = $this->projectModel->getProjectById($task->project_id);
+                            
+                            if ($project && !empty($project->organization_id)) {
+                                $transferResult = $walletModel->transferTaskReward(
+                                    $taskId,
+                                    $project->organization_id,
+                                    $task->assigned_to,
+                                    $task->buckx_allocated
+                                );
+
+                                if ($transferResult['success']) {
+                                    // Mark Buckx as distributed
+                                    $this->taskModel->markBuckXDistributed($taskId);
+                                    $buckxTransferMessage = " - {$task->buckx_allocated} BuckX rewarded to user";
+                                    
+                                    // Notify user about reward
+                                    $rewardMsg = "Congratulations! You received {$task->buckx_allocated} BuckX reward for completing task '{$taskLabel}'";
+                                    $this->notificationModel->createNotification([
+                                        'user_id' => $task->assigned_to,
+                                        'type' => 'buckx_reward',
+                                        'message' => $rewardMsg,
+                                        'project_id' => $task->project_id,
+                                        'task_id' => $taskId
+                                    ]);
+                                } else {
+                                    error_log("Failed to transfer BuckX for task {$taskId}: " . $transferResult['message']);
+                                }
+                            }
+                        } catch (Throwable $buckxError) {
+                            error_log('BuckX transfer error: ' . $buckxError->getMessage());
+                        }
+                    }
+
                     try {
                         if (!$isOwner && $isAssigned && $project && !empty($project->organization_id)) {
                             $this->notificationModel->createNotification([
                                 'user_id' => $project->organization_id,
                                 'type' => 'task_update',
-                                'message' => $msg,
+                                'message' => $msg . $buckxTransferMessage,
                                 'project_id' => $task->project_id,
                                 'task_id' => $taskId
                             ]);
