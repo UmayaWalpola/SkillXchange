@@ -10,7 +10,7 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
     <!-- Local Phosphor Icons එකතු කිරීම -->
-<link rel="stylesheet" type="text/css" href="<?= URLROOT ?>/assets/phosphor/regular/style.css" />
+<link rel="stylesheet" type="text/css" href="<?= URLROOT ?>/assets/phosphor/src/regular/style.css" />
 
     <style>
         .header {
