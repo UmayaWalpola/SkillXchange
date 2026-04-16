@@ -1,57 +1,44 @@
 // Quiz Manager Dashboard JavaScript
 
-// Sample quiz data
-let quizzes = [
-  {
-    id: 1,
-    title: "JavaScript Fundamentals",
-    badge: "Advanced",
-    status: "active",
-    participants: 85,
-    totalQuestions: 20,
-    duration: 30,
-    createdDate: "2024-03-15",
-    averageScore: 78.5
-  },
-  {
-    id: 2,
-    title: "React Advanced Concepts",
-    badge: "Intermediate",
-    status: "active",
-    participants: 52,
-    totalQuestions: 15,
-    duration: 45,
-    createdDate: "2024-03-18",
-    averageScore: 82.1
-  },
-  {
-    id: 3,
-    title: "Database Design Principles",
-    badge: "Beginer",
-    status: "paused",
-    participants: 73,
-    totalQuestions: 25,
-    duration: 40,
-    createdDate: "2024-03-10",
-    averageScore: 71.3
-  },
-  {
-    id: 4,
-    title: "Python Data Structures",
-    badge: "Advanced",
-    status: "draft",
-    participants: 0,
-    totalQuestions: 18,
-    duration: 35,
-    createdDate: "2024-03-20",
-    averageScore: 0
-  }
-];
+let quizzes = [];
 
 // Initialize dashboard
 function initDashboard() {
-  renderQuizTable();
+  loadQuizzesFromBackend();
 }
+
+// Load quizzes from backend
+async function loadQuizzesFromBackend() {
+  try {
+    // Get URLROOT from data attribute if available
+    const urlRoot = window.URLROOT || document.querySelector('.dashboard-container')?.dataset?.urlroot || '/SkillXchange';
+    
+    const response = await fetch(urlRoot + '/quizmanager/getQuizzes', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch quizzes: ' + response.statusText);
+    }
+    
+    const data = await response.json();
+    
+    if (data.success && Array.isArray(data.quizzes)) {
+      quizzes = data.quizzes.map(quiz => ({
+        id: quiz.id,
+        title: quiz.title || 'Untitled Quiz',
+        badge: quiz.difficulty_level || 'General',
+        status: quiz.status || 'draft',
+        participants: parseInt(quiz.participant_count) || 0,
+        totalQuestions: parseInt(quiz.total_questions) || 0,
+        duration: parseInt(quiz.duration) || 0,
+        createdDate: quiz.created_at || new Date().toISOString().split('T')[0],
+        averageScore: parseFloat(quiz.avg_score) || 0
+      }));
+    } else {\n      quizzes = [];\n    }\n    \n    renderQuizTable();\n  } catch (error) {\n    console.error('Error loading quizzes:', error);\n    // Show error message but still initialize with empty quizzes\n    const tbody = document.getElementById('quizTableBody');\n    if (tbody) {\n      tbody.innerHTML = '<tr><td colspan=\"7\" style=\"text-align: center; padding: 20px; color: #ef4444;\">Error loading quizzes. Please refresh the page.</td></tr>';\n    }\n  }\n}
 
 // Render quiz table
 function renderQuizTable(filteredQuizzes = null) {

@@ -65,11 +65,11 @@ function saveQuestion(event) {
         return;
     }
     
-    // Create question object
+    // Create question object with field names expected by backend
     const question = {
         question: questionText,
         options: options,
-        correctAnswer: correctAnswer
+        correct: correctAnswer
     };
     
     // Check if editing or adding new

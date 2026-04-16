@@ -21,8 +21,8 @@ class Community {
     public function create($data) {
         $this->db->query("
             INSERT INTO communities 
-            (name, description, privacy, rules, tags, status, created_by, created_at) 
-            VALUES (:name, :description, :privacy, :rules, :tags, :status, :created_by, NOW())
+            (name, description, privacy, rules, tags, status, created_by, goal_description, goal_count, created_at) 
+            VALUES (:name, :description, :privacy, :rules, :tags, :status, :created_by, :goal_description, :goal_count, NOW())
         ");
         
         $this->db->bind(':name', $data['name']);
@@ -32,6 +32,9 @@ class Community {
         $this->db->bind(':tags', $data['tags']);
         $this->db->bind(':status', $data['status']);
         $this->db->bind(':created_by', $data['created_by']);
+        $this->db->bind(':goal_description', $data['goal_description']);
+        $this->db->bind(':goal_count', $data['goal_count']);
+
         
         return $this->db->execute();
     }

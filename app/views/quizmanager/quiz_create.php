@@ -33,7 +33,7 @@
                     <label for="quizBadge">Difficulty Level *</label>
                     <select id="quizBadge">
                         <option value="">Select difficulty</option>
-                        <option value="Beginer">Beginner</option>
+                        <option value="Beginner">Beginner</option>
                         <option value="Intermediate">Intermediate</option>
                         <option value="Expert">Expert</option>
                     </select>
