@@ -112,4 +112,60 @@ class AdminController extends Controller {
         ];
         $this->view('admin/admin_activity_logs', $data);
     }
+
+    public function reports() {
+    $data = ['reports' => $this->adminModel->getProjectMemberReports()];
+    $this->view('admin/admin_reports', $data);
+}
+
+public function warnUser() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        header('Location: ' . URLROOT . '/admin/reports'); exit;
+    }
+    $userId   = $_POST['user_id'] ?? null;
+    $reportId = $_POST['report_id'] ?? null;
+    $reason   = trim($_POST['reason'] ?? '');
+
+    if (!$userId || !$reason) {
+        $_SESSION['error'] = 'Missing required fields';
+        header('Location: ' . URLROOT . '/admin/reports'); exit;
+    }
+
+    if ($this->adminModel->warnUser($userId, $_SESSION['user_id'], $reason)) {
+        $this->adminModel->updateProjectReport($reportId, 'warned');
+
+        $db = new Database();
+        $db->query(
+            "INSERT INTO notifications (user_id, type, title, message, related_user_id, is_read)
+             VALUES (:user_id, 'system_warning', 'Official Warning', :message, :related_user_id, 0)"
+        );
+        $db->bind(':user_id',         $userId);
+        $db->bind(':message',         '⚠️ You have received an official warning: ' . $reason);
+        $db->bind(':related_user_id', $_SESSION['user_id']);
+        $db->execute();
+
+        $this->adminModel->logAdminAction(
+            $_SESSION['user_id'], 'user_warned', $userId,
+            'user', $userId, "Warned user: {$reason}",
+            $_SERVER['REMOTE_ADDR'] ?? 'unknown'
+        );
+        $_SESSION['success'] = 'Warning issued successfully';
+    } else {
+        $_SESSION['error'] = 'Failed to issue warning';
+    }
+    header('Location: ' . URLROOT . '/admin/reports'); exit;
+}
+
+public function dismissReport() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        header('Location: ' . URLROOT . '/admin/reports'); exit;
+    }
+    $reportId = $_POST['report_id'] ?? null;
+    if ($this->adminModel->updateProjectReport($reportId, 'dismissed')) {
+        $_SESSION['success'] = 'Report dismissed';
+    } else {
+        $_SESSION['error'] = 'Failed to dismiss report';
+    }
+    header('Location: ' . URLROOT . '/admin/reports'); exit;
+}
 }

@@ -100,11 +100,14 @@ class Admin {
     public function getReportsAboutUser($userId) {
         try {
             $this->db->query(
-                "SELECT r.*, u.username AS reporter_username
-                 FROM reports r
-                 JOIN users u ON r.reporter_user_id = u.id
-                 WHERE r.reported_user_id = :uid
-                 ORDER BY r.created_at DESC"
+                "SELECT ur.reason, ur.description, ur.status, ur.created_at,
+                        reporter.username AS reporter_username,
+                        p.name AS project_name
+                FROM user_reports ur
+                JOIN users reporter ON ur.reporter_id = reporter.id
+                JOIN projects p ON ur.project_id = p.id
+                WHERE ur.reported_user_id = :uid
+                ORDER BY ur.created_at DESC"
             );
             $this->db->bind(':uid', $userId);
             return $this->db->resultSet();
@@ -221,6 +224,52 @@ class Admin {
             $this->db->bind(':target_id',     $targetId);
             $this->db->bind(':description',   $description);
             $this->db->bind(':ip',            $ipAddress);
+            return $this->db->execute();
+        } catch (Exception $e) { error_log($e->getMessage()); return false; }
+    }
+
+    public function getProjectMemberReports() {
+        try {
+            $this->db->query(
+                "SELECT ur.*,
+                        reporter.username AS reporter_name,
+                        reported.username AS reported_name,
+                        reported.email    AS reported_email,
+                        reported.warning_count,
+                        p.name            AS project_name
+                FROM user_reports ur
+                JOIN users reporter ON ur.reporter_id  = reporter.id
+                JOIN users reported ON ur.reported_user_id = reported.id
+                JOIN projects p     ON ur.project_id   = p.id
+                ORDER BY ur.created_at DESC"
+            );
+            return $this->db->resultSet();
+        } catch (Exception $e) { error_log($e->getMessage()); return []; }
+    }
+
+    public function warnUser($userId, $adminId, $reason, $warningType = 'minor') {
+        try {
+            $this->db->query(
+                "INSERT INTO user_warnings (user_id, admin_id, warning_type, reason, message, created_at)
+                VALUES (:uid, :admin_id, :type, :reason, :message, NOW())"
+            );
+            $this->db->bind(':uid',      $userId);
+            $this->db->bind(':admin_id', $adminId);
+            $this->db->bind(':type',     $warningType);
+            $this->db->bind(':reason',   $reason);
+            $this->db->bind(':message',  'Warning issued based on project member report: ' . $reason);
+            $this->db->execute();
+
+            $this->db->query("UPDATE users SET warning_count = warning_count + 1 WHERE id = :uid");
+            $this->db->bind(':uid', $userId);
+            return $this->db->execute();
+        } catch (Exception $e) { error_log($e->getMessage()); return false; }
+    }
+    public function updateProjectReport($reportId, $status) {
+        try {
+            $this->db->query("UPDATE user_reports SET status = :status WHERE id = :id");
+            $this->db->bind(':status', $status);
+            $this->db->bind(':id',     $reportId);
             return $this->db->execute();
         } catch (Exception $e) { error_log($e->getMessage()); return false; }
     }

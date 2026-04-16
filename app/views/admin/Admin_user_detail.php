@@ -112,11 +112,10 @@
         <?php if (!empty($data['warnings'])): ?>
         <div class="table-container">
             <table class="data-table">
-                <thead><tr><th>Type</th><th>Reason</th><th>By Admin</th><th>Date</th></tr></thead>
+                <thead><tr><th>Reason</th><th>By Admin</th><th>Date</th></tr></thead>
                 <tbody>
                 <?php foreach ($data['warnings'] as $w): ?>
                 <tr>
-                    <td><span class="badge badge-warning"><?= htmlspecialchars($w->warning_type) ?></span></td>
                     <td><?= htmlspecialchars($w->reason) ?></td>
                     <td><?= htmlspecialchars($w->admin_username) ?></td>
                     <td><?= date('M d, Y', strtotime($w->created_at)) ?></td>
@@ -136,20 +135,27 @@
         <?php if (!empty($data['reports'])): ?>
         <div class="table-container">
             <table class="data-table">
-                <thead><tr><th>Reason</th><th>Reported By</th><th>Status</th><th>Date</th></tr></thead>
-                <tbody>
-                <?php foreach ($data['reports'] as $r): ?>
-                <tr>
-                    <td><?= htmlspecialchars($r->reason) ?></td>
-                    <td><?= htmlspecialchars($r->reporter_username) ?></td>
-                    <td>
-                        <span class="badge <?= $r->status === 'pending' ? 'badge-warning' : ($r->status === 'resolved' ? 'badge-success' : 'badge-info') ?>">
-                            <?= ucfirst($r->status) ?>
-                        </span>
-                    </td>
-                    <td><?= date('M d, Y', strtotime($r->created_at)) ?></td>
-                </tr>
-                <?php endforeach; ?>
+                <thead>
+                        <tr>
+                            <th>Reason</th>
+                            <th>Project</th>
+                            <th>Reported By</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($data['reports'] as $r): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($r->reason) ?>
+                            <?php if (!empty($r->description)): ?>
+                                <br><small style="color:#aaa"><?= htmlspecialchars($r->description) ?></small>
+                            <?php endif; ?>
+                        </td>
+                        <td><?= htmlspecialchars($r->project_name) ?></td>
+                        <td><?= htmlspecialchars($r->reporter_username) ?></td>
+                        <td><?= date('M d, Y', strtotime($r->created_at)) ?></td>
+                    </tr>
+                    <?php endforeach; ?>
                 </tbody>
             </table>
         </div>

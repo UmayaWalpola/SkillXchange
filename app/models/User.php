@@ -33,6 +33,7 @@ class User extends Database {
         return false;
     }
 
+    
     // 🔹 Login (Updated with Suspension Logic)
     public function login($email, $password) {
         $sql = "SELECT * FROM users WHERE email = :email";
@@ -43,10 +44,27 @@ class User extends Database {
 
         if ($user && password_verify($password, $user['password'])) {
 
-            // Suspension: block login if account is suspended.
-            // Avoid reliance on optional DB columns (e.g. timed suspension fields).
             $status = strtolower(trim((string)($user['status'] ?? '')));
             if ($status === 'suspended') {
+
+                // ✅ Auto-lift if expiry time has passed
+                if (!empty($user['suspension_expires_at']) && strtotime($user['suspension_expires_at']) < time()) {
+                    $liftSql = "UPDATE users SET
+                                    status = 'active',
+                                    suspended_at = NULL,
+                                    suspended_by = NULL,
+                                    suspension_reason = NULL,
+                                    suspension_expires_at = NULL
+                                WHERE id = :id";
+                    $stmt2 = $this->connect()->prepare($liftSql);
+                    $stmt2->bindValue(':id', $user['id']);
+                    $stmt2->execute();
+
+                    // continue login as normal
+                    $user['status'] = 'active';
+                    return $user;
+                }
+
                 return 'suspended|';
             }
 
@@ -54,6 +72,7 @@ class User extends Database {
         }
         return false;
     }
+
     // 🔹 Find user by ID
     public function getUserById($id) {
         $sql = "SELECT * FROM users WHERE id = :id";
