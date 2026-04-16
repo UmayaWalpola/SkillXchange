@@ -1,6 +1,4 @@
-/* ============================================
-   COMMUNITIES - DATABASE VERSION
-   ============================================ */
+
 
 // Get configuration from PHP
 const currentUser = {
@@ -117,131 +115,122 @@ function viewCommunity(communityId) {
 // COMMUNITY MESSAGING (for detail page)
 // ============================================
 
-/**
- * Handle Enter key in message input
- */
-function handleKeyPress(event, communityId) {
-    if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        sendMessage(communityId);
-    }
-}
 
-/**
- * Send a message in community chat
- */
-async function sendMessage(communityId) {
-    const input = document.getElementById('messageInput');
-    const content = input?.value.trim();
-    
+async function createCommunityPost(communityId) {
+    const titleInput = document.getElementById('postTitle');
+    const contentInput = document.getElementById('postContent');
+    const postTypeInput = document.getElementById('postType');
+    const linkInput = document.getElementById('postLink');
+
+    const title = titleInput?.value.trim() || '';
+    const content = contentInput?.value.trim() || '';
+    const postType = postTypeInput?.value || 'discussion';
+    const linkUrl = linkInput?.value.trim() || '';
+
     if (!content) {
+        showNotification('Post content is required.', 'error');
         return;
     }
-    
-    // Disable input while sending
-    input.disabled = true;
-    const sendBtn = document.querySelector('.send-btn');
-    if (sendBtn) sendBtn.disabled = true;
-    
+
     try {
         const response = await fetch(urlRoot + '/userdashboard/postToCommunity', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: `community_id=${communityId}&content=${encodeURIComponent(content)}`
+            body:
+                `community_id=${encodeURIComponent(communityId)}` +
+                `&title=${encodeURIComponent(title)}` +
+                `&content=${encodeURIComponent(content)}` +
+                `&post_type=${encodeURIComponent(postType)}` +
+                `&link_url=${encodeURIComponent(linkUrl)}`
         });
-        
+
         const result = await response.json();
-        
+
         if (result.success) {
-            input.value = '';
-            loadMessages(communityId);
-            showNotification('Message sent!', 'success');
+            showNotification(result.message || 'Post created successfully!', 'success');
+            titleInput.value = '';
+            contentInput.value = '';
+            postTypeInput.value = 'discussion';
+            linkInput.value = '';
+            setTimeout(() => location.reload(), 700);
         } else {
-            showNotification(result.message || 'Failed to send message', 'error');
+            showNotification(result.message || 'Failed to create post.', 'error');
         }
     } catch (error) {
-        console.error('Send message error:', error);
-        showNotification('Failed to send message', 'error');
-    } finally {
-        input.disabled = false;
-        if (sendBtn) sendBtn.disabled = false;
-        input.focus();
+        console.error('Create post error:', error);
+        showNotification('Network error. Please try again.', 'error');
     }
 }
 
-/**
- * Load messages for a community
- */
-async function loadMessages(communityId) {
+window.createCommunityPost = createCommunityPost;
+
+function toggleComments(postId) {
+    const el = document.getElementById('comments-' + postId);
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function handleComment(event, communityId, postId) {
+    if (event.key !== 'Enter') return;
+
+    event.preventDefault();
+
+    const input = event.target;
+    const content = input.value.trim();
+
+    if (!content) {
+        return;
+    }
+
     try {
-        const response = await fetch(urlRoot + '/userdashboard/getCommunityMessages?community_id=' + communityId);
+        const response = await fetch(urlRoot + '/userdashboard/addCommunityComment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body:
+                `community_id=${encodeURIComponent(communityId)}` +
+                `&parent_id=${encodeURIComponent(postId)}` +
+                `&content=${encodeURIComponent(content)}`
+        });
+
         const result = await response.json();
-        
+
         if (result.success) {
-            renderMessages(result.posts);
-            scrollToBottom();
+            showNotification('Comment added!', 'success');
+            setTimeout(() => location.reload(), 500);
+        } else {
+            showNotification(result.message || 'Failed to add comment', 'error');
         }
     } catch (error) {
-        console.error('Load messages error:', error);
+        console.error('Comment error:', error);
+        showNotification('Network error. Please try again.', 'error');
     }
 }
 
-/**
- * Render messages in the chat
- */
-function renderMessages(posts) {
-    const messagesList = document.getElementById('messagesList');
-    if (!messagesList) return;
-    
-    messagesList.innerHTML = posts.map(post => {
-        const isOwn = post.user_id == currentUser.id;
-        const time = formatTime(post.created_at);
-        
-        return `
-            <div class="msg ${isOwn ? 'own' : ''}">
-                ${!isOwn ? `<div class="msg-author">${escapeHtml(post.author_name)}</div>` : ''}
-                <div class="msg-text">${escapeHtml(post.content)}</div>
-                <div class="msg-time">${time}</div>
-            </div>
-        `;
-    }).join('');
-}
-
-/**
- * Format timestamp for display
- */
-function formatTime(timestamp) {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now - date;
-    
-    // If today, show time
-    if (diff < 86400000 && date.getDate() === now.getDate()) {
-        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    }
-    
-    // If yesterday
-    if (diff < 172800000 && date.getDate() === now.getDate() - 1) {
-        return 'Yesterday ' + date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    }
-    
-    // Otherwise show date
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
-/**
- * Scroll chat to bottom
- */
-function scrollToBottom() {
-    setTimeout(() => {
-        const messagesList = document.getElementById('messagesList');
-        if (messagesList) {
-            messagesList.scrollTop = messagesList.scrollHeight;
+function likePost(postId) {
+    fetch(urlRoot + '/userdashboard/reactToPost', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `post_id=${postId}&reaction_type=like`
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            location.reload(); // simple for now
+        } else {
+            showNotification(data.message || 'Failed to react', 'error');
         }
-    }, 100);
+    })
+    .catch(err => {
+        console.error(err);
+        showNotification('Error reacting to post', 'error');
+    });
 }
+
 
 // ============================================
 // UI HELPERS
@@ -322,25 +311,10 @@ if (!document.getElementById('notification-styles')) {
 }
 
 // ============================================
-// AUTO-REFRESH (for community detail page)
-// ============================================
-
-if (window.location.pathname.includes('viewCommunity')) {
-    const communityId = window.location.pathname.split('/').pop();
-    if (communityId && !isNaN(communityId)) {
-        console.log('Auto-refresh enabled for community:', communityId);
-        setInterval(() => {
-            loadMessages(communityId);
-        }, 10000); // Refresh every 10 seconds
-    }
-}
-
-// ============================================
 // GLOBAL EXPORTS
 // ============================================
 
 window.joinCommunity = joinCommunity;
 window.leaveCommunity = leaveCommunity;
 window.viewCommunity = viewCommunity;
-window.sendMessage = sendMessage;
-window.handleKeyPress = handleKeyPress;
+window.createCommunityPost = createCommunityPost;

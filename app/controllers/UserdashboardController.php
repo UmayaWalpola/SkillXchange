@@ -497,38 +497,60 @@ public function matches() {
     }
 
     public function postToCommunity() {
-        header('Content-Type: application/json');
-        
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(['success' => false, 'message' => 'Invalid request']);
-            exit;
-        }
-        
-        $userId = $this->checkAuth();
-        $communityId = $_POST['community_id'] ?? null;
-        $content = trim($_POST['content'] ?? '');
-        
-        if (!$communityId || empty($content)) {
-            echo json_encode(['success' => false, 'message' => 'Missing required fields']);
-            exit;
-        }
-        
-        $communityModel = $this->model('Community');
-        
-        if (!$communityModel->isMember($userId, $communityId)) {
-            echo json_encode(['success' => false, 'message' => 'You must be a member to post']);
-            exit;
-        }
-        
-        $postId = $communityModel->createPost($userId, $communityId, $content);
-        
-        if ($postId) {
-            echo json_encode(['success' => true, 'message' => 'Message posted successfully', 'post_id' => $postId]);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Failed to post message']);
-        }
+    header('Content-Type: application/json');
+
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        echo json_encode(['success' => false, 'message' => 'Invalid request']);
         exit;
     }
+
+    $userId = $this->checkAuth();
+    $communityId = $_POST['community_id'] ?? null;
+    $title = trim($_POST['title'] ?? '');
+    $content = trim($_POST['content'] ?? '');
+    $postType = trim($_POST['post_type'] ?? 'discussion');
+    $linkUrl = trim($_POST['link_url'] ?? '');
+
+    if (!$communityId || empty($content)) {
+        echo json_encode(['success' => false, 'message' => 'Content is required']);
+        exit;
+    }
+
+    $communityModel = $this->model('Community');
+
+    if (!$communityModel->isMember($userId, $communityId)) {
+        echo json_encode(['success' => false, 'message' => 'You must be a member to post']);
+        exit;
+    }
+    $member = $communityModel->getMemberRole($userId, $communityId);
+
+// Only admins (or moderators if you want) can post announcements
+if ($postType === 'announcement' && !in_array($member->role, ['admin', 'moderator'])) {
+    $postType = 'discussion'; // force downgrade
+}
+
+    $postId = $communityModel->createPost(
+        $userId,
+        $communityId,
+        $title ?: null,
+        $content,
+        $postType ?: 'discussion',
+        $linkUrl ?: null,
+        null
+    );
+
+    if ($postId) {
+        echo json_encode([
+            'success' => true,
+            'message' => 'Post created successfully',
+            'post_id' => $postId
+        ]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Failed to create post']);
+    }
+
+    exit;
+}
 
     public function getCommunityMessages() {
         header('Content-Type: application/json');
@@ -604,7 +626,60 @@ public function matches() {
             $this->view('users/create_community', $data);
         }
     }
+public function addCommunityComment() {
+    header('Content-Type: application/json');
 
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        echo json_encode(['success' => false, 'message' => 'Invalid request']);
+        exit;
+    }
+
+    $userId = $this->checkAuth();
+
+    $communityId = $_POST['community_id'] ?? null;
+    $parentId = $_POST['parent_id'] ?? null;
+    $content = trim($_POST['content'] ?? '');
+
+    if (!$communityId || !$parentId || $content === '') {
+        echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+        exit;
+    }
+
+    $communityModel = $this->model('Community');
+
+    if (!$communityModel->isMember($userId, $communityId)) {
+        echo json_encode(['success' => false, 'message' => 'You must be a member to comment']);
+        exit;
+    }
+
+    $commentId = $communityModel->createComment($userId, $communityId, $parentId, $content);
+
+    if ($commentId) {
+        echo json_encode(['success' => true, 'message' => 'Comment added']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Failed to add comment']);
+    }
+
+    exit;
+}
+    public function reactToPost() {
+    header('Content-Type: application/json');
+
+    $userId = $this->checkAuth();
+    $postId = $_POST['post_id'] ?? null;
+    $type = $_POST['reaction_type'] ?? 'like';
+
+    if (!$postId) {
+        echo json_encode(['success' => false]);
+        return;
+    }
+
+    $communityModel = $this->model('Community');
+
+    $success = $communityModel->addReaction($userId, $postId, $type);
+
+    echo json_encode(['success' => $success]);
+}
     // ============================================
     // QUIZ METHODS
     // ============================================

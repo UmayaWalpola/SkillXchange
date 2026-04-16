@@ -2,6 +2,7 @@
 
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/reporting.css">
+<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/community_forum.css">
 
 <main class="site-main">
 
@@ -40,19 +41,22 @@
         <?php if(!empty($data['posts'])): ?>
             <?php foreach(array_reverse($data['posts']) as $post): ?>
                 <div class="card post-card skill-card" data-skill="post">
-                    <div class="card-body">
-                        <p><?= htmlspecialchars($post->content) ?></p>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
-                            <small>by <?= $post->user_name ?> at <?= date('d M Y H:i', strtotime($post->created_at)) ?></small>
-                            <?php if (isset($_SESSION['user_id']) && $_SESSION['user_id'] != $post->user_id): ?>
-                            <button class="report-btn-small report-content-btn" 
-                                    data-content-type="post" 
-                                    data-content-id="<?= $post->id ?>"
-                                    title="Report this post">
-                                <span><i class="ph ph-warning"></i></span>
-                            </button>
-                            <?php endif; ?>
-                        </div>
+    <div class="card-body">
+        <p class="post-content"><?= htmlspecialchars($post->content) ?></p>
+                        <div class="post-meta-row">
+    <small class="post-meta">
+        by <?= htmlspecialchars($post->user_name) ?> at <?= date('d M Y H:i', strtotime($post->created_at)) ?>
+    </small>
+
+    <?php if (isset($_SESSION['user_id']) && $_SESSION['user_id'] != $post->user_id): ?>
+    <button class="report-btn-small report-content-btn" 
+            data-content-type="post" 
+            data-content-id="<?= $post->id ?>"
+            title="Report this post">
+        <span><i class="ph ph-warning"></i></span>
+    </button>
+    <?php endif; ?>
+</div>
                     </div>
                 </div>
             <?php endforeach; ?>
