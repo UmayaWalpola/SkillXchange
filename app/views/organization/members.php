@@ -393,6 +393,10 @@ $orgCssVersion = file_exists($orgCssPath) ? (string)filemtime($orgCssPath) : '1'
                                                             <button class="task-delete-btn" onclick="removeOrgTask(<?= $task->id ?>, this.closest('tr'))" title="Remove task" style="padding:5px 8px;background:#fff;border:1px solid #fca5a5;border-radius:6px;color:#dc2626;cursor:pointer;">
                                                                 <i class="ph ph-trash"></i>
                                                             </button>
+                                                            
+                                                        <a href="<?= URLROOT ?>/task/edit/<?= $task->id ?>" title="Edit task" style="padding:5px 8px; background:#fff; border:1px solid #93c5fd; border-radius:6px; color:#0284c7; text-decoration:none; display:inline-block; margin-right:5px;">
+                                                            <i class="ph ph-pencil-simple"></i>
+                                                        </a>
                                                         </td>
                                                     </tr>
                                                 <?php endforeach; ?>

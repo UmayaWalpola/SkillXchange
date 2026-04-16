@@ -343,7 +343,9 @@ class TaskController extends Controller {
         ];
 
         unset($_SESSION['errors']);
+           
 
+        //load to VIEW file: app/views/tasks/editTask.php
         $this->view('tasks/editTask', $data);
     }
 

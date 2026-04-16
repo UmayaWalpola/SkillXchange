@@ -73,7 +73,7 @@
                     </div>
 
                     <div class="info-item">
-                        <label>Skills Needed</label>  //This shows a list of skill suggestions below when the user types
+                        <label>Skills Needed</label>  
                         <input id="requiredSkillsInput" type="text" name="required_skills" list="skillsSuggestionList" value="<?= $isEdit ? htmlspecialchars($project->required_skills) : '' ?>" placeholder="Example: Web Development, Frontend Frameworks" required>
                         <datalist id="skillsSuggestionList"></datalist>
                         <small id="skillsHint" style="display:block;margin-top:6px;color:#355a72;font-size:13px;line-height:1.45;"></small>
@@ -110,6 +110,20 @@
                         <label>End Date</label>
                         <input class="info-input" type="date" name="end_date" value="<?= $isEdit ? $project->end_date : '' ?>">
                     </div>
+
+                    <!--                    
+                    <div class="form-group">
+                       <label for="budget">Project Budget ($)</label>
+                             <input type="number" 
+                                step="0.01" 
+                                name="budget" 
+                                id="budget" 
+                                class="form-control" 
+                                value="
+                                <?php // echo isset($data['project']->budget) ? htmlspecialchars($data['project']->budget) : ''; ?>
+                                placeholder="e.g. 500.00">
+                    </div>     -->  
+
                 </div>
             </div>
 

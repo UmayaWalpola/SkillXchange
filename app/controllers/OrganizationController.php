@@ -186,6 +186,8 @@ class OrganizationController extends Controller {
                     'end_date'        => $_POST['end_date'] ?? null,
                     // If skills were valid, use the formatted version. Else, use raw text.
                     'required_skills' => $skillsValidation ? $skillsValidation['formatted'] : $rawRequiredSkills
+                    //'budget'   => isset($_POST['budget']) && $_POST['budget'] !== '' ? (float)$_POST['budget'] : null,
+                     //'duration' => trim($_POST['duration'] ?? ''),
                 ];
                 
                 // Give the array to the model. If createProject() returns true, it worked!
@@ -299,6 +301,8 @@ class OrganizationController extends Controller {
                     'start_date'      => $_POST['start_date'] ?? null,
                     'end_date'        => $_POST['end_date'] ?? null,
                     'required_skills' => $skillsValidation ? $skillsValidation['formatted'] : $rawRequiredSkills
+                    //'budget'   => isset($_POST['budget']) && $_POST['budget'] !== '' ? (float)$_POST['budget'] : null,
+                     //'duration' => trim($_POST['duration'] ?? ''),    
                 ];
 
                 // Send array to model. If updateProject() returns true, redirect success.
