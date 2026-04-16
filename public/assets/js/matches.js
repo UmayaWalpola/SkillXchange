@@ -3,15 +3,18 @@
 // matches.js - Fixed version with proper UI updates
 
 
-function connectWithUser(userId, userName) {
-   if (!confirm(`Send connection request to ${userName}?`)) {
-       return;
+function connectWithUser(userId, userName, event) {
+   if (event) {
+       event.preventDefault();
+       event.stopPropagation();
    }
 
+   if (!confirm(`Send connection request to ${userName}?`)) {
+       return false;
+   }
 
    const formData = new FormData();
    formData.append('user_id', userId);
-
 
    fetch(`${URLROOT}/userdashboard/connect`, {
        method: 'POST',
@@ -19,10 +22,10 @@ function connectWithUser(userId, userName) {
    })
    .then(response => response.json())
    .then(data => {
+       console.log(data);
+
        if (data.success) {
            showNotification(data.message || 'Connection request sent!', 'success');
-          
-           // Update the button to show pending state
            updateButtonToPending(userId);
        } else {
            showNotification(data.message || 'Failed to send request', 'error');
@@ -32,6 +35,8 @@ function connectWithUser(userId, userName) {
        console.error('Error:', error);
        showNotification('Network error. Please try again.', 'error');
    });
+
+   return false;
 }
 
 

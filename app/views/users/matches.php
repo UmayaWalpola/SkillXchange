@@ -82,8 +82,8 @@
                    <label for="match-tier-filter">Match Type:</label>
                    <select id="match-tier-filter" class="filter-select">
                        <option value="all">All Matches</option>
-                       <option value="mutual">🤝 Mutual Matches</option>
-                       <option value="multi">⭐ Multi-Skill</option>
+                       <option value="mutual"> Mutual Matches</option>
+                       <option value="multi"> Multi-Skill</option>
                        <option value="single">✓ Single Skill</option>
                    </select>
                </div>
@@ -202,13 +202,16 @@
                                </span>
                               
                                <?php if(isset($match['connection_status']) && $match['connection_status'] === 'pending'): ?>
-                                   <span class="badge badge-warning">⏳ Pending</span>
+                                   <span class="badge badge-warning">Pending</span>
                                <?php elseif(isset($match['connection_status']) && $match['connection_status'] === 'connected'): ?>
                                    <span class="badge badge-success">✓ Connected</span>
                                <?php else: ?>
-                                   <button class="btn-connect" onclick="event.stopPropagation(); connectWithUser(<?= $match['id']; ?>, '<?= htmlspecialchars($match['name']); ?>')">
-                                       Connect
-                                   </button>
+                                   <button
+    type="button"
+    class="btn-connect"
+    onclick="return connectWithUser(<?= (int)$match['id']; ?>, '<?= htmlspecialchars($match['name'], ENT_QUOTES); ?>', event)">
+    Connect
+</button>
                                <?php endif; ?>
                            </div>
                        </div>
@@ -225,7 +228,7 @@
            <?php if (!empty($data['multi'])): ?>
            <div class="match-tier-section" data-tier="multi">
                <h2 class="tier-title">
-                   ⭐ MULTI-SKILL MATCHES
+                    MULTI-SKILL MATCHES
                    <span class="tier-count">(<?= count($data['multi']); ?> found)</span>
                </h2>
                <p class="tier-description">Multiple skills in common - great learning potential</p>
@@ -238,7 +241,7 @@
                                 array_column($match['i_teach'], 'name'),
                                 array_column($match['they_teach'], 'name')
                             ))); ?>">
-                           <div class="match-badge-overlay">⭐ Multi</div>
+                           <div class="match-badge-overlay"> Multi</div>
                            <div class="match-header">
                                <div class="match-avatar">
                                    <?= htmlspecialchars($match['avatar']); ?>
@@ -298,9 +301,12 @@
                                <?php elseif(isset($match['connection_status']) && $match['connection_status'] === 'connected'): ?>
                                    <span class="badge badge-success">✓ Connected</span>
                                <?php else: ?>
-                                   <button class="btn-connect" onclick="event.stopPropagation(); connectWithUser(<?= $match['id']; ?>, '<?= htmlspecialchars($match['name']); ?>')">
-                                       Connect
-                                   </button>
+                                   <button
+    type="button"
+    class="btn-connect"
+    onclick="return connectWithUser(<?= (int)$match['id']; ?>, '<?= htmlspecialchars($match['name'], ENT_QUOTES); ?>', event)">
+    Connect
+</button>
                                <?php endif; ?>
                            </div>
                        </div>
@@ -382,13 +388,16 @@
                                </span>
                               
                                <?php if(isset($match['connection_status']) && $match['connection_status'] === 'pending'): ?>
-                                   <span class="badge badge-warning">⏳ Pending</span>
+                                   <span class="badge badge-warning"> Request Pending</span>
                                <?php elseif(isset($match['connection_status']) && $match['connection_status'] === 'connected'): ?>
                                    <span class="badge badge-success">✓ Connected</span>
                                <?php else: ?>
-                                   <button class="btn-connect" onclick="event.stopPropagation(); connectWithUser(<?= $match['id']; ?>, '<?= htmlspecialchars($match['name']); ?>')">
-                                       Connect
-                                   </button>
+                                   <button
+    type="button"
+    class="btn-connect"
+    onclick="return connectWithUser(<?= (int)$match['id']; ?>, '<?= htmlspecialchars($match['name'], ENT_QUOTES); ?>', event)">
+    Connect
+</button>
                                <?php endif; ?>
                            </div>
                        </div>

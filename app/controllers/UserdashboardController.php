@@ -338,31 +338,64 @@ public function matches() {
     }
 
     public function connect() {
-        header('Content-Type: application/json');
-        
+    header('Content-Type: application/json');
+
+    // Clean any previous output
+    if (ob_get_length()) {
+        ob_clean();
+    }
+
+    try {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(['success' => false, 'message' => 'Invalid request method']);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Invalid request method'
+            ]);
             exit;
         }
-        
-        $currentUserId = $this->checkAuth();
+
+        $currentUserId = $this->checkAuth(true);
         $targetUserId = $_POST['user_id'] ?? null;
-        
+
         if (!$targetUserId) {
-            echo json_encode(['success' => false, 'message' => 'User ID is required']);
+            echo json_encode([
+                'success' => false,
+                'message' => 'User ID is required'
+            ]);
             exit;
         }
-        
+
+        if ((int)$currentUserId === (int)$targetUserId) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Cannot connect with yourself'
+            ]);
+            exit;
+        }
+
         $exchangeModel = $this->model('Exchange');
         $result = $exchangeModel->createExchangeRequest($currentUserId, $targetUserId);
-        
-        if ($result) {
-            echo json_encode(['success' => true, 'message' => 'Connection request sent successfully!']);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Failed to send connection request']);
-        }
+
+        echo json_encode([
+            'success' => $result,
+            'message' => $result 
+                ? 'Connection request sent successfully!' 
+                : 'Request already exists or failed'
+        ]);
+        exit;
+
+    } catch (\Throwable $e) {
+        error_log("Connect error: " . $e->getMessage());
+
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Server error',
+            'error' => $e->getMessage()
+        ]);
         exit;
     }
+}
 
     public function searchMatches() {
         header('Content-Type: application/json');

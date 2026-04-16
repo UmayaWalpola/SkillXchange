@@ -12,72 +12,77 @@ class Exchange extends Database {
      * Create an exchange/connection request
      */
     public function createExchangeRequest($senderId, $receiverId, $skillOffered = null, $skillWanted = null) {
-        // Check if exchange already exists (any status)
-        $this->db->query("
-            SELECT id, status FROM exchanges 
-            WHERE (requester_id = :requester_id AND receiver_id = :receiver_id)
-               OR (requester_id = :receiver_id AND receiver_id = :requester_id)
-            LIMIT 1
-        ");
-        
-        $this->db->bind(':requester_id', $senderId);
-        $this->db->bind(':receiver_id', $receiverId);
-        
-        $existing = $this->db->single();
-        if ($existing) {
-            error_log("Exchange already exists with status: " . $existing->status);
-            // If cancelled, allow re-request
-            if ($existing->status === 'cancelled') {
-                $this->db->query("DELETE FROM exchanges WHERE id = :id");
-                $this->db->bind(':id', $existing->id);
-                $this->db->execute();
-            } else {
-                return false; // Exchange already exists
-            }
+
+    // 1. Check if exchange already exists
+    $this->db->query("
+        SELECT id, status FROM exchanges 
+        WHERE (requester_id = :sender AND receiver_id = :receiver)
+           OR (requester_id = :receiver AND receiver_id = :sender)
+        LIMIT 1
+    ");
+
+    $this->db->bind(':sender', $senderId);
+    $this->db->bind(':receiver', $receiverId);
+
+    $existing = $this->db->single();
+
+    if ($existing) {
+        if ($existing->status === 'cancelled') {
+            $this->db->query("DELETE FROM exchanges WHERE id = :id");
+            $this->db->bind(':id', $existing->id);
+            $this->db->execute();
+        } else {
+            return false;
         }
-        
-        // Get matching skills automatically if not provided
-        if (!$skillOffered || !$skillWanted) {
-            $matchingSkills = $this->getMatchingSkills($senderId, $receiverId);
-            $skillOffered = $matchingSkills['offered'] ?? 'general';
-            $skillWanted = $matchingSkills['wanted'] ?? 'general';
-        }
-        
-        error_log("Creating exchange: sender=$senderId, receiver=$receiverId");
-        
-        // Create new exchange request
-        $this->db->query("
-            INSERT INTO exchanges (
-                requester_id, 
-                receiver_id, 
-                skill_id, 
-                skill_offered, skill_wanted,
-                status, 
-                created_at
-            ) VALUES (
-                :requester_id, 
-                :receiver_id, 
-                1, 
-                :skill_offered, :skill_wanted,
-                'pending', 
-                NOW()
-            )
-        ");
-        
-        $this->db->bind(':requester_id', $senderId);
-        $this->db->bind(':receiver_id', $receiverId);
-        
-        if ($this->db->execute()) {
-            error_log("Exchange created successfully!");
-            // Create a notification
-            $this->createExchangeNotification($senderId, $receiverId);
-            return true;
-        }
-        
-        error_log("Failed to create exchange!");
-        return false;
     }
-    
+
+    // 2. Get matching skills
+    if (!$skillOffered || !$skillWanted) {
+        $matchingSkills = $this->getMatchingSkills($senderId, $receiverId);
+        $skillOffered = $matchingSkills['offered'] ?? 'general';
+        $skillWanted = $matchingSkills['wanted'] ?? 'general';
+    }
+
+    // 3. Insert new exchange (ONLY ONE INSERT)
+    $this->db->query("
+        INSERT INTO exchanges (
+            requester_id, 
+            receiver_id, 
+            skill_id, 
+            skill_offered,
+            skill_wanted,
+            status, 
+            created_at
+        ) VALUES (
+            :requester_id, 
+            :receiver_id, 
+            NULL, 
+            :skill_offered,
+            :skill_wanted,
+            'pending', 
+            NOW()
+        )
+    ");
+
+    $this->db->bind(':requester_id', $senderId);
+    $this->db->bind(':receiver_id', $receiverId);
+    $this->db->bind(':skill_offered', $skillOffered);
+    $this->db->bind(':skill_wanted', $skillWanted);
+
+    if ($this->db->execute()) {
+
+        // Notification should NOT break main flow
+        try {
+            $this->createExchangeNotification($senderId, $receiverId);
+        } catch (\Throwable $e) {
+            error_log("Notification error: " . $e->getMessage());
+        }
+
+        return true;
+    }
+
+    return false;
+}
     /**
      * Get matching skills between two users
      */
@@ -166,15 +171,17 @@ class Exchange extends Database {
     public function getExchangeRequests($userId) {
         $this->db->query("
             SELECT 
-                e.id,
-                e.requester_id,
-                e.receiver_id,
-                e.skill_id,
-                e.status,
-                e.created_at,
-                requester.username as sender_name,
-                requester.email as sender_email,
-                requester.profile_picture as sender_avatar
+    e.id,
+    e.requester_id,
+    e.receiver_id,
+    e.skill_id,
+    e.skill_offered,
+    e.skill_wanted,
+    e.status,
+    e.created_at,
+    requester.username as sender_name,
+    requester.email as sender_email,
+    requester.profile_picture as sender_avatar
             FROM exchanges e
             INNER JOIN users requester ON e.requester_id = requester.id
             WHERE e.receiver_id = :user_id AND e.status = 'pending'
