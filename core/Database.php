@@ -52,7 +52,7 @@ class Database {
         return $this->stmt->fetch(); // Now returns FETCH_ASSOC by default
     }
 
-    public function resultSet() { 
+    public function resultSet(): array { 
         $this->execute(); 
         return $this->stmt->fetchAll(); // Now returns FETCH_ASSOC by default
     }
