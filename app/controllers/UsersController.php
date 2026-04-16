@@ -332,14 +332,10 @@ public function editProfile() {
     $user = $this->userModel->getUserById($userId);
 
     // Check if profile is completed
-    if (!$user['profile_completed'] && $userId == $_SESSION['user_id']) {
-    if (($user['role'] ?? $_SESSION['role'] ?? '') === 'organization') {
-        header('Location: ' . URLROOT . '/organization/profile');
-    } else {
+    if (!$user['profile_completed']) {
         header('Location: ' . URLROOT . '/users/profileSetup');
+        exit;
     }
-    exit;
-}
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $this->handleEditProfile($userId);
