@@ -10,6 +10,23 @@ require_once "../app/views/layouts/adminsidebar.php";
 ?>
 
 <style>
+    /* ---------------------------------------------------------------------
+       REPORTED FEEDBACK PAGE LAYOUT
+       Prevent overlap with fixed admin sidebar (250px) and fixed top header.
+       --------------------------------------------------------------------- */
+    .reported-feedback-main {
+        margin-left: 250px;
+        margin-top: 64px;
+        width: calc(100% - 250px);
+        padding: 30px;
+        box-sizing: border-box;
+    }
+
+    .reported-feedback-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
     .report-card {
         background: white;
         border: 2px solid #e1eefb;
@@ -117,17 +134,32 @@ require_once "../app/views/layouts/adminsidebar.php";
         color: #6583aa;
         border-bottom-color: #6583aa;
     }
+
+    /* Keep filters/actions readable on smaller widths */
+    @media (max-width: 992px) {
+        .reported-feedback-main {
+            margin-left: 0;
+            width: 100%;
+            margin-top: 64px;
+            padding: 20px;
+        }
+
+        .filter-tabs {
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+    }
 </style>
 
-<main style="padding:30px;max-width:1400px;margin:0 auto;">
-    <div class="container">
+<main class="reported-feedback-main">
+    <div class="container reported-feedback-container">
         <!-- Header -->
         <div style="margin-bottom:30px;">
             <h1 style="font-size:32px;font-weight:700;color:#1a1a1a;margin-bottom:10px;display:flex;align-items:center;gap:12px;">
                 <i class="ph ph-flag" style="color:#e74c3c;"></i>
                 Reported Feedback
             </h1>
-            <p style="color:#666;font-size:16px;">Review and manage reported feedback from users</p>
+            <p style="color:#666;font-size:16px;">Show only user-submitted feedback reports (abusive, fake, spam, inappropriate, other).</p>
         </div>
 
         <!-- Statistics Cards -->
@@ -181,6 +213,15 @@ require_once "../app/views/layouts/adminsidebar.php";
                 </div>
             <?php else: ?>
                 <?php foreach ($data['reports'] as $report): ?>
+                    <?php
+                        // View-level safety: render feedback-reason reports only.
+                        $validReasons = ['abusive', 'fake', 'spam', 'inappropriate', 'other'];
+                        $reasonValue = strtolower(trim((string)($report['reason'] ?? '')));
+                        $feedbackId = (int)($report['feedback_id'] ?? 0);
+                        if ($feedbackId <= 0 || !in_array($reasonValue, $validReasons, true)) {
+                            continue;
+                        }
+                    ?>
                     <div class="report-card" data-report-id="<?= $report['id'] ?>">
                         <!-- Report Header -->
                         <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:20px;">

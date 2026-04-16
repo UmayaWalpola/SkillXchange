@@ -75,12 +75,6 @@ if (isset($_SESSION['role'])) {
                     </select>
                 </div>
 
-                <!-- Search Input -->
-                <div style="flex:2;min-width:200px;">
-                    <label style="display:block;font-weight:600;margin-bottom:8px;font-size:14px;color:#1a1a1a;">Search Comments</label>
-                    <input type="text" id="searchInput" placeholder="Search in comments..." style="width:100%;padding:10px 12px;border:2px solid #e1eefb;border-radius:8px;font-size:14px;">
-                </div>
-
                 <!-- Clear Filters Button -->
                 <div>
                     <button id="clearFilters" style="padding:10px 20px;background:#f0f0f0;border:2px solid #e0e0e0;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;transition:all 0.2s;">

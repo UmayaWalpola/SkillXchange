@@ -71,7 +71,6 @@
                     if (is_array($proj)) $proj = (object)$proj;
                     $pid      = (int)($proj->id ?? 0);
                     $stClass  = strtolower(str_replace('_','-',$proj->status ?? 'active'));
-                    $skills   = array_filter(array_map('trim', explode(',', (string)($proj->required_skills ?? ''))));
                     $g        = getGradient($pid, $gradients);
                     $joinDate = !empty($proj->joined_at) ? date('M Y', strtotime($proj->joined_at)) : 'N/A';
                     $role     = $proj->role ?? 'Member';

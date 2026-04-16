@@ -1,5 +1,15 @@
-<?php require_once "../app/views/layouts/header_user.php"; ?>
-<?php require_once "../app/views/layouts/organization_sidebar.php"; ?>
+<?php
+// -----------------------------------------------------------------------------
+// ORGANIZATION APPLICATIONS ENTRY
+// Use compact-card UI with "More Details" toggle from the dedicated partial.
+// -----------------------------------------------------------------------------
+require __DIR__ . '/_applications_compact.php';
+return;
+
+// Legacy layout kept below for fallback/reference.
+require_once "../app/views/layouts/header_user.php";
+require_once "../app/views/layouts/organization_sidebar.php";
+?>
 
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/organizations.css">

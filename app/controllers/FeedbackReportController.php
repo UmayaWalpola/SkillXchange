@@ -9,6 +9,9 @@ class FeedbackReportController extends Controller {
     private $feedbackModel;
     private $notificationModel;
 
+    // Allowed reasons for feedback report flow only.
+    private const FEEDBACK_REASONS = ['abusive', 'fake', 'spam', 'inappropriate', 'other'];
+
     public function __construct() {
         $this->feedbackReportModel = $this->model('FeedbackReport');
         $this->feedbackModel = $this->model('Feedback');
@@ -114,13 +117,16 @@ class FeedbackReportController extends Controller {
         // Get statistics
         $stats = $this->feedbackReportModel->getReportStats();
 
+        // HARD FILTER: Only show feedback report rows (never user/org/project-member reports).
+        $filteredReports = $this->filterFeedbackOnlyReports($result['items']);
+
         // Prepare data for view
         $data = [
             'title' => 'Reported Feedback',
-            'reports' => $result['items'],
-            'total_count' => $result['total_count'],
+            'reports' => $filteredReports,
+            'total_count' => count($filteredReports),
             'current_page' => $page,
-            'total_pages' => ceil($result['total_count'] / $limit),
+            'total_pages' => max(1, (int)ceil(max(1, count($filteredReports)) / $limit)),
             'current_status' => $status,
             'stats' => $stats
         ];
@@ -151,12 +157,15 @@ class FeedbackReportController extends Controller {
                 'offset' => $offset
             ]);
 
+            // HARD FILTER: return only valid feedback reports to UI.
+            $filteredReports = $this->filterFeedbackOnlyReports($result['items']);
+
             echo json_encode([
                 'success' => true,
-                'reports' => $result['items'],
-                'total_count' => $result['total_count'],
+                'reports' => $filteredReports,
+                'total_count' => count($filteredReports),
                 'current_page' => $page,
-                'total_pages' => ceil($result['total_count'] / $limit)
+                'total_pages' => max(1, (int)ceil(max(1, count($filteredReports)) / $limit))
             ]);
 
         } catch (Exception $e) {
@@ -325,5 +334,26 @@ class FeedbackReportController extends Controller {
         } catch (Exception $e) {
             error_log("Failed to notify admins: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Keep only user-submitted feedback report records.
+     * This protects Reported Feedback page from mixed report sources.
+     */
+    private function filterFeedbackOnlyReports($items) {
+        if (!is_array($items)) {
+            return [];
+        }
+
+        return array_values(array_filter($items, function ($row) {
+            $reason = strtolower(trim((string)($row['reason'] ?? '')));
+            $feedbackId = isset($row['feedback_id']) ? (int)$row['feedback_id'] : 0;
+
+            if ($feedbackId <= 0) {
+                return false;
+            }
+
+            return in_array($reason, self::FEEDBACK_REASONS, true);
+        }));
     }
 }
