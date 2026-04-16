@@ -13,6 +13,8 @@ async function loadQuizzesFromBackend() {
     // Get URLROOT from data attribute if available
     const urlRoot = window.URLROOT || document.querySelector('.dashboard-container')?.dataset?.urlroot || '/SkillXchange';
     
+    console.log('🔄 Loading quizzes from:', urlRoot + '/quizmanager/getQuizzes');
+    
     const response = await fetch(urlRoot + '/quizmanager/getQuizzes', {
       method: 'GET',
       headers: {
@@ -20,11 +22,14 @@ async function loadQuizzesFromBackend() {
       }
     });
     
+    console.log('📡 Response status:', response.status);
+    
     if (!response.ok) {
       throw new Error('Failed to fetch quizzes: ' + response.statusText);
     }
     
     const data = await response.json();
+    console.log('📊 Data received:', data);
     
     if (data.success && Array.isArray(data.quizzes)) {
       quizzes = data.quizzes.map(quiz => ({
@@ -38,7 +43,21 @@ async function loadQuizzesFromBackend() {
         createdDate: quiz.created_at || new Date().toISOString().split('T')[0],
         averageScore: parseFloat(quiz.avg_score) || 0
       }));
-    } else {\n      quizzes = [];\n    }\n    \n    renderQuizTable();\n  } catch (error) {\n    console.error('Error loading quizzes:', error);\n    // Show error message but still initialize with empty quizzes\n    const tbody = document.getElementById('quizTableBody');\n    if (tbody) {\n      tbody.innerHTML = '<tr><td colspan=\"7\" style=\"text-align: center; padding: 20px; color: #ef4444;\">Error loading quizzes. Please refresh the page.</td></tr>';\n    }\n  }\n}
+      console.log('✅ Loaded', quizzes.length, 'quizzes');
+    } else {
+      console.warn('⚠️ No quizzes in response or success=false');
+      quizzes = [];
+    }
+    
+    renderQuizTable();
+  } catch (error) {
+    console.error('❌ Error loading quizzes:', error);
+    const tbody = document.getElementById('quizTableBody');
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px; color: #ef4444;">Error loading quizzes. <a href="javascript:location.reload()" style="color: #658396; text-decoration: underline;">Click to refresh</a></td></tr>';
+    }
+  }
+}
 
 // Render quiz table
 function renderQuizTable(filteredQuizzes = null) {

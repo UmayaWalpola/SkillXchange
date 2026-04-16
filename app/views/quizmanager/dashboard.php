@@ -17,12 +17,15 @@
     <div class="quiz-table-container">
         <div class="table-header">
             <h2 class="table-title">Quiz Management</h2>
-            <select class="filter-select" id="statusFilter" onchange="filterQuizzes()">
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="paused">Paused</option>
-                <option value="draft">Draft</option>
-            </select>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button onclick="loadQuizzesFromBackend()" style="padding: 8px 12px; background: #658396; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">🔄 Refresh</button>
+                <select class="filter-select" id="statusFilter" onchange="filterQuizzes()">
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="paused">Paused</option>
+                    <option value="draft">Draft</option>
+                </select>
+            </div>
         </div>
 
         <table class="quiz-table">
