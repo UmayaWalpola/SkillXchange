@@ -32,6 +32,45 @@
     opacity: 0.9;
 }
 
+/* Debt Summary Cards */
+.debt-cards-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.debt-card {
+    background: var(--white-bg);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(18, 18, 13, 0.05);
+    border: 1px solid var(--blue-bg);
+}
+
+.debt-card-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.6;
+    margin-bottom: 0.4rem;
+}
+
+.debt-card-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.debt-card-value.owe { color: #dc2626; }
+.debt-card-value.receive { color: #16a34a; }
+
+.debt-card-sub {
+    font-size: 0.85rem;
+    opacity: 0.55;
+    margin-top: 0.2rem;
+}
+
 /* Section Wrapper */
 .transaction-section {
     background: var(--white-bg);
@@ -144,6 +183,8 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+    .debt-cards-row { grid-template-columns: 1fr; }
+
     .transaction-table th,
     .transaction-table td { padding: 0.65rem 0.5rem; }
 
