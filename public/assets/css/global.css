@@ -502,7 +502,7 @@ form button:hover {
 
 /* Sidebar Dashboard */
 .sidebar {
-    background: var(--primary-blue);
+    background: var(--dark-bg);
     width: 250px;
     padding: 2rem 0;
     color: #FFFFFF;
