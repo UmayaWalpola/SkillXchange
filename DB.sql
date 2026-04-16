@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Apr 11, 2026 at 09:18 AM
+-- Generation Time: Apr 16, 2026 at 09:32 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -47,6 +47,36 @@ INSERT INTO `badges` (`id`, `name`, `description`, `icon`, `type`, `created_at`)
 (4, 'Web Developer', 'Complete all web development quizzes', '💻', 'quiz', '2026-02-18 19:13:43'),
 (5, 'Data Expert', 'Complete all data science quizzes', '📊', 'quiz', '2026-02-18 19:13:43'),
 (6, 'Early Adopter', 'Platform achievement badge', '🌟', 'community', '2026-04-10 10:02:29');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `chats`
+--
+
+CREATE TABLE `chats` (
+  `id` int(11) NOT NULL,
+  `user1_id` int(11) NOT NULL,
+  `user2_id` int(11) NOT NULL,
+  `skill_context` varchar(255) DEFAULT NULL,
+  `exchange_direction` varchar(50) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `chat_messages`
+--
+
+CREATE TABLE `chat_messages` (
+  `id` int(11) NOT NULL,
+  `chat_id` int(11) NOT NULL,
+  `sender_id` int(11) NOT NULL,
+  `message` text NOT NULL,
+  `read_status` tinyint(2) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -176,7 +206,8 @@ INSERT INTO `feedback_reports` (`id`, `feedback_id`, `reporter_id`, `reason`, `d
 (2, 2, 48, 'fake', 'Automated test fake', 'pending', '2026-04-01 14:43:28', NULL, NULL, NULL),
 (3, 3, 47, 'fake', 'Fresh fake report test', 'pending', '2026-04-01 14:47:01', NULL, NULL, NULL),
 (4, 2, 46, 'abusive', 'Post-fix success check', 'reviewed', '2026-04-01 14:48:13', 7, '2026-04-04 12:25:30', ''),
-(6, 3, 44, 'abusive', 'Abusive reason success verification', 'pending', '2026-04-01 14:49:51', NULL, NULL, NULL);
+(6, 3, 44, 'abusive', 'Abusive reason success verification', 'pending', '2026-04-01 14:49:51', NULL, NULL, NULL),
+(7, 10, 41, 'fake', 'This feedback contains inaccurate information and does not reflect the actual work or performance. It appears misleading and could negatively impact a fair evaluation.', 'pending', '2026-04-16 00:23:25', NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -204,7 +235,10 @@ INSERT INTO `notifications` (`id`, `user_id`, `type`, `message`, `project_id`, `
 (2, 7, 'feedback_report', 'A feedback has been reported as abusive. Please review.', NULL, NULL, 0, '2026-04-01 14:49:51'),
 (3, 41, 'task_assigned', 'You have been assigned a new task: Manage Team Members', 18, 1, 0, '2026-04-10 10:24:42'),
 (5, 60, 'task_removed', 'A task assigned to you was removed: Build Baseline Prediction Model', 21, NULL, 0, '2026-04-11 06:55:45'),
-(6, 57, 'task_update', 'Task \'Build Baseline Prediction Model\' status changed to In Progress', 21, 2, 0, '2026-04-11 06:56:28');
+(6, 57, 'task_update', 'Task \'Build Baseline Prediction Model\' status changed to In Progress', 21, 2, 0, '2026-04-11 06:56:28'),
+(7, 7, 'feedback_report', 'A feedback has been reported as fake. Please review.', NULL, NULL, 0, '2026-04-16 00:23:25'),
+(8, 60, 'task_update', 'Task \'Build Baseline Prediction Model\' status changed to Done', 21, 2, 0, '2026-04-16 02:42:11'),
+(9, 60, 'task_update', 'Task \'Build Baseline Prediction Model\' status changed to In Progress', 21, 2, 0, '2026-04-16 02:42:16');
 
 -- --------------------------------------------------------
 
@@ -258,20 +292,19 @@ CREATE TABLE `projects` (
 --
 
 INSERT INTO `projects` (`id`, `organization_id`, `name`, `description`, `category`, `status`, `required_skills`, `max_members`, `current_members`, `start_date`, `end_date`, `created_at`, `updated_at`) VALUES
-(7, 37, 'Zcode', 'ZCode is a mobile application designed to simplify and streamline the process of coding, learning, and managing software development tasks directly from a smartphone. The project focuses on providing developers, students, and tech enthusiasts with a fast, lightweight, and user-friendly coding environment on mobile devices.\r\n\r\nZCode supports essential development features such as code editing, syntax highlighting, real-time previews, and project management tools. The main goal of the app is to allow users to write, test, and manage code on the go without needing a desktop computer. The project also integrates cloud support, enabling users to save files online and access their work from multiple devices.\r\n\r\nThe ZCode Mobile Development Project aims to deliver a productive mobile coding experience, improve accessibility to programming tools, and enable learners to practice coding anytime, anywhere.', 'mobile', 'in-progress', 'Flutter , NodeJs', 6, 0, '2025-11-17', '2026-10-20', '2025-11-17 12:17:49', '2025-12-08 08:11:30'),
-(8, 37, 'CodeCollab Hub', 'mplement a module to create and manage community skill-sharing events, allowing users to RSVP and join online/offline workshops.', 'web', 'completed', 'HTML5 , CSS3, JavaScript, PHP, MySql', 5, 1, '2025-11-28', '2026-01-03', '2025-11-17 12:33:12', '2025-11-18 10:37:23'),
-(9, 37, 'SkillMentor', 'A system to connect learners with expert mentors in various skills.', 'data', 'cancelled', 'Python, R, SQL, Machine Learning, Data Visualization, Pandas, NumPy, Scikit-learn, Matplotlib, Tableau', 10, 0, '2026-12-17', '2026-12-31', '2025-11-17 12:34:15', '2025-11-17 12:34:15'),
-(10, 37, 'LearnLab', 'An interactive platform for project-based skill learning and exercises.', 'design', 'completed', 'UI/UX Design, Adobe Photoshop, Adobe Illustrator, Figma, Sketch, Wireframing, Prototyping, Interaction Design, Graphic Design, Color Theory', 8, 0, '2025-11-18', '2028-11-18', '2025-11-17 12:35:27', '2025-11-17 12:35:27'),
-(13, 37, 'kithsara project', 'Pretty software project', 'web', 'active', 'HTML5 , CSS3, JavaScript, PHP, MySql', 7, 2, '2025-11-29', '2026-10-18', '2025-11-18 10:55:15', '2026-02-18 18:45:19'),
-(14, 37, 'Devinda Web Project', 'This project is a modern and responsive web application designed to provide users with an easy-to-use and interactive online experience. It includes key features such as user authentication, dynamic content display, and a well-structured interface built with best web development practices. The system ensures smooth navigation, mobile-friendly layouts, and efficient data handling through backend integration. The project focuses on scalability, maintainability, and clean UI/UX design to offer a seamless workflow for both users and administrators.', 'web', 'active', 'HTML5 , CSS3, JavaScript, PHP, MySql', 7, 0, '2025-11-20', '2026-10-18', '2025-11-18 17:11:40', '2025-11-18 17:11:51'),
-(15, 37, 'SmartConnect Mobile App (PS software)', 'SmartConnect is a modern mobile application designed to help users connect, collaborate, and share skills effortlessly. The app provides a clean and responsive interface with real-time interactions, profile management, skill listings, messaging, and project collaboration features.\r\nIt aims to deliver fast performance, smooth navigation, and a user-friendly experience across Android and iOS platforms.', 'mobile', 'active', 'Flutter / Dart, React Native, Java / Kotlin ,Git/GitHub', 10, 1, '2025-11-29', '2025-12-31', '2025-11-19 19:03:48', '2025-11-19 19:51:05'),
-(16, 37, 'Online Bookstore Management System', 'A web application that allows users to browse, search, and purchase books online with secure payment integration.', 'web', 'active', 'PHP, MySQL, Laravel, HTML, CSS, JavaScript', 5, 0, '2025-11-23', '2025-11-29', '2025-11-23 10:28:30', '2025-11-23 10:28:30'),
-(17, 37, 'Kithsara Mobile App 2', 'The Mobile App Development Project is focused on designing and building a fully–functional, user-friendly, and efficient mobile application tailored to meet specific user needs. This project involves creating a high-quality mobile solution that delivers seamless performance, attractive UI/UX design, and practical features that solve real-world problems.\r\n\r\nThe application will be developed using modern mobile technologies and frameworks, ensuring cross-platform compatibility, scalability, and long-term maintainability. Throughout the project, industry-best practices such as version control, clean architecture, responsive design, and secure coding standards will be followed.\r\n\r\nKey project tasks include requirement gathering, designing wireframes, developing core features, integrating APIs, testing for bugs, and finally deploying the app to platforms such as Google Play Store or Apple App Store. The project also aims to provide an admin or backend system if required, enabling data management and real-time updates.\r\n\r\nOverall, this mobile app development project will deliver a high-quality, modern application that enhances the user experience, supports business goals, and ensures continuous improvement based on user feedback.', 'mobile', 'active', 'React Native , Flutter, JavaScript / TypeScript  , HTML & CSS , UI/UX Design , API Integration , RESTful API Development , Node.js , Express.js ,   MongoDB / MySQL,  Firebase Services', 10, 0, '2025-12-30', '2026-05-06', '2025-12-06 09:51:12', '2025-12-06 09:52:46'),
+(7, 37, 'Zcode', 'ZCode is a mobile application designed to simplify and streamline the process of coding, learning, and managing software development tasks directly from a smartphone. The project focuses on providing developers, students, and tech enthusiasts with a fast, lightweight, and user-friendly coding environment on mobile devices.\r\n\r\nZCode supports essential development features such as code editing, syntax highlighting, real-time previews, and project management tools. The main goal of the app is to allow users to write, test, and manage code on the go without needing a desktop computer. The project also integrates cloud support, enabling users to save files online and access their work from multiple devices.\r\n\r\nThe ZCode Mobile Development Project aims to deliver a productive mobile coding experience, improve accessibility to programming tools, and enable learners to practice coding anytime, anywhere.', 'mobile', 'completed', 'Flutter , NodeJs', 6, 6, '2025-11-17', '2026-10-20', '2025-11-17 12:17:49', '2026-04-14 06:20:36'),
+(8, 37, 'CodeCollab Hub', 'mplement a module to create and manage community skill-sharing events, allowing users to RSVP and join online/offline workshops.', 'web', 'completed', 'HTML5 , CSS3, JavaScript, PHP, MySql', 5, 6, '2025-11-28', '2026-01-03', '2025-11-17 12:33:12', '2026-04-14 06:20:36'),
+(9, 37, 'SkillMentor', 'A system to connect learners with expert mentors in various skills.', 'data', 'completed', 'Python, R, SQL, Machine Learning, Data Visualization, Pandas, NumPy, Scikit-learn, Matplotlib, Tableau', 10, 5, '2026-12-17', '2026-12-31', '2025-11-17 12:34:15', '2026-04-14 06:20:36'),
+(13, 37, 'kithsara project', 'Pretty software project', 'web', 'completed', 'HTML5 , CSS3, JavaScript, PHP, MySql', 7, 8, '2025-11-29', '2026-10-18', '2025-11-18 10:55:15', '2026-04-14 06:20:36'),
+(14, 37, 'Devinda Web Project', 'This project is a modern and responsive web application designed to provide users with an easy-to-use and interactive online experience. It includes key features such as user authentication, dynamic content display, and a well-structured interface built with best web development practices. The system ensures smooth navigation, mobile-friendly layouts, and efficient data handling through backend integration. The project focuses on scalability, maintainability, and clean UI/UX design to offer a seamless workflow for both users and administrators.', 'web', 'completed', 'HTML5 , CSS3, JavaScript, PHP, MySql', 7, 5, '2025-11-20', '2026-10-18', '2025-11-18 17:11:40', '2026-04-14 06:20:36'),
+(15, 37, 'SmartConnect Mobile App (PS software)', 'SmartConnect is a modern mobile application designed to help users connect, collaborate, and share skills effortlessly. The app provides a clean and responsive interface with real-time interactions, profile management, skill listings, messaging, and project collaboration features.\r\nIt aims to deliver fast performance, smooth navigation, and a user-friendly experience across Android and iOS platforms.', 'mobile', 'completed', 'Flutter / Dart, React Native, Java / Kotlin ,Git/GitHub', 10, 5, '2025-11-29', '2025-12-31', '2025-11-19 19:03:48', '2026-04-14 06:20:36'),
+(16, 37, 'Online Bookstore Management System', 'A web application that allows users to browse, search, and purchase books online with secure payment integration.', 'web', 'completed', 'PHP, MySQL, Laravel, HTML, CSS, JavaScript', 5, 5, '2025-11-23', '2025-11-29', '2025-11-23 10:28:30', '2026-04-14 06:20:36'),
+(17, 37, 'Kithsara Mobile App 2', 'The Mobile App Development Project is focused on designing and building a fully–functional, user-friendly, and efficient mobile application tailored to meet specific user needs. This project involves creating a high-quality mobile solution that delivers seamless performance, attractive UI/UX design, and practical features that solve real-world problems.\r\n\r\nThe application will be developed using modern mobile technologies and frameworks, ensuring cross-platform compatibility, scalability, and long-term maintainability. Throughout the project, industry-best practices such as version control, clean architecture, responsive design, and secure coding standards will be followed.\r\n\r\nKey project tasks include requirement gathering, designing wireframes, developing core features, integrating APIs, testing for bugs, and finally deploying the app to platforms such as Google Play Store or Apple App Store. The project also aims to provide an admin or backend system if required, enabling data management and real-time updates.\r\n\r\nOverall, this mobile app development project will deliver a high-quality, modern application that enhances the user experience, supports business goals, and ensures continuous improvement based on user feedback.', 'mobile', 'completed', 'Mobile App Development, Frontend Frameworks, GitHub and Git', 10, 5, '2025-12-30', '2026-05-07', '2025-12-06 09:51:12', '2026-04-15 10:46:26'),
 (18, 52, 'SkillX Web Platform', 'A collaborative web-based platform where users can learn, teach, and exchange skills. This project includes user authentication, skill matching, project collaboration, feedback system, and reporting features.', 'web', 'active', 'HTML, CSS, JavaScript, PHP, MySQL', 5, 0, '2026-04-10', '2026-04-30', '2026-04-10 10:06:23', '2026-04-11 06:12:42'),
 (19, 56, 'SkillBridge Web Portal', 'A responsive web portal for skill sharing with auth, profile, and project board.', 'web', 'active', 'Web Development, Frontend Frameworks', 8, 0, '2026-04-15', '2026-08-30', '2026-04-11 06:40:23', '2026-04-11 06:40:23'),
 (20, 56, 'QuickTutor Mobile App', 'Mobile app for booking quick tutor sessions and progress tracking.', 'mobile', 'active', 'Mobile App Development, Backend Development', 6, 0, '2026-04-20', '2026-09-10', '2026-04-11 06:40:23', '2026-04-11 06:40:23'),
-(21, 57, 'InsightFlow Analytics', 'Data analytics dashboard with prediction and visualization modules.', 'data', 'active', 'Data Science, Data Analysis & Visualization, AI and ML', 7, 1, '2026-04-18', '2026-10-01', '2026-04-11 06:40:23', '2026-04-11 06:50:36'),
-(22, 57, 'SecureCloudOps Monitor', 'Monitoring and alerting platform for cloud infra and security.', 'other', 'active', 'Cloud Computing, Cybersecurity, Devops', 5, 1, '2026-04-22', '2026-09-25', '2026-04-11 06:40:23', '2026-04-11 06:50:39');
+(21, 57, 'InsightFlow Analytics', 'Data analytics dashboard with prediction and visualization modules.', 'data', 'active', 'Data Science, Data Analysis & Visualization, AI and ML', 7, 1, '2026-04-18', '2026-10-01', '2026-04-11 06:40:23', '2026-04-13 06:17:54'),
+(22, 57, 'SecureCloudOps Monitor', 'Monitoring and alerting platform for cloud infra and security.', 'other', 'active', 'Cloud Computing, Cybersecurity, Devops', 5, 2, '2026-04-22', '2026-09-25', '2026-04-11 06:40:23', '2026-04-16 01:03:30');
 
 -- --------------------------------------------------------
 
@@ -319,7 +352,9 @@ INSERT INTO `project_applications` (`id`, `project_id`, `user_id`, `message`, `e
 (22, 21, 60, 'Matched skills test application', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'accepted', '2026-04-11 06:43:33', NULL, NULL, NULL, NULL, NULL),
 (23, 22, 61, 'Matched skills test application', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'accepted', '2026-04-11 06:43:33', NULL, NULL, NULL, NULL, NULL),
 (24, 19, 62, 'Matched skills test application', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'pending', '2026-04-11 06:43:33', NULL, NULL, NULL, NULL, NULL),
-(25, 20, 62, 'Matched skills test application', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'pending', '2026-04-11 06:43:33', NULL, NULL, NULL, NULL, NULL);
+(25, 20, 62, 'Matched skills test application', NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'pending', '2026-04-11 06:43:33', NULL, NULL, NULL, NULL, NULL),
+(26, 22, 41, 'Advanced Application', 'I have experience in data-related projects and backend development, with a strong foundation in Data Science and AI at an intermediate level. I have worked on small-scale analytics tasks, including data cleaning, visualization, and basic predictive modeling. Additionally, I have experience working with databases and web-based systems, which helps me understand how to integrate data-driven features into applications.', 'I have intermediate-level skills in Data Science and AI, which directly align with this project’s requirements. I am also familiar with data analysis concepts and can contribute to building visualization modules. My basic knowledge of DevOps helps in managing deployment and system efficiency. Additionally, my advanced knowledge of databases supports efficient data handling and storage.', 'I can contribute by assisting in data preprocessing, building visualization dashboards, and supporting the development of prediction models. I will also help in optimizing database queries and ensuring smooth integration between backend systems and analytics modules. I am committed to collaborating with the team and delivering quality work on time.', '10-20', '6-12', 'I am passionate about data-driven solutions and enjoy working on projects that involve analytics and intelligent systems. This project gives me the opportunity to improve my practical skills in Data Science and AI while contributing to a meaningful platform. I am also interested in learning from the team and gaining real-world project experience.', 'https://github.com/devinda', 'accepted', '2026-04-16 00:59:08', NULL, NULL, NULL, NULL, NULL),
+(27, 21, 41, 'Advanced Application', 'lllllll', 'lllllllllllll', 'llllllllll', '5-10', '6-12', 'llllllllllllllll', 'https://github.com/mahiiii', 'rejected', '2026-04-16 01:14:29', NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -347,7 +382,15 @@ INSERT INTO `project_chat_messages` (`id`, `project_id`, `sender_id`, `message`,
 (5, 17, 37, 'hi suddh', '2025-12-07 06:30:23'),
 (6, 17, 37, 'hi', '2025-12-08 08:04:40'),
 (7, 13, 37, 'kithsara', '2025-12-08 08:05:54'),
-(8, 13, 41, 'umaya', '2025-12-08 08:06:35');
+(8, 13, 41, 'umaya', '2025-12-08 08:06:35'),
+(9, 7, 37, 'Project completed successfully: Zcode', '2026-04-14 06:18:28'),
+(10, 8, 37, 'Project completed successfully: CodeCollab Hub', '2026-04-14 06:18:28'),
+(11, 9, 37, 'Project completed successfully: SkillMentor', '2026-04-14 06:18:28'),
+(12, 13, 37, 'Project completed successfully: kithsara project', '2026-04-14 06:18:28'),
+(13, 14, 37, 'Project completed successfully: Devinda Web Project', '2026-04-14 06:18:28'),
+(14, 15, 37, 'Project completed successfully: SmartConnect Mobile App (PS software)', '2026-04-14 06:18:28'),
+(15, 16, 37, 'Project completed successfully: Online Bookstore Management System', '2026-04-14 06:18:28'),
+(16, 17, 37, 'Project completed successfully: Kithsara Mobile App 2', '2026-04-14 06:18:28');
 
 -- --------------------------------------------------------
 
@@ -369,15 +412,55 @@ CREATE TABLE `project_members` (
 --
 
 INSERT INTO `project_members` (`id`, `project_id`, `user_id`, `role`, `joined_at`, `status`) VALUES
-(1, 7, 41, 'Member', '2025-11-18 10:32:02', ''),
+(1, 7, 41, 'Member', '2025-11-18 10:32:02', 'active'),
 (2, 8, 41, 'Member', '2025-11-18 10:37:23', 'active'),
 (3, 13, 41, 'Developer', '2025-11-18 17:10:17', 'active'),
-(4, 15, 37, 'Developer', '2025-11-19 19:51:05', 'active'),
-(5, 13, 50, 'Frontend Engineer', '2025-11-26 12:09:26', ''),
+(4, 15, 37, 'Project Owner', '2025-11-19 19:51:05', 'active'),
+(5, 13, 50, 'Frontend Engineer', '2025-11-26 12:09:26', 'active'),
 (6, 13, 51, 'Project Lead', '2025-11-26 13:57:29', 'active'),
 (7, 18, 41, 'Member', '2026-04-10 10:21:36', ''),
 (8, 21, 60, 'Data Scientist', '2026-04-11 06:50:36', 'active'),
-(9, 22, 61, 'Member', '2026-04-11 06:50:39', 'active');
+(9, 22, 61, 'Member', '2026-04-11 06:50:39', 'active'),
+(10, 7, 37, 'Project Owner', '2026-04-14 06:18:28', 'active'),
+(11, 8, 37, 'Project Owner', '2026-04-14 06:18:28', 'active'),
+(12, 9, 37, 'Project Owner', '2026-04-14 06:18:28', 'active'),
+(13, 13, 37, 'Project Owner', '2026-04-14 06:18:28', 'active'),
+(14, 14, 37, 'Project Owner', '2026-04-14 06:18:28', 'active'),
+(15, 16, 37, 'Project Owner', '2026-04-14 06:18:28', 'active'),
+(16, 17, 37, 'Project Owner', '2026-04-14 06:18:28', 'active'),
+(17, 7, 63, 'Project Lead', '2026-04-14 06:18:28', 'active'),
+(18, 8, 63, 'Project Lead', '2026-04-14 06:18:28', 'active'),
+(19, 9, 63, 'Project Lead', '2026-04-14 06:18:28', 'active'),
+(20, 13, 63, 'Project Lead', '2026-04-14 06:18:28', 'active'),
+(21, 14, 63, 'Project Lead', '2026-04-14 06:18:28', 'active'),
+(22, 15, 63, 'Project Lead', '2026-04-14 06:18:28', 'active'),
+(23, 16, 63, 'Project Lead', '2026-04-14 06:18:28', 'active'),
+(24, 17, 63, 'Project Lead', '2026-04-14 06:18:28', 'active'),
+(32, 7, 64, 'Frontend Engineer', '2026-04-14 06:18:28', 'active'),
+(33, 8, 64, 'Frontend Engineer', '2026-04-14 06:18:28', 'active'),
+(34, 9, 64, 'Frontend Engineer', '2026-04-14 06:18:28', 'active'),
+(35, 13, 64, 'Frontend Engineer', '2026-04-14 06:18:28', 'active'),
+(36, 14, 64, 'Frontend Engineer', '2026-04-14 06:18:28', 'active'),
+(37, 15, 64, 'Frontend Engineer', '2026-04-14 06:18:28', 'active'),
+(38, 16, 64, 'Frontend Engineer', '2026-04-14 06:18:28', 'active'),
+(39, 17, 64, 'Frontend Engineer', '2026-04-14 06:18:28', 'active'),
+(47, 7, 65, 'Backend Engineer', '2026-04-14 06:18:28', 'active'),
+(48, 8, 65, 'Backend Engineer', '2026-04-14 06:18:28', 'active'),
+(49, 9, 65, 'Backend Engineer', '2026-04-14 06:18:28', 'active'),
+(50, 13, 65, 'Backend Engineer', '2026-04-14 06:18:28', 'active'),
+(51, 14, 65, 'Backend Engineer', '2026-04-14 06:18:28', 'active'),
+(52, 15, 65, 'Backend Engineer', '2026-04-14 06:18:28', 'active'),
+(53, 16, 65, 'Backend Engineer', '2026-04-14 06:18:28', 'active'),
+(54, 17, 65, 'Backend Engineer', '2026-04-14 06:18:28', 'active'),
+(62, 7, 66, 'QA Tester', '2026-04-14 06:18:28', 'active'),
+(63, 8, 66, 'QA Tester', '2026-04-14 06:18:28', 'active'),
+(64, 9, 66, 'QA Tester', '2026-04-14 06:18:28', 'active'),
+(65, 13, 66, 'QA Tester', '2026-04-14 06:18:28', 'active'),
+(66, 14, 66, 'QA Tester', '2026-04-14 06:18:28', 'active'),
+(67, 15, 66, 'QA Tester', '2026-04-14 06:18:28', 'active'),
+(68, 16, 66, 'QA Tester', '2026-04-14 06:18:28', 'active'),
+(69, 17, 66, 'QA Tester', '2026-04-14 06:18:28', 'active'),
+(70, 22, 41, 'Member', '2026-04-16 01:03:30', 'active');
 
 -- --------------------------------------------------------
 
@@ -404,7 +487,55 @@ CREATE TABLE `project_tasks` (
 
 INSERT INTO `project_tasks` (`id`, `project_id`, `assigned_to`, `title`, `description`, `status`, `priority`, `deadline`, `created_at`, `updated_at`) VALUES
 (1, 18, 41, 'Manage Team Members', 'Nice bro 😎 now we assign a clean, realistic task to Devinda 🔥\r\n\r\n📝 Assign New Task (Devinda)\r\n\r\nMember:\r\n👉 Devinda\r\n\r\n✅ Task Title *\r\n\r\n👉\r\nManage Team Members\r\n\r\n✅ Description *\r\n\r\n👉\r\nResponsible for managing and coordinating project team members effectively. This includes assigning tasks, monitoring member progress, and ensuring proper collaboration within the team.\r\n\r\nThe task also involves tracking task completion, identifying blockers, and maintaining clear communication among all members. Additionally, ensure that each member is contributing according to their role and skill level.\r\n\r\nWork closely with the project owner to improve team workflow and maintain productivity throughout the project lifecycle.', 'todo', 'high', '2026-04-24', '2026-04-10 10:24:42', '2026-04-10 10:24:42'),
-(2, 21, 60, 'Build Baseline Prediction Model', 'Create a baseline ML prediction pipeline and include key performance metrics for the InsightFlow dashboard.', 'in-progress', 'high', '2026-05-10', '2026-04-11 06:54:24', '2026-04-11 06:56:28');
+(2, 21, 60, 'Build Baseline Prediction Model', 'Create a baseline ML prediction pipeline and include key performance metrics for the InsightFlow dashboard.', 'in-progress', 'high', '2026-05-10', '2026-04-11 06:54:24', '2026-04-16 02:42:16'),
+(4, 7, 63, 'Project Planning Completed - Zcode', 'Project scope, milestones, and timeline finalized.', 'done', 'high', '2026-03-20', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(5, 8, 63, 'Project Planning Completed - CodeCollab Hub', 'Project scope, milestones, and timeline finalized.', 'done', 'high', '2026-03-20', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(6, 9, 63, 'Project Planning Completed - SkillMentor', 'Project scope, milestones, and timeline finalized.', 'done', 'high', '2026-03-20', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(7, 13, 63, 'Project Planning Completed - kithsara project', 'Project scope, milestones, and timeline finalized.', 'done', 'high', '2026-03-20', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(8, 14, 63, 'Project Planning Completed - Devinda Web Project', 'Project scope, milestones, and timeline finalized.', 'done', 'high', '2026-03-20', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(9, 15, 63, 'Project Planning Completed - SmartConnect Mobile App (PS software)', 'Project scope, milestones, and timeline finalized.', 'done', 'high', '2026-03-20', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(10, 16, 63, 'Project Planning Completed - Online Bookstore Management System', 'Project scope, milestones, and timeline finalized.', 'done', 'high', '2026-03-20', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(11, 17, 63, 'Project Planning Completed - Kithsara Mobile App 2', 'Project scope, milestones, and timeline finalized.', 'done', 'high', '2026-03-20', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(19, 7, 64, 'Frontend Completed - Zcode', 'UI implementation and responsive behavior completed.', 'done', 'high', '2026-03-27', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(20, 8, 64, 'Frontend Completed - CodeCollab Hub', 'UI implementation and responsive behavior completed.', 'done', 'high', '2026-03-27', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(21, 9, 64, 'Frontend Completed - SkillMentor', 'UI implementation and responsive behavior completed.', 'done', 'high', '2026-03-27', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(22, 13, 64, 'Frontend Completed - kithsara project', 'UI implementation and responsive behavior completed.', 'done', 'high', '2026-03-27', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(23, 14, 64, 'Frontend Completed - Devinda Web Project', 'UI implementation and responsive behavior completed.', 'done', 'high', '2026-03-27', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(24, 15, 64, 'Frontend Completed - SmartConnect Mobile App (PS software)', 'UI implementation and responsive behavior completed.', 'done', 'high', '2026-03-27', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(25, 16, 64, 'Frontend Completed - Online Bookstore Management System', 'UI implementation and responsive behavior completed.', 'done', 'high', '2026-03-27', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(26, 17, 64, 'Frontend Completed - Kithsara Mobile App 2', 'UI implementation and responsive behavior completed.', 'done', 'high', '2026-03-27', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(34, 7, 65, 'Backend Completed - Zcode', 'APIs, database operations, and validations completed.', 'done', 'high', '2026-04-02', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(35, 8, 65, 'Backend Completed - CodeCollab Hub', 'APIs, database operations, and validations completed.', 'done', 'high', '2026-04-02', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(36, 9, 65, 'Backend Completed - SkillMentor', 'APIs, database operations, and validations completed.', 'done', 'high', '2026-04-02', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(37, 13, 65, 'Backend Completed - kithsara project', 'APIs, database operations, and validations completed.', 'done', 'high', '2026-04-02', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(38, 14, 65, 'Backend Completed - Devinda Web Project', 'APIs, database operations, and validations completed.', 'done', 'high', '2026-04-02', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(39, 15, 65, 'Backend Completed - SmartConnect Mobile App (PS software)', 'APIs, database operations, and validations completed.', 'done', 'high', '2026-04-02', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(40, 16, 65, 'Backend Completed - Online Bookstore Management System', 'APIs, database operations, and validations completed.', 'done', 'high', '2026-04-02', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(41, 17, 65, 'Backend Completed - Kithsara Mobile App 2', 'APIs, database operations, and validations completed.', 'done', 'high', '2026-04-02', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(49, 7, 66, 'QA and UAT Completed - Zcode', 'Testing cycle and final user acceptance completed.', 'done', 'medium', '2026-04-09', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(50, 8, 66, 'QA and UAT Completed - CodeCollab Hub', 'Testing cycle and final user acceptance completed.', 'done', 'medium', '2026-04-09', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(51, 9, 66, 'QA and UAT Completed - SkillMentor', 'Testing cycle and final user acceptance completed.', 'done', 'medium', '2026-04-09', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(52, 13, 66, 'QA and UAT Completed - kithsara project', 'Testing cycle and final user acceptance completed.', 'done', 'medium', '2026-04-09', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(53, 14, 66, 'QA and UAT Completed - Devinda Web Project', 'Testing cycle and final user acceptance completed.', 'done', 'medium', '2026-04-09', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(54, 15, 66, 'QA and UAT Completed - SmartConnect Mobile App (PS software)', 'Testing cycle and final user acceptance completed.', 'done', 'medium', '2026-04-09', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(55, 16, 66, 'QA and UAT Completed - Online Bookstore Management System', 'Testing cycle and final user acceptance completed.', 'done', 'medium', '2026-04-09', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(56, 17, 66, 'QA and UAT Completed - Kithsara Mobile App 2', 'Testing cycle and final user acceptance completed.', 'done', 'medium', '2026-04-09', '2026-04-14 06:18:28', '2026-04-14 06:20:36'),
+(64, 7, 63, 'Planning Completed - Zcode', 'Project planning, milestones, and scope finalized.', 'done', 'high', '2026-03-17', '2026-04-14 06:20:36', '2026-04-14 06:20:36'),
+(65, 8, 63, 'Planning Completed - CodeCollab Hub', 'Project planning, milestones, and scope finalized.', 'done', 'high', '2026-03-17', '2026-04-14 06:20:36', '2026-04-14 06:20:36'),
+(66, 9, 63, 'Planning Completed - SkillMentor', 'Project planning, milestones, and scope finalized.', 'done', 'high', '2026-03-17', '2026-04-14 06:20:36', '2026-04-14 06:20:36'),
+(67, 13, 63, 'Planning Completed - kithsara project', 'Project planning, milestones, and scope finalized.', 'done', 'high', '2026-03-17', '2026-04-14 06:20:36', '2026-04-14 06:20:36'),
+(68, 14, 63, 'Planning Completed - Devinda Web Project', 'Project planning, milestones, and scope finalized.', 'done', 'high', '2026-03-17', '2026-04-14 06:20:36', '2026-04-14 06:20:36'),
+(69, 15, 63, 'Planning Completed - SmartConnect Mobile App (PS software)', 'Project planning, milestones, and scope finalized.', 'done', 'high', '2026-03-17', '2026-04-14 06:20:36', '2026-04-14 06:20:36'),
+(70, 16, 63, 'Planning Completed - Online Bookstore Management System', 'Project planning, milestones, and scope finalized.', 'done', 'high', '2026-03-17', '2026-04-14 06:20:36', '2026-04-14 06:20:36'),
+(71, 17, 63, 'Planning Completed - Kithsara Mobile App 2', 'Project planning, milestones, and scope finalized.', 'done', 'high', '2026-03-17', '2026-04-14 06:20:36', '2026-04-14 06:20:36'),
+(79, 7, 66, 'QA Completed - Zcode', 'QA testing, bug fixing, and final acceptance completed.', 'done', 'medium', '2026-04-09', '2026-04-14 06:20:36', '2026-04-14 06:20:36'),
+(80, 8, 66, 'QA Completed - CodeCollab Hub', 'QA testing, bug fixing, and final acceptance completed.', 'done', 'medium', '2026-04-09', '2026-04-14 06:20:36', '2026-04-14 06:20:36'),
+(81, 9, 66, 'QA Completed - SkillMentor', 'QA testing, bug fixing, and final acceptance completed.', 'done', 'medium', '2026-04-09', '2026-04-14 06:20:36', '2026-04-14 06:20:36'),
+(82, 13, 66, 'QA Completed - kithsara project', 'QA testing, bug fixing, and final acceptance completed.', 'done', 'medium', '2026-04-09', '2026-04-14 06:20:36', '2026-04-14 06:20:36'),
+(83, 14, 66, 'QA Completed - Devinda Web Project', 'QA testing, bug fixing, and final acceptance completed.', 'done', 'medium', '2026-04-09', '2026-04-14 06:20:36', '2026-04-14 06:20:36'),
+(84, 15, 66, 'QA Completed - SmartConnect Mobile App (PS software)', 'QA testing, bug fixing, and final acceptance completed.', 'done', 'medium', '2026-04-09', '2026-04-14 06:20:36', '2026-04-14 06:20:36'),
+(85, 16, 66, 'QA Completed - Online Bookstore Management System', 'QA testing, bug fixing, and final acceptance completed.', 'done', 'medium', '2026-04-09', '2026-04-14 06:20:36', '2026-04-14 06:20:36'),
+(86, 17, 66, 'QA Completed - Kithsara Mobile App 2', 'QA testing, bug fixing, and final acceptance completed.', 'done', 'medium', '2026-04-09', '2026-04-14 06:20:36', '2026-04-14 06:20:36');
 
 -- --------------------------------------------------------
 
@@ -531,7 +662,57 @@ CREATE TABLE `task_history` (
 --
 
 INSERT INTO `task_history` (`id`, `task_id`, `user_id`, `action`, `timestamp`) VALUES
-(1, 2, 60, 'marked_in_progress', '2026-04-11 06:56:28');
+(1, 2, 60, 'marked_in_progress', '2026-04-11 06:56:28'),
+(2, 4, 63, 'marked_done', '2026-04-14 06:18:28'),
+(3, 19, 64, 'marked_done', '2026-04-14 06:18:28'),
+(4, 34, 65, 'marked_done', '2026-04-14 06:18:28'),
+(5, 49, 66, 'marked_done', '2026-04-14 06:18:28'),
+(6, 5, 63, 'marked_done', '2026-04-14 06:18:28'),
+(7, 20, 64, 'marked_done', '2026-04-14 06:18:28'),
+(8, 35, 65, 'marked_done', '2026-04-14 06:18:28'),
+(9, 50, 66, 'marked_done', '2026-04-14 06:18:28'),
+(10, 6, 63, 'marked_done', '2026-04-14 06:18:28'),
+(11, 21, 64, 'marked_done', '2026-04-14 06:18:28'),
+(12, 36, 65, 'marked_done', '2026-04-14 06:18:28'),
+(13, 51, 66, 'marked_done', '2026-04-14 06:18:28'),
+(14, 7, 63, 'marked_done', '2026-04-14 06:18:28'),
+(15, 22, 64, 'marked_done', '2026-04-14 06:18:28'),
+(16, 37, 65, 'marked_done', '2026-04-14 06:18:28'),
+(17, 52, 66, 'marked_done', '2026-04-14 06:18:28'),
+(18, 8, 63, 'marked_done', '2026-04-14 06:18:28'),
+(19, 23, 64, 'marked_done', '2026-04-14 06:18:28'),
+(20, 38, 65, 'marked_done', '2026-04-14 06:18:28'),
+(21, 53, 66, 'marked_done', '2026-04-14 06:18:28'),
+(22, 9, 63, 'marked_done', '2026-04-14 06:18:28'),
+(23, 24, 64, 'marked_done', '2026-04-14 06:18:28'),
+(24, 39, 65, 'marked_done', '2026-04-14 06:18:28'),
+(25, 54, 66, 'marked_done', '2026-04-14 06:18:28'),
+(26, 10, 63, 'marked_done', '2026-04-14 06:18:28'),
+(27, 25, 64, 'marked_done', '2026-04-14 06:18:28'),
+(28, 40, 65, 'marked_done', '2026-04-14 06:18:28'),
+(29, 55, 66, 'marked_done', '2026-04-14 06:18:28'),
+(30, 11, 63, 'marked_done', '2026-04-14 06:18:28'),
+(31, 26, 64, 'marked_done', '2026-04-14 06:18:28'),
+(32, 41, 65, 'marked_done', '2026-04-14 06:18:28'),
+(33, 56, 66, 'marked_done', '2026-04-14 06:18:28'),
+(65, 64, 63, 'marked_done', '2026-04-14 06:20:36'),
+(66, 79, 66, 'marked_done', '2026-04-14 06:20:36'),
+(67, 65, 63, 'marked_done', '2026-04-14 06:20:36'),
+(68, 80, 66, 'marked_done', '2026-04-14 06:20:36'),
+(69, 66, 63, 'marked_done', '2026-04-14 06:20:36'),
+(70, 81, 66, 'marked_done', '2026-04-14 06:20:36'),
+(71, 67, 63, 'marked_done', '2026-04-14 06:20:36'),
+(72, 82, 66, 'marked_done', '2026-04-14 06:20:36'),
+(73, 68, 63, 'marked_done', '2026-04-14 06:20:36'),
+(74, 83, 66, 'marked_done', '2026-04-14 06:20:36'),
+(75, 69, 63, 'marked_done', '2026-04-14 06:20:36'),
+(76, 84, 66, 'marked_done', '2026-04-14 06:20:36'),
+(77, 70, 63, 'marked_done', '2026-04-14 06:20:36'),
+(78, 85, 66, 'marked_done', '2026-04-14 06:20:36'),
+(79, 71, 63, 'marked_done', '2026-04-14 06:20:36'),
+(80, 86, 66, 'marked_done', '2026-04-14 06:20:36'),
+(81, 2, 57, 'marked_done', '2026-04-16 02:42:11'),
+(82, 2, 57, 'marked_in_progress', '2026-04-16 02:42:16');
 
 -- --------------------------------------------------------
 
@@ -581,7 +762,11 @@ INSERT INTO `users` (`id`, `username`, `email`, `profile_picture`, `bio`, `passw
 (59, 'Nethmi Silva', 'nethmi.u2@testmail.com', NULL, NULL, '$2y$10$HFuvcDlmgOZ.Q0AhFtqM8el/SBywTY3A96PJEAb3P5qYtcJKWP766', 'individual', NULL, 1, '2026-04-11 06:40:23', 'active', NULL),
 (60, 'Sithum Jayasena', 'sithum.u3@testmail.com', NULL, NULL, '$2y$10$HFuvcDlmgOZ.Q0AhFtqM8el/SBywTY3A96PJEAb3P5qYtcJKWP766', 'individual', NULL, 1, '2026-04-11 06:40:23', 'active', NULL),
 (61, 'Tharushi Fernando', 'tharushi.u4@testmail.com', NULL, NULL, '$2y$10$HFuvcDlmgOZ.Q0AhFtqM8el/SBywTY3A96PJEAb3P5qYtcJKWP766', 'individual', NULL, 1, '2026-04-11 06:40:23', 'active', NULL),
-(62, 'Iresha Madushani', 'iresha.u5@testmail.com', NULL, NULL, '$2y$10$HFuvcDlmgOZ.Q0AhFtqM8el/SBywTY3A96PJEAb3P5qYtcJKWP766', 'individual', NULL, 1, '2026-04-11 06:40:23', 'active', NULL);
+(62, 'Iresha Madushani', 'iresha.u5@testmail.com', NULL, NULL, '$2y$10$HFuvcDlmgOZ.Q0AhFtqM8el/SBywTY3A96PJEAb3P5qYtcJKWP766', 'individual', NULL, 1, '2026-04-11 06:40:23', 'active', NULL),
+(63, 'PS Lead', 'ps.lead@skillx.local', NULL, NULL, '$2y$10$HFuvcDlmgOZ.Q0AhFtqM8el/SBywTY3A96PJEAb3P5qYtcJKWP766', 'individual', NULL, 1, '2026-04-14 06:18:28', 'active', NULL),
+(64, 'PS Frontend', 'ps.frontend@skillx.local', NULL, NULL, '$2y$10$HFuvcDlmgOZ.Q0AhFtqM8el/SBywTY3A96PJEAb3P5qYtcJKWP766', 'individual', NULL, 1, '2026-04-14 06:18:28', 'active', NULL),
+(65, 'PS Backend', 'ps.backend@skillx.local', NULL, NULL, '$2y$10$HFuvcDlmgOZ.Q0AhFtqM8el/SBywTY3A96PJEAb3P5qYtcJKWP766', 'individual', NULL, 1, '2026-04-14 06:18:28', 'active', NULL),
+(66, 'PS QA', 'ps.qa@skillx.local', NULL, NULL, '$2y$10$HFuvcDlmgOZ.Q0AhFtqM8el/SBywTY3A96PJEAb3P5qYtcJKWP766', 'individual', NULL, 1, '2026-04-14 06:18:28', 'active', NULL);
 
 -- --------------------------------------------------------
 
@@ -645,7 +830,43 @@ CREATE TABLE `user_feedback` (
 
 INSERT INTO `user_feedback` (`id`, `user_id`, `reviewer_id`, `project_id`, `context_type`, `context_id`, `rating`, `comment`, `tags`, `created_at`, `updated_at`, `report_count`) VALUES
 (2, 41, 37, 13, 'project', 13, 3, 'It was a pleasure working with Devinda. He communicated clearly, delivered quality work, and completed tasks on time. Very reliable and professional throughout the project.', 'quality,ontime,teamwork,communication', '2026-02-18 12:19:54', '2026-04-01 14:48:13', 2),
-(3, 51, 37, 13, 'project', 13, 3, 'kkk', 'communication', '2026-02-18 18:44:57', '2026-04-01 14:49:51', 2);
+(3, 51, 37, 13, 'project', 13, 3, 'kkk', 'communication', '2026-02-18 18:44:57', '2026-04-01 14:49:51', 2),
+(4, 60, 57, 21, 'project', 21, 3, '', 'quality', '2026-04-12 16:27:48', '2026-04-12 16:27:48', 0),
+(5, 41, 37, 7, 'project', 7, 5, 'Excellent contribution as Member. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(6, 63, 37, 7, 'project', 7, 5, 'Excellent contribution as Project Lead. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(7, 64, 37, 7, 'project', 7, 5, 'Excellent contribution as Frontend Engineer. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(8, 65, 37, 7, 'project', 7, 5, 'Excellent contribution as Backend Engineer. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(9, 66, 37, 7, 'project', 7, 5, 'Excellent contribution as QA Tester. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(10, 41, 37, 8, 'project', 8, 5, 'Excellent contribution as Member. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-16 00:23:25', 1),
+(11, 63, 37, 8, 'project', 8, 5, 'Excellent contribution as Project Lead. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(14, 66, 37, 8, 'project', 8, 5, 'Excellent contribution as QA Tester. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(15, 63, 37, 9, 'project', 9, 5, 'Excellent contribution as Project Lead. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(16, 64, 37, 9, 'project', 9, 5, 'Excellent contribution as Frontend Engineer. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(17, 65, 37, 9, 'project', 9, 5, 'Excellent contribution as Backend Engineer. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(18, 66, 37, 9, 'project', 9, 5, 'Excellent contribution as QA Tester. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(19, 50, 37, 13, 'project', 13, 5, 'Excellent contribution as Frontend Engineer. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(20, 63, 37, 13, 'project', 13, 5, 'Excellent contribution as Project Lead. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(21, 64, 37, 13, 'project', 13, 5, 'Excellent contribution as Frontend Engineer. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(22, 65, 37, 13, 'project', 13, 5, 'Excellent contribution as Backend Engineer. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(23, 66, 37, 13, 'project', 13, 5, 'Excellent contribution as QA Tester. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(24, 63, 37, 14, 'project', 14, 5, 'Excellent contribution as Project Lead. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(25, 64, 37, 14, 'project', 14, 5, 'Excellent contribution as Frontend Engineer. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(26, 65, 37, 14, 'project', 14, 5, 'Excellent contribution as Backend Engineer. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(27, 66, 37, 14, 'project', 14, 5, 'Excellent contribution as QA Tester. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(28, 63, 37, 15, 'project', 15, 5, 'Excellent contribution as Project Lead. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(29, 64, 37, 15, 'project', 15, 5, 'Excellent contribution as Frontend Engineer. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(30, 65, 37, 15, 'project', 15, 5, 'Excellent contribution as Backend Engineer. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(31, 66, 37, 15, 'project', 15, 5, 'Excellent contribution as QA Tester. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(32, 63, 37, 16, 'project', 16, 5, 'Excellent contribution as Project Lead. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(33, 64, 37, 16, 'project', 16, 5, 'Excellent contribution as Frontend Engineer. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(34, 65, 37, 16, 'project', 16, 5, 'Excellent contribution as Backend Engineer. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(35, 66, 37, 16, 'project', 16, 5, 'Excellent contribution as QA Tester. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(36, 63, 37, 17, 'project', 17, 5, 'Excellent contribution as Project Lead. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(37, 64, 37, 17, 'project', 17, 5, 'Excellent contribution as Frontend Engineer. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(38, 65, 37, 17, 'project', 17, 5, 'Excellent contribution as Backend Engineer. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(39, 66, 37, 17, 'project', 17, 5, 'Excellent contribution as QA Tester. Project successfully completed.', 'quality,ontime,teamwork,communication', '2026-04-14 06:18:28', '2026-04-14 06:18:28', 0),
+(40, 58, 37, 7, 'project', 7, 4, 'Great work Kasun', 'quality', '2026-04-15 04:33:22', '2026-04-15 04:33:22', 0),
+(41, 59, 37, 7, 'project', 7, 5, 'Great work Nethmi', 'ontime', '2026-04-15 04:33:22', '2026-04-15 04:33:22', 0);
 
 -- --------------------------------------------------------
 
@@ -661,6 +882,57 @@ CREATE TABLE `user_projects` (
   `status` enum('in_progress','completed') DEFAULT 'in_progress',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `user_projects`
+--
+
+INSERT INTO `user_projects` (`id`, `user_id`, `title`, `description`, `status`, `created_at`) VALUES
+(1, 37, 'Zcode', 'Completed as Project Owner in organization project Zcode.', 'completed', '2026-04-14 06:18:28'),
+(2, 41, 'Zcode', 'Completed as Member in organization project Zcode.', 'completed', '2026-04-14 06:18:28'),
+(3, 63, 'Zcode', 'Completed as Project Lead in organization project Zcode.', 'completed', '2026-04-14 06:18:28'),
+(4, 64, 'Zcode', 'Completed as Frontend Engineer in organization project Zcode.', 'completed', '2026-04-14 06:18:28'),
+(5, 65, 'Zcode', 'Completed as Backend Engineer in organization project Zcode.', 'completed', '2026-04-14 06:18:28'),
+(6, 66, 'Zcode', 'Completed as QA Tester in organization project Zcode.', 'completed', '2026-04-14 06:18:28'),
+(7, 37, 'CodeCollab Hub', 'Completed as Project Owner in organization project CodeCollab Hub.', 'completed', '2026-04-14 06:18:28'),
+(8, 41, 'CodeCollab Hub', 'Completed as Member in organization project CodeCollab Hub.', 'completed', '2026-04-14 06:18:28'),
+(9, 63, 'CodeCollab Hub', 'Completed as Project Lead in organization project CodeCollab Hub.', 'completed', '2026-04-14 06:18:28'),
+(10, 64, 'CodeCollab Hub', 'Completed as Frontend Engineer in organization project CodeCollab Hub.', 'completed', '2026-04-14 06:18:28'),
+(11, 65, 'CodeCollab Hub', 'Completed as Backend Engineer in organization project CodeCollab Hub.', 'completed', '2026-04-14 06:18:28'),
+(12, 66, 'CodeCollab Hub', 'Completed as QA Tester in organization project CodeCollab Hub.', 'completed', '2026-04-14 06:18:28'),
+(13, 37, 'SkillMentor', 'Completed as Project Owner in organization project SkillMentor.', 'completed', '2026-04-14 06:18:28'),
+(14, 63, 'SkillMentor', 'Completed as Project Lead in organization project SkillMentor.', 'completed', '2026-04-14 06:18:28'),
+(15, 64, 'SkillMentor', 'Completed as Frontend Engineer in organization project SkillMentor.', 'completed', '2026-04-14 06:18:28'),
+(16, 65, 'SkillMentor', 'Completed as Backend Engineer in organization project SkillMentor.', 'completed', '2026-04-14 06:18:28'),
+(17, 66, 'SkillMentor', 'Completed as QA Tester in organization project SkillMentor.', 'completed', '2026-04-14 06:18:28'),
+(18, 37, 'kithsara project', 'Completed as Project Owner in organization project kithsara project.', 'completed', '2026-04-14 06:18:28'),
+(19, 41, 'kithsara project', 'Completed as Developer in organization project kithsara project.', 'completed', '2026-04-14 06:18:28'),
+(20, 50, 'kithsara project', 'Completed as Frontend Engineer in organization project kithsara project.', 'completed', '2026-04-14 06:18:28'),
+(21, 51, 'kithsara project', 'Completed as Project Lead in organization project kithsara project.', 'completed', '2026-04-14 06:18:28'),
+(22, 63, 'kithsara project', 'Completed as Project Lead in organization project kithsara project.', 'completed', '2026-04-14 06:18:28'),
+(23, 64, 'kithsara project', 'Completed as Frontend Engineer in organization project kithsara project.', 'completed', '2026-04-14 06:18:28'),
+(24, 65, 'kithsara project', 'Completed as Backend Engineer in organization project kithsara project.', 'completed', '2026-04-14 06:18:28'),
+(25, 66, 'kithsara project', 'Completed as QA Tester in organization project kithsara project.', 'completed', '2026-04-14 06:18:28'),
+(26, 37, 'Devinda Web Project', 'Completed as Project Owner in organization project Devinda Web Project.', 'completed', '2026-04-14 06:18:28'),
+(27, 63, 'Devinda Web Project', 'Completed as Project Lead in organization project Devinda Web Project.', 'completed', '2026-04-14 06:18:28'),
+(28, 64, 'Devinda Web Project', 'Completed as Frontend Engineer in organization project Devinda Web Project.', 'completed', '2026-04-14 06:18:28'),
+(29, 65, 'Devinda Web Project', 'Completed as Backend Engineer in organization project Devinda Web Project.', 'completed', '2026-04-14 06:18:28'),
+(30, 66, 'Devinda Web Project', 'Completed as QA Tester in organization project Devinda Web Project.', 'completed', '2026-04-14 06:18:28'),
+(31, 37, 'SmartConnect Mobile App (PS software)', 'Completed as Project Owner in organization project SmartConnect Mobile App (PS software).', 'completed', '2026-04-14 06:18:28'),
+(32, 63, 'SmartConnect Mobile App (PS software)', 'Completed as Project Lead in organization project SmartConnect Mobile App (PS software).', 'completed', '2026-04-14 06:18:28'),
+(33, 64, 'SmartConnect Mobile App (PS software)', 'Completed as Frontend Engineer in organization project SmartConnect Mobile App (PS software).', 'completed', '2026-04-14 06:18:28'),
+(34, 65, 'SmartConnect Mobile App (PS software)', 'Completed as Backend Engineer in organization project SmartConnect Mobile App (PS software).', 'completed', '2026-04-14 06:18:28'),
+(35, 66, 'SmartConnect Mobile App (PS software)', 'Completed as QA Tester in organization project SmartConnect Mobile App (PS software).', 'completed', '2026-04-14 06:18:28'),
+(36, 37, 'Online Bookstore Management System', 'Completed as Project Owner in organization project Online Bookstore Management System.', 'completed', '2026-04-14 06:18:28'),
+(37, 63, 'Online Bookstore Management System', 'Completed as Project Lead in organization project Online Bookstore Management System.', 'completed', '2026-04-14 06:18:28'),
+(38, 64, 'Online Bookstore Management System', 'Completed as Frontend Engineer in organization project Online Bookstore Management System.', 'completed', '2026-04-14 06:18:28'),
+(39, 65, 'Online Bookstore Management System', 'Completed as Backend Engineer in organization project Online Bookstore Management System.', 'completed', '2026-04-14 06:18:28'),
+(40, 66, 'Online Bookstore Management System', 'Completed as QA Tester in organization project Online Bookstore Management System.', 'completed', '2026-04-14 06:18:28'),
+(41, 37, 'Kithsara Mobile App 2', 'Completed as Project Owner in organization project Kithsara Mobile App 2.', 'completed', '2026-04-14 06:18:28'),
+(42, 63, 'Kithsara Mobile App 2', 'Completed as Project Lead in organization project Kithsara Mobile App 2.', 'completed', '2026-04-14 06:18:28'),
+(43, 64, 'Kithsara Mobile App 2', 'Completed as Frontend Engineer in organization project Kithsara Mobile App 2.', 'completed', '2026-04-14 06:18:28'),
+(44, 65, 'Kithsara Mobile App 2', 'Completed as Backend Engineer in organization project Kithsara Mobile App 2.', 'completed', '2026-04-14 06:18:28'),
+(45, 66, 'Kithsara Mobile App 2', 'Completed as QA Tester in organization project Kithsara Mobile App 2.', 'completed', '2026-04-14 06:18:28');
 
 -- --------------------------------------------------------
 
@@ -721,7 +993,8 @@ CREATE TABLE `user_reports` (
 --
 
 INSERT INTO `user_reports` (`id`, `project_id`, `reported_user_id`, `reporter_org_id`, `reason`, `details`, `status`, `reported_at`) VALUES
-(1, 7, 41, 37, 'llll', '', 'pending', '2025-12-08 08:11:22');
+(1, 7, 41, 37, 'llll', '', 'pending', '2025-12-08 08:11:22'),
+(2, 7, 37, 37, 'I am reporting the project owner due to unfair and misleading behavior. The information and feedback provided do not accurately reflect the actual work and contributions. This may negatively impact team members and creates an unprofessional environment.', '', 'pending', '2026-04-16 00:26:14');
 
 -- --------------------------------------------------------
 
@@ -898,7 +1171,9 @@ INSERT INTO `wallets` (`id`, `user_id`, `balance`, `created_at`, `updated_at`) V
 (10, 50, 250.00, '2025-12-06 10:59:43', '2025-12-06 10:59:43'),
 (11, 51, 250.00, '2025-12-06 10:59:43', '2025-12-06 10:59:43'),
 (12, 52, 1000.00, '2026-04-10 10:41:59', '2026-04-10 10:41:59'),
-(13, 53, 250.00, '2026-04-10 16:34:29', '2026-04-10 16:34:29');
+(13, 53, 250.00, '2026-04-10 16:34:29', '2026-04-10 16:34:29'),
+(14, 57, 1000.00, '2026-04-12 15:02:48', '2026-04-12 15:02:48'),
+(15, 60, 250.00, '2026-04-12 16:29:09', '2026-04-12 16:29:09');
 
 -- --------------------------------------------------------
 
@@ -927,6 +1202,7 @@ CREATE TABLE `wallet_transactions` (
   `receiver_id` int(11) NOT NULL,
   `amount` decimal(10,2) NOT NULL,
   `note` varchar(255) DEFAULT NULL,
+  `transaction_type` varchar(50) DEFAULT 'transfer',
   `status` enum('pending','completed','failed','cancelled') DEFAULT 'completed',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -940,6 +1216,19 @@ CREATE TABLE `wallet_transactions` (
 --
 ALTER TABLE `badges`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `chats`
+--
+ALTER TABLE `chats`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `chat_messages`
+--
+ALTER TABLE `chat_messages`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `chat_id` (`chat_id`);
 
 --
 -- Indexes for table `communities`
@@ -1236,6 +1525,18 @@ ALTER TABLE `badges`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
+-- AUTO_INCREMENT for table `chats`
+--
+ALTER TABLE `chats`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `chat_messages`
+--
+ALTER TABLE `chat_messages`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `communities`
 --
 ALTER TABLE `communities`
@@ -1263,13 +1564,13 @@ ALTER TABLE `exchanges`
 -- AUTO_INCREMENT for table `feedback_reports`
 --
 ALTER TABLE `feedback_reports`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `posts`
@@ -1287,25 +1588,25 @@ ALTER TABLE `projects`
 -- AUTO_INCREMENT for table `project_applications`
 --
 ALTER TABLE `project_applications`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
 
 --
 -- AUTO_INCREMENT for table `project_chat_messages`
 --
 ALTER TABLE `project_chat_messages`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- AUTO_INCREMENT for table `project_members`
 --
 ALTER TABLE `project_members`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=71;
 
 --
 -- AUTO_INCREMENT for table `project_tasks`
 --
 ALTER TABLE `project_tasks`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=87;
 
 --
 -- AUTO_INCREMENT for table `quizzes`
@@ -1341,13 +1642,13 @@ ALTER TABLE `skills`
 -- AUTO_INCREMENT for table `task_history`
 --
 ALTER TABLE `task_history`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=83;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=63;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=67;
 
 --
 -- AUTO_INCREMENT for table `user_activity`
@@ -1365,13 +1666,13 @@ ALTER TABLE `user_badges`
 -- AUTO_INCREMENT for table `user_feedback`
 --
 ALTER TABLE `user_feedback`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=42;
 
 --
 -- AUTO_INCREMENT for table `user_projects`
 --
 ALTER TABLE `user_projects`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
 
 --
 -- AUTO_INCREMENT for table `user_quiz_answers`
@@ -1389,7 +1690,7 @@ ALTER TABLE `user_quiz_attempts`
 -- AUTO_INCREMENT for table `user_reports`
 --
 ALTER TABLE `user_reports`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `user_saved_quizzes`
@@ -1413,7 +1714,7 @@ ALTER TABLE `user_stats`
 -- AUTO_INCREMENT for table `wallets`
 --
 ALTER TABLE `wallets`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `wallet_notifications`
@@ -1430,6 +1731,12 @@ ALTER TABLE `wallet_transactions`
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `chat_messages`
+--
+ALTER TABLE `chat_messages`
+  ADD CONSTRAINT `chat_messages_ibfk_1` FOREIGN KEY (`chat_id`) REFERENCES `chats` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `community_members`

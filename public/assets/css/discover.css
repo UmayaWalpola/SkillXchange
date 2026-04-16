@@ -444,6 +444,22 @@
     text-overflow: ellipsis;
 }
 
+.disc-mini-card__org {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.45rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--primary-blue);
+}
+
+.disc-mini-card__org i {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
 .disc-mini-card__desc {
     font-size: 0.9rem;
     color: var(--dark-bg);

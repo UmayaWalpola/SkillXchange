@@ -64,7 +64,7 @@
                     <label for="feedbackComment">Comments (Optional)</label>
                     <textarea id="feedbackComment" name="comment" rows="4" maxlength="500" 
                               placeholder="Share your experience working with this person..."></textarea>
-                    <small class="char-counter">0 / 500 characters</small>
+                    <small class="char-counter">0 / 1000 characters</small>
                 </div>
                 
                 <!-- Footer Buttons -->

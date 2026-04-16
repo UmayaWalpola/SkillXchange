@@ -14,8 +14,8 @@ if (isset($_SESSION['role'])) {
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/feedback.css">
 
-<main class="site-main">
-    <div class="container" style="max-width:1200px;margin:0 auto;padding:20px;">
+<main class="site-main feedback-page-main">
+    <div class="container feedback-page-container" style="max-width:1200px;margin:0 auto;padding:20px;">
         <!-- Page Header -->
         <div class="page-header" style="margin-bottom:30px;">
             <h1 style="font-size:28px;font-weight:700;color:#1a1a1a;margin-bottom:10px;">My Feedback</h1>

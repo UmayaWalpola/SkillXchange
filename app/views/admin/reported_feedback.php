@@ -151,7 +151,7 @@ $reasonLabels = [
                 <i class="ph ph-flag" style="color:#e74c3c;"></i>
                 Reported Feedback
             </h1>
-            <p style="color:#666;font-size:16px;">Review and manage reported feedback, user reports, project member reports, and content reports.</p>
+            <p style="color:#666;font-size:16px;">Review and manage only user-submitted feedback reports (abusive, fake, spam, inappropriate, or other).</p>
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-bottom:30px;">
@@ -196,6 +196,9 @@ $reasonLabels = [
                     $reportKind = $report['report_kind'] ?? 'feedback';
                     $uiStatus = $report['ui_status'] ?? ($report['status'] ?? 'pending');
                     $isFeedbackReport = $reportKind === 'feedback';
+                    if (!$isFeedbackReport) {
+                        continue;
+                    }
                     $reportTitle = $report['display_title'] ?? ($isFeedbackReport ? 'Feedback Report' : 'Report');
                     $reporterName = htmlspecialchars($report['reporter_name'] ?? 'Unknown');
                     $reportedUserName = htmlspecialchars($report['reported_user_name'] ?? '');

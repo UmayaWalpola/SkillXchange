@@ -7,6 +7,7 @@ class FeedbackController extends Controller {
     
     private $feedbackModel;
     private $notificationModel;
+    private $managerModel;
 
     public function __construct() {
         // Ensure user is logged in
@@ -17,6 +18,68 @@ class FeedbackController extends Controller {
 
         $this->feedbackModel = $this->model('Feedback');
         $this->notificationModel = $this->model('Notification');
+        $this->managerModel = null;
+    }
+
+    /**
+     * Submit platform feedback to management
+     * POST /feedback/submit
+     * Expected: feedback_message, feedback_type
+     */
+    public function submit() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ' . URLROOT . '/users/userprofile');
+            exit;
+        }
+
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: ' . URLROOT . '/auth/signin');
+            exit;
+        }
+
+        $userId = (int)($_SESSION['user_id'] ?? 0);
+        $message = trim($_POST['feedback_message'] ?? '');
+        $type = trim($_POST['feedback_type'] ?? 'other');
+
+        if ($userId <= 0 || $message === '') {
+            $_SESSION['error'] = 'Please provide your feedback message.';
+            header('Location: ' . URLROOT . '/users/userprofile');
+            exit;
+        }
+
+        $allowedTypes = ['suggestion', 'bug', 'feature', 'other'];
+        if (!in_array($type, $allowedTypes, true)) {
+            $type = 'other';
+        }
+
+        $subjectMap = [
+            'suggestion' => 'Suggestion',
+            'bug' => 'Bug Report',
+            'feature' => 'Feature Request',
+            'other' => 'Other'
+        ];
+        $subject = $subjectMap[$type] ?? 'Other';
+
+        if ($this->managerModel === null) {
+            $managerModelPath = dirname(__DIR__) . '/models/Manager.php';
+            if (!file_exists($managerModelPath)) {
+                $_SESSION['error'] = 'Platform feedback is currently unavailable.';
+                header('Location: ' . URLROOT . '/users/userprofile');
+                exit;
+            }
+
+            $this->managerModel = $this->model('Manager');
+        }
+
+        $ok = $this->managerModel->submitPlatformFeedback($userId, $subject, $message);
+        if ($ok) {
+            $_SESSION['success'] = 'Feedback sent to management.';
+        } else {
+            $_SESSION['error'] = 'Failed to send feedback. Please try again.';
+        }
+
+        header('Location: ' . URLROOT . '/users/userprofile');
+        exit;
     }
 
     /**
@@ -42,7 +105,7 @@ class FeedbackController extends Controller {
 
         // Get and validate inputs
         $userId = filter_var($_POST['user_id'] ?? 0, FILTER_VALIDATE_INT);
-        $contextType = trim((string)($_POST['context_type'] ?? 'project'));
+        $contextType = trim(strip_tags((string)($_POST['context_type'] ?? 'project')));
         $contextId = filter_var($_POST['context_id'] ?? 0, FILTER_VALIDATE_INT);
         $rating = filter_var($_POST['rating'] ?? 0, FILTER_VALIDATE_INT);
         $comment = trim($_POST['comment'] ?? '');
@@ -141,7 +204,7 @@ class FeedbackController extends Controller {
 
         // Get query parameters
         $userId = filter_var($_GET['user_id'] ?? 0, FILTER_VALIDATE_INT);
-        $contextType = trim((string)($_GET['context_type'] ?? 'project'));
+        $contextType = trim(strip_tags((string)($_GET['context_type'] ?? 'project')));
         $contextId = filter_var($_GET['context_id'] ?? null, FILTER_VALIDATE_INT);
 
         if (!$userId) {
@@ -217,14 +280,15 @@ class FeedbackController extends Controller {
             }
 
             // Create notification
-            $this->notificationModel->create(
-                $userId,
-                'feedback_received',
-                $message,
-                null,
-                $reviewerId
-            );
-        } catch (Exception $e) {
+            $this->notificationModel->createNotification([
+                'user_id' => $userId,
+                'type' => 'feedback_received',
+                'message' => $message,
+                'project_id' => null,
+                'task_id' => $reviewerId,
+                'is_read' => 0
+            ]);
+        } catch (Throwable $e) {
             // Log error but don't fail feedback submission
             error_log("Failed to create feedback notification: " . $e->getMessage());
         }
@@ -254,13 +318,13 @@ class FeedbackController extends Controller {
 
         // Build filters array from query parameters
         $filters = [
-            'context_type' => isset($_GET['context_type']) ? trim((string)$_GET['context_type']) : null,
+            'context_type' => isset($_GET['context_type']) ? htmlspecialchars(strip_tags($_GET['context_type'])) : null,
             'context_id' => filter_var($_GET['context_id'] ?? null, FILTER_VALIDATE_INT),
             'rating' => filter_var($_GET['rating'] ?? null, FILTER_VALIDATE_INT),
-            'tag' => isset($_GET['tag']) ? trim((string)$_GET['tag']) : null,
+            'tag' => isset($_GET['tag']) ? htmlspecialchars(strip_tags($_GET['tag'])) : null,
             'reviewer_id' => filter_var($_GET['reviewer_id'] ?? null, FILTER_VALIDATE_INT),
-            'search' => isset($_GET['search']) ? trim((string)$_GET['search']) : null,
-            'sort' => trim((string)($_GET['sort'] ?? 'newest')),
+            'search' => isset($_GET['search']) ? htmlspecialchars(strip_tags($_GET['search'])) : null,
+            'sort' => isset($_GET['sort']) ? htmlspecialchars(strip_tags($_GET['sort'])) : 'newest',
             'page' => filter_var($_GET['page'] ?? 1, FILTER_VALIDATE_INT),
             'limit' => filter_var($_GET['limit'] ?? 10, FILTER_VALIDATE_INT)
         ];
@@ -296,9 +360,6 @@ class FeedbackController extends Controller {
      * Route: /Feedback/index or /Feedback
      */
     public function index($userId = null) {
-        if (!$userId && isset($_GET['user_id'])) {
-            $userId = filter_var($_GET['user_id'], FILTER_VALIDATE_INT);
-        }
         if (!$userId) {
             $userId = $_SESSION['user_id'];
         }

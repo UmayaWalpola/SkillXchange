@@ -516,9 +516,11 @@ class Project {
     // Get every project from DB (all statuses) for discover page
     public function getAllProjects() {
         $this->db->query(
-            "SELECT p.*, 
-            (SELECT COUNT(*) FROM project_members WHERE project_id = p.id AND status='active') AS current_members 
-            FROM projects p 
+            "SELECT p.*,
+            COALESCE(NULLIF(TRIM(org.username), ''), 'Organization') AS organization_name,
+            (SELECT COUNT(*) FROM project_members WHERE project_id = p.id AND status='active') AS current_members
+            FROM projects p
+            LEFT JOIN users org ON org.id = p.organization_id
             ORDER BY p.created_at DESC"
         );
         return $this->db->resultSet();

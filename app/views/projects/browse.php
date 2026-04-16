@@ -153,6 +153,7 @@
                     $stClass     = strtolower(str_replace('_','-',$project->status ?? 'active'));
                     $skills      = array_filter(array_map('trim', explode(',', (string)($project->required_skills ?? ''))));
                     $matchedSkills = isset($project->matched_skills) && is_array($project->matched_skills) ? $project->matched_skills : [];
+                    $organizationName = trim((string)($project->organization_name ?? ''));
                     $isMember    = !empty($memberProjectIds[$pid]);
                     $appStat     = $appStatus[$pid] ?? null;
                     $g           = getGradient($pid, $gradients);
@@ -161,7 +162,8 @@
                 ?>
                 <div class="disc-mini-card" data-status="<?= $stClass ?>"
                      data-name="<?= htmlspecialchars(strtolower($project->name ?? '')) ?>"
-                     data-desc="<?= htmlspecialchars(strtolower(substr((string)($project->description ?? ''),0,200))) ?>">
+                     data-desc="<?= htmlspecialchars(strtolower(substr((string)($project->description ?? ''),0,200))) ?>"
+                     data-org="<?= htmlspecialchars(strtolower($organizationName)) ?>">
 
                     <!-- Colour strip top -->
                     <div class="disc-mini-card__strip" style="background: <?= $g ?>;"></div>
@@ -175,6 +177,12 @@
                         </div>
 
                         <h4 class="disc-mini-card__title"><?= htmlspecialchars($project->name ?? 'Project') ?></h4>
+                        <?php if ($organizationName !== ''): ?>
+                        <div class="disc-mini-card__org">
+                            <i class="ph ph-buildings"></i>
+                            <span><?= htmlspecialchars($organizationName) ?></span>
+                        </div>
+                        <?php endif; ?>
                         <p class="disc-mini-card__desc">
                             <?= htmlspecialchars(substr((string)($project->description ?? ''), 0, 80)) ?><?= strlen((string)($project->description ?? '')) > 80 ? '…' : '' ?>
                         </p>
@@ -273,7 +281,8 @@
             const statusMatch = activeFilter === 'all' || card.dataset.status === activeFilter;
             const textMatch   = !searchTerm ||
                 card.dataset.name.includes(searchTerm) ||
-                card.dataset.desc.includes(searchTerm);
+                card.dataset.desc.includes(searchTerm) ||
+                (card.dataset.org || '').includes(searchTerm);
             const show = statusMatch && textMatch;
             card.style.display = show ? '' : 'none';
             if (show) visible++;

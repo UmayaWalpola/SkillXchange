@@ -1,8 +1,14 @@
 <?php require_once "../app/views/layouts/header_user.php"; ?>
 <?php require_once "../app/views/layouts/organization_sidebar.php"; ?>
 
+<?php
+// MEMBERS PAGE - asset versioning so updated typography CSS is loaded immediately.
+$orgCssPath = dirname(__DIR__, 3) . '/public/assets/css/organizations.css';
+$orgCssVersion = file_exists($orgCssPath) ? (string)filemtime($orgCssPath) : '1';
+?>
+
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
-<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/organizations.css">
+<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/organizations.css?v=<?= htmlspecialchars($orgCssVersion) ?>">
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/feedback.css">
 
 <!-- Include Feedback Modal early so elements exist -->
@@ -275,11 +281,11 @@
 
                             <!-- Role Assignment (form POST to updateMemberRole) -->
                             <div class="role-assignment">
-                                <form method="POST" action="<?= URLROOT ?>/organization/updateMemberRole" class="role-form" style="display:flex;align-items:center;gap:10px;">
+                                <form method="POST" action="<?= URLROOT ?>/organization/updateMemberRole" class="role-form">
                                     <input type="hidden" name="member_id" value="<?= $member->id ?>" />
                                     <input type="hidden" name="project_id" value="<?= $data['projectId'] ?>" />
 
-                                    <label for="role_<?= $member->id ?>" style="margin:0 6px 0 0;"><strong>Assign Role:</strong></label>
+                                    <label for="role_<?= $member->id ?>" class="role-assignment-label"><strong>Assign Role:</strong></label>
 
                                     <?php
                                         $presetRoles = ['Member','Designer','Developer','UI/UX','Backend Engineer','Frontend Engineer','Data Analyst','QA Tester','Project Lead'];
@@ -303,7 +309,7 @@
                             <!-- Tasks Section for this Member -->
                             <div class="member-tasks-section" style="margin-top:20px;padding-top:20px;border-top:2px solid #f0f0f0;">
                                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:10px;">
-                                    <h4 style="margin:0;color:#1a1a1a;font-size:16px;">Tasks for this Member</h4>
+                                    <h4 class="member-tasks-title" style="margin:0;color:#1a1a1a;">Tasks for this Member</h4>
                                     <button class="btn btn-primary assign-task-btn" data-member-id="<?= $member->user_id ?>" data-member-name="<?= htmlspecialchars($member->username) ?>">
                                         Assign Task
                                     </button>
@@ -329,18 +335,18 @@
                                 ?>
 
                                 <?php if ($totalTasks === 0): ?>
-                                    <p style="color:#6b7280;font-size:14px;padding:14px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;">
+                                    <p class="member-tasks-empty" style="color:#6b7280;padding:14px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;">
                                         No tasks assigned yet.
                                     </p>
                                 <?php else: ?>
                                     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-                                        <span style="background:#eef4f8;color:#355a72;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:600;">To-Do: <?= $todoCount ?></span>
-                                        <span style="background:#eef4f8;color:#355a72;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:600;">In Progress: <?= $inProgressCount ?></span>
-                                        <span style="background:#eef4f8;color:#355a72;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:600;">Completed: <?= $doneCount ?></span>
+                                        <span class="member-task-pill" style="background:#eef4f8;color:#355a72;padding:5px 10px;border-radius:999px;font-weight:600;">To-Do: <?= $todoCount ?></span>
+                                        <span class="member-task-pill" style="background:#eef4f8;color:#355a72;padding:5px 10px;border-radius:999px;font-weight:600;">In Progress: <?= $inProgressCount ?></span>
+                                        <span class="member-task-pill" style="background:#eef4f8;color:#355a72;padding:5px 10px;border-radius:999px;font-weight:600;">Completed: <?= $doneCount ?></span>
                                     </div>
 
                                     <div style="overflow-x:auto;border:1px solid #e1eefb;border-radius:8px;">
-                                        <table style="width:100%;border-collapse:collapse;font-size:13px;background:#fff;min-width:620px;">
+                                        <table class="member-task-table" style="width:100%;border-collapse:collapse;background:#fff;min-width:620px;">
                                             <thead>
                                                 <tr style="background:#f7fbff;border-bottom:1px solid #e1eefb;">
                                                     <th style="text-align:left;padding:10px;color:#355a72;font-weight:700;">Task</th>
@@ -377,14 +383,14 @@
                                                             <?= !empty($task->deadline) ? date('M d, Y', strtotime($task->deadline)) : '-' ?>
                                                         </td>
                                                         <td style="padding:10px;">
-                                                            <select class="task-status-select" data-task-id="<?= $task->id ?>" style="width:130px;padding:5px 8px;border-radius:6px;border:1px solid #d1d5db;font-size:12px;background:#fff;">
+                                                            <select class="task-status-select" data-task-id="<?= $task->id ?>" style="width:130px;padding:5px 8px;border-radius:6px;border:1px solid #d1d5db;background:#fff;">
                                                                 <option value="todo" <?= (($task->status ?? '') === 'todo' || ($task->status ?? '') === 'pending') ? 'selected' : '' ?>>To-Do</option>
                                                                 <option value="in-progress" <?= (($task->status ?? '') === 'in-progress' || ($task->status ?? '') === 'in_progress' || ($task->status ?? '') === 'on_hold') ? 'selected' : '' ?>>In Progress</option>
                                                                 <option value="done" <?= (($task->status ?? '') === 'done' || ($task->status ?? '') === 'completed') ? 'selected' : '' ?>>Completed</option>
                                                             </select>
                                                         </td>
                                                         <td style="padding:10px;">
-                                                            <button onclick="removeOrgTask(<?= $task->id ?>, this.closest('tr'))" title="Remove task" style="padding:5px 8px;background:#fff;border:1px solid #fca5a5;border-radius:6px;color:#dc2626;font-size:12px;cursor:pointer;">
+                                                            <button class="task-delete-btn" onclick="removeOrgTask(<?= $task->id ?>, this.closest('tr'))" title="Remove task" style="padding:5px 8px;background:#fff;border:1px solid #fca5a5;border-radius:6px;color:#dc2626;cursor:pointer;">
                                                                 <i class="ph ph-trash"></i>
                                                             </button>
                                                         </td>

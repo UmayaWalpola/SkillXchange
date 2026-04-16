@@ -1,5 +1,15 @@
 /* Feedback Modal Styles - Matching existing dashboard design */
 
+.feedback-page-main {
+    margin-left: 250px;
+    min-height: calc(100vh - 100px);
+    background: #f8f9fa;
+}
+
+.feedback-page-container {
+    width: 100%;
+}
+
 .feedback-modal {
     display: none;
     position: fixed;
@@ -599,6 +609,10 @@
 
 /* Responsive Design for Report Modal */
 @media (max-width: 768px) {
+    .feedback-page-main {
+        margin-left: 0;
+    }
+
     #reportModal .modal-content {
         width: 95%;
         max-height: 95vh;

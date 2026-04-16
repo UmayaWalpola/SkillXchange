@@ -174,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (commentField) {
         commentField.addEventListener('input', function() {
             const length = this.value.length;
-            document.querySelector('.char-counter').textContent = `${length} / 500 characters`;
+            document.querySelector('.char-counter').textContent = `${length} / 1000 characters`;
         });
     }
     

@@ -9,7 +9,7 @@
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
-    <!-- Local Phosphor Icons එකතු කිරීම -->
+    <!-- Add Local Phosphor Icons  -->
 <link rel="stylesheet" type="text/css" href="<?= URLROOT ?>/assets/phosphor/src/regular/style.css" />
 
     <style>
@@ -69,8 +69,18 @@
             justify-content: center;
             cursor: pointer;
             font-size: 18px;
+            line-height: 0;
             box-shadow: 0 4px 12px rgba(15,23,42,0.7);
             transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+        }
+
+        .notif-bell-icon {
+            width: 19px;
+            height: 19px;
+            display: block;
+            color: #f8fafc;
+            fill: currentColor;
+            flex-shrink: 0;
         }
 
         .notif-bell-button:hover {
@@ -261,6 +271,11 @@
 
         .user-caret {
             color: #9ca3af;
+            font-size: 0;
+        }
+
+        .user-caret::before {
+            content: "\25BE";
             font-size: 0.8rem;
         }
 
@@ -415,7 +430,11 @@ function sx_get_role_label($user) {
         <div class="auth-section">
             <?php if ($user): ?>
                 <div class="notif-bell" id="sxNotifBell">
-                    <button type="button" class="notif-bell-button" id="sxNotifTrigger"><i class="ph ph-bell"></i></button>
+                    <button type="button" class="notif-bell-button" id="sxNotifTrigger" aria-label="Notifications" title="Notifications">
+                        <svg class="notif-bell-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M12 2a6 6 0 0 0-6 6v3.586l-1.707 1.707A1 1 0 0 0 5 15h14a1 1 0 0 0 .707-1.707L18 11.586V8a6 6 0 0 0-6-6Zm0 20a3 3 0 0 1-2.995-2.824L9 19h6a3 3 0 0 1-3 3Z"></path>
+                        </svg>
+                    </button>
                     <?php if ($notifUnreadCount > 0): ?>
                         <div class="notif-badge"><?= $notifUnreadCount > 9 ? '9+' : $notifUnreadCount; ?></div>
                     <?php endif; ?>
