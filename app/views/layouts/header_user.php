@@ -5,359 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SkillXchange - Dashboard</title>
     <link rel="stylesheet" href="<?= URLROOT; ?>/assets/css/global.css">
-    <link rel="stylesheet" href="<?= URLROOT; ?>/assets/css/profile.css">
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-
-    <style>
-
-        header, .site-header, nav {
-    width: 100%;
-    margin: 0;
-    box-sizing: border-box;
-}
-        .header {
-            position: fixed;
-            top: 0;
-            left: 250px !important;
-            width: calc(100% - 250px) !important;
-            height: 64px;
-            background: #111827;
-            display: flex;
-            align-items: center;
-            z-index: 1000;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-        }
-
-        .nav-container {
-            width: 100%;
-            max-width: 1440px;
-            margin: 0 auto;
-            padding: 0 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .logo-section {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .logo-image {
-            height: 32px;
-        }
-
-        .auth-section {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .notif-bell {
-            position: relative;
-            margin-right: 8px;
-        }
-
-        .notif-bell-button {
-            width: 36px;
-            height: 36px;
-            border-radius: 999px;
-            border: 1px solid rgba(156,163,175,0.7);
-            background: #020617;
-            color: #e5e7eb;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 18px;
-            box-shadow: 0 4px 12px rgba(15,23,42,0.7);
-            transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
-        }
-
-        .notif-bell-button:hover {
-            background: #111827;
-            transform: translateY(-1px);
-            box-shadow: 0 6px 18px rgba(15,23,42,0.9);
-        }
-
-        .notif-badge {
-            position: absolute;
-            top: -4px;
-            right: -2px;
-            min-width: 16px;
-            height: 16px;
-            padding: 0 4px;
-            border-radius: 999px;
-            background: #2563eb;
-            color: #e5e7eb;
-            font-size: 10px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 0 2px #020617;
-        }
-
-        .notif-dropdown {
-            position: absolute;
-            top: 115%;
-            right: 0;
-            width: 320px;
-            max-height: 420px;
-            overflow: hidden;
-            background: #020617;
-            border-radius: 14px;
-            border: 1px solid rgba(31,41,55,0.95);
-            box-shadow: 0 16px 40px rgba(0,0,0,0.85);
-            display: none;
-            z-index: 1500;
-        }
-
-        .notif-dropdown.show {
-            display: block;
-        }
-
-        .notif-header {
-            padding: 10px 14px;
-            border-bottom: 1px solid rgba(31,41,55,0.9);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .notif-header-title {
-            color: #e5e7eb;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
-        .notif-header-link {
-            color: #60a5fa;
-            font-size: 0.8rem;
-            text-decoration: none;
-        }
-
-        .notif-list {
-            max-height: 340px;
-            overflow-y: auto;
-        }
-
-        .notif-item {
-            padding: 10px 14px;
-            display: flex;
-            gap: 10px;
-            border-bottom: 1px solid rgba(31,41,55,0.7);
-            background: #020617;
-        }
-
-        .notif-item.unread {
-            background: #0b1120;
-        }
-
-        .notif-icon {
-            width: 28px;
-            height: 28px;
-            border-radius: 999px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-        }
-
-        .notif-icon.info { background: rgba(37,99,235,0.18); color: #60a5fa; }
-        .notif-icon.success { background: rgba(22,163,74,0.2); color: #4ade80; }
-        .notif-icon.danger { background: rgba(220,38,38,0.25); color: #fecaca; }
-        .notif-icon.warning { background: rgba(234,179,8,0.25); color: #facc15; }
-
-        .notif-body {
-            flex: 1;
-        }
-
-        .notif-text {
-            color: #e5e7eb;
-            font-size: 0.83rem;
-            margin-bottom: 4px;
-        }
-
-        .notif-meta {
-            color: #6b7280;
-            font-size: 0.75rem;
-        }
-
-        .notif-empty {
-            padding: 16px;
-            text-align: center;
-            color: #6b7280;
-            font-size: 0.85rem;
-        }
-
-        .user-dropdown {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .user-trigger {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 6px 10px;
-            background: #111827;
-            border-radius: 999px;
-            cursor: pointer;
-            border: 1px solid rgba(255,255,255,0.08);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.35);
-            transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
-        }
-
-        .user-trigger:hover {
-            background: #1f2937;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.45);
-            transform: translateY(-1px);
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 999px;
-            overflow: hidden;
-            background: linear-gradient(135deg, #34d399, #10b981);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #ffffff;
-            font-weight: 700;
-            font-size: 16px;
-            flex-shrink: 0;
-        }
-
-        .user-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-
-        .user-info {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .user-name {
-            color: #f9fafb;
-            font-weight: 600;
-            font-size: 0.95rem;
-            max-width: 160px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .user-role {
-            color: #9ca3af;
-            font-size: 0.75rem;
-            text-transform: capitalize;
-        }
-
-        .user-caret {
-            color: #9ca3af;
-            font-size: 0.8rem;
-        }
-
-        .user-menu {
-            position: absolute;
-            top: 110%;
-            right: 0;
-            min-width: 190px;
-            background: #111827;
-            border-radius: 10px;
-            padding: 8px 0;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.55);
-            border: 1px solid rgba(55,65,81,0.9);
-            display: none;
-        }
-
-        .user-menu.show {
-            display: block;
-        }
-
-        .user-menu a {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 14px;
-            text-decoration: none;
-            color: #e5e7eb;
-            font-size: 0.9rem;
-            transition: background 0.15s ease, color 0.15s ease;
-        }
-
-        .user-menu a:hover {
-            background: #1f2937;
-            color: #ffffff;
-        }
-
-        .user-menu a.logout {
-            color: #fca5a5;
-        }
-
-        .user-menu a.logout:hover {
-            background: #7f1d1d;
-            color: #ffffff;
-        }
-
-        .guest-actions {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-auth {
-            padding: 6px 14px;
-            border-radius: 999px;
-            border: 1px solid #4b5563;
-            background: transparent;
-            color: #e5e7eb;
-            font-size: 0.9rem;
-            text-decoration: none;
-            transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-        }
-
-        .btn-auth:hover {
-            background: #e5e7eb;
-            color: #111827;
-            border-color: #e5e7eb;
-        }
-
-        .btn-auth-primary {
-            background: #3b82f6;
-            border-color: #3b82f6;
-            color: #ffffff;
-            box-shadow: 0 4px 10px rgba(59,130,246,0.45);
-        }
-
-        .btn-auth-primary:hover {
-            background: #2563eb;
-            border-color: #2563eb;
-            color: #ffffff;
-        }
-
-        @media (max-width: 768px) {
-            .header {
-                left: 0 !important;
-                width: 100% !important;
-            }
-            .nav-container {
-                padding: 0 12px;
-            }
-            .user-name {
-                max-width: 110px;
-            }
-        }
-    </style>
 </head>
 <body>
 <script>
@@ -406,6 +55,45 @@ function sx_get_display_name($user) {
 function sx_get_role_label($user) {
     if (!$user || empty($user->role)) return '';
     return str_replace('_', ' ', strtolower($user->role));
+}
+?>
+
+<?php
+$profileUrl = URLROOT . '/users/userprofile';
+$settingsUrl = $profileUrl;
+
+if (isset($_SESSION['role'])) {
+    switch ($_SESSION['role']) {
+        case 'organization':
+            $profileUrl = URLROOT . '/organization/profile';
+            $settingsUrl = URLROOT . '/organization/profile';
+            break;
+
+        case 'manager':
+            $profileUrl = URLROOT . '/manager/dashboard';
+            $settingsUrl = URLROOT . '/manager/dashboard';
+            break;
+
+        case 'quizmanager':
+            $profileUrl = URLROOT . '/quizmanager/dashboard';
+            $settingsUrl = URLROOT . '/quizmanager/dashboard';
+            break;
+
+        case 'communitymanager':
+            $profileUrl = URLROOT . '/communitymanager/dashboard';
+            $settingsUrl = URLROOT . '/communitymanager/dashboard';
+            break;
+
+        case 'admin':
+            $profileUrl = URLROOT . '/admin/dashboard';
+            $settingsUrl = URLROOT . '/admin/dashboard';
+            break;
+
+        default:
+            $profileUrl = URLROOT . '/users/userprofile';
+            $settingsUrl = URLROOT . '/users/userprofile';
+            break;
+    }
 }
 ?>
 
@@ -476,15 +164,9 @@ function sx_get_role_label($user) {
                         <span class="user-caret">▾</span>
                     </button>
                     <div class="user-menu" id="sxUserMenu">
-                        <a href="<?= URLROOT ?>/users/userprofile">
-                            Profile
-                        </a>
-                        <a href="<?= URLROOT ?>/users/userprofile">
-                            Settings
-                        </a>
-                        <a href="<?= URLROOT ?>/auth/logout" class="logout">
-                            Logout
-                        </a>
+                       <a href="<?= $profileUrl ?>">Profile</a>
+                       <a href="<?= $settingsUrl ?>">Settings</a>
+                       <a href="<?= URLROOT ?>/auth/logout" class="logout">Logout</a>
                     </div>
                 </div>
             <?php else: ?>
