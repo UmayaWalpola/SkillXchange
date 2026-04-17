@@ -250,8 +250,7 @@
            $matchDir   = $data['matchDir']   ?? 'teacher'; // 'teacher'|'learner' for single/multi
                                                            // or learn-skill name for mutual
            $isMutual   = ($matchType === 'mutual');
-           $availableSkills = $data['availableSkills'] ?? [];
-           $isSingleFixedSkill = ($matchType === 'single' && !empty($matchSkill));
+           $hasMatchedSkillContext = !empty($matchSkill) || ($isMutual && !empty($matchDir));
            ?>
 
            <!-- Role selector: only shown for mutual matches -->
@@ -310,19 +309,25 @@
            </div>
 
            <div class="form-group" id="skillxGroup" style="display: none;">
-               <label<?= $isSingleFixedSkill ? '' : ' for="skillName"' ?>>Skill Name</label>
-               <?php if ($isSingleFixedSkill): ?>
+               <label>Skill Name</label>
+               <?php if ($hasMatchedSkillContext): ?>
                    <input type="hidden" name="skill_name" id="skillNameHidden" value="<?= htmlspecialchars($matchSkill) ?>">
                    <div class="role-fixed-display">
-                       <span class="role-badge role-learner">
-                           <?= htmlspecialchars(ucwords(str_replace(['-', '_'], ' ', $matchSkill))) ?>
+                       <span class="role-badge role-learner" id="selectedSkillBadge">
+                           <?= htmlspecialchars(ucwords(str_replace(['-', '_'], ' ', $matchSkill ?: 'matched skill'))) ?>
                        </span>
-                       <small>This matched skill will be used automatically for SkillX debt.</small>
+                       <small id="selectedSkillHelp">
+                           <?php if ($isMutual): ?>
+                               Select your role and the matching chat skill will be used automatically.
+                           <?php else: ?>
+                               This chat's matched skill will be used automatically for SkillX debt.
+                           <?php endif; ?>
+                       </small>
                    </div>
                <?php else: ?>
                    <select name="skill_name" id="skillName">
                        <option value="">Select a skill</option>
-                       <?php foreach ($availableSkills as $skill): ?>
+                       <?php foreach (($data['availableSkills'] ?? []) as $skill): ?>
                            <?php $skillNameValue = $skill['skill_name'] ?? ''; ?>
                            <option value="<?= htmlspecialchars($skillNameValue) ?>"
                                <?= ($matchSkill === $skillNameValue) ? 'selected' : '' ?>>
@@ -387,6 +392,7 @@
     // Match context — used by chats.js to auto-set role for single/multi
     const MATCH_TYPE      = '<?= htmlspecialchars($data['matchType'] ?? 'single') ?>';
     const MATCH_DIR       = '<?= htmlspecialchars($data['matchDir']  ?? 'teacher') ?>';
+    const MATCH_SKILL     = '<?= htmlspecialchars($data['matchSkill'] ?? '') ?>';
 </script>
 <script src="<?= URLROOT ?>/assets/js/chats.js"></script>
 

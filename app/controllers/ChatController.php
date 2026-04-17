@@ -231,13 +231,16 @@ class ChatController extends Controller
             return;
         }
 
-        $messages = $chatModel->getChatMessages($chatId);
+        $messages = $chatModel->getChatTimeline($chatId);
         $chatModel->markAsRead($chatId, $userId);
 
         echo json_encode([
             'success'         => true,
             'messages'        => $messages,
-            'current_user_id' => $userId
+            'current_user_id' => $userId,
+            'last_item_token' => !empty($messages)
+                ? (($messages[count($messages) - 1]->timeline_key ?? '') . '|' . ($messages[count($messages) - 1]->created_at ?? ''))
+                : ''
         ]);
     }
 

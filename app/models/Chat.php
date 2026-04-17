@@ -160,6 +160,62 @@ class Chat extends Database {
        $this->db->bind(':chat_id', $chatId);
        return $this->db->resultSet();
    }
+
+   /**
+    * Get a combined timeline of messages and session milestones for a chat.
+    */
+   public function getChatTimeline($chatId) {
+       $messages = $this->getChatMessages($chatId);
+
+       $this->db->query("
+           SELECT
+               id,
+               teacher_id,
+               learner_id,
+               payment_type,
+               amount,
+               skill_debt_hours,
+               skill_name,
+               status,
+               offer_created_at,
+               both_agreed_at,
+               teacher_completed_at,
+               learner_verified_at,
+               terminated_at,
+               dispute_created_at,
+               created_at
+           FROM chat_transaction_events
+           WHERE chat_id = :chat_id
+           ORDER BY created_at ASC, id ASC
+       ");
+       $this->db->bind(':chat_id', $chatId);
+       $events = $this->db->resultSet();
+
+       $timeline = [];
+
+       foreach ($messages as $message) {
+           $message->item_type = 'message';
+           $message->timeline_key = 'message-' . $message->id;
+           $timeline[] = $message;
+       }
+
+       foreach ($events as $event) {
+           foreach ($this->buildTimelineMilestones($event) as $milestone) {
+               $timeline[] = (object) $milestone;
+           }
+       }
+
+       usort($timeline, function ($left, $right) {
+           $timeCompare = strcmp((string) $left->created_at, (string) $right->created_at);
+           if ($timeCompare !== 0) {
+               return $timeCompare;
+           }
+
+           return strcmp((string) $left->timeline_key, (string) $right->timeline_key);
+       });
+
+       return $timeline;
+   }
   
    /**
     * Send a message
@@ -252,5 +308,104 @@ class Chat extends Database {
        if ($diff < 86400) return floor($diff / 3600) . 'h ago';
        if ($diff < 604800) return floor($diff / 86400) . 'd ago';
        return date('M j', $time);
+   }
+
+   private function buildTimelineMilestones($event) {
+       $milestones = [];
+       $sessionLabel = $this->buildSessionLabel($event);
+
+       if (!empty($event->offer_created_at)) {
+           $milestones[] = $this->createMilestone(
+               $event,
+               'offer_created',
+               'Offer created',
+               $sessionLabel,
+               $event->offer_created_at,
+               1
+           );
+       }
+
+       if (!empty($event->both_agreed_at)) {
+           $milestones[] = $this->createMilestone(
+               $event,
+               'session_started',
+               'Session started',
+               $sessionLabel,
+               $event->both_agreed_at,
+               2
+           );
+       }
+
+       if (!empty($event->teacher_completed_at)) {
+           $milestones[] = $this->createMilestone(
+               $event,
+               'teacher_completed',
+               'Teacher marked session completed',
+               $sessionLabel,
+               $event->teacher_completed_at,
+               3
+           );
+       }
+
+       if ($event->status === 'completed' && !empty($event->learner_verified_at)) {
+           $milestones[] = $this->createMilestone(
+               $event,
+               'session_completed',
+               'Session completed',
+               $sessionLabel,
+               $event->learner_verified_at,
+               4
+           );
+       }
+
+       if ($event->status === 'terminated' && !empty($event->terminated_at)) {
+           $milestones[] = $this->createMilestone(
+               $event,
+               'session_terminated',
+               'Session terminated',
+               $sessionLabel,
+               $event->terminated_at,
+               5
+           );
+       }
+
+       if ($event->status === 'disputed' && !empty($event->dispute_created_at)) {
+           $milestones[] = $this->createMilestone(
+               $event,
+               'session_disputed',
+               'Session reported',
+               $sessionLabel,
+               $event->dispute_created_at,
+               6
+           );
+       }
+
+       return $milestones;
+   }
+
+   private function createMilestone($event, $type, $title, $description, $timestamp, $sequence) {
+       return [
+           'id' => 'event-' . $event->id . '-' . $type,
+           'item_type' => 'session_event',
+           'event_id' => $event->id,
+           'event_type' => $type,
+           'event_title' => $title,
+           'event_description' => $description,
+           'created_at' => $timestamp,
+           'timeline_key' => sprintf('event-%s-%02d', $event->id, $sequence),
+       ];
+   }
+
+   private function buildSessionLabel($event) {
+       if ($event->payment_type === 'buckx') {
+           return number_format((float) ($event->amount ?? 0), 2) . ' BuckX';
+       }
+
+       $hours = number_format((float) ($event->skill_debt_hours ?? 0), 2);
+       $skill = !empty($event->skill_name)
+           ? ucwords(str_replace(['-', '_'], ' ', $event->skill_name))
+           : 'Matched Skill';
+
+       return "{$hours} hrs of {$skill}";
    }
 }

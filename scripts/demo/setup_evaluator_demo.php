@@ -10,8 +10,11 @@ $passwordHash = '$2y$10$27/QXBMdqyp/aEkqeijmT.fuEJgwSju.ZIObOBxRHFKg/AoEVOXHu'; 
 
 $users = [
     'main' => [
-        'username' => 'Ava Demo',
-        'email' => 'demo.ava@skillxchange.local',
+        'username' => 'Nadeesha Perera',
+        'email' => 'nadisha@gmail.com',
+        'legacy_emails' => [
+            'demo.nadeesha@skillxchange.local',
+        ],
         'role' => 'individual',
         'bio' => 'Frontend learner and collaborator used for the evaluator demo.',
         'profile_completed' => 1,
@@ -29,8 +32,11 @@ $users = [
         ],
     ],
     'live' => [
-        'username' => 'Ben Match',
-        'email' => 'demo.ben@skillxchange.local',
+        'username' => 'Kasun Silva',
+        'email' => 'kasun.demo@gmail.com',
+        'legacy_emails' => [
+            'demo.kasun@skillxchange.local',
+        ],
         'role' => 'individual',
         'bio' => 'Live session partner for request and offer acceptance.',
         'profile_completed' => 1,
@@ -45,8 +51,11 @@ $users = [
         ],
     ],
     'archive' => [
-        'username' => 'Cara Archive',
-        'email' => 'demo.cara@skillxchange.local',
+        'username' => 'Tharushi Fernando',
+        'email' => 'tharushi.demo@gmail.com',
+        'legacy_emails' => [
+            'demo.tharushi@skillxchange.local',
+        ],
         'role' => 'individual',
         'bio' => 'Older terminated chat history for the evaluator demo.',
         'profile_completed' => 1,
@@ -61,8 +70,11 @@ $users = [
         ],
     ],
     'history' => [
-        'username' => 'Dilan History',
-        'email' => 'demo.dilan@skillxchange.local',
+        'username' => 'Chathura Jayasinghe',
+        'email' => 'chathura.demo@gmail.com',
+        'legacy_emails' => [
+            'demo.chathura@skillxchange.local',
+        ],
         'role' => 'individual',
         'bio' => 'Completed BuckX and SkillX history for wallet and debt views.',
         'profile_completed' => 1,
@@ -86,9 +98,26 @@ function fetchId(PDO $pdo, string $email): ?int
     return $row ? (int) $row['id'] : null;
 }
 
+function findExistingUserId(PDO $pdo, array $user): ?int
+{
+    $candidateEmails = array_merge([$user['email']], $user['legacy_emails'] ?? []);
+
+    foreach ($candidateEmails as $email) {
+        $existingId = fetchId($pdo, $email);
+        if ($existingId) {
+            return $existingId;
+        }
+    }
+
+    $stmt = $pdo->prepare('SELECT id FROM users WHERE username = :username LIMIT 1');
+    $stmt->execute(['username' => $user['username']]);
+    $row = $stmt->fetch();
+    return $row ? (int) $row['id'] : null;
+}
+
 function ensureUser(PDO $pdo, array $user, string $passwordHash): int
 {
-    $existingId = fetchId($pdo, $user['email']);
+    $existingId = findExistingUserId($pdo, $user);
 
     if ($existingId) {
         $stmt = $pdo->prepare(
@@ -494,10 +523,10 @@ try {
     $pdo->commit();
 
     echo "Evaluator demo data is ready.\n";
-    echo "Main demo account: demo.ava@skillxchange.local / DemoPass123!\n";
-    echo "Live request partner: demo.ben@skillxchange.local / DemoPass123!\n";
-    echo "Archived chat partner: demo.cara@skillxchange.local / DemoPass123!\n";
-    echo "Wallet history partner: demo.dilan@skillxchange.local / DemoPass123!\n";
+    echo "Main demo account: nadisha@gmail.com / DemoPass123!\n";
+    echo "Live request partner: kasun.demo@gmail.com / DemoPass123!\n";
+    echo "Archived chat partner: tharushi.demo@gmail.com / DemoPass123!\n";
+    echo "Wallet history partner: chathura.demo@gmail.com / DemoPass123!\n";
 } catch (Throwable $e) {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();

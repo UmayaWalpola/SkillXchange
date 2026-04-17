@@ -697,6 +697,71 @@
     margin-top: 4px;
 }
 
+.timeline-event {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    margin: 18px 0;
+}
+
+.timeline-line {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #dbe4ec;
+    transform: translateY(-50%);
+}
+
+.timeline-pill {
+    position: relative;
+    z-index: 1;
+    min-width: 240px;
+    max-width: 420px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: #f8fbff;
+    border: 1px solid #cddceb;
+    box-shadow: 0 2px 8px rgba(101, 131, 150, 0.08);
+    text-align: center;
+}
+
+.timeline-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--dark-bg);
+}
+
+.timeline-description {
+    font-size: 12px;
+    color: #5f6b76;
+    margin-top: 2px;
+}
+
+.timeline-time {
+    font-size: 11px;
+    color: #8a97a3;
+    margin-top: 4px;
+}
+
+.timeline-session_started .timeline-pill {
+    background: #eefaf3;
+    border-color: #bfe3cc;
+}
+
+.timeline-session_completed .timeline-pill,
+.timeline-teacher_completed .timeline-pill {
+    background: #eef6ff;
+    border-color: #c7daf5;
+}
+
+.timeline-session_terminated .timeline-pill,
+.timeline-session_disputed .timeline-pill {
+    background: #fff3f1;
+    border-color: #f1c5bf;
+}
+
 .own-message .message-time {
     text-align: right;
 }

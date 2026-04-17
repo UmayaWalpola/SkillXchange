@@ -66,11 +66,17 @@ class Database {
     return $this->dbh->lastInsertId();
 }
 public function beginTransaction() {
+    if ($this->dbh->inTransaction()) {
+        return true;
+    }
     return $this->dbh->beginTransaction();
 }
 
 public function commit() {
-    return $this->dbh->commit();
+    if ($this->dbh->inTransaction()) {
+        return $this->dbh->commit();
+    }
+    return false;
 }
 
 public function inTransaction() {

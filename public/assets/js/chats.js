@@ -1,5 +1,5 @@
 let messagePollingInterval = null;
-let lastMessageId = 0;
+let lastMessageToken = '';
 
 function openChatWindow(partnerId) {
     window.location.href = `${URLROOT}/chat/user/${partnerId}`;
@@ -15,9 +15,7 @@ function loadMessages() {
         .then(data => {
             if (data.success) {
                 displayMessages(data.messages, data.current_user_id);
-                if (data.messages.length > 0) {
-                    lastMessageId = data.messages[data.messages.length - 1].id;
-                }
+                lastMessageToken = data.last_item_token || '';
             }
         })
         .catch(err => console.error('Error loading messages:', err));
@@ -34,6 +32,19 @@ function displayMessages(messages, currentUserId) {
 
     let html = '';
     messages.forEach(msg => {
+        if (msg.item_type === 'session_event') {
+            html += `
+                <div class="timeline-event timeline-${escapeHtml(msg.event_type || 'generic')}" data-message-id="${escapeHtml(String(msg.id || ''))}">
+                    <div class="timeline-line"></div>
+                    <div class="timeline-pill">
+                        <div class="timeline-title">${escapeHtml(msg.event_title || 'Session update')}</div>
+                        <div class="timeline-description">${escapeHtml(msg.event_description || '')}</div>
+                        <div class="timeline-time">${formatMessageTime(msg.created_at)}</div>
+                    </div>
+                </div>`;
+            return;
+        }
+
         const isOwn = msg.sender_id == currentUserId;
         let avatarHTML = msg.sender_profile_pic && msg.sender_profile_pic.includes('uploads/')
             ? `<img src="${URLROOT}/${msg.sender_profile_pic}" alt="Avatar">`
@@ -83,11 +94,11 @@ function pollForNewMessages() {
     fetch(`${URLROOT}/chat/fetchUserMessages?chat_id=${CURRENT_CHAT_ID}`)
         .then(r => r.json())
         .then(data => {
-            if (data.success && data.messages.length > 0) {
-                const latestId = data.messages[data.messages.length - 1].id;
-                if (latestId > lastMessageId) {
+            if (data.success) {
+                const latestToken = data.last_item_token || '';
+                if (latestToken && latestToken !== lastMessageToken) {
                     displayMessages(data.messages, data.current_user_id);
-                    lastMessageId = latestId;
+                    lastMessageToken = latestToken;
                 }
             }
         })
@@ -301,6 +312,52 @@ function showNotification(message, type = 'info') {
     }, 5000);
 }
 
+function formatSkillLabel(skillName) {
+    return (skillName || '')
+        .replace(/[-_]/g, ' ')
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function getResolvedSkillName(selectedRole) {
+    if (MATCH_TYPE === 'mutual') {
+        if (selectedRole === 'learner') return MATCH_DIR || '';
+        if (selectedRole === 'teacher') return MATCH_SKILL || '';
+        return '';
+    }
+
+    return MATCH_SKILL || '';
+}
+
+function updateMatchedSkillDisplay() {
+    const hiddenInput = document.getElementById('skillNameHidden');
+    const badge = document.getElementById('selectedSkillBadge');
+    const help = document.getElementById('selectedSkillHelp');
+
+    if (!hiddenInput || !badge) return;
+
+    const selectedRole =
+        document.querySelector('#transactionRole')?.value ||
+        document.querySelector('#transactionRoleHidden')?.value ||
+        '';
+
+    const resolvedSkill = getResolvedSkillName(selectedRole);
+    hiddenInput.value = resolvedSkill;
+
+    if (resolvedSkill) {
+        badge.textContent = formatSkillLabel(resolvedSkill);
+        if (help) {
+            help.textContent = MATCH_TYPE === 'mutual'
+                ? `The matched ${selectedRole === 'learner' ? 'learning' : 'teaching'} skill for this chat will be used automatically.`
+                : 'This chat\'s matched skill will be used automatically for SkillX debt.';
+        }
+    } else {
+        badge.textContent = 'Select your role first';
+        if (help) {
+            help.textContent = 'Choose whether you are teaching or learning so the correct matched skill is used.';
+        }
+    }
+}
+
 // ── Session countdown ─────────────────────────────────────────────────────────
 // When the countdown hits zero, the server-side cron (process_transaction_timeouts.php)
 // handles the actual transfer. The countdown is purely visual — it alerts the user
@@ -372,6 +429,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const messageInput = document.getElementById('messageInput');
     if (messageInput) messageInput.focus();
 
+    updateMatchedSkillDisplay();
+
+    const roleSelect = document.getElementById('transactionRole');
+    if (roleSelect) {
+        roleSelect.addEventListener('change', updateMatchedSkillDisplay);
+    }
+
     // Payment type toggle
     const paymentType = document.getElementById('paymentType');
     if (paymentType) {
@@ -437,7 +501,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
             if (paymentTypeValue === 'skillx' && !skillName) {
-                showNotification('Please select a skill for SkillX debt.', 'error');
+                showNotification(MATCH_TYPE === 'mutual'
+                    ? 'Please select your role so the matched skill can be used.'
+                    : 'No matched skill is available for this chat.', 'error');
                 return;
             }
             if (!timeframeHours || timeframeHours <= 0) {
