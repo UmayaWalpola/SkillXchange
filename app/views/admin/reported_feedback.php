@@ -168,7 +168,7 @@ require_once "../app/views/layouts/adminsidebar.php";
                 <div style="font-size:14px;font-weight:600;opacity:0.9;margin-bottom:5px;">Pending</div>
                 <div style="font-size:32px;font-weight:700;"><?= $data['stats']['pending'] ?? 0 ?></div>
             </div>
-            <div style="background:linear-gradient(135deg,#6583aa,#5472 91);padding:20px;border-radius:12px;color:white;">
+            <div style="background:linear-gradient(135deg,#6583aa,#547291);padding:20px;border-radius:12px;color:white;">
                 <div style="font-size:14px;font-weight:600;opacity:0.9;margin-bottom:5px;">Reviewed</div>
                 <div style="font-size:32px;font-weight:700;"><?= $data['stats']['reviewed'] ?? 0 ?></div>
             </div>

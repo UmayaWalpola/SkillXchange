@@ -100,14 +100,14 @@ class Admin {
     public function getReportsAboutUser($userId) {
         try {
             $this->db->query(
-                "SELECT ur.reason, ur.description, ur.status, ur.created_at,
+                "SELECT ur.reason,  ur.details, ur.status, ur.reported_at,
                         reporter.username AS reporter_username,
                         p.name AS project_name
                 FROM user_reports ur
-                JOIN users reporter ON ur.reporter_id = reporter.id
+                JOIN users reporter ON ur.reporter_org_id = reporter.id
                 JOIN projects p ON ur.project_id = p.id
                 WHERE ur.reported_user_id = :uid
-                ORDER BY ur.created_at DESC"
+                ORDER BY ur.reported_at DESC"
             );
             $this->db->bind(':uid', $userId);
             return $this->db->resultSet();
@@ -238,10 +238,10 @@ class Admin {
                         reported.warning_count,
                         p.name            AS project_name
                 FROM user_reports ur
-                JOIN users reporter ON ur.reporter_id  = reporter.id
+                JOIN users reporter ON ur.reporter_org_id  = reporter.id
                 JOIN users reported ON ur.reported_user_id = reported.id
                 JOIN projects p     ON ur.project_id   = p.id
-                ORDER BY ur.created_at DESC"
+                ORDER BY ur.reported_at DESC"
             );
             return $this->db->resultSet();
         } catch (Exception $e) { error_log($e->getMessage()); return []; }

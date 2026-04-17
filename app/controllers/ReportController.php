@@ -115,8 +115,8 @@ class ReportController extends Controller
         }
 
         // Check for duplicate report
-        $this->db->query("SELECT id FROM user_reports WHERE reporter_id = :reporter_id AND reported_user_id = :reported_user_id AND project_id = :project_id AND status = 'pending'");
-        $this->db->bind(':reporter_id', $reporterId);
+        $this->db->query("SELECT id FROM user_reports WHERE reporter_org_id = :reporter_org_id AND reported_user_id = :reported_user_id AND project_id = :project_id AND status = 'pending' ");
+        $this->db->bind(':reporter_org_id', $reporterId);
         $this->db->bind(':reported_user_id', $reportedUserId);
         $this->db->bind(':project_id', $projectId);
         $existing = $this->db->single();
@@ -127,9 +127,9 @@ class ReportController extends Controller
         }
 
         // Insert report
-        $this->db->query("INSERT INTO user_reports (reporter_id, reported_user_id, project_id, reason, description, status, created_at) 
-                         VALUES (:reporter_id, :reported_user_id, :project_id, :reason, :description, 'pending', NOW())");
-        $this->db->bind(':reporter_id', $reporterId);
+        $this->db->query("INSERT INTO user_reports (reporter_org_id, reported_user_id, project_id, reason, details, status, reported_at) 
+                         VALUES (:reporter_org_id, :reported_user_id, :project_id, :reason, :description, 'pending', NOW())");
+        $this->db->bind(':reporter_org_id', $reporterId);
         $this->db->bind(':reported_user_id', $reportedUserId);
         $this->db->bind(':project_id', $projectId);
         $this->db->bind(':reason', $reason);
@@ -329,9 +329,9 @@ class ReportController extends Controller
 
         // Get project member reports
         if ($type === 'all' || $type === 'project_member') {
-            $query = "SELECT ur.*, u1.username as reporter_name, u2.username as reported_user_name, p.name as project_name, ur.created_at
+            $query = "SELECT ur.*, u1.username as reporter_name, u2.username as reported_user_name, p.name as project_name,  ur.reported_at
                      FROM user_reports ur
-                     JOIN users u1 ON ur.reporter_id = u1.id
+                     JOIN users u1 ON  ur.reporter_org_id = u1.id
                      JOIN users u2 ON ur.reported_user_id = u2.id
                      JOIN projects p ON ur.project_id = p.id";
             
