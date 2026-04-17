@@ -65,6 +65,13 @@ class TransactionController extends Controller
        return $this->db->execute();
    }
 
+   private function skillExists($skillName)
+   {
+       $this->db->query("SELECT id FROM skills WHERE LOWER(skill_name) = LOWER(:skill_name) LIMIT 1");
+       $this->db->bind(':skill_name', trim($skillName));
+       return (bool) $this->db->single();
+   }
+
 
    // ============================================
    // 1. CREATE TRANSACTION OFFER
@@ -89,10 +96,10 @@ class TransactionController extends Controller
        $chatId = (int)($_POST['chat_id'] ?? 0);
        $paymentType = trim($_POST['payment_type'] ?? ''); // 'buckx' or 'skillx'
        $amount = isset($_POST['amount']) ? (float)$_POST['amount'] : null;
-       $skillDebtHours = isset($_POST['skill_debt_hours']) ? (float)$_POST['skill_debt_hours'] : null;
        $skillName = trim($_POST['skill_name'] ?? '');
        $timeframeHours = (int)($_POST['timeframe_hours'] ?? 0);
        $role = trim($_POST['role'] ?? ''); // 'teacher' or 'learner'
+       $skillDebtHours = ($paymentType === 'skillx' && $timeframeHours > 0) ? (float) $timeframeHours : null;
 
 
        // Validation
@@ -110,6 +117,16 @@ class TransactionController extends Controller
 
        if ($paymentType === 'skillx' && (!$skillDebtHours || $skillDebtHours <= 0)) {
            echo json_encode(['success' => false, 'message' => 'Invalid SkillX hours.']);
+           return;
+       }
+
+       if ($paymentType === 'skillx' && $skillName === '') {
+           echo json_encode(['success' => false, 'message' => 'Please select a skill for SkillX debt.']);
+           return;
+       }
+
+       if ($paymentType === 'skillx' && !$this->skillExists($skillName)) {
+           echo json_encode(['success' => false, 'message' => 'Selected skill is not available.']);
            return;
        }
 
@@ -365,10 +382,10 @@ class TransactionController extends Controller
            echo json_encode(['success' => true, 'message' => 'Transaction started successfully!']);
 
 
-       } catch (Exception $e) {
+       } catch (\Throwable $e) {
            $this->db->rollBack();
            error_log("Transaction accept error: " . $e->getMessage());
-           echo json_encode(['success' => false, 'message' => 'Failed to start transaction.']);
+           echo json_encode(['success' => false, 'message' => $e->getMessage() ?: 'Failed to start transaction.']);
        }
    }
 
@@ -638,7 +655,6 @@ class TransactionController extends Controller
            return;
        }
 
-
        // AGREED - Complete the transaction
        $this->db->beginTransaction();
 
@@ -680,10 +696,10 @@ class TransactionController extends Controller
            echo json_encode(['success' => true, 'message' => 'Transaction completed successfully!']);
 
 
-       } catch (Exception $e) {
+       } catch (\Throwable $e) {
            $this->db->rollBack();
            error_log("Verify completion error: " . $e->getMessage());
-           echo json_encode(['success' => false, 'message' => 'Failed to complete transaction.']);
+           echo json_encode(['success' => false, 'message' => $e->getMessage() ?: 'Failed to complete transaction.']);
        }
    }
 

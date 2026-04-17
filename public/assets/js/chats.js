@@ -136,7 +136,21 @@ function respondToOffer(eventId, action) {
     formData.append('action', action);
 
     fetch(`${URLROOT}/transaction/respondToOffer`, { method: 'POST', body: formData })
-        .then(async r => JSON.parse(await r.text()))
+        .then(async r => {
+            const raw = await r.text();
+
+            try {
+                return JSON.parse(raw);
+            } catch (parseError) {
+                console.error('respondToOffer returned non-JSON response:', raw);
+                return {
+                    success: false,
+                    message: raw && raw.trim()
+                        ? raw.trim()
+                        : 'Unexpected server response while responding to the offer.'
+                };
+            }
+        })
         .then(data => {
             if (data.success) {
                 showNotification(data.message || 'Offer updated.', 'success');
@@ -145,7 +159,26 @@ function respondToOffer(eventId, action) {
                 showNotification(data.message || 'Failed to update offer.', 'error');
             }
         })
-        .catch(() => showNotification('Network error.', 'error'));
+        .catch((error) => {
+            console.error('respondToOffer network error:', error);
+            showNotification('Network error.', 'error');
+        });
+}
+
+function parseJsonResponse(response, contextLabel) {
+    return response.text().then(raw => {
+        try {
+            return JSON.parse(raw);
+        } catch (parseError) {
+            console.error(`${contextLabel} returned non-JSON response:`, raw);
+            return {
+                success: false,
+                message: raw && raw.trim()
+                    ? raw.trim()
+                    : `Unexpected server response while ${contextLabel}.`
+            };
+        }
+    });
 }
 
 function leaveLesson(eventId) {
@@ -174,7 +207,7 @@ function markCompleted(eventId) {
     formData.append('event_id', eventId);
 
     fetch(`${URLROOT}/transaction/markCompleted`, { method: 'POST', body: formData })
-        .then(async r => JSON.parse(await r.text()))
+        .then(r => parseJsonResponse(r, 'marking session as completed'))
         .then(data => {
             if (data.success) {
                 showNotification(data.message || 'Marked as completed.', 'success');
@@ -183,7 +216,10 @@ function markCompleted(eventId) {
                 showNotification(data.message || 'Failed.', 'error');
             }
         })
-        .catch(() => showNotification('Network error.', 'error'));
+        .catch((error) => {
+            console.error('markCompleted network error:', error);
+            showNotification('Network error.', 'error');
+        });
 }
 
 function verifyCompletion(eventId, action) {
@@ -194,7 +230,7 @@ function verifyCompletion(eventId, action) {
     formData.append('action', action);
 
     fetch(`${URLROOT}/transaction/verifyCompletion`, { method: 'POST', body: formData })
-        .then(r => r.json())
+        .then(r => parseJsonResponse(r, 'verifying session completion'))
         .then(data => {
             if (data.success) {
                 showNotification(data.message || 'Done.', 'success');
@@ -203,7 +239,10 @@ function verifyCompletion(eventId, action) {
                 showNotification(data.message || 'Failed.', 'error');
             }
         })
-        .catch(() => showNotification('Network error.', 'error'));
+        .catch((error) => {
+            console.error('verifyCompletion network error:', error);
+            showNotification('Network error.', 'error');
+        });
 }
 
 // ── Search chats sidebar ──────────────────────────────────────────────────────
@@ -347,6 +386,12 @@ document.addEventListener('DOMContentLoaded', function () {
     if (transactionForm) {
         transactionForm.addEventListener('submit', function (e) {
             e.preventDefault();
+            const submitButton = transactionForm.querySelector('button[type="submit"]');
+
+            if (transactionForm.dataset.submitting === 'true') {
+                return;
+            }
+
             if (!CURRENT_CHAT_ID) {
                 showNotification('No active chat selected.', 'error');
                 return;
@@ -354,7 +399,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // For single/multi, role is a hidden input already set to MATCH_DIR.
             // For mutual, role comes from the visible select.
-            const role = document.getElementById('transactionRole')?.value || '';
+            const role =
+                document.querySelector('#transactionRole')?.value ||
+                document.querySelector('#transactionRoleHidden')?.value ||
+                '';
             if (!role) {
                 showNotification('Please select your role for this session.', 'error');
                 return;
@@ -362,8 +410,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const paymentTypeValue = document.getElementById('paymentType')?.value || '';
             const amount           = document.getElementById('buckxAmount')?.value  || '';
-            const skillName        = document.getElementById('skillName')?.value    || '';
-            const skillDebtHours   = document.getElementById('skillDebtHours')?.value || '';
+            const skillName        =
+                document.getElementById('skillName')?.value ||
+                document.getElementById('skillNameHidden')?.value ||
+                '';
             const timeframeValue   = parseInt(document.getElementById('timeframeValue')?.value || '0', 10);
             const timeframeUnit    = document.getElementById('timeframeUnit')?.value || 'hours';
             const timeframeHours   = timeframeUnit === 'days' ? timeframeValue * 24 : timeframeValue;
@@ -376,8 +426,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 showNotification('Please enter a valid BuckX amount.', 'error');
                 return;
             }
-            if (paymentTypeValue === 'skillx' && (!skillDebtHours || parseFloat(skillDebtHours) <= 0)) {
-                showNotification('Please enter valid skill debt hours.', 'error');
+            if (paymentTypeValue === 'skillx' && !skillName) {
+                showNotification('Please select a skill for SkillX debt.', 'error');
                 return;
             }
             if (!timeframeHours || timeframeHours <= 0) {
@@ -391,11 +441,30 @@ document.addEventListener('DOMContentLoaded', function () {
             formData.append('payment_type',   paymentTypeValue);
             formData.append('amount',         amount);
             formData.append('skill_name',     skillName);
-            formData.append('skill_debt_hours', skillDebtHours);
             formData.append('timeframe_hours', timeframeHours);
 
+            transactionForm.dataset.submitting = 'true';
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Sending...';
+            }
+
             fetch(`${URLROOT}/transaction/createOffer`, { method: 'POST', body: formData })
-                .then(async r => JSON.parse(await r.text()))
+                .then(async r => {
+                    const raw = await r.text();
+
+                    try {
+                        return JSON.parse(raw);
+                    } catch (parseError) {
+                        console.error('createOffer returned non-JSON response:', raw);
+                        return {
+                            success: false,
+                            message: raw && raw.trim()
+                                ? raw.trim()
+                                : 'Unexpected server response while creating offer.'
+                        };
+                    }
+                })
                 .then(data => {
                     if (data.success) {
                         showNotification(data.message || 'Offer created successfully.', 'success');
@@ -405,7 +474,17 @@ document.addEventListener('DOMContentLoaded', function () {
                         showNotification(data.message || 'Failed to create offer.', 'error');
                     }
                 })
-                .catch(() => showNotification('Network error while creating offer.', 'error'));
+                .catch((error) => {
+                    console.error('createOffer network error:', error);
+                    showNotification('Network error while creating offer.', 'error');
+                })
+                .finally(() => {
+                    transactionForm.dataset.submitting = 'false';
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'Send Offer';
+                    }
+                });
         });
     }
 
