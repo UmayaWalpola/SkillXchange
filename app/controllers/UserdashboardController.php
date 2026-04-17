@@ -172,61 +172,76 @@ private function getActiveChats($userId) {
 
 
 public function matches() {
-   $userId = $this->checkAuth();
-  
-   $skillMatchModel = $this->model('SkillMatch');
-   $exchangeModel = $this->model('Exchange');
-  
-   // Get all matches with new tier system (mutual, multi, single)
-   $allMatches = $skillMatchModel->getAllMatchesWithScores($userId);
+    $userId = $this->checkAuth();
 
+    $skillMatchModel = $this->model('SkillMatch');
+    $exchangeModel = $this->model('Exchange');
 
-   // Ensure arrays exist (in case model returns empty)
-   $mutual = isset($allMatches['mutual']) && is_array($allMatches['mutual']) ? $allMatches['mutual'] : [];
-   $multi = isset($allMatches['multi']) && is_array($allMatches['multi']) ? $allMatches['multi'] : [];
-   $single = isset($allMatches['single']) && is_array($allMatches['single']) ? $allMatches['single'] : [];
-  
-   // Get pending connection requests
-   $pendingRequests = $exchangeModel->getExchangeRequests($userId);
+    // Get all matches with new tier system
+    $allMatches = $skillMatchModel->getAllMatchesWithScores($userId);
 
+    // Ensure arrays exist
+    $mutual = isset($allMatches['mutual']) && is_array($allMatches['mutual']) ? $allMatches['mutual'] : [];
+    $multi  = isset($allMatches['multi']) && is_array($allMatches['multi']) ? $allMatches['multi'] : [];
+    $single = isset($allMatches['single']) && is_array($allMatches['single']) ? $allMatches['single'] : [];
 
-   $formattedRequests = [];
-   foreach ($pendingRequests as $request) {
-       $formattedRequests[] = [
-           'exchange_id' => $request->id,
-           'sender_id' => $request->requester_id,
-           'sender_name' => $request->sender_name,
-           'sender_email' => $request->sender_email,
-           'sender_avatar' => $request->sender_avatar ?? strtoupper(substr($request->sender_name, 0, 2)),
-           'skill_offered' => $request->skill_offered,
-           'skill_wanted' => $request->skill_wanted,
-           'time_ago' => $this->timeAgo($request->created_at)
-       ];
-   }  
-  
-   $userSkillsData = $skillMatchModel->getUserSkillsForFilter($userId);
-   $user = $this->getUserData($userId);
-  
-   $data = [
-       'title' => 'Matches',
-       'user' => $user,
-       'page' => 'matches',
-       // Pass the three tier arrays
-       'mutual' => $mutual,
-       'multi' => $multi,
-       'single' => $single,
-       // Match statistics
-       'matchStats' => [
-           'total_count' => count($mutual) + count($multi) + count($single),
-           'mutual_count' => count($mutual),
-           'multi_count' => count($multi),
-           'single_count' => count($single)
-       ],
-       'userSkills' => $userSkillsData,
-       'pendingRequests' => $formattedRequests
-   ];
-  
-   $this->view('users/matches', $data);
+    // Flatten into one array
+    $combinedMatches = [];
+
+    foreach ($mutual as $match) {
+        $match['match_type'] = 'mutual';
+        $match['match_type_label'] = 'Mutual Match';
+        $combinedMatches[] = $match;
+    }
+
+    foreach ($multi as $match) {
+        $match['match_type'] = 'multi';
+        $match['match_type_label'] = 'Multi-Skill Match';
+        $combinedMatches[] = $match;
+    }
+
+    foreach ($single as $match) {
+        $match['match_type'] = 'single';
+        $match['match_type_label'] = 'Single-Skill Match';
+        $combinedMatches[] = $match;
+    }
+
+    // Pending requests
+    $pendingRequests = $exchangeModel->getExchangeRequests($userId);
+
+    $formattedRequests = [];
+    foreach ($pendingRequests as $request) {
+        $formattedRequests[] = [
+            'exchange_id' => $request->id,
+            'sender_id' => $request->requester_id,
+            'sender_name' => $request->sender_name,
+            'sender_email' => $request->sender_email,
+            'sender_avatar' => $request->sender_avatar ?? strtoupper(substr($request->sender_name, 0, 2)),
+            'skill_offered' => $request->skill_offered,
+            'skill_wanted' => $request->skill_wanted,
+            'time_ago' => $this->timeAgo($request->created_at)
+        ];
+    }
+
+    $userSkillsData = $skillMatchModel->getUserSkillsForFilter($userId);
+    $user = $this->getUserData($userId);
+
+    $data = [
+        'title' => 'Matches',
+        'user' => $user,
+        'page' => 'matches',
+        'allMatches' => $combinedMatches,
+        'matchStats' => [
+            'total_count' => count($combinedMatches),
+            'mutual_count' => count($mutual),
+            'multi_count' => count($multi),
+            'single_count' => count($single),
+        ],
+        'userSkills' => $userSkillsData,
+        'pendingRequests' => $formattedRequests
+    ];
+
+    $this->view('users/matches', $data);
 }
 
 
@@ -365,28 +380,71 @@ public function matches() {
     }
 
     public function searchMatches() {
-        header('Content-Type: application/json');
-        
+    header('Content-Type: application/json');
+
+    if (ob_get_length()) {
+        ob_clean();
+    }
+
+    try {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(['success' => false, 'message' => 'Invalid request']);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Invalid request'
+            ]);
             exit;
         }
-        
-        $currentUserId = $this->checkAuth();
-        $skillName = $_POST['skill'] ?? '';
+
+        $currentUserId = $this->checkAuth(true);
+        $skillName = trim($_POST['skill'] ?? '');
         $matchType = $_POST['type'] ?? 'all';
-        
-        if (empty($skillName)) {
-            echo json_encode(['success' => false, 'message' => 'Skill name is required']);
+
+        if ($skillName === '') {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Skill name is required'
+            ]);
             exit;
         }
-        
+
         $skillMatchModel = $this->model('SkillMatch');
         $matches = $skillMatchModel->searchMatchesBySkill($currentUserId, $skillName, $matchType);
-        
-        echo json_encode(['success' => true, 'matches' => $matches]);
+
+        // Optional: normalize match type labels if needed
+        foreach ($matches as &$match) {
+            if (!isset($match['match_type'])) {
+                $match['match_type'] = $matchType !== 'all' ? $matchType : 'single';
+            }
+
+            if (!isset($match['match_type_label'])) {
+                if ($match['match_type'] === 'mutual') {
+                    $match['match_type_label'] = 'Mutual Match';
+                } elseif ($match['match_type'] === 'multi') {
+                    $match['match_type_label'] = 'Multi-Skill Match';
+                } else {
+                    $match['match_type_label'] = 'Single-Skill Match';
+                }
+            }
+        }
+
+        echo json_encode([
+            'success' => true,
+            'matches' => $matches
+        ]);
+        exit;
+
+    } catch (\Throwable $e) {
+        error_log('searchMatches error: ' . $e->getMessage());
+
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Server error while searching matches',
+            'error' => $e->getMessage()
+        ]);
         exit;
     }
+}
 
     // ============================================
     // COMMUNITY METHODS

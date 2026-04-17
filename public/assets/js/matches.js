@@ -137,34 +137,37 @@ function clearFilters() {
 
 
 function applyFilters() {
-   const tierFilter = document.getElementById('match-tier-filter').value;
-   const skillFilter = document.getElementById('skill-filter').value;
-  
-   const sections = document.querySelectorAll('.match-tier-section');
+   const tierFilter = document.getElementById('match-tier-filter')?.value || 'all';
+   const skillFilter = document.getElementById('skill-filter')?.value || 'all';
+
    const cards = document.querySelectorAll('.match-card');
-  
-   // Show/hide sections based on tier filter
-   sections.forEach(section => {
-       const tier = section.dataset.tier;
-       if (tierFilter === 'all' || tierFilter === tier) {
-           section.style.display = 'block';
-       } else {
-           section.style.display = 'none';
-       }
-   });
-  
-   // Filter cards by skill
+   let visibleCount = 0;
+
    cards.forEach(card => {
-       const cardSkills = JSON.parse(card.dataset.skills || '[]');
-       const matchesSkill = skillFilter === 'all' || cardSkills.includes(skillFilter);
+       let cardSkills = [];
+
+       try {
+           cardSkills = JSON.parse(card.dataset.skills || '[]');
+       } catch (e) {
+           cardSkills = [];
+       }
+
        const matchesTier = tierFilter === 'all' || card.dataset.tier === tierFilter;
-      
-       if (matchesSkill && matchesTier) {
+       const matchesSkill = skillFilter === 'all' || cardSkills.includes(skillFilter);
+
+       if (matchesTier && matchesSkill) {
            card.style.display = 'block';
+           visibleCount++;
        } else {
            card.style.display = 'none';
        }
    });
+
+   // optional: update count text
+   const tierCount = document.querySelector('.tier-count');
+   if (tierCount) {
+       tierCount.textContent = `(${visibleCount} found)`;
+   }
 }
 
 
