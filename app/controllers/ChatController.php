@@ -9,6 +9,43 @@ class ChatController extends Controller
         }
     }
 
+    /**
+     * Project Chat - index method for accessing project-wide chat
+     */
+    public function index($projectId = null)
+    {
+        $currentUserId = $_SESSION['user_id'];
+
+        if (!$projectId) {
+            header('Location: ' . URLROOT . '/organization/projects');
+            exit();
+        }
+
+        $projectId = (int)$projectId;
+        $projectModel = $this->model('Project');
+        $project = $projectModel->getProjectById($projectId);
+
+        if (!$project) {
+            header('Location: ' . URLROOT . '/organization/projects');
+            exit();
+        }
+
+        // Verify user has access to this project
+        if ($project->created_by != $currentUserId && !$projectModel->isProjectMember($projectId, $currentUserId)) {
+            header('Location: ' . URLROOT . '/organization/projects');
+            exit();
+        }
+
+        $data = [
+            'title'     => 'Project Chat',
+            'page'      => 'project-chat',
+            'project'   => $project,
+            'projectId' => $projectId
+        ];
+
+        $this->view('organization/chats', $data);
+    }
+
     public function user($partnerId = null)
     {
         $currentUserId = $_SESSION['user_id'];

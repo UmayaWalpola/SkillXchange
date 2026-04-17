@@ -250,29 +250,6 @@
                                 </div>
                             </div>
 
-                            <!-- Skills matched to this project's required skills -->
-                            <?php $matchedSkillsWithLevel = (isset($member->matched_skills_with_level) && is_array($member->matched_skills_with_level)) ? $member->matched_skills_with_level : []; ?>
-                            <?php if (!empty($matchedSkillsWithLevel)): ?>
-                                <div class="member-skills">
-                                    <span class="member-skills-label">Matched Skills</span>
-                                    <div class="skills-list">
-                                        <?php foreach ($matchedSkillsWithLevel as $skillWithLevel): ?>
-                                            <span class="skill-tag member-skill-tag">
-                                                <span class="skill-dot"></span>
-                                                <?= htmlspecialchars($skillWithLevel) ?>
-                                            </span>
-                                        <?php endforeach; ?>
-                                    </div>
-                                </div>
-                            <?php else: ?>
-                                <div class="member-skills">
-                                    <span class="member-skills-label">Matched Skills</span>
-                                    <div class="skills-list">
-                                        <span class="skill-tag member-skill-tag" style="opacity:0.8;">No matched required skills</span>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
-
                             <!-- Role Assignment (form POST to updateMemberRole) -->
                             <div class="role-assignment">
                                 <form method="POST" action="<?= URLROOT ?>/organization/updateMemberRole" class="role-form" style="display:flex;align-items:center;gap:10px;">
