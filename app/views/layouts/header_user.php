@@ -22,11 +22,11 @@
             left: 250px !important;
             width: calc(100% - 250px) !important;
             height: 64px;
-            background: #111827;
+            background: var(--primary-blue);
             display: flex;
             align-items: center;
             z-index: 1000;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.22);
         }
 
         .nav-container {

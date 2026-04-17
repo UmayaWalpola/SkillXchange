@@ -12,7 +12,7 @@
         <div class="profile-content">
             <!-- Profile Header - SHORTENED -->
             <div class="profile-header">
-                <button class="edit-profile-btn">Edit details</button>
+                <a href="<?= URLROOT ?>/users/editProfile" class="edit-profile-btn">Edit details</a>
                 <div class="profile-info">
                     <div class="profile-avatar"><?= strtoupper(substr($data['user']['name'], 0, 2)); ?></div>
                     <div class="profile-details">
