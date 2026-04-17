@@ -64,7 +64,7 @@
                             <!-- Warn button triggers inline form -->
                             <button class="btn-outline" style="color:#d97706;border-color:#d97706;font-size:13px;"
                                 onclick="document.getElementById('warn-<?= $r->id ?>').classList.toggle('open')">
-                                ⚠️ Warn
+                                 Warn
                             </button>
                             <form method="POST" action="<?= URLROOT ?>/admin/dismissReport">
                                 <input type="hidden" name="report_id" value="<?= $r->id ?>">
