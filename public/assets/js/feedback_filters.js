@@ -311,11 +311,11 @@ document.addEventListener('click', function(e) {
         const btn = e.target.closest('.report-feedback-btn');
         const feedbackId = btn.dataset.feedbackId;
         
-        // Open report modal (defined in feedback_report.js)
-        if (typeof openReportModal === 'function') {
-            openReportModal(feedbackId);
+        // Open feedback-specific report modal (defined in feedback_report.js)
+        if (typeof openFeedbackReportModal === 'function') {
+            openFeedbackReportModal(feedbackId);
         } else {
-            console.error('Report modal function not found. Make sure feedback_report.js is loaded.');
+            console.error('Feedback report modal function not found. Make sure feedback_report.js is loaded.');
         }
     }
 });

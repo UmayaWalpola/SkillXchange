@@ -23,71 +23,72 @@ class FeedbackReportController extends Controller {
      * POST /FeedbackReport/submit
      */
     public function submit() {
-    // Check authentication
-    if (!isset($_SESSION['user_id'])) {
-        echo json_encode(['success' => false, 'message' => 'Please log in first']);
-        return;
-    }
-
-    // Only accept POST requests
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        echo json_encode(['success' => false, 'message' => 'Invalid request method']);
-        return;
-    }
-
-    try {
-        // Get POST data with proper validation
-        $feedbackId = filter_var($_POST['feedback_id'] ?? 0, FILTER_VALIDATE_INT);
-        $reason = trim((string)($_POST['reason'] ?? ''));
-        $details = trim((string)($_POST['details'] ?? ''));
-        $reporterId = (int)($_SESSION['user_id'] ?? 0);
-
-        // Validate required fields
-        if (!$feedbackId || !$reason) {
-            echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+        // Check authentication
+        if (!isset($_SESSION['user_id'])) {
+            echo json_encode(['success' => false, 'message' => 'Please log in first']);
             return;
         }
 
-        // Validate reason
-        $validReasons = ['abusive', 'fake', 'spam', 'inappropriate', 'other'];
-        if (!in_array($reason, $validReasons)) {
-            echo json_encode(['success' => false, 'message' => 'Invalid reason']);
+        // Only accept POST requests
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request method']);
             return;
         }
 
-        // Create report (model handles duplicate check internally)
-        $reportData = [
-            'feedback_id' => $feedbackId,
-            'reporter_id' => $reporterId,
-            'reason' => $reason,
-            'details' => $details
-        ];
+        try {
+            // Get POST data with proper validation
+            $feedbackId = filter_var($_POST['feedback_id'] ?? 0, FILTER_VALIDATE_INT);
+            $reason = trim((string)($_POST['reason'] ?? ''));
+            $details = trim((string)($_POST['details'] ?? ''));
+            $reporterId = (int)($_SESSION['user_id'] ?? 0);
 
-        $reportId = $this->feedbackReportModel->createReport($reportData);
-
-        if ($reportId) {
-            // Send notification to admins (optional)
-            $this->notifyAdmins($reportId, $feedbackId, $reason);
-
-            echo json_encode([
-                'success' => true,
-                'message' => 'Report submitted successfully. Our team will review it shortly.',
-                'report_id' => $reportId
-            ]);
-        } else {
-            // Check if it's a duplicate report
-            if ($this->feedbackReportModel->hasUserReported($feedbackId, $reporterId)) {
-                echo json_encode(['success' => false, 'message' => 'You have already reported this feedback']);
-            } else {
-                echo json_encode(['success' => false, 'message' => 'Failed to submit report']);
+            // Validate required fields
+            if (!$feedbackId || !$reason) {
+                echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+                return;
             }
-        }
 
-    } catch (Throwable $e) {
-        error_log("FeedbackReport submit error: " . $e->getMessage());
-        echo json_encode(['success' => false, 'message' => 'An error occurred. Please try again.']);
+            // Validate reason
+            $validReasons = ['abusive', 'fake', 'spam', 'inappropriate', 'other'];
+            if (!in_array($reason, $validReasons)) {
+                echo json_encode(['success' => false, 'message' => 'Invalid reason']);
+                return;
+            }
+
+            // Create report
+            $reportData = [
+                'feedback_id' => $feedbackId,
+                'reporter_id' => $reporterId,
+                'reason' => $reason,
+                'details' => $details
+            ];
+
+            $reportId = $this->feedbackReportModel->createReport($reportData);
+
+            // Handle different return values
+            if ($reportId === 'duplicate') {
+                echo json_encode(['success' => false, 'message' => 'You have already reported this feedback']);
+                return;
+            }
+
+            if ($reportId && is_numeric($reportId)) {
+                // Send notification to admins
+                $this->notifyAdmins($reportId, $feedbackId, $reason);
+
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Report submitted successfully. Our team will review it shortly.',
+                    'report_id' => $reportId
+                ]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Failed to submit report. Please try again.']);
+            }
+
+        } catch (Throwable $e) {
+            error_log("FeedbackReport submit error: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'An error occurred. Please try again.']);
+        }
     }
-}
 
     /**
      * Admin page: List all reported feedback

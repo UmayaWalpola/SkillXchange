@@ -14,11 +14,11 @@ class FeedbackReport extends Database {
     public function createReport($data) {
         // Check if user already reported this feedback
         if ($this->hasUserReported($data['feedback_id'], $data['reporter_id'])) {
-            return false; // Prevent duplicate reports
+            return 'duplicate'; // Return specific code so controller can show correct message
         }
 
-        $sql = "INSERT INTO feedback_reports (feedback_id, reporter_id, reason, details, created_at) 
-                VALUES (:feedback_id, :reporter_id, :reason, :details, NOW())";
+        $sql = "INSERT INTO feedback_reports (feedback_id, reporter_id, reason, details, status, created_at) 
+                VALUES (:feedback_id, :reporter_id, :reason, :details, 'pending', NOW())";
         
         $stmt = $this->connect()->prepare($sql);
         $stmt->bindValue(':feedback_id', $data['feedback_id']);

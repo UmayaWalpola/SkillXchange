@@ -7,7 +7,7 @@
                 <i class="ph ph-flag" style="color:#e74c3c;font-size:28px;"></i>
                 Report Feedback
             </h2>
-            <button type="button" class="modal-close" onclick="closeReportModal()">
+            <button type="button" class="modal-close" onclick="closeFeedbackReportModal()">
                 <i class="ph ph-x"></i>
             </button>
         </div>
@@ -62,7 +62,7 @@
 
                 <!-- Submit Button -->
                 <div style="display:flex;gap:12px;justify-content:flex-end;">
-                    <button type="button" onclick="closeReportModal()" style="padding:12px 24px;background:white;border:2px solid #e1eefb;border-radius:8px;font-weight:600;color:#666;cursor:pointer;transition:all 0.2s;">
+                    <button type="button" onclick="closeFeedbackReportModal()" style="padding:12px 24px;background:white;border:2px solid #e1eefb;border-radius:8px;font-weight:600;color:#666;cursor:pointer;transition:all 0.2s;">
                         Cancel
                     </button>
                     <button type="submit" id="submitReportBtn" style="padding:12px 24px;background:#e74c3c;border:none;border-radius:8px;font-weight:600;color:white;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:8px;">

@@ -8,7 +8,7 @@
  * 
  * @param {number} feedbackId - ID of feedback to report
  */
-function openReportModal(feedbackId) {
+function openFeedbackReportModal(feedbackId) {
     const modal = document.getElementById('reportModal');
     const form = document.getElementById('reportFeedbackForm');
     
@@ -23,6 +23,9 @@ function openReportModal(feedbackId) {
     // Reset form
     form.reset();
     
+    // Re-set feedback ID after reset (form.reset() clears hidden inputs too)
+    document.getElementById('reportFeedbackId').value = feedbackId;
+    
     // Show modal
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden'; // Prevent background scrolling
@@ -36,7 +39,7 @@ function openReportModal(feedbackId) {
 /**
  * Close report modal
  */
-function closeReportModal() {
+function closeFeedbackReportModal() {
     const modal = document.getElementById('reportModal');
     const form = document.getElementById('reportFeedbackForm');
     
@@ -158,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (data.success) {
                 showReportToast(data.message, 'success');
-                closeReportModal();
+                closeFeedbackReportModal();
                 
                 // Optional: Reload feedback list to update report count
                 if (typeof loadFeedback === 'function') {
@@ -186,7 +189,7 @@ document.addEventListener('click', function(e) {
     const modal = document.getElementById('reportModal');
     
     if (e.target === modal) {
-        closeReportModal();
+        closeFeedbackReportModal();
     }
 });
 
@@ -197,7 +200,7 @@ document.addEventListener('keydown', function(e) {
     const modal = document.getElementById('reportModal');
     
     if (e.key === 'Escape' && modal && modal.style.display === 'flex') {
-        closeReportModal();
+        closeFeedbackReportModal();
     }
 });
 
