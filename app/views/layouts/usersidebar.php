@@ -5,14 +5,16 @@
         <span>Profile</span>
     </a>
 
-    <a href="<?= URLROOT ?>/userdashboard/chats" class="sidebar-item <?= (isset($page) && $page == 'chats') ? 'active' : '' ?>">
-        <span class="icon"><i class="ph ph-chat-circle-dots"></i></span>
-        <span>Chats</span>
-    </a>
     <a href="<?= URLROOT ?>/userdashboard/matches" class="sidebar-item <?= (isset($page) && $page == 'matches') ? 'active' : '' ?>">
         <span class="icon"><i class="ph ph-heart"></i></span>
         <span>Your Matches</span>
     </a>
+
+    <a href="<?= URLROOT ?>/userdashboard/chats" class="sidebar-item <?= (isset($page) && $page == 'chats') ? 'active' : '' ?>">
+        <span class="icon"><i class="ph ph-chat-circle-dots"></i></span>
+        <span>Sessions</span>
+    </a>
+    
     <a href="<?= URLROOT ?>/userdashboard/communities" class="sidebar-item <?= (isset($page) && $page == 'communities') ? 'active' : '' ?>">
         <span class="icon"><i class="ph ph-users-three"></i></span>
         <span>Communities</span>

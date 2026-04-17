@@ -242,6 +242,20 @@
     gap: 8px;
 }
 
+.chat-action-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.chat-action-label {
+    font-size: 11px;
+    line-height: 1;
+    color: #6b7280;
+    font-weight: 600;
+}
+
 .btn-icon {
     width: 36px;
     height: 36px;

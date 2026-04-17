@@ -98,6 +98,8 @@ class ChatController extends Controller
             $matchDir = $this->inferDirection($db, $currentUserId, $partnerId);
         }
 
+        $availableSkills = $userModel->getAllSkills();
+
         $data = [
             'title'             => 'Chats',
             'page'              => 'chats',
@@ -108,6 +110,7 @@ class ChatController extends Controller
             'chatId'            => $chatId,
             'buckxBalance'      => $currentWalletBalance,
             'activeTransaction' => $activeTransaction,
+            'availableSkills'   => $availableSkills,
             // Match context — consumed by chats.php to adapt the transaction modal
             'matchType'         => $matchType,  // 'mutual' | 'multi' | 'single'
             'matchSkill'        => $matchSkill, // skill name (teach skill for mutual)
