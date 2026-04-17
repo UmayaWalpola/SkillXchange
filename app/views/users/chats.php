@@ -153,7 +153,10 @@
                                                <?php endif; ?>
                                                &bull; <?= htmlspecialchars($timeframeLabel); ?> session
                                            </p>
-                                           <p id="sessionCountdown" data-expires-at="<?= htmlspecialchars($tx['expires_at']); ?>">
+                                           <p id="sessionCountdown"
+                                              data-expires-at="<?= htmlspecialchars($tx['expires_at']); ?>"
+                                              data-expires-at-unix="<?= !empty($tx['expires_at']) ? strtotime($tx['expires_at']) : '' ?>"
+                                              data-server-now-unix="<?= time() ?>">
                                                Calculating remaining time...
                                            </p>
                                        </div>

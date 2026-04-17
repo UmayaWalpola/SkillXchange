@@ -312,21 +312,31 @@ function startSessionCountdown() {
 
     const expiresAt = countdownEl.dataset.expiresAt;
     if (!expiresAt) return;
+    const notificationKey = `expired-session:${CURRENT_CHAT_ID}:${expiresAt}`;
+    const expiresAtUnix = parseInt(countdownEl.dataset.expiresAtUnix || '0', 10);
+    const serverNowUnix = parseInt(countdownEl.dataset.serverNowUnix || '0', 10);
+    const countdownStartedAt = Date.now();
 
     let expiredNotified = false;
 
     function updateCountdown() {
-        const end  = new Date(expiresAt.replace(' ', 'T'));
-        const now  = new Date();
-        const diff = end - now;
+        let diff;
+
+        if (expiresAtUnix > 0 && serverNowUnix > 0) {
+            const elapsedSeconds = Math.floor((Date.now() - countdownStartedAt) / 1000);
+            diff = (expiresAtUnix - (serverNowUnix + elapsedSeconds)) * 1000;
+        } else {
+            const end = new Date(expiresAt.replace(' ', 'T'));
+            const now = new Date();
+            diff = end - now;
+        }
 
         if (diff <= 0) {
             countdownEl.textContent = '⏰ Session time expired — processing...';
-            if (!expiredNotified) {
+            if (!expiredNotified && sessionStorage.getItem(notificationKey) !== 'shown') {
                 expiredNotified = true;
+                sessionStorage.setItem(notificationKey, 'shown');
                 showNotification('Session time has expired. The transaction is being processed.', 'info');
-                // Reload after a short delay so the banner reflects the updated DB status
-                setTimeout(() => location.reload(), 4000);
             }
             return;
         }

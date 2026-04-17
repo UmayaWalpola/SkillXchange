@@ -66,6 +66,8 @@ class Exchange extends Database {
         
         $this->db->bind(':requester_id', $senderId);
         $this->db->bind(':receiver_id', $receiverId);
+        $this->db->bind(':skill_offered', $skillOffered);
+        $this->db->bind(':skill_wanted', $skillWanted);
         
         if ($this->db->execute()) {
             error_log("Exchange created successfully!");
@@ -170,6 +172,8 @@ class Exchange extends Database {
                 e.requester_id,
                 e.receiver_id,
                 e.skill_id,
+                e.skill_offered,
+                e.skill_wanted,
                 e.status,
                 e.created_at,
                 requester.username as sender_name,

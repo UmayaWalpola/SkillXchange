@@ -73,7 +73,14 @@ public function commit() {
     return $this->dbh->commit();
 }
 
+public function inTransaction() {
+    return $this->dbh->inTransaction();
+}
+
 public function rollBack() {
-    return $this->dbh->rollBack();
+    if ($this->dbh->inTransaction()) {
+        return $this->dbh->rollBack();
+    }
+    return false;
 }
 }

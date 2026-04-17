@@ -499,11 +499,21 @@ class TransactionTimeoutProcessor
         $this->db->execute();
 
         // Also insert into main notifications table
+        $titleMap = [
+            'expiry_warning' => 'Session Expired',
+            'payment_released' => 'Payment Released',
+            'payment_transferred' => 'Payment Transferred',
+            'timeout_warning' => 'Verification Timeout',
+            'reminder' => 'Session Reminder',
+        ];
+        $title = $titleMap[$type] ?? 'Transaction Update';
+
         $this->db->query("
-            INSERT INTO notifications (user_id, type, message, is_read, created_at)
-            VALUES (:user_id, 'transaction', :message, 0, NOW())
+            INSERT INTO notifications (user_id, type, title, message, is_read, created_at)
+            VALUES (:user_id, 'transaction', :title, :message, 0, NOW())
         ");
         $this->db->bind(':user_id', $userId);
+        $this->db->bind(':title', $title);
         $this->db->bind(':message', $message);
         $this->db->execute();
     }

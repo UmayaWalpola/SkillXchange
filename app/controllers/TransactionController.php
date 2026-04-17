@@ -257,6 +257,14 @@ class TransactionController extends Controller
            return;
        }
 
+       if (!in_array($event->status, ['pending_learner', 'pending_teacher'], true)) {
+           echo json_encode([
+               'success' => false,
+               'message' => 'This offer has already been processed. Please refresh the chat.'
+           ]);
+           return;
+       }
+
 
        // Verify user is the one who needs to respond
        if ($event->status === 'pending_learner' && $event->learner_id != $userId) {
@@ -383,7 +391,9 @@ class TransactionController extends Controller
 
 
        } catch (\Throwable $e) {
-           $this->db->rollBack();
+           if (method_exists($this->db, 'inTransaction') && $this->db->inTransaction()) {
+               $this->db->rollBack();
+           }
            error_log("Transaction accept error: " . $e->getMessage());
            echo json_encode(['success' => false, 'message' => $e->getMessage() ?: 'Failed to start transaction.']);
        }
@@ -616,6 +626,11 @@ class TransactionController extends Controller
            return;
        }
 
+       if ($event->status === 'completed') {
+           echo json_encode(['success' => true, 'message' => 'Transaction already completed.']);
+           return;
+       }
+
 
        // Verify user is the learner
        if ($event->learner_id != $userId) {
@@ -655,11 +670,10 @@ class TransactionController extends Controller
            return;
        }
 
-       // AGREED - Complete the transaction
-       $this->db->beginTransaction();
-
-
        try {
+           // AGREED - Complete the transaction
+           $this->db->beginTransaction();
+
            // Update event status
            $this->db->query("
                UPDATE chat_transaction_events
@@ -697,7 +711,9 @@ class TransactionController extends Controller
 
 
        } catch (\Throwable $e) {
-           $this->db->rollBack();
+           if (method_exists($this->db, 'inTransaction') && $this->db->inTransaction()) {
+               $this->db->rollBack();
+           }
            error_log("Verify completion error: " . $e->getMessage());
            echo json_encode(['success' => false, 'message' => $e->getMessage() ?: 'Failed to complete transaction.']);
        }
@@ -924,11 +940,21 @@ class TransactionController extends Controller
 
 
        // Also create in main notifications table
+       $titleMap = [
+           'offer_received' => 'Transaction Offer',
+           'session_started' => 'Session Started',
+           'teacher_completed' => 'Session Completed',
+           'dispute_created' => 'Issue Reported',
+           'payment_transferred' => 'Transaction Complete',
+       ];
+       $title = $titleMap[$type] ?? 'Transaction Update';
+
        $this->db->query("
-           INSERT INTO notifications (user_id, type, message, is_read, created_at)
-           VALUES (:user_id, 'transaction', :message, 0, NOW())
+           INSERT INTO notifications (user_id, type, title, message, is_read, created_at)
+           VALUES (:user_id, 'transaction', :title, :message, 0, NOW())
        ");
        $this->db->bind(':user_id', $userId);
+       $this->db->bind(':title', $title);
        $this->db->bind(':message', $message);
        $this->db->execute();
    }

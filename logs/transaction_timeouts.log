@@ -18,3 +18,15 @@
 [2026-02-13 16:18:33] Found 0 events expiring soon
 [2026-02-13 16:18:33] === Processing Complete ===
 [2026-02-13 16:18:33] Total events processed: 0
+[2026-04-17 15:19:04] === Transaction Timeout Processor Started ===
+[2026-04-17 15:19:04] --- Processing Teacher Timeouts ---
+[2026-04-17 15:19:04] Found 0 teacher timeout events
+[2026-04-17 15:19:04] --- Processing Learner Timeouts ---
+[2026-04-17 15:19:04] Found 0 learner timeout events
+[2026-04-17 15:19:04] --- Sending Reminder Notifications ---
+[2026-04-17 15:19:04] Found 0 events needing reminders
+[2026-04-17 15:19:04] --- Sending Expiry Warnings ---
+[2026-04-17 15:19:04] Found 1 events expiring soon
+[2026-04-17 15:19:04] Sent expiry warning for event #10
+[2026-04-17 15:19:04] === Processing Complete ===
+[2026-04-17 15:19:04] Total events processed: 1
