@@ -18,8 +18,9 @@ class ChatController extends Controller
             exit();
         }
 
-        $chatModel  = $this->model('Chat');
-        $userModel  = $this->model('User');
+        $chatModel   = $this->model('Chat');
+        $userModel   = $this->model('User');
+        $walletModel = $this->model('Wallet');
 
         $chatId = $chatModel->getOrCreateChat($currentUserId, $partnerId);
 
@@ -38,10 +39,8 @@ class ChatController extends Controller
             : strtoupper(substr($partnerName, 0, 2));
 
         $db = new Database();
-
-        $db->query("SELECT buckx_balance FROM users WHERE id = :id");
-        $db->bind(':id', $currentUserId);
-        $me = $db->single();
+        $walletModel->ensureWalletExists($currentUserId, $_SESSION['role'] ?? 'individual');
+        $currentWalletBalance = $walletModel->getBalance($currentUserId);
 
         // ── Active transaction event ──────────────────────────────────────────
         $db->query("
@@ -99,6 +98,8 @@ class ChatController extends Controller
             $matchDir = $this->inferDirection($db, $currentUserId, $partnerId);
         }
 
+        $availableSkills = $userModel->getAllSkills();
+
         $data = [
             'title'             => 'Chats',
             'page'              => 'chats',
@@ -107,8 +108,9 @@ class ChatController extends Controller
             'partnerName'       => $partnerName,
             'partnerAvatar'     => $partnerAvatar,
             'chatId'            => $chatId,
-            'buckxBalance'      => $me->buckx_balance ?? 0,
+            'buckxBalance'      => $currentWalletBalance,
             'activeTransaction' => $activeTransaction,
+            'availableSkills'   => $availableSkills,
             // Match context — consumed by chats.php to adapt the transaction modal
             'matchType'         => $matchType,  // 'mutual' | 'multi' | 'single'
             'matchSkill'        => $matchSkill, // skill name (teach skill for mutual)

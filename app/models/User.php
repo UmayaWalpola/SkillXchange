@@ -1,7 +1,7 @@
 <?php
 class User extends Database {
 
-    // 🔹 Register Organization
+    // Register Organization
     public function registerOrganization($name, $email, $password, $certPath) {
         $sql = "INSERT INTO users (username, email, password, role, org_cert)
                 VALUES (:name, :email, :password, 'organization', :cert)";
@@ -13,7 +13,7 @@ class User extends Database {
         return $stmt->execute();
     }
 
-    // 🔹 Register Individual
+    // Register Individual
     public function registerIndividual($name, $email, $password) {
 
         $sql = "INSERT INTO users (username, email, password, role, profile_completed)
@@ -34,7 +34,7 @@ class User extends Database {
     }
 
     
-    // 🔹 Login (Updated with Suspension Logic)
+    // Login (Updated with Suspension Logic)
     public function login($email, $password) {
         $sql = "SELECT * FROM users WHERE email = :email";
         $stmt = $this->connect()->prepare($sql);
@@ -47,7 +47,7 @@ class User extends Database {
             $status = strtolower(trim((string)($user['status'] ?? '')));
             if ($status === 'suspended') {
 
-                // ✅ Auto-lift if expiry time has passed
+                // Auto-lift if expiry time has passed
                 if (!empty($user['suspension_expires_at']) && strtotime($user['suspension_expires_at']) < time()) {
                     $liftSql = "UPDATE users SET
                                     status = 'active',
@@ -73,7 +73,7 @@ class User extends Database {
         return false;
     }
 
-    // 🔹 Find user by ID
+    //  Find user by ID
     public function getUserById($id) {
         $sql = "SELECT * FROM users WHERE id = :id";
         $stmt = $this->connect()->prepare($sql);
@@ -82,7 +82,7 @@ class User extends Database {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // 🔹 Complete Profile Setup
+    //  Complete Profile Setup
     public function completeProfile($userId, $username, $profilePicture, $bio = null) {
         $sql = "UPDATE users 
                 SET username = :username, 
@@ -98,7 +98,7 @@ class User extends Database {
         return $stmt->execute();
     }
 
-    // 🔹 Add User Skills (both teach and learn)
+    //  Add User Skills (both teach and learn)
     public function addUserSkills($userId, $skills, $levels, $type) {
         $sql = "INSERT INTO user_skills (user_id, skill_name, skill_type, proficiency_level) 
                 VALUES (:user_id, :skill_name, :type, :level)";
@@ -126,7 +126,22 @@ class User extends Database {
         return $success;
     }
 
-    // 🔹 Get User Skills
+    public function getAllSkills() {
+        $sql = "SELECT id, skill_name, description FROM skills ORDER BY skill_name ASC";
+        $stmt = $this->connect()->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function skillExists($skillName) {
+        $sql = "SELECT id FROM skills WHERE LOWER(skill_name) = LOWER(:skill_name) LIMIT 1";
+        $stmt = $this->connect()->prepare($sql);
+        $stmt->bindValue(':skill_name', trim($skillName));
+        $stmt->execute();
+        return (bool) $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    //  Get User Skills
     public function getUserSkills($userId) {
         $sql = "SELECT skill_name, skill_type, proficiency_level 
                 FROM user_skills 
@@ -157,7 +172,7 @@ class User extends Database {
         return $skills;
     }
 
-    // 🔹 Get User Projects
+    //  Get User Projects
     public function getUserProjects($userId) {
         $sql = "SELECT * FROM user_projects 
                 WHERE user_id = :user_id 
@@ -188,7 +203,7 @@ class User extends Database {
         return $projects;
     }
 
-    // 🔹 Get User Badges
+    //  Get User Badges
     public function getUserBadges($userId) {
         $sql = "SELECT b.name as badge_name, b.icon as badge_icon, ub.earned_at 
                 FROM user_badges ub
@@ -211,7 +226,7 @@ class User extends Database {
         return $badges;
     }
 
-    // 🔹 Get User Feedback/Reviews
+    //  Get User Feedback/Reviews
     public function getUserFeedback($userId) {
         $sql = "SELECT uf.rating, uf.comment, uf.created_at, u.username as reviewer_name
                 FROM user_feedback uf
@@ -236,7 +251,7 @@ class User extends Database {
         return $feedback;
     }
 
-    // 🔹 Update Profile (for editing)
+    //  Update Profile (for editing)
     public function updateProfile($userId, $username, $profilePicture, $bio = null) {
         $sql = "UPDATE users 
                 SET username = :username, 
@@ -251,7 +266,7 @@ class User extends Database {
         return $stmt->execute();
     }
 
-    // 🔹 Delete User Skills (before updating)
+    //  Delete User Skills (before updating)
     public function deleteUserSkills($userId) {
         $sql = "DELETE FROM user_skills WHERE user_id = :user_id";
         $stmt = $this->connect()->prepare($sql);
@@ -259,7 +274,7 @@ class User extends Database {
         return $stmt->execute();
     }
 
-    // 🔹 Get User Stats
+    //  Get User Stats
     public function getUserStats($userId) {
         $sql = "SELECT * FROM user_stats WHERE user_id = :user_id";
         $stmt = $this->connect()->prepare($sql);
@@ -281,7 +296,51 @@ class User extends Database {
         return $stats;
     }
 
-    // 🔹 Get Average Rating
+    public function getLiveUserStats($userId) {
+        $sql = "SELECT
+                    (
+                        SELECT COUNT(*)
+                        FROM exchanges
+                        WHERE (requester_id = :user_id OR receiver_id = :user_id)
+                          AND status = 'active'
+                    ) AS connections_count,
+                    (
+                        SELECT COUNT(*)
+                        FROM user_skills
+                        WHERE user_id = :user_id
+                          AND skill_type = 'teach'
+                    ) AS skills_taught_count,
+                    (
+                        SELECT COUNT(*)
+                        FROM user_skills
+                        WHERE user_id = :user_id
+                          AND skill_type = 'learn'
+                    ) AS skills_learning_count,
+                    COALESCE((
+                        SELECT hours_exchanged
+                        FROM user_stats
+                        WHERE user_id = :user_id
+                        LIMIT 1
+                    ), 0) AS hours_exchanged";
+        $stmt = $this->connect()->prepare($sql);
+        $stmt->bindValue(':user_id', $userId);
+        $stmt->execute();
+
+        $stats = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$stats) {
+            return [
+                'connections_count' => 0,
+                'skills_taught_count' => 0,
+                'skills_learning_count' => 0,
+                'hours_exchanged' => 0
+            ];
+        }
+
+        return $stats;
+    }
+
+    //  Get Average Rating
     public function getAverageRating($userId) {
         $sql = "SELECT AVG(rating) as avg_rating, COUNT(*) as review_count 
                 FROM user_feedback 
@@ -297,7 +356,7 @@ class User extends Database {
         ];
     }
 
-    // 🔹 Initialize User Stats
+    //  Initialize User Stats
     private function initializeUserStats($userId) {
         $sql = "INSERT INTO user_stats (user_id) VALUES (:user_id)";
         $stmt = $this->connect()->prepare($sql);
@@ -305,7 +364,7 @@ class User extends Database {
         return $stmt->execute();
     }
 
-    // 🔹 Update Skill Stats
+    //  Update Skill Stats
     private function updateSkillStats($userId) {
         $sql = "UPDATE user_stats SET 
                 skills_taught_count = (SELECT COUNT(*) FROM user_skills WHERE user_id = :user_id AND skill_type = 'teach'),
@@ -316,7 +375,7 @@ class User extends Database {
         return $stmt->execute();
     }
 
-    // 🔹 Log User Activity
+    //  Log User Activity
     public function logActivity($userId, $activityType, $description) {
         $sql = "INSERT INTO user_activity (user_id, activity_type, description) 
                 VALUES (:user_id, :type, :description)";
@@ -327,7 +386,7 @@ class User extends Database {
         return $stmt->execute();
     }
 
-    // 🔹 Award Badge to User
+    //  Award Badge to User
     public function awardBadge($userId, $badgeName, $badgeIcon) {
         $sql = "INSERT INTO user_badges (user_id, badge_name, badge_icon) 
                 VALUES (:user_id, :name, :icon)";
@@ -338,7 +397,7 @@ class User extends Database {
         return $stmt->execute();
     }
 
-    // 🔹 Get User Activity
+    //  Get User Activity
     public function getUserActivity($userId) {
         $sql = "SELECT * FROM user_activity 
                 WHERE user_id = :user_id 
@@ -349,7 +408,7 @@ class User extends Database {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // 🔹 Helper: Time Ago
+    // Helper: Time Ago
     private function timeAgo($timestamp) {
         $time = strtotime($timestamp);
         $diff = time() - $time;
@@ -362,7 +421,7 @@ class User extends Database {
         return date('M j, Y', $time);
     }
 
-    // 🔹 Check if username exists
+    // Check if username exists
     public function usernameExists($username, $excludeUserId = null) {
         $sql = "SELECT id FROM users WHERE username = :username";
         if ($excludeUserId) {
@@ -464,7 +523,7 @@ class User extends Database {
     }
 
 
-    // 🔹 Create OTP for password reset
+    //  Create OTP for password reset
     public function createPasswordResetOTP($email) {
         $userSql = "SELECT id FROM users WHERE email = :email AND status != 'suspended'";
         $stmt = $this->connect()->prepare($userSql);
@@ -495,7 +554,7 @@ class User extends Database {
         return $otp;
     }
 
-    // 🔹 Verify OTP and get user
+    //  Verify OTP and get user
     public function verifyPasswordResetOTP($email, $otp) {
         $sql = "SELECT prt.id, prt.user_id, prt.expires_at
                 FROM password_reset_tokens prt
@@ -511,7 +570,7 @@ class User extends Database {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // 🔹 Reset password and mark OTP as used
+    //  Reset password and mark OTP as used
     public function resetPasswordByOTP($email, $otp, $newPassword) {
         $token = $this->verifyPasswordResetOTP($email, $otp);
         if (!$token) return false;

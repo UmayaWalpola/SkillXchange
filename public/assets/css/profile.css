@@ -5,10 +5,10 @@
     padding: 0;
 }
 
-/* Profile Header with Gradient */
+/* Profile Header */
 .profile-header {
     position: relative;
-    background: linear-gradient(135deg, var(--accent-blue), var(--primary-blue));
+    background: var(--primary-blue);
     border-radius: 15px;
     padding: 2rem;
     margin-bottom: 2rem;
@@ -19,6 +19,9 @@
     position: absolute;
     top: 1rem;
     right: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background: rgba(255, 255, 255, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.3);
     color: var(--white-bg);
@@ -26,6 +29,8 @@
     border-radius: 8px;
     font-size: 0.9rem;
     cursor: pointer;
+    text-decoration: none;
+    z-index: 2;
     transition: all 0.3s ease;
     backdrop-filter: blur(10px);
 }

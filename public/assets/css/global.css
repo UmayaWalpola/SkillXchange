@@ -519,7 +519,7 @@ form button:hover {
 
 /* ===== Footer ===== */
 .footer-minimal {
-  background: var(--dark-bg);
+  background: var(--primary-blue);
   color: var(--white-bg);
   padding: 3rem 0 2rem;
   margin-left: 0; 
@@ -1237,6 +1237,5 @@ textarea:focus {
         padding: 10px;
     }
 }
-
 
 

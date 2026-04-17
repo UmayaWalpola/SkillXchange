@@ -225,10 +225,15 @@ function renderFeedback(items, pagination) {
                 ` : ''}
                 
                 <div style="border-top:1px solid #e1eefb;padding-top:12px;margin-top:12px;display:flex;justify-content:flex-end;">
-                    <button class="report-feedback-btn" data-feedback-id="${feedback.id}" style="background:transparent;border:1px solid #e74c3c;color:#e74c3c;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;">
-                        <i class="ph ph-flag" style="font-size:16px;"></i>
-                        Report
-                    </button>
+                    ${
+                        // Only show Report button for feedback the USER RECEIVED (not feedback they gave)
+                        (feedback.user_id == window.CURRENT_USER_ID)
+                        ? `<button class="report-feedback-btn" data-feedback-id="${feedback.id}" style="background:transparent;border:1px solid #e74c3c;color:#e74c3c;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;">
+                            <i class="ph ph-flag" style="font-size:16px;"></i>
+                            Report
+                           </button>`
+                        : ''
+                    }
                 </div>
             </div>
         `;
@@ -311,11 +316,11 @@ document.addEventListener('click', function(e) {
         const btn = e.target.closest('.report-feedback-btn');
         const feedbackId = btn.dataset.feedbackId;
         
-        // Open report modal (defined in feedback_report.js)
-        if (typeof openReportModal === 'function') {
-            openReportModal(feedbackId);
+        // Open feedback-specific report modal (defined in feedback_report.js)
+        if (typeof openFeedbackReportModal === 'function') {
+            openFeedbackReportModal(feedbackId);
         } else {
-            console.error('Report modal function not found. Make sure feedback_report.js is loaded.');
+            console.error('Feedback report modal function not found. Make sure feedback_report.js is loaded.');
         }
     }
 });

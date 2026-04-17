@@ -1,8 +1,4 @@
-
-
-// matches.js - Fixed version with proper UI updates
-
-
+// Matches page behavior
 function connectWithUser(userId, userName) {
    if (!confirm(`Send connection request to ${userName}?`)) {
        return;
@@ -124,8 +120,26 @@ function updateRequestCount() {
 }
 
 
-function viewProfile(userId) {
-   window.location.href = `${URLROOT}/userdashboard/viewProfile/${userId}`;
+function viewProfile(userId, matchType = null, skillOrTeach = null, dirOrLearn = null) {
+   let url = `${URLROOT}/userdashboard/viewProfile/${userId}`;
+   const params = new URLSearchParams();
+
+   if (matchType) {
+       params.set('match_type', matchType);
+   }
+   if (skillOrTeach) {
+       params.set('skill', skillOrTeach);
+   }
+   if (dirOrLearn) {
+       params.set('dir', dirOrLearn);
+   }
+
+   const query = params.toString();
+   if (query) {
+       url += `?${query}`;
+   }
+
+   window.location.href = url;
 }
 
 
@@ -137,34 +151,37 @@ function clearFilters() {
 
 
 function applyFilters() {
-   const tierFilter = document.getElementById('match-tier-filter').value;
-   const skillFilter = document.getElementById('skill-filter').value;
-  
-   const sections = document.querySelectorAll('.match-tier-section');
+   const tierFilter = document.getElementById('match-tier-filter')?.value || 'all';
+   const skillFilter = document.getElementById('skill-filter')?.value || 'all';
+
    const cards = document.querySelectorAll('.match-card');
-  
-   // Show/hide sections based on tier filter
-   sections.forEach(section => {
-       const tier = section.dataset.tier;
-       if (tierFilter === 'all' || tierFilter === tier) {
-           section.style.display = 'block';
-       } else {
-           section.style.display = 'none';
-       }
-   });
-  
-   // Filter cards by skill
+   let visibleCount = 0;
+
    cards.forEach(card => {
-       const cardSkills = JSON.parse(card.dataset.skills || '[]');
-       const matchesSkill = skillFilter === 'all' || cardSkills.includes(skillFilter);
+       let cardSkills = [];
+
+       try {
+           cardSkills = JSON.parse(card.dataset.skills || '[]');
+       } catch (e) {
+           cardSkills = [];
+       }
+
        const matchesTier = tierFilter === 'all' || card.dataset.tier === tierFilter;
-      
-       if (matchesSkill && matchesTier) {
+       const matchesSkill = skillFilter === 'all' || cardSkills.includes(skillFilter);
+
+       if (matchesTier && matchesSkill) {
            card.style.display = 'block';
+           visibleCount++;
        } else {
            card.style.display = 'none';
        }
    });
+
+   // optional: update count text
+   const tierCount = document.querySelector('.tier-count');
+   if (tierCount) {
+       tierCount.textContent = `(${visibleCount} found)`;
+   }
 }
 
 
@@ -194,36 +211,26 @@ function showNotification(message, type = 'info') {
 }
 
 
-function openSkillChat(userId) {
-   window.location.href = `${URLROOT}/chat/user/${userId}`;
-}
+function openSkillChat(userId, matchType = null, skillOrTeach = null, dirOrLearn = null) {
+   let url = `${URLROOT}/chat/user/${userId}`;
+   const params = new URLSearchParams();
 
+   if (matchType) {
+       params.set('match_type', matchType);
+   }
+   if (skillOrTeach) {
+       params.set('skill', skillOrTeach);
+   }
+   if (dirOrLearn) {
+       params.set('dir', dirOrLearn);
+   }
 
-// Search functionality (if needed)
-function searchMatches() {
-   const searchInput = document.querySelector('.matches-search-input');
-   if (!searchInput) return;
-  
-   const query = searchInput.value.toLowerCase();
-   const cards = document.querySelectorAll('.match-card');
-  
-   cards.forEach(card => {
-       const name = card.querySelector('.match-name')?.textContent.toLowerCase() || '';
-       const skills = card.querySelectorAll('.skill-name');
-       let skillText = '';
-       skills.forEach(skill => skillText += skill.textContent.toLowerCase() + ' ');
-      
-       if (name.includes(query) || skillText.includes(query)) {
-           card.style.display = 'block';
-       } else {
-           card.style.display = 'none';
-       }
-   });
-}
+   const query = params.toString();
+   if (query) {
+       url += `?${query}`;
+   }
 
-
-function openSkillChat(userId, skillName = null, direction = null) {
-   window.location.href = `${URLROOT}/chat/user/${userId}`;
+   window.location.href = url;
 }
 
 
@@ -240,13 +247,6 @@ document.addEventListener('DOMContentLoaded', function() {
    if (skillFilter) {
        skillFilter.addEventListener('change', applyFilters);
    }
-  
-   // Search functionality
-   const searchInput = document.querySelector('.matches-search-input');
-   if (searchInput) {
-       searchInput.addEventListener('input', searchMatches);
-   }
-  
    // Log page load for debugging
    console.log('Matches page loaded successfully');
    console.log('URLROOT:', URLROOT);

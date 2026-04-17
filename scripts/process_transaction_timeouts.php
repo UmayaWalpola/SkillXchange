@@ -24,6 +24,48 @@ class TransactionTimeoutProcessor
         $this->log("=== Transaction Timeout Processor Started ===");
     }
 
+    private function ensureWalletExists($userId, $role = 'individual')
+    {
+        $this->db->query("SELECT id FROM wallets WHERE user_id = :user_id");
+        $this->db->bind(':user_id', $userId);
+        $wallet = $this->db->single();
+
+        if (!$wallet) {
+            $initialAmount = ($role === 'organization') ? 1000.00 : 250.00;
+            $this->db->query("INSERT INTO wallets (user_id, balance) VALUES (:user_id, :balance)");
+            $this->db->bind(':user_id', $userId);
+            $this->db->bind(':balance', $initialAmount);
+            $this->db->execute();
+        }
+    }
+
+    private function updateWalletBalance($userId, $amount, $operation = 'add')
+    {
+        if ($operation === 'subtract') {
+            $this->db->query("UPDATE wallets SET balance = balance - :amount WHERE user_id = :user_id");
+        } else {
+            $this->db->query("UPDATE wallets SET balance = balance + :amount WHERE user_id = :user_id");
+        }
+
+        $this->db->bind(':amount', abs((float) $amount));
+        $this->db->bind(':user_id', $userId);
+        return $this->db->execute();
+    }
+
+    private function logWalletTransaction($senderId, $receiverId, $amount, $note, $transactionType = 'transfer')
+    {
+        $this->db->query("
+            INSERT INTO wallet_transactions (sender_id, receiver_id, amount, note, transaction_type, status, created_at)
+            VALUES (:sender_id, :receiver_id, :amount, :note, :transaction_type, 'completed', NOW())
+        ");
+        $this->db->bind(':sender_id', $senderId);
+        $this->db->bind(':receiver_id', $receiverId);
+        $this->db->bind(':amount', abs((float) $amount));
+        $this->db->bind(':note', $note);
+        $this->db->bind(':transaction_type', $transactionType);
+        $this->db->execute();
+    }
+
     /**
      * Main execution method
      */
@@ -372,27 +414,35 @@ class TransactionTimeoutProcessor
      */
     private function transferBuckX($eventId, $learnerId, $teacherId, $amount)
     {
+        $amount = (float) $amount;
+
+        $this->ensureWalletExists($learnerId, 'individual');
+        $this->ensureWalletExists($teacherId, 'individual');
+
         // Update frozen_buckx status
         $this->db->query("UPDATE frozen_buckx SET status = 'transferred', transferred_at = NOW() WHERE event_id = :event_id");
         $this->db->bind(':event_id', $eventId);
         $this->db->execute();
 
-        // Deduct from learner's frozen and balance
+        // Deduct from learner's frozen balance tracker
         $this->db->query("
             UPDATE users 
-            SET buckx_frozen = buckx_frozen - :amount,
-                buckx_balance = buckx_balance - :amount
+            SET buckx_frozen = GREATEST(buckx_frozen - :amount, 0)
             WHERE id = :learner_id
         ");
         $this->db->bind(':amount', $amount);
         $this->db->bind(':learner_id', $learnerId);
         $this->db->execute();
 
-        // Add to teacher's balance
-        $this->db->query("UPDATE users SET buckx_balance = buckx_balance + :amount WHERE id = :teacher_id");
-        $this->db->bind(':amount', $amount);
-        $this->db->bind(':teacher_id', $teacherId);
-        $this->db->execute();
+        $this->updateWalletBalance($learnerId, $amount, 'subtract');
+        $this->updateWalletBalance($teacherId, $amount, 'add');
+        $this->logWalletTransaction(
+            $learnerId,
+            $teacherId,
+            $amount,
+            "BuckX transferred due to learner timeout for event #{$eventId}",
+            'transfer'
+        );
 
         // Log transaction
         $this->logTransaction($eventId, 'buckx_transfer', $learnerId, $teacherId, $amount, null, 

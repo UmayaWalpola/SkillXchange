@@ -16,6 +16,62 @@ class TransactionController extends Controller
        $this->db = new Database();
    }
 
+   private function ensureWalletExists($userId, $role = 'individual')
+   {
+       $walletModel = $this->model('Wallet');
+       $walletModel->ensureWalletExists($userId, $role);
+   }
+
+   private function getWalletBalance($userId)
+   {
+       $this->db->query("SELECT balance FROM wallets WHERE user_id = :user_id");
+       $this->db->bind(':user_id', $userId);
+       $wallet = $this->db->single();
+       return $wallet ? (float) $wallet->balance : 0.0;
+   }
+
+   private function getFrozenBuckx($userId)
+   {
+       $this->db->query("SELECT COALESCE(buckx_frozen, 0) AS buckx_frozen FROM users WHERE id = :user_id");
+       $this->db->bind(':user_id', $userId);
+       $user = $this->db->single();
+       return $user ? (float) $user->buckx_frozen : 0.0;
+   }
+
+   private function updateWalletBalance($userId, $amount, $operation = 'add')
+   {
+       if ($operation === 'subtract') {
+           $this->db->query("UPDATE wallets SET balance = balance - :amount WHERE user_id = :user_id");
+       } else {
+           $this->db->query("UPDATE wallets SET balance = balance + :amount WHERE user_id = :user_id");
+       }
+
+       $this->db->bind(':amount', abs((float) $amount));
+       $this->db->bind(':user_id', $userId);
+       return $this->db->execute();
+   }
+
+   private function logWalletTransaction($senderId, $receiverId, $amount, $note, $transactionType = 'transfer')
+   {
+       $this->db->query("
+           INSERT INTO wallet_transactions (sender_id, receiver_id, amount, note, transaction_type, status, created_at)
+           VALUES (:sender_id, :receiver_id, :amount, :note, :transaction_type, 'completed', NOW())
+       ");
+       $this->db->bind(':sender_id', $senderId);
+       $this->db->bind(':receiver_id', $receiverId);
+       $this->db->bind(':amount', abs((float) $amount));
+       $this->db->bind(':note', $note);
+       $this->db->bind(':transaction_type', $transactionType);
+       return $this->db->execute();
+   }
+
+   private function skillExists($skillName)
+   {
+       $this->db->query("SELECT id FROM skills WHERE LOWER(skill_name) = LOWER(:skill_name) LIMIT 1");
+       $this->db->bind(':skill_name', trim($skillName));
+       return (bool) $this->db->single();
+   }
+
 
    // ============================================
    // 1. CREATE TRANSACTION OFFER
@@ -40,10 +96,10 @@ class TransactionController extends Controller
        $chatId = (int)($_POST['chat_id'] ?? 0);
        $paymentType = trim($_POST['payment_type'] ?? ''); // 'buckx' or 'skillx'
        $amount = isset($_POST['amount']) ? (float)$_POST['amount'] : null;
-       $skillDebtHours = isset($_POST['skill_debt_hours']) ? (float)$_POST['skill_debt_hours'] : null;
        $skillName = trim($_POST['skill_name'] ?? '');
        $timeframeHours = (int)($_POST['timeframe_hours'] ?? 0);
        $role = trim($_POST['role'] ?? ''); // 'teacher' or 'learner'
+       $skillDebtHours = ($paymentType === 'skillx' && $timeframeHours > 0) ? (float) $timeframeHours : null;
 
 
        // Validation
@@ -61,6 +117,16 @@ class TransactionController extends Controller
 
        if ($paymentType === 'skillx' && (!$skillDebtHours || $skillDebtHours <= 0)) {
            echo json_encode(['success' => false, 'message' => 'Invalid SkillX hours.']);
+           return;
+       }
+
+       if ($paymentType === 'skillx' && $skillName === '') {
+           echo json_encode(['success' => false, 'message' => 'Please select a skill for SkillX debt.']);
+           return;
+       }
+
+       if ($paymentType === 'skillx' && !$this->skillExists($skillName)) {
+           echo json_encode(['success' => false, 'message' => 'Selected skill is not available.']);
            return;
        }
 
@@ -224,6 +290,19 @@ class TransactionController extends Controller
 
 
        try {
+           if ($event->payment_type === 'buckx') {
+               $this->ensureWalletExists($event->learner_id, 'individual');
+               $this->ensureWalletExists($event->teacher_id, 'individual');
+
+               $walletBalance = $this->getWalletBalance($event->learner_id);
+               $frozenBuckx = $this->getFrozenBuckx($event->learner_id);
+               $availableBuckx = $walletBalance - $frozenBuckx;
+
+               if ($availableBuckx < (float) $event->amount) {
+                   throw new Exception('Learner does not have enough available BuckX for this session.');
+               }
+           }
+
            // Update event status to 'active'
            $expiresAt = date('Y-m-d H:i:s', strtotime("+{$event->agreed_timeframe_hours} hours"));
           
@@ -303,10 +382,10 @@ class TransactionController extends Controller
            echo json_encode(['success' => true, 'message' => 'Transaction started successfully!']);
 
 
-       } catch (Exception $e) {
+       } catch (\Throwable $e) {
            $this->db->rollBack();
            error_log("Transaction accept error: " . $e->getMessage());
-           echo json_encode(['success' => false, 'message' => 'Failed to start transaction.']);
+           echo json_encode(['success' => false, 'message' => $e->getMessage() ?: 'Failed to start transaction.']);
        }
    }
 
@@ -576,7 +655,6 @@ class TransactionController extends Controller
            return;
        }
 
-
        // AGREED - Complete the transaction
        $this->db->beginTransaction();
 
@@ -618,10 +696,10 @@ class TransactionController extends Controller
            echo json_encode(['success' => true, 'message' => 'Transaction completed successfully!']);
 
 
-       } catch (Exception $e) {
+       } catch (\Throwable $e) {
            $this->db->rollBack();
            error_log("Verify completion error: " . $e->getMessage());
-           echo json_encode(['success' => false, 'message' => 'Failed to complete transaction.']);
+           echo json_encode(['success' => false, 'message' => $e->getMessage() ?: 'Failed to complete transaction.']);
        }
    }
 
@@ -744,17 +822,21 @@ class TransactionController extends Controller
     */
    private function transferBuckX($eventId, $learnerId, $teacherId, $amount)
    {
+       $amount = (float) $amount;
+
+       $this->ensureWalletExists($learnerId, 'individual');
+       $this->ensureWalletExists($teacherId, 'individual');
+
        // Update frozen_buckx status
        $this->db->query("UPDATE frozen_buckx SET status = 'transferred', transferred_at = NOW() WHERE event_id = :event_id");
        $this->db->bind(':event_id', $eventId);
        $this->db->execute();
 
 
-       // Deduct from learner's frozen and balance
+       // Deduct from learner's frozen balance tracker
        $this->db->query("
            UPDATE users
-           SET buckx_frozen = buckx_frozen - :amount,
-               buckx_balance = buckx_balance - :amount
+           SET buckx_frozen = GREATEST(buckx_frozen - :amount, 0)
            WHERE id = :learner_id
        ");
        $this->db->bind(':amount', $amount);
@@ -762,11 +844,21 @@ class TransactionController extends Controller
        $this->db->execute();
 
 
-       // Add to teacher's balance
-       $this->db->query("UPDATE users SET buckx_balance = buckx_balance + :amount WHERE id = :teacher_id");
-       $this->db->bind(':amount', $amount);
-       $this->db->bind(':teacher_id', $teacherId);
-       $this->db->execute();
+       if (!$this->updateWalletBalance($learnerId, $amount, 'subtract')) {
+           throw new Exception('Failed to deduct BuckX from learner wallet.');
+       }
+
+       if (!$this->updateWalletBalance($teacherId, $amount, 'add')) {
+           throw new Exception('Failed to credit BuckX to teacher wallet.');
+       }
+
+       $this->logWalletTransaction(
+           $learnerId,
+           $teacherId,
+           $amount,
+           "BuckX transferred for completed session #{$eventId}",
+           'transfer'
+       );
 
 
        // Log transaction
