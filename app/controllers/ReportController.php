@@ -51,7 +51,7 @@ class ReportController extends Controller
         }
 
         // Check for duplicate report
-        $this->db->query("SELECT id FROM reports WHERE reporter_id = :reporter_id AND reported_user_id = :reported_user_id AND status = 'pending'");
+        $this->db->query("SELECT id FROM reports WHERE reporter_org_id = :reporter_id AND reported_user_id = :reported_user_id AND status = 'pending'");
         $this->db->bind(':reporter_id', $reporterId);
         $this->db->bind(':reported_user_id', $reportedUserId);
         $existing = $this->db->single();
@@ -202,7 +202,7 @@ class ReportController extends Controller
         }
 
         // Check for duplicate report
-        $this->db->query("SELECT id FROM content_reports WHERE reporter_id = :reporter_id AND content_type = :content_type AND content_id = :content_id AND status = 'pending'");
+        $this->db->query("SELECT id FROM content_reports WHERE reporter_org_id = :reporter_id AND content_type = :content_type AND content_id = :content_id AND status = 'pending'");
         $this->db->bind(':reporter_id', $reporterId);
         $this->db->bind(':content_type', $contentType);
         $this->db->bind(':content_id', $contentId);
@@ -214,7 +214,7 @@ class ReportController extends Controller
         }
 
         // Insert report
-        $this->db->query("INSERT INTO content_reports (reporter_id, content_type, content_id, reason, description, status, created_at) 
+        $this->db->query("INSERT INTO content_reports (reporter_org_id, content_type, content_id, reason, description, status, reported_at) 
                          VALUES (:reporter_id, :content_type, :content_id, :reason, :description, 'pending', NOW())");
         $this->db->bind(':reporter_id', $reporterId);
         $this->db->bind(':content_type', $contentType);
