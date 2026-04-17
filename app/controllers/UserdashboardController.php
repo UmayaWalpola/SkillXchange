@@ -497,60 +497,87 @@ public function matches() {
     }
 
     public function postToCommunity() {
-    header('Content-Type: application/json');
-
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        echo json_encode(['success' => false, 'message' => 'Invalid request']);
+        header('Content-Type: application/json');
+ 
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request']);
+            exit;
+        }
+ 
+        $userId      = $this->checkAuth(true);
+        $communityId = $_POST['community_id'] ?? null;
+        $title       = trim($_POST['title'] ?? '');
+        $content     = trim($_POST['content'] ?? '');
+        $postType    = trim($_POST['post_type'] ?? 'discussion');
+        $linkUrl     = trim($_POST['link_url'] ?? '');
+ 
+        if (!$communityId || empty($content)) {
+            echo json_encode(['success' => false, 'message' => 'Content is required']);
+            exit;
+        }
+ 
+        $communityModel = $this->model('Community');
+ 
+        if (!$communityModel->isMember($userId, $communityId)) {
+            echo json_encode(['success' => false, 'message' => 'You must be a member to post']);
+            exit;
+        }
+ 
+        $member = $communityModel->getMemberRole($userId, $communityId);
+        if ($postType === 'announcement' && !in_array($member->role, ['admin', 'moderator'])) {
+            $postType = 'discussion';
+        }
+ 
+        // Handle image upload
+        $imagePath = null;
+        if (!empty($_FILES['image']['name'])) {
+            $file      = $_FILES['image'];
+            $allowed   = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            $maxSize   = 5 * 1024 * 1024; // 5 MB
+ 
+            if (!in_array($file['type'], $allowed)) {
+                echo json_encode(['success' => false, 'message' => 'Only JPEG, PNG, GIF and WebP images are allowed']);
+                exit;
+            }
+            if ($file['size'] > $maxSize) {
+                echo json_encode(['success' => false, 'message' => 'Image must be under 5 MB']);
+                exit;
+            }
+ 
+            $uploadDir = APPROOT . '/../public/assets/uploads/community_posts/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+ 
+            $ext       = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $filename  = 'post_' . $userId . '_' . time() . '.' . strtolower($ext);
+            $destPath  = $uploadDir . $filename;
+ 
+            if (!move_uploaded_file($file['tmp_name'], $destPath)) {
+                echo json_encode(['success' => false, 'message' => 'Failed to upload image']);
+                exit;
+            }
+ 
+            $imagePath = 'assets/uploads/community_posts/' . $filename;
+        }
+ 
+        $postId = $communityModel->createPost(
+            $userId,
+            $communityId,
+            $title    ?: null,
+            $content,
+            $postType ?: 'discussion',
+            $linkUrl  ?: null,
+            $imagePath
+        );
+ 
+        if ($postId) {
+            echo json_encode(['success' => true, 'message' => 'Post created successfully', 'post_id' => $postId]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Failed to create post']);
+        }
         exit;
     }
-
-    $userId = $this->checkAuth();
-    $communityId = $_POST['community_id'] ?? null;
-    $title = trim($_POST['title'] ?? '');
-    $content = trim($_POST['content'] ?? '');
-    $postType = trim($_POST['post_type'] ?? 'discussion');
-    $linkUrl = trim($_POST['link_url'] ?? '');
-
-    if (!$communityId || empty($content)) {
-        echo json_encode(['success' => false, 'message' => 'Content is required']);
-        exit;
-    }
-
-    $communityModel = $this->model('Community');
-
-    if (!$communityModel->isMember($userId, $communityId)) {
-        echo json_encode(['success' => false, 'message' => 'You must be a member to post']);
-        exit;
-    }
-    $member = $communityModel->getMemberRole($userId, $communityId);
-
-// Only admins (or moderators if you want) can post announcements
-if ($postType === 'announcement' && !in_array($member->role, ['admin', 'moderator'])) {
-    $postType = 'discussion'; // force downgrade
-}
-
-    $postId = $communityModel->createPost(
-        $userId,
-        $communityId,
-        $title ?: null,
-        $content,
-        $postType ?: 'discussion',
-        $linkUrl ?: null,
-        null
-    );
-
-    if ($postId) {
-        echo json_encode([
-            'success' => true,
-            'message' => 'Post created successfully',
-            'post_id' => $postId
-        ]);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to create post']);
-    }
-
-    exit;
-}
 
     public function getCommunityMessages() {
         header('Content-Type: application/json');
@@ -662,24 +689,47 @@ public function addCommunityComment() {
 
     exit;
 }
-    public function reactToPost() {
-    header('Content-Type: application/json');
-
-    $userId = $this->checkAuth();
-    $postId = $_POST['post_id'] ?? null;
-    $type = $_POST['reaction_type'] ?? 'like';
-
-    if (!$postId) {
-        echo json_encode(['success' => false]);
-        return;
+   public function reactToPost() {
+        header('Content-Type: application/json');
+ 
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request']);
+            exit;
+        }
+ 
+        $userId = $this->checkAuth(true);
+        $postId = $_POST['post_id'] ?? null;
+        $type   = $_POST['reaction_type'] ?? 'like';
+ 
+        if (!$postId) {
+            echo json_encode(['success' => false, 'message' => 'Post ID required']);
+            exit;
+        }
+ 
+        $communityModel = $this->model('Community');
+ 
+        // Toggle: if already reacted with same type, remove it; otherwise add/swap
+        $existing = $communityModel->getUserReaction($userId, $postId);
+ 
+        if ($existing && $existing->reaction_type === $type) {
+            // Unlike
+            $communityModel->removeReaction($userId, $postId);
+            $reacted = false;
+        } else {
+            // Like (or swap reaction)
+            $communityModel->addReaction($userId, $postId, $type);
+            $reacted = true;
+        }
+ 
+        $likeCount = $communityModel->getReactionCount($postId, $type);
+ 
+        echo json_encode([
+            'success'    => true,
+            'reacted'    => $reacted,
+            'like_count' => (int) $likeCount
+        ]);
+        exit;
     }
-
-    $communityModel = $this->model('Community');
-
-    $success = $communityModel->addReaction($userId, $postId, $type);
-
-    echo json_encode(['success' => $success]);
-}
     // ============================================
     // QUIZ METHODS
     // ============================================

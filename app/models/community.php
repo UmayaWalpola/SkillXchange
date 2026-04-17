@@ -347,33 +347,26 @@ class Community {
  /**
   * Get posts in a community (for forum view)
  */
-public function getCommunityPosts($communityId) {
-    $this->db->query("
-        SELECT 
-            cp.id,
-            cp.community_id,
-            cp.user_id,
-            cp.title,
-            cp.content,
-            cp.link_url,
-            cp.image_path,
-            cp.post_type,
-            cp.parent_id,
-            cp.is_pinned,
-            cp.created_at,
-            cp.updated_at,
-            u.username AS author_name,
-            u.profile_picture
-        FROM community_posts cp
-        JOIN users u ON cp.user_id = u.id
-        WHERE cp.community_id = :community_id
-          AND cp.parent_id IS NULL
-        ORDER BY cp.is_pinned DESC, cp.created_at DESC
-    ");
-
-    $this->db->bind(':community_id', $communityId);
-    return $this->db->resultSet();
-}
+public function getCommunityPosts($communityId, $userId = null) {
+        $this->db->query("
+            SELECT
+                p.*,
+                u.username AS author_name,
+                (SELECT COUNT(*) FROM community_post_reactions r
+                 WHERE r.post_id = p.id AND r.reaction_type = 'like') AS like_count,
+                " . ($userId ? "
+                (SELECT COUNT(*) FROM community_post_reactions r2
+                 WHERE r2.post_id = p.id AND r2.user_id = :user_id AND r2.reaction_type = 'like') AS user_reacted
+                " : "0 AS user_reacted") . "
+            FROM community_posts p
+            LEFT JOIN users u ON p.user_id = u.id
+            WHERE p.community_id = :community_id
+            ORDER BY p.is_pinned DESC, p.created_at ASC
+        ");
+        $this->db->bind(':community_id', $communityId);
+        if ($userId) $this->db->bind(':user_id', $userId);
+        return $this->db->resultSet();
+    }
     /**
      * Create a post in community
      */
@@ -529,6 +522,46 @@ public function getMemberRole($userId, $communityId) {
         }
         
         return false;
+    }
+     /**
+     * Get a single user reaction on a post (or null if none).
+     */
+    public function getUserReaction($userId, $postId) {
+        $this->db->query("
+            SELECT * FROM community_post_reactions
+            WHERE user_id = :user_id AND post_id = :post_id
+            LIMIT 1
+        ");
+        $this->db->bind(':user_id', $userId);
+        $this->db->bind(':post_id', $postId);
+        return $this->db->single(); // returns object or false
+    }
+ 
+    /**
+     * Remove a user's reaction from a post.
+     */
+    public function removeReaction($userId, $postId) {
+        $this->db->query("
+            DELETE FROM community_post_reactions
+            WHERE user_id = :user_id AND post_id = :post_id
+        ");
+        $this->db->bind(':user_id', $userId);
+        $this->db->bind(':post_id', $postId);
+        return $this->db->execute();
+    }
+ 
+    /**
+     * Get total reaction count for a post (filtered by type).
+     */
+    public function getReactionCount($postId, $type = 'like') {
+        $this->db->query("
+            SELECT COUNT(*) as cnt FROM community_post_reactions
+            WHERE post_id = :post_id AND reaction_type = :type
+        ");
+        $this->db->bind(':post_id', $postId);
+        $this->db->bind(':type', $type);
+        $row = $this->db->single();
+        return $row ? $row->cnt : 0;
     }
     
     /**

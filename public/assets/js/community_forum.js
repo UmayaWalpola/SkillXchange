@@ -1,320 +1,374 @@
-
-
 // Get configuration from PHP
 const currentUser = {
     id: window.currentUserId || 1,
     name: window.currentUserName || 'You'
 };
-const urlRoot = window.urlRoot || '';
+const urlRoot = window.urlRoot || window.URLROOT || '';
 
-// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ Communities module loaded');
-    console.log('URL Root:', urlRoot);
-    console.log('Current User:', currentUser);
-    
     if (!urlRoot) {
-        console.error('❌ ERROR: URLROOT not defined!');
-        alert('Configuration error: URLROOT is not set. Please refresh the page.');
+        console.error('❌ URLROOT not defined!');
         return;
     }
-    
-    console.log('✅ All checks passed. Buttons should work now.');
+    console.log('✅ Communities module loaded');
 });
 
 // ============================================
 // COMMUNITY ACTIONS
 // ============================================
 
-/**
- * Join a community
- */
 async function joinCommunity(id) {
-    console.log('Joining community:', id);
-    
-    if (!urlRoot) {
-        alert('Configuration error. Please refresh the page.');
-        return;
-    }
-    
     try {
-        const response = await fetch(urlRoot + '/userdashboard/joinCommunity', {
+        const res = await fetch(urlRoot + '/userdashboard/joinCommunity', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: `community_id=${id}`
         });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        console.log('Join result:', result);
-        
-        if (result.success) {
-            showNotification(result.message, 'success');
-            setTimeout(() => location.reload(), 1000);
-        } else {
-            showNotification(result.message || 'Failed to join community', 'error');
-        }
-    } catch (error) {
-        console.error('Join error:', error);
+        const result = await res.json();
+        showNotification(result.message, result.success ? 'success' : 'error');
+        if (result.success) setTimeout(() => location.reload(), 1000);
+    } catch (e) {
         showNotification('Network error. Please try again.', 'error');
     }
 }
 
-/**
- * Leave a community
- */
 async function leaveCommunity(id) {
-    if (!confirm('Are you sure you want to leave this community?')) {
-        return;
-    }
-    
-    console.log('Leaving community:', id);
-    
+    if (!confirm('Are you sure you want to leave this community?')) return;
     try {
-        const response = await fetch(urlRoot + '/userdashboard/leaveCommunity', {
+        const res = await fetch(urlRoot + '/userdashboard/leaveCommunity', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: `community_id=${id}`
         });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        console.log('Leave result:', result);
-        
-        if (result.success) {
-            showNotification(result.message, 'success');
-            setTimeout(() => location.reload(), 1000);
-        } else {
-            showNotification(result.message || 'Failed to leave community', 'error');
-        }
-    } catch (error) {
-        console.error('Leave error:', error);
+        const result = await res.json();
+        showNotification(result.message, result.success ? 'success' : 'error');
+        if (result.success) setTimeout(() => location.reload(), 1000);
+    } catch (e) {
         showNotification('Network error. Please try again.', 'error');
     }
 }
 
-/**
- * View community details
- */
 function viewCommunity(communityId) {
-    console.log('Viewing community:', communityId);
     window.location.href = urlRoot + '/userdashboard/viewCommunity/' + communityId;
 }
 
 // ============================================
-// COMMUNITY MESSAGING (for detail page)
+// CREATE POST (with image upload via FormData)
 // ============================================
 
-
 async function createCommunityPost(communityId) {
-    const titleInput = document.getElementById('postTitle');
-    const contentInput = document.getElementById('postContent');
-    const postTypeInput = document.getElementById('postType');
-    const linkInput = document.getElementById('postLink');
-
-    const title = titleInput?.value.trim() || '';
-    const content = contentInput?.value.trim() || '';
-    const postType = postTypeInput?.value || 'discussion';
-    const linkUrl = linkInput?.value.trim() || '';
+    const title    = document.getElementById('postTitle')?.value.trim() || '';
+    const content  = document.getElementById('postContent')?.value.trim() || '';
+    const postType = document.getElementById('postType')?.value || 'discussion';
+    const linkUrl  = document.getElementById('postLink')?.value.trim() || '';
+    const imageFile = document.getElementById('postImage')?.files[0] || null;
 
     if (!content) {
         showNotification('Post content is required.', 'error');
         return;
     }
 
-    try {
-        const response = await fetch(urlRoot + '/userdashboard/postToCommunity', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body:
-                `community_id=${encodeURIComponent(communityId)}` +
-                `&title=${encodeURIComponent(title)}` +
-                `&content=${encodeURIComponent(content)}` +
-                `&post_type=${encodeURIComponent(postType)}` +
-                `&link_url=${encodeURIComponent(linkUrl)}`
-        });
+    const formData = new FormData();
+    formData.append('community_id', communityId);
+    formData.append('title', title);
+    formData.append('content', content);
+    formData.append('post_type', postType);
+    formData.append('link_url', linkUrl);
+    if (imageFile) formData.append('image', imageFile);
 
-        const result = await response.json();
+    const btn = document.getElementById('postSubmitBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Posting…'; }
+
+    try {
+        const res = await fetch(urlRoot + '/userdashboard/postToCommunity', {
+            method: 'POST',
+            body: formData   // no Content-Type header — browser sets multipart boundary
+        });
+        const result = await res.json();
 
         if (result.success) {
-            showNotification(result.message || 'Post created successfully!', 'success');
-            titleInput.value = '';
-            contentInput.value = '';
-            postTypeInput.value = 'discussion';
-            linkInput.value = '';
+            showNotification(result.message || 'Post created!', 'success');
             setTimeout(() => location.reload(), 700);
         } else {
             showNotification(result.message || 'Failed to create post.', 'error');
+            if (btn) { btn.disabled = false; btn.textContent = 'Post'; }
         }
-    } catch (error) {
-        console.error('Create post error:', error);
+    } catch (e) {
+        console.error(e);
         showNotification('Network error. Please try again.', 'error');
+        if (btn) { btn.disabled = false; btn.textContent = 'Post'; }
     }
 }
 
-window.createCommunityPost = createCommunityPost;
+// Image preview helper
+document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('postImage');
+    if (!input) return;
+    input.addEventListener('change', function () {
+        const file = this.files[0];
+        const wrap = document.getElementById('imagePreviewWrap');
+        const preview = document.getElementById('imagePreview');
+        if (file && wrap && preview) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                preview.src = e.target.result;
+                wrap.style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+});
+
+function removeImagePreview() {
+    const input = document.getElementById('postImage');
+    const wrap  = document.getElementById('imagePreviewWrap');
+    const preview = document.getElementById('imagePreview');
+    if (input)   input.value = '';
+    if (preview) preview.src = '';
+    if (wrap)    wrap.style.display = 'none';
+}
+
+// ============================================
+// LIKES — update in-place, no page reload
+// ============================================
+
+async function likePost(postId) {
+    const btn       = document.getElementById('like-btn-' + postId);
+    const countEl   = document.getElementById('like-count-' + postId);
+    if (!btn) return;
+
+    try {
+        const res = await fetch(urlRoot + '/userdashboard/reactToPost', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `post_id=${postId}&reaction_type=like`
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            // Toggle liked class
+            btn.classList.toggle('liked', data.reacted);
+            btn.title = data.reacted ? 'Unlike' : 'Like';
+
+            // Update the SVG fill
+            const icon = btn.querySelector('.like-icon');
+            if (icon) icon.setAttribute('fill', data.reacted ? 'currentColor' : 'none');
+
+            // Update count
+            if (countEl) countEl.textContent = data.like_count;
+        } else {
+            showNotification(data.message || 'Could not react', 'error');
+        }
+    } catch (e) {
+        console.error(e);
+        showNotification('Network error.', 'error');
+    }
+}
+
+// ============================================
+// COMMENTS
+// ============================================
 
 function toggleComments(postId) {
     const el = document.getElementById('comments-' + postId);
-    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    if (!el) return;
+    const isHidden = el.style.display === 'none' || el.style.display === '';
+    el.style.display = isHidden ? 'block' : 'none';
+
+    // Focus comment input when opening
+    if (isHidden) {
+        const input = el.querySelector('.comment-input');
+        if (input) setTimeout(() => input.focus(), 50);
+    }
 }
 
 async function handleComment(event, communityId, postId) {
     if (event.key !== 'Enter') return;
-
     event.preventDefault();
 
-    const input = event.target;
+    const input   = event.target;
     const content = input.value.trim();
+    if (!content) return;
 
-    if (!content) {
-        return;
-    }
+    input.disabled = true;
 
     try {
-        const response = await fetch(urlRoot + '/userdashboard/addCommunityComment', {
+        const res = await fetch(urlRoot + '/userdashboard/addCommunityComment', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body:
-                `community_id=${encodeURIComponent(communityId)}` +
-                `&parent_id=${encodeURIComponent(postId)}` +
-                `&content=${encodeURIComponent(content)}`
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `community_id=${encodeURIComponent(communityId)}&parent_id=${encodeURIComponent(postId)}&content=${encodeURIComponent(content)}`
         });
-
-        const result = await response.json();
+        const result = await res.json();
 
         if (result.success) {
-            showNotification('Comment added!', 'success');
-            setTimeout(() => location.reload(), 500);
+            // Append the new comment to the DOM without a reload
+            appendComment(postId, currentUser.name, content);
+            input.value = '';
         } else {
             showNotification(result.message || 'Failed to add comment', 'error');
         }
-    } catch (error) {
-        console.error('Comment error:', error);
-        showNotification('Network error. Please try again.', 'error');
+    } catch (e) {
+        console.error(e);
+        showNotification('Network error.', 'error');
+    } finally {
+        input.disabled = false;
+        input.focus();
     }
 }
 
-function likePost(postId) {
-    fetch(urlRoot + '/userdashboard/reactToPost', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `post_id=${postId}&reaction_type=like`
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            location.reload(); // simple for now
-        } else {
-            showNotification(data.message || 'Failed to react', 'error');
-        }
-    })
-    .catch(err => {
-        console.error(err);
-        showNotification('Error reacting to post', 'error');
-    });
-}
+function appendComment(postId, authorName, content) {
+    const section = document.getElementById('comments-' + postId);
+    if (!section) return;
 
+    let list = section.querySelector('.comments-list');
+    if (!list) {
+        list = document.createElement('div');
+        list.className = 'comments-list';
+        section.insertBefore(list, section.querySelector('.add-comment-row'));
+    }
+
+    // Remove "no comments yet" placeholder if present
+    const placeholder = list.querySelector('.no-comments-yet');
+    if (placeholder) placeholder.remove();
+
+    const item = document.createElement('div');
+    item.className = 'comment-item';
+    item.innerHTML = `
+        <div class="member-avatar comment-avatar">${escapeHtml(authorName.charAt(0).toUpperCase())}</div>
+        <div class="comment-body">
+            <span class="comment-author">${escapeHtml(authorName)}</span>
+            <span class="comment-text">${escapeHtml(content)}</span>
+            <span class="comment-time">just now</span>
+        </div>
+    `;
+    list.appendChild(item);
+
+    // Update the button count
+    const toggleBtn = document.querySelector(`[onclick="toggleComments(${postId})"]`);
+    if (toggleBtn) {
+        const current = parseInt(toggleBtn.textContent.match(/\d+/)?.[0] || '0');
+        toggleBtn.innerHTML = `<i class="ph ph-chat-circle"></i> ${current + 1} Comments`;
+    }
+}
 
 // ============================================
 // UI HELPERS
 // ============================================
 
-/**
- * Show notification toast
- */
 function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.textContent = message;
-    notification.style.cssText = `
-        position: fixed;
-        top: 80px;
-        right: 20px;
-        padding: 15px 20px;
-        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
-        color: white;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        z-index: 10000;
-        animation: slideIn 0.3s ease-out;
-        max-width: 300px;
-        font-weight: 500;
+    const n = document.createElement('div');
+    n.className = `notification notification-${type}`;
+    n.textContent = message;
+    n.style.cssText = `
+        position:fixed;top:80px;right:20px;
+        padding:15px 20px;
+        background:${type==='success'?'#10b981':type==='error'?'#ef4444':'#3b82f6'};
+        color:#fff;border-radius:8px;
+        box-shadow:0 4px 12px rgba(0,0,0,.15);
+        z-index:10000;animation:slideIn .3s ease-out;
+        max-width:300px;font-weight:500;
     `;
-    
-    document.body.appendChild(notification);
-    
+    document.body.appendChild(n);
     setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease-out';
-        setTimeout(() => notification.remove(), 300);
+        n.style.animation = 'slideOut .3s ease-out';
+        setTimeout(() => n.remove(), 300);
     }, 3000);
 }
 
-/**
- * Escape HTML to prevent XSS
- */
 function escapeHtml(text) {
     if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+    const d = document.createElement('div');
+    d.textContent = text;
+    return d.innerHTML;
 }
 
-// ============================================
-// STYLES
-// ============================================
-
-// Add notification animations
 if (!document.getElementById('notification-styles')) {
-    const style = document.createElement('style');
-    style.id = 'notification-styles';
-    style.textContent = `
-        @keyframes slideIn {
-            from {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
+    const s = document.createElement('style');
+    s.id = 'notification-styles';
+    s.textContent = `
+        @keyframes slideIn { from { transform:translateX(400px);opacity:0 } to { transform:translateX(0);opacity:1 } }
+        @keyframes slideOut { from { transform:translateX(0);opacity:1 } to { transform:translateX(400px);opacity:0 } }
+
+        /* Like button */
+        .like-btn {
+            display:inline-flex;align-items:center;gap:6px;
+            padding:6px 12px;border-radius:8px;border:1.5px solid var(--border,#e8e8f0);
+            background:transparent;cursor:pointer;font-size:.85rem;font-weight:600;
+            color:var(--text-2,#4a4a6a);transition:all .2s;
         }
-        
-        @keyframes slideOut {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(400px);
-                opacity: 0;
-            }
+        .like-btn:hover { border-color:#2563eb;color:#2563eb; }
+        .like-btn.liked { background:#eff6ff;border-color:#2563eb;color:#2563eb; }
+        .like-btn.liked .like-icon { fill:#2563eb;stroke:#2563eb; }
+
+        /* Comments toggle */
+        .comments-toggle-btn {
+            display:inline-flex;align-items:center;gap:6px;
+            padding:6px 12px;border-radius:8px;border:1.5px solid var(--border,#e8e8f0);
+            background:transparent;cursor:pointer;font-size:.85rem;font-weight:600;
+            color:var(--text-2,#4a4a6a);transition:all .2s;
+        }
+        .comments-toggle-btn:hover { border-color:#7c3aed;color:#7c3aed; }
+
+        /* Comments section */
+        .comments-section {
+            margin-top:1rem;padding-top:1rem;
+            border-top:1px solid var(--border,#e8e8f0);
+        }
+        .comments-list { display:flex;flex-direction:column;gap:.65rem;margin-bottom:.85rem; }
+        .comment-item { display:flex;align-items:flex-start;gap:.6rem; }
+        .comment-avatar { width:28px;height:28px;font-size:.75rem;flex-shrink:0; }
+        .comment-body { display:flex;flex-wrap:wrap;align-items:baseline;gap:.35rem;font-size:.88rem; }
+        .comment-author { font-weight:600;color:var(--text-1,#1a1a2e); }
+        .comment-text { color:var(--text-2,#4a4a6a); }
+        .comment-time { font-size:.75rem;color:var(--text-3,#8888aa); }
+        .no-comments-yet { font-size:.85rem;color:var(--text-3,#8888aa);padding:.25rem 0; }
+
+        /* Add comment row */
+        .add-comment-row { display:flex;align-items:center;gap:.6rem;margin-top:.5rem; }
+        .comment-input {
+            flex:1;padding:.55rem .85rem;
+            border:1.5px solid var(--border,#e8e8f0);border-radius:20px;
+            font-size:.88rem;outline:none;
+            background:var(--surface-2,#f8f8fc);
+            transition:border-color .2s;
+        }
+        .comment-input:focus { border-color:#2563eb; }
+
+        /* Image upload */
+        .image-upload-wrap { display:flex;flex-direction:column;gap:.5rem; }
+        .image-upload-label {
+            display:inline-flex;align-items:center;gap:.4rem;
+            padding:.55rem 1rem;border-radius:8px;cursor:pointer;
+            border:1.5px dashed var(--border,#e8e8f0);
+            font-size:.88rem;color:var(--text-2,#4a4a6a);
+            transition:border-color .2s;width:fit-content;
+        }
+        .image-upload-label:hover { border-color:#2563eb;color:#2563eb; }
+        .image-upload-input { display:none; }
+        .image-preview-wrap {
+            position:relative;display:flex;width:fit-content;
+            border-radius:10px;overflow:hidden;border:1px solid var(--border,#e8e8f0);
+        }
+        .image-preview-wrap img { max-height:180px;max-width:100%;object-fit:cover;display:block; }
+        .remove-image-btn {
+            position:absolute;top:6px;right:6px;
+            background:rgba(0,0,0,.55);color:#fff;
+            border:none;border-radius:50%;width:24px;height:24px;
+            cursor:pointer;font-size:.8rem;line-height:1;
         }
     `;
-    document.head.appendChild(style);
+    document.head.appendChild(s);
 }
 
 // ============================================
 // GLOBAL EXPORTS
 // ============================================
 
-window.joinCommunity = joinCommunity;
-window.leaveCommunity = leaveCommunity;
-window.viewCommunity = viewCommunity;
+window.joinCommunity       = joinCommunity;
+window.leaveCommunity      = leaveCommunity;
+window.viewCommunity       = viewCommunity;
 window.createCommunityPost = createCommunityPost;
+window.likePost            = likePost;
+window.toggleComments      = toggleComments;
+window.handleComment       = handleComment;
+window.removeImagePreview  = removeImagePreview;
