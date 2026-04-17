@@ -1,49 +1,31 @@
 let messagePollingInterval = null;
 let lastMessageId = 0;
 
-/**
- * Open chat window with a specific partner
- */
 function openChatWindow(partnerId) {
     window.location.href = `${URLROOT}/chat/user/${partnerId}`;
 }
 
-/**
- * Load messages for current chat
- */
+// ── Messages ──────────────────────────────────────────────────────────────────
+
 function loadMessages() {
     if (!CURRENT_CHAT_ID) return;
 
     fetch(`${URLROOT}/chat/fetchUserMessages?chat_id=${CURRENT_CHAT_ID}`)
-        .then(response => response.json())
+        .then(r => r.json())
         .then(data => {
-            console.log('Messages received:', data);
-
             if (data.success) {
                 displayMessages(data.messages, data.current_user_id);
-
                 if (data.messages.length > 0) {
                     lastMessageId = data.messages[data.messages.length - 1].id;
                 }
-            } else {
-                console.error('Failed to load messages:', data.message);
             }
         })
-        .catch(error => {
-            console.error('Error loading messages:', error);
-        });
+        .catch(err => console.error('Error loading messages:', err));
 }
 
-/**
- * Display messages in the chat window
- */
 function displayMessages(messages, currentUserId) {
     const container = document.getElementById('messagesContainer');
-
-    if (!container) {
-        console.error('messagesContainer not found');
-        return;
-    }
+    if (!container) return;
 
     if (!messages || messages.length === 0) {
         container.innerHTML = '<div class="no-messages">No messages yet. Start the conversation!</div>';
@@ -53,57 +35,38 @@ function displayMessages(messages, currentUserId) {
     let html = '';
     messages.forEach(msg => {
         const isOwn = msg.sender_id == currentUserId;
-        const messageClass = isOwn ? 'message own-message' : 'message';
-
-        let avatarHTML = '';
-        if (msg.sender_profile_pic && msg.sender_profile_pic.includes('uploads/')) {
-            avatarHTML = `<img src="${URLROOT}/${msg.sender_profile_pic}" alt="Avatar">`;
-        } else {
-            const initials = msg.sender_name
-                ? msg.sender_name.substring(0, 2).toUpperCase()
-                : '??';
-            avatarHTML = initials;
-        }
+        let avatarHTML = msg.sender_profile_pic && msg.sender_profile_pic.includes('uploads/')
+            ? `<img src="${URLROOT}/${msg.sender_profile_pic}" alt="Avatar">`
+            : (msg.sender_name ? msg.sender_name.substring(0, 2).toUpperCase() : '??');
 
         html += `
-            <div class="${messageClass}" data-message-id="${msg.id}">
-                <div class="message-avatar">
-                    ${avatarHTML}
-                </div>
+            <div class="${isOwn ? 'message own-message' : 'message'}" data-message-id="${msg.id}">
+                <div class="message-avatar">${avatarHTML}</div>
                 <div class="message-content">
                     ${!isOwn ? `<div class="message-sender">${msg.sender_name}</div>` : ''}
                     <div class="message-text">${escapeHtml(msg.message)}</div>
                     <div class="message-time">${formatMessageTime(msg.created_at)}</div>
                 </div>
-            </div>
-        `;
+            </div>`;
     });
 
     container.innerHTML = html;
     scrollToBottom();
 }
 
-/**
- * Send a new message
- */
 function sendMessage(event) {
     event.preventDefault();
-
-    const input = document.getElementById('messageInput');
+    const input  = document.getElementById('messageInput');
     const message = input.value.trim();
-    const chatId = document.getElementById('chatId')?.value;
-
+    const chatId  = document.getElementById('chatId')?.value;
     if (!message || !chatId) return;
 
     const formData = new FormData();
     formData.append('chat_id', chatId);
     formData.append('message', message);
 
-    fetch(`${URLROOT}/chat/sendUserMessage`, {
-        method: 'POST',
-        body: formData
-    })
-        .then(response => response.json())
+    fetch(`${URLROOT}/chat/sendUserMessage`, { method: 'POST', body: formData })
+        .then(r => r.json())
         .then(data => {
             if (data.success) {
                 input.value = '';
@@ -112,99 +75,68 @@ function sendMessage(event) {
                 showNotification(data.message || 'Failed to send message.', 'error');
             }
         })
-        .catch(error => {
-            console.error('Error sending message:', error);
-            showNotification('Network error. Please try again.', 'error');
-        });
+        .catch(() => showNotification('Network error. Please try again.', 'error'));
 }
 
-/**
- * Poll for new messages
- */
 function pollForNewMessages() {
     if (!CURRENT_CHAT_ID) return;
-
     fetch(`${URLROOT}/chat/fetchUserMessages?chat_id=${CURRENT_CHAT_ID}`)
-        .then(response => response.json())
+        .then(r => r.json())
         .then(data => {
             if (data.success && data.messages.length > 0) {
                 const latestId = data.messages[data.messages.length - 1].id;
-
                 if (latestId > lastMessageId) {
                     displayMessages(data.messages, data.current_user_id);
                     lastMessageId = latestId;
                 }
             }
         })
-        .catch(error => {
-            console.error('Error polling messages:', error);
-        });
+        .catch(() => {});
 }
 
-/**
- * View partner's profile
- */
+// ── Profile ───────────────────────────────────────────────────────────────────
+
 function viewPartnerProfile(partnerId) {
     window.location.href = `${URLROOT}/userdashboard/viewProfile/${partnerId}`;
 }
 
-/**
- * Open/close transaction modal
- */
+// ── Transaction modal ─────────────────────────────────────────────────────────
+
 function openTransactionModal() {
     const modal = document.getElementById('transactionModal');
-    if (!modal) {
-        console.error('transactionModal not found');
-        return;
-    }
+    if (!modal) { console.error('transactionModal not found'); return; }
     modal.style.display = 'flex';
 }
 
 function closeTransactionModal() {
     const modal = document.getElementById('transactionModal');
-    if (!modal) return;
-    modal.style.display = 'none';
+    if (modal) modal.style.display = 'none';
 }
 
-/**
- * Open/close report modal
- */
+// ── Report modal ──────────────────────────────────────────────────────────────
+
 function openReportModal(eventId) {
-    const modal = document.getElementById('reportModal');
+    const modal      = document.getElementById('reportModal');
     const eventInput = document.getElementById('reportEventId');
-
-    if (!modal || !eventInput) {
-        console.error('report modal elements not found');
-        return;
-    }
-
+    if (!modal || !eventInput) { console.error('report modal elements not found'); return; }
     eventInput.value = eventId;
     modal.style.display = 'flex';
 }
 
 function closeReportModal() {
     const modal = document.getElementById('reportModal');
-    if (!modal) return;
-    modal.style.display = 'none';
+    if (modal) modal.style.display = 'none';
 }
 
-/**
- * Respond to offer
- */
+// ── Transaction actions ───────────────────────────────────────────────────────
+
 function respondToOffer(eventId, action) {
     const formData = new FormData();
     formData.append('event_id', eventId);
     formData.append('action', action);
 
-    fetch(`${URLROOT}/transaction/respondToOffer`, {
-        method: 'POST',
-        body: formData
-    })
-        .then(async response => {
-            const text = await response.text();
-            console.log('Raw respondToOffer response:', text);
-            return JSON.parse(text);
-        })
+    fetch(`${URLROOT}/transaction/respondToOffer`, { method: 'POST', body: formData })
+        .then(async r => JSON.parse(await r.text()))
         .then(data => {
             if (data.success) {
                 showNotification(data.message || 'Offer updated.', 'success');
@@ -213,30 +145,17 @@ function respondToOffer(eventId, action) {
                 showNotification(data.message || 'Failed to update offer.', 'error');
             }
         })
-        .catch(error => {
-            console.error('Error responding to offer:', error);
-            showNotification('Network error.', 'error');
-        });
+        .catch(() => showNotification('Network error.', 'error'));
 }
 
-/**
- * Leave lesson
- */
 function leaveLesson(eventId) {
     if (!confirm('Are you sure you want to leave this lesson?')) return;
 
     const formData = new FormData();
     formData.append('event_id', eventId);
 
-    fetch(`${URLROOT}/transaction/leaveLesson`, {
-        method: 'POST',
-        body: formData
-    })
-        .then(async response => {
-            const text = await response.text();
-            console.log('Raw leaveLesson response:', text);
-            return JSON.parse(text);
-        })
+    fetch(`${URLROOT}/transaction/leaveLesson`, { method: 'POST', body: formData })
+        .then(async r => JSON.parse(await r.text()))
         .then(data => {
             if (data.success) {
                 showNotification(data.message || 'Lesson left successfully.', 'success');
@@ -245,165 +164,109 @@ function leaveLesson(eventId) {
                 showNotification(data.message || 'Failed to leave lesson.', 'error');
             }
         })
-        .catch(error => {
-            console.error('Error leaving lesson:', error);
-            showNotification('Network error.', 'error');
-        });
+        .catch(() => showNotification('Network error.', 'error'));
 }
 
-/**
- * Mark session completed
- */
 function markCompleted(eventId) {
     if (!confirm('Mark this session as completed?')) return;
 
     const formData = new FormData();
     formData.append('event_id', eventId);
 
-    fetch(`${URLROOT}/transaction/markCompleted`, {
-        method: 'POST',
-        body: formData
-    })
-        .then(response => response.json())
+    fetch(`${URLROOT}/transaction/markCompleted`, { method: 'POST', body: formData })
+        .then(async r => JSON.parse(await r.text()))
         .then(data => {
             if (data.success) {
                 showNotification(data.message || 'Marked as completed.', 'success');
                 setTimeout(() => location.reload(), 500);
             } else {
-                showNotification(data.message || 'Failed to mark completed.', 'error');
+                showNotification(data.message || 'Failed.', 'error');
             }
         })
-        .catch(error => {
-            console.error('Error marking completed:', error);
-            showNotification('Network error.', 'error');
-        });
+        .catch(() => showNotification('Network error.', 'error'));
 }
 
-/**
- * Verify completion
- */
 function verifyCompletion(eventId, action) {
+    if (action === 'agreed' && !confirm('Confirm the session was completed and release payment?')) return;
+
     const formData = new FormData();
     formData.append('event_id', eventId);
     formData.append('action', action);
 
-    fetch(`${URLROOT}/transaction/verifyCompletion`, {
-        method: 'POST',
-        body: formData
-    })
-        .then(response => response.json())
+    fetch(`${URLROOT}/transaction/verifyCompletion`, { method: 'POST', body: formData })
+        .then(r => r.json())
         .then(data => {
             if (data.success) {
-                showNotification(data.message || 'Verification completed.', 'success');
+                showNotification(data.message || 'Done.', 'success');
                 setTimeout(() => location.reload(), 500);
             } else {
-                showNotification(data.message || 'Failed to verify.', 'error');
+                showNotification(data.message || 'Failed.', 'error');
             }
         })
-        .catch(error => {
-            console.error('Error verifying completion:', error);
-            showNotification('Network error.', 'error');
-        });
+        .catch(() => showNotification('Network error.', 'error'));
 }
 
-/**
- * Search chats
- */
+// ── Search chats sidebar ──────────────────────────────────────────────────────
+
 function searchChats() {
-    const searchInput = document.getElementById('searchChats');
-    if (!searchInput) return;
-
-    const query = searchInput.value.toLowerCase();
-    const chatItems = document.querySelectorAll('.chat-item');
-
-    chatItems.forEach(item => {
+    const query = document.getElementById('searchChats')?.value.toLowerCase() || '';
+    document.querySelectorAll('.chat-item').forEach(item => {
         const name = item.querySelector('.chat-name')?.textContent.toLowerCase() || '';
-        const preview = item.querySelector('.chat-preview')?.textContent.toLowerCase() || '';
-
-        if (name.includes(query) || preview.includes(query)) {
-            item.style.display = 'flex';
-        } else {
-            item.style.display = 'none';
-        }
+        item.style.display = name.includes(query) ? '' : 'none';
     });
 }
 
-/**
- * Scroll to bottom
- */
+// ── Utilities ─────────────────────────────────────────────────────────────────
+
 function scrollToBottom() {
     const container = document.getElementById('messagesContainer');
-    if (container) {
-        container.scrollTop = container.scrollHeight;
-    }
+    if (container) container.scrollTop = container.scrollHeight;
 }
 
-/**
- * Format message time
- */
 function formatMessageTime(timestamp) {
     const date = new Date(timestamp);
-    const now = new Date();
+    const now  = new Date();
     const diff = now - date;
-
-    if (diff < 60000) return 'Just now';
-
-    if (diff < 3600000) {
-        const mins = Math.floor(diff / 60000);
-        return `${mins}m ago`;
-    }
-
-    if (date.toDateString() === now.toDateString()) {
+    if (diff < 60000)    return 'Just now';
+    if (diff < 3600000)  return `${Math.floor(diff / 60000)}m ago`;
+    if (date.toDateString() === now.toDateString())
         return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-    }
-
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
-    if (date.toDateString() === yesterday.toDateString()) {
+    if (date.toDateString() === yesterday.toDateString())
         return 'Yesterday ' + date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-    }
-
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-/**
- * Escape HTML
- */
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
-/**
- * Show notification
- */
 function showNotification(message, type = 'info') {
     const existing = document.querySelector('.notification-banner');
-    if (existing) {
-        existing.remove();
-    }
+    if (existing) existing.remove();
 
-    const notification = document.createElement('div');
-    notification.className = `notification-banner notification-${type}`;
-    notification.innerHTML = `
-        <span class="notification-message">${message}</span>
-        <button class="notification-close" onclick="this.parentElement.remove()">×</button>
-    `;
-
-    document.body.appendChild(notification);
+    const n = document.createElement('div');
+    n.className = `notification-banner notification-${type}`;
+    n.innerHTML = `<span class="notification-message">${message}</span>
+                   <button class="notification-close" onclick="this.parentElement.remove()">×</button>`;
+    document.body.appendChild(n);
 
     setTimeout(() => {
-        if (notification.parentElement) {
-            notification.style.opacity = '0';
-            setTimeout(() => notification.remove(), 300);
+        if (n.parentElement) {
+            n.style.opacity = '0';
+            setTimeout(() => n.remove(), 300);
         }
     }, 5000);
 }
 
-/**
- * Session countdown
- */
+// ── Session countdown ─────────────────────────────────────────────────────────
+// When the countdown hits zero, the server-side cron (process_transaction_timeouts.php)
+// handles the actual transfer. The countdown is purely visual — it alerts the user
+// that time is up and triggers a page reload so the banner updates.
+
 function startSessionCountdown() {
     const countdownEl = document.getElementById('sessionCountdown');
     if (!countdownEl) return;
@@ -411,39 +274,43 @@ function startSessionCountdown() {
     const expiresAt = countdownEl.dataset.expiresAt;
     if (!expiresAt) return;
 
+    let expiredNotified = false;
+
     function updateCountdown() {
-        const end = new Date(expiresAt.replace(' ', 'T'));
-        const now = new Date();
+        const end  = new Date(expiresAt.replace(' ', 'T'));
+        const now  = new Date();
         const diff = end - now;
 
         if (diff <= 0) {
-            countdownEl.textContent = 'Session expired';
+            countdownEl.textContent = '⏰ Session time expired — processing...';
+            if (!expiredNotified) {
+                expiredNotified = true;
+                showNotification('Session time has expired. The transaction is being processed.', 'info');
+                // Reload after a short delay so the banner reflects the updated DB status
+                setTimeout(() => location.reload(), 4000);
+            }
             return;
         }
 
-        const totalSeconds = Math.floor(diff / 1000);
-        const days = Math.floor(totalSeconds / 86400);
-        const hours = Math.floor((totalSeconds % 86400) / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
+        const totalSecs = Math.floor(diff / 1000);
+        const days    = Math.floor(totalSecs / 86400);
+        const hours   = Math.floor((totalSecs % 86400) / 3600);
+        const minutes = Math.floor((totalSecs % 3600) / 60);
+        const seconds = totalSecs % 60;
 
-        if (days > 0) {
-            countdownEl.textContent = `Time remaining: ${days}d ${hours}h ${minutes}m ${seconds}s`;
-        } else {
-            countdownEl.textContent = `Time remaining: ${hours}h ${minutes}m ${seconds}s`;
-        }
+        countdownEl.textContent = days > 0
+            ? `Time remaining: ${days}d ${hours}h ${minutes}m ${seconds}s`
+            : `Time remaining: ${hours}h ${minutes}m ${seconds}s`;
     }
 
     updateCountdown();
     setInterval(updateCountdown, 1000);
 }
 
-/**
- * Init on page load
- */
+// ── Init ──────────────────────────────────────────────────────────────────────
+
 document.addEventListener('DOMContentLoaded', function () {
-    console.log('Chats page loaded');
-    console.log('Current chat ID:', CURRENT_CHAT_ID);
+    console.log('Chats page loaded. Chat ID:', CURRENT_CHAT_ID, '| Match type:', MATCH_TYPE);
 
     if (CURRENT_CHAT_ID) {
         loadMessages();
@@ -451,115 +318,116 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     const searchInput = document.getElementById('searchChats');
-    if (searchInput) {
-        searchInput.addEventListener('input', searchChats);
-    }
+    if (searchInput) searchInput.addEventListener('input', searchChats);
 
     const messageInput = document.getElementById('messageInput');
-    if (messageInput) {
-        messageInput.focus();
-    }
+    if (messageInput) messageInput.focus();
 
+    // Payment type toggle
     const paymentType = document.getElementById('paymentType');
     if (paymentType) {
         paymentType.addEventListener('change', function () {
             const buckxGroup = document.getElementById('buckxAmountGroup');
             const skillxGroup = document.getElementById('skillxGroup');
-
             if (this.value === 'buckx') {
-                if (buckxGroup) buckxGroup.style.display = 'block';
+                if (buckxGroup)  buckxGroup.style.display  = 'block';
                 if (skillxGroup) skillxGroup.style.display = 'none';
             } else if (this.value === 'skillx') {
-                if (buckxGroup) buckxGroup.style.display = 'none';
+                if (buckxGroup)  buckxGroup.style.display  = 'none';
                 if (skillxGroup) skillxGroup.style.display = 'block';
             } else {
-                if (buckxGroup) buckxGroup.style.display = 'none';
+                if (buckxGroup)  buckxGroup.style.display  = 'none';
                 if (skillxGroup) skillxGroup.style.display = 'none';
             }
         });
     }
 
+    // Transaction form submit
     const transactionForm = document.getElementById('transactionForm');
     if (transactionForm) {
         transactionForm.addEventListener('submit', function (e) {
             e.preventDefault();
-
             if (!CURRENT_CHAT_ID) {
                 showNotification('No active chat selected.', 'error');
                 return;
             }
 
+            // For single/multi, role is a hidden input already set to MATCH_DIR.
+            // For mutual, role comes from the visible select.
             const role = document.getElementById('transactionRole')?.value || '';
+            if (!role) {
+                showNotification('Please select your role for this session.', 'error');
+                return;
+            }
+
             const paymentTypeValue = document.getElementById('paymentType')?.value || '';
-            const amount = document.getElementById('buckxAmount')?.value || '';
-            const skillName = document.getElementById('skillName')?.value || '';
-            const skillDebtHours = document.getElementById('skillDebtHours')?.value || '';
+            const amount           = document.getElementById('buckxAmount')?.value  || '';
+            const skillName        = document.getElementById('skillName')?.value    || '';
+            const skillDebtHours   = document.getElementById('skillDebtHours')?.value || '';
+            const timeframeValue   = parseInt(document.getElementById('timeframeValue')?.value || '0', 10);
+            const timeframeUnit    = document.getElementById('timeframeUnit')?.value || 'hours';
+            const timeframeHours   = timeframeUnit === 'days' ? timeframeValue * 24 : timeframeValue;
 
-            const timeframeValue = parseInt(document.getElementById('timeframeValue')?.value || '0', 10);
-            const timeframeUnit = document.getElementById('timeframeUnit')?.value || 'hours';
-
-            let timeframeHours = timeframeValue;
-            if (timeframeUnit === 'days') {
-                timeframeHours = timeframeValue * 24;
+            if (!paymentTypeValue) {
+                showNotification('Please select a payment type.', 'error');
+                return;
+            }
+            if (paymentTypeValue === 'buckx' && (!amount || parseFloat(amount) <= 0)) {
+                showNotification('Please enter a valid BuckX amount.', 'error');
+                return;
+            }
+            if (paymentTypeValue === 'skillx' && (!skillDebtHours || parseFloat(skillDebtHours) <= 0)) {
+                showNotification('Please enter valid skill debt hours.', 'error');
+                return;
+            }
+            if (!timeframeHours || timeframeHours <= 0) {
+                showNotification('Please enter a valid timeframe.', 'error');
+                return;
             }
 
             const formData = new FormData();
-            formData.append('chat_id', CURRENT_CHAT_ID);
-            formData.append('role', role);
-            formData.append('payment_type', paymentTypeValue);
-            formData.append('amount', amount);
-            formData.append('skill_name', skillName);
+            formData.append('chat_id',        CURRENT_CHAT_ID);
+            formData.append('role',           role);
+            formData.append('payment_type',   paymentTypeValue);
+            formData.append('amount',         amount);
+            formData.append('skill_name',     skillName);
             formData.append('skill_debt_hours', skillDebtHours);
             formData.append('timeframe_hours', timeframeHours);
 
-            fetch(`${URLROOT}/transaction/createOffer`, {
-    method: 'POST',
-    body: formData
-})
-    .then(async response => {
-        const text = await response.text();
-        console.log('Raw createOffer response:', text);
-        return JSON.parse(text);
-    })
-    .then(data => {
-        if (data.success) {
-            showNotification(data.message || 'Offer created successfully.', 'success');
-            closeTransactionModal();
-            setTimeout(() => location.reload(), 500);
-        } else {
-            showNotification(data.message || 'Failed to create offer.', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error creating offer:', error);
-        showNotification('Network error while creating offer.', 'error');
-    });
+            fetch(`${URLROOT}/transaction/createOffer`, { method: 'POST', body: formData })
+                .then(async r => JSON.parse(await r.text()))
+                .then(data => {
+                    if (data.success) {
+                        showNotification(data.message || 'Offer created successfully.', 'success');
+                        closeTransactionModal();
+                        setTimeout(() => location.reload(), 500);
+                    } else {
+                        showNotification(data.message || 'Failed to create offer.', 'error');
+                    }
+                })
+                .catch(() => showNotification('Network error while creating offer.', 'error'));
         });
     }
 
+    // Report form submit
     const reportForm = document.getElementById('reportForm');
     if (reportForm) {
         reportForm.addEventListener('submit', function (e) {
             e.preventDefault();
-
             const eventId = document.getElementById('reportEventId')?.value;
-            const reason = document.getElementById('disputeReason')?.value.trim();
-
+            const reason  = document.getElementById('disputeReason')?.value.trim();
             if (!eventId || !reason) {
                 showNotification('Please provide a reason for the report.', 'error');
                 return;
             }
 
             const formData = new FormData();
-            formData.append('event_id', eventId);
-            formData.append('action', 'report');
+            formData.append('event_id',       eventId);
+            formData.append('action',         'report');
             formData.append('dispute_reason', reason);
 
-            fetch(`${URLROOT}/transaction/verifyCompletion`, {
-                method: 'POST',
-                body: formData
-            })
-                .then(response => response.json())
+            fetch(`${URLROOT}/transaction/verifyCompletion`, { method: 'POST', body: formData })
+                .then(r => r.json())
                 .then(data => {
                     if (data.success) {
                         showNotification(data.message || 'Issue reported.', 'success');
@@ -569,21 +437,13 @@ document.addEventListener('DOMContentLoaded', function () {
                         showNotification(data.message || 'Failed to report issue.', 'error');
                     }
                 })
-                .catch(error => {
-                    console.error('Error reporting issue:', error);
-                    showNotification('Network error.', 'error');
-                });
+                .catch(() => showNotification('Network error.', 'error'));
         });
     }
 
     startSessionCountdown();
 });
 
-/**
- * Cleanup
- */
 window.addEventListener('beforeunload', function () {
-    if (messagePollingInterval) {
-        clearInterval(messagePollingInterval);
-    }
+    if (messagePollingInterval) clearInterval(messagePollingInterval);
 });

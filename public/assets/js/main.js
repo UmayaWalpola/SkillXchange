@@ -1,305 +1,187 @@
-// main.js - Complete JavaScript functionality for SkillXchange homepage
-document.addEventListener('DOMContentLoaded', () => {
-  initFadeInObserver();
-  initCountersObserver();
-  initCardEffects();
-  handleHeaderScroll();
-  bindAnchorSmoothScroll();
-});
+// matches.js - Fixed: passes match_type, skill, direction to chat URL
 
-/* ===== FADE-IN ANIMATIONS ===== */
-function initFadeInObserver() {
-  const items = document.querySelectorAll('.fade-in');
-  const observer = new IntersectionObserver((entries, observer) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.style.animationPlayState = 'running';
-        observer.unobserve(entry.target);
-      }
-    });
-  }, { 
-    threshold: 0.12,
-    rootMargin: '0px 0px -50px 0px'
-  });
-  
-  items.forEach(item => {
-    item.style.animationPlayState = 'paused';
-    observer.observe(item);
-  });
-}
-
-/* ===== ANIMATED COUNTERS ===== */
-function initCountersObserver() {
-  const cards = document.querySelectorAll('.stat-card');
-  const observer = new IntersectionObserver((entries, observer) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        startCounter(entry.target);
-        observer.unobserve(entry.target);
-      }
-    });
-  }, { 
-    threshold: 0.25,
-    rootMargin: '0px 0px -50px 0px'
-  });
-
-  cards.forEach(card => observer.observe(card));
-}
-
-function startCounter(card) {
-  const numberEl = card.querySelector('.stat-number');
-  const target = parseInt(card.dataset.count || numberEl.textContent || '0', 10);
-  
-  if (isNaN(target) || target <= 0) { 
-    numberEl.textContent = numberEl.textContent; 
-    return; 
-  }
-
-  let current = 0;
-  const duration = 2000; // 2 seconds
-  const steps = 60; // approximately 60fps
-  const increment = target / steps;
-  const stepTime = duration / steps;
-
-  function step() {
-    current += increment;
-    if (current < target) {
-      numberEl.textContent = Math.ceil(current) + '+';
-      setTimeout(step, stepTime);
-    } else {
-      numberEl.textContent = target + '+';
+function connectWithUser(userId, userName) {
+    if (!confirm(`Send connection request to ${userName}?`)) {
+        return;
     }
-  }
-  
-  step();
-}
 
-/* ===== INTERACTIVE CARD EFFECTS ===== */
-function initCardEffects() {
-  // Skill cards with 3D tilt and click effects
-  document.querySelectorAll('.skill-card').forEach(card => {
-    // 3D tilt effect on mouse move
-    card.addEventListener('mousemove', (e) => {
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-      
-      const rotateX = (y - centerY) / 12;
-      const rotateY = (centerX - x) / 12;
-      
-      card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-10px)`;
-    });
-    
-    // Reset transform on mouse leave
-    card.addEventListener('mouseleave', () => {
-      card.style.transform = '';
-    });
-    
-    // Click effect with pulse animation
-    card.addEventListener('click', () => {
-      card.style.animation = 'pulse 0.28s ease';
-      setTimeout(() => card.style.animation = '', 280);
-      
-      // Get skill data for potential routing/modal opening
-      const skillType = card.dataset.skill;
-      console.log(`Clicked skill: ${skillType}`);
-      
-      // Placeholder for skill detail modal or navigation
-      // openSkillModal(skillType) or window.location.href = `/skills/${skillType}`
-    });
-    
-    // Enhanced hover effect for skill icon
-    const skillIcon = card.querySelector('.skill-icon');
-    if (skillIcon) {
-      card.addEventListener('mouseenter', () => {
-        skillIcon.style.transform = 'scale(1.1) rotate(5deg)';
-      });
-      
-      card.addEventListener('mouseleave', () => {
-        skillIcon.style.transform = '';
-      });
-    }
-  });
+    const formData = new FormData();
+    formData.append('user_id', userId);
 
-  // Stats cards with subtle 3D effects
-  document.querySelectorAll('.stat-card').forEach(card => {
-    card.addEventListener('mousemove', (e) => {
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-      
-      const rotateX = (y - centerY) / 14;
-      const rotateY = (centerX - x) / 14;
-      
-      card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-    });
-    
-    card.addEventListener('mouseleave', () => {
-      card.style.transform = '';
-    });
-  });
-
-  // Process steps with 3D tilt
-  document.querySelectorAll('.process-step').forEach(card => {
-    card.addEventListener('mousemove', (e) => {
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-      
-      const rotateX = (y - centerY) / 14;
-      const rotateY = (centerX - x) / 14;
-      
-      card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-5px)`;
-    });
-    
-    card.addEventListener('mouseleave', () => {
-      card.style.transform = '';
-    });
-  });
-}
-
-/* ===== HEADER SCROLL BEHAVIOR ===== */
-/* ===== INLINE HEADER FUNCTIONALITY ===== */
-function handleHeaderScroll() {
-    const header = document.getElementById('header');
-    
-    if (!header) return;
-
-    window.addEventListener('scroll', () => {
-        if (window.scrollY > 20) {
-            header.classList.add('scrolled');
+    fetch(`${URLROOT}/userdashboard/connect`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message || 'Connection request sent!', 'success');
+            updateButtonToPending(userId);
         } else {
-            header.classList.remove('scrolled');
+            showNotification(data.message || 'Failed to send request', 'error');
         }
-    }, { passive: true });
-}
-
-
-/* ===== SMOOTH SCROLL FOR ANCHOR LINKS ===== */
-function bindAnchorSmoothScroll() {
-  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function(e) {
-      const href = this.getAttribute('href');
-      
-      // Skip empty anchors
-      if (!href || href === '#') return;
-      
-      e.preventDefault();
-      
-      const target = document.querySelector(href);
-      if (target) {
-        const headerHeight = document.querySelector('.header')?.offsetHeight || 80;
-        const targetPosition = target.offsetTop - headerHeight - 20;
-        
-        window.scrollTo({
-          top: targetPosition,
-          behavior: 'smooth'
-        });
-      }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Network error. Please try again.', 'error');
     });
-  });
 }
 
-/* ===== UTILITY FUNCTIONS ===== */
+function updateButtonToPending(userId) {
+    const matchCards = document.querySelectorAll(`.match-card`);
+    matchCards.forEach(card => {
+        const connectBtn = card.querySelector('.btn-connect');
+        if (connectBtn && connectBtn.onclick.toString().includes(`connectWithUser(${userId}`)) {
+            const footer = connectBtn.closest('.match-footer');
+            connectBtn.remove();
+            const pendingBadge = document.createElement('span');
+            pendingBadge.className = 'badge badge-warning';
+            pendingBadge.innerHTML = '⏳ Request Pending';
+            footer.appendChild(pendingBadge);
+        }
+    });
+}
 
-// Throttle function for performance optimization
-function throttle(func, limit) {
-  let inThrottle;
-  return function() {
-    const args = arguments;
-    const context = this;
-    if (!inThrottle) {
-      func.apply(context, args);
-      inThrottle = true;
-      setTimeout(() => inThrottle = false, limit);
+function handleRequest(exchangeId, action) {
+    const actionText = action === 'accept' ? 'accept' : 'reject';
+    if (!confirm(`Are you sure you want to ${actionText} this request?`)) return;
+
+    const formData = new FormData();
+    formData.append('exchange_id', exchangeId);
+    formData.append('action', action);
+
+    fetch(`${URLROOT}/userdashboard/handleRequest`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message, 'success');
+            const requestCard = document.querySelector(`[onclick*="handleRequest(${exchangeId}"]`).closest('.request-card');
+            if (requestCard) {
+                requestCard.style.opacity = '0';
+                requestCard.style.transform = 'translateX(-20px)';
+                setTimeout(() => {
+                    requestCard.remove();
+                    updateRequestCount();
+                    if (action === 'accept') {
+                        setTimeout(() => location.reload(), 1000);
+                    }
+                }, 300);
+            }
+        } else {
+            showNotification(data.message || 'Action failed', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Network error. Please try again.', 'error');
+    });
+}
+
+function updateRequestCount() {
+    const requestsSection = document.querySelector('.connection-requests-section');
+    if (requestsSection) {
+        const requestCards = requestsSection.querySelectorAll('.request-card');
+        const badgeCount = requestsSection.querySelector('.badge-count');
+        if (badgeCount) badgeCount.textContent = requestCards.length;
+        if (requestCards.length === 0) requestsSection.style.display = 'none';
     }
-  }
 }
 
-// Debounce function for input handling
-function debounce(func, wait, immediate) {
-  let timeout;
-  return function() {
-    const context = this;
-    const args = arguments;
-    const later = function() {
-      timeout = null;
-      if (!immediate) func.apply(context, args);
-    };
-    const callNow = immediate && !timeout;
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-    if (callNow) func.apply(context, args);
-  };
+function viewProfile(userId) {
+    window.location.href = `${URLROOT}/userdashboard/viewProfile/${userId}`;
 }
 
-/* ===== ADDITIONAL INTERACTIVE FEATURES ===== */
-
-// Button hover effects enhancement
-document.querySelectorAll('.btn-primary, .btn-secondary, .explore-more-btn').forEach(btn => {
-  btn.addEventListener('mouseenter', function() {
-    this.style.transform = 'translateY(-4px) scale(1.05)';
-  });
-  
-  btn.addEventListener('mouseleave', function() {
-    this.style.transform = '';
-  });
-});
-
-// Logo hover effect
-const logo = document.querySelector('.logo');
-if (logo) {
-  logo.addEventListener('mouseenter', () => {
-    logo.style.transform = 'scale(1.05)';
-  });
-  
-  logo.addEventListener('mouseleave', () => {
-    logo.style.transform = '';
-  });
+function clearFilters() {
+    document.getElementById('match-tier-filter').value = 'all';
+    document.getElementById('skill-filter').value = 'all';
+    applyFilters();
 }
 
-// Add loading state management
-window.addEventListener('load', () => {
-  document.body.classList.add('loaded');
-  
-  // Trigger any final animations or setup
-  setTimeout(() => {
-    document.querySelectorAll('.fade-in').forEach(el => {
-      if (!el.style.animationPlayState || el.style.animationPlayState === 'paused') {
-        el.style.animationPlayState = 'running';
-      }
+function applyFilters() {
+    const tierFilter = document.getElementById('match-tier-filter').value;
+    const skillFilter = document.getElementById('skill-filter').value;
+
+    document.querySelectorAll('.match-tier-section').forEach(section => {
+        const tier = section.dataset.tier;
+        section.style.display = (tierFilter === 'all' || tierFilter === tier) ? 'block' : 'none';
     });
-  }, 100);
-});
 
-// Handle resize events for responsive behavior
-window.addEventListener('resize', throttle(() => {
-  // Reset any transforms that might not work well on different screen sizes
-  document.querySelectorAll('.skill-card, .stat-card, .process-step').forEach(card => {
-    card.style.transform = '';
-  });
-}, 250));
-
-// Keyboard navigation support
-document.addEventListener('keydown', (e) => {
-  // ESC key to close any open modals or reset states
-  if (e.key === 'Escape') {
-    document.querySelectorAll('.skill-card, .stat-card, .process-step').forEach(card => {
-      card.style.transform = '';
-      card.style.animation = '';
+    document.querySelectorAll('.match-card').forEach(card => {
+        const cardSkills = JSON.parse(card.dataset.skills || '[]');
+        const matchesSkill = skillFilter === 'all' || cardSkills.includes(skillFilter);
+        const matchesTier = tierFilter === 'all' || card.dataset.tier === tierFilter;
+        card.style.display = (matchesSkill && matchesTier) ? 'block' : 'none';
     });
-  }
-});
+}
 
-/* ===== CONSOLE BRANDING ===== */
-console.log('%c🚀 SkillXchange Platform Loaded', 'color: #388C2B; font-size: 16px; font-weight: bold;');
-console.log('%cReady to connect skills and build the future!', 'color: #4CAF50; font-size: 12px;');
+/**
+ * Navigate to chat, passing match context as URL params so ChatController
+ * can determine whether to show role selector in the transaction modal.
+ *
+ * @param {number} userId       - Partner's user ID
+ * @param {string} matchType    - 'mutual' | 'multi' | 'single'
+ * @param {string} skillOrTeach - For mutual: the skill current user teaches.
+ *                                For single/multi: the matched skill name.
+ * @param {string} dirOrLearn  - For mutual: the skill current user learns.
+ *                                For single/multi: 'teacher' or 'learner' (current user's fixed role).
+ */
+function openSkillChat(userId, matchType = null, skillOrTeach = null, dirOrLearn = null) {
+    let url = `${URLROOT}/chat/user/${userId}`;
+    const params = new URLSearchParams();
+
+    if (matchType)    params.set('match_type', matchType);
+    if (skillOrTeach) params.set('skill', skillOrTeach);
+    if (dirOrLearn)   params.set('dir', dirOrLearn);
+
+    const qs = params.toString();
+    if (qs) url += '?' + qs;
+
+    window.location.href = url;
+}
+
+function showNotification(message, type = 'info') {
+    const existing = document.querySelector('.notification-banner');
+    if (existing) existing.remove();
+
+    const notification = document.createElement('div');
+    notification.className = `notification-banner notification-${type}`;
+    notification.innerHTML = `
+        <span class="notification-message">${message}</span>
+        <button class="notification-close" onclick="this.parentElement.remove()">×</button>
+    `;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.style.opacity = '0';
+            setTimeout(() => notification.remove(), 300);
+        }
+    }, 5000);
+}
+
+function searchMatches() {
+    const searchInput = document.querySelector('.matches-search-input');
+    if (!searchInput) return;
+    const query = searchInput.value.toLowerCase();
+    document.querySelectorAll('.match-card').forEach(card => {
+        const name = card.querySelector('.match-name')?.textContent.toLowerCase() || '';
+        let skillText = '';
+        card.querySelectorAll('.skill-name').forEach(s => skillText += s.textContent.toLowerCase() + ' ');
+        card.style.display = (name.includes(query) || skillText.includes(query)) ? 'block' : 'none';
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const tierFilter = document.getElementById('match-tier-filter');
+    const skillFilter = document.getElementById('skill-filter');
+    if (tierFilter)  tierFilter.addEventListener('change', applyFilters);
+    if (skillFilter) skillFilter.addEventListener('change', applyFilters);
+
+    const searchInput = document.querySelector('.matches-search-input');
+    if (searchInput) searchInput.addEventListener('input', searchMatches);
+
+    console.log('Matches page loaded. URLROOT:', URLROOT);
+});

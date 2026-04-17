@@ -820,3 +820,29 @@
         width: 100%;
     }
 }
+/* ── Fixed role display (single/multi matches) ── */
+.role-fixed-display {
+    padding: 10px 14px;
+    background: var(--blue-bg);
+    border: 2px solid var(--accent-blue);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.role-badge {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--dark-bg);
+}
+
+.role-teacher { color: #0369a1; }
+.role-learner { color: #7c3aed; }
+
+.role-fixed-display small {
+    margin-top: 0;
+    font-size: 12px;
+    color: var(--dark-bg);
+    opacity: 0.6;
+}
