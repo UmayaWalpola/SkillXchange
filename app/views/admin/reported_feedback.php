@@ -9,23 +9,10 @@ require_once "../app/views/layouts/header_user.php";
 require_once "../app/views/layouts/adminsidebar.php";
 ?>
 
-<style>
-    /* ---------------------------------------------------------------------
-       REPORTED FEEDBACK PAGE LAYOUT
-       Prevent overlap with fixed admin sidebar (250px) and fixed top header.
-       --------------------------------------------------------------------- */
-    .reported-feedback-main {
-        margin-left: 250px;
-        margin-top: 64px;
-        width: calc(100% - 250px);
-        padding: 30px;
-        box-sizing: border-box;
-    }
+<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
+<link rel="stylesheet" href="<?= URLROOT ?>/assets/css/dashboard.css">
 
-    .reported-feedback-container {
-        max-width: 1400px;
-        margin: 0 auto;
-    }
+<style>
 
     .report-card {
         background: white;
@@ -151,16 +138,16 @@ require_once "../app/views/layouts/adminsidebar.php";
     }
 </style>
 
-<main class="reported-feedback-main">
-    <div class="container reported-feedback-container">
-        <!-- Header -->
-        <div style="margin-bottom:30px;">
-            <h1 style="font-size:32px;font-weight:700;color:#1a1a1a;margin-bottom:10px;display:flex;align-items:center;gap:12px;">
-                <i class="ph ph-flag" style="color:#e74c3c;"></i>
-                Reported Feedback
-            </h1>
-            <p style="color:#666;font-size:16px;">Show only user-submitted feedback reports (abusive, fake, spam, inappropriate, other).</p>
+<main class="site-main">
+<div class="dashboard-container">
+<div class="dashboard-main">
+
+    <div class="page-header">
+        <div>
+            <h1>Reported Feedback</h1>
+            <p>Show only user-submitted feedback reports (abusive, fake, spam, inappropriate, other).</p>
         </div>
+    </div>
 
         <!-- Statistics Cards -->
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-bottom:30px;">
@@ -240,13 +227,18 @@ require_once "../app/views/layouts/adminsidebar.php";
                                 </div>
                             </div>
                             
-                            <?php if ($report['status'] === 'pending'): ?>
-                                <div style="display:flex;gap:10px;">
-                                    <button class="admin-action-btn btn-dismiss" onclick="updateReportStatus(<?= $report['id'] ?>, 'dismissed')">
+                            <?php if (in_array($report['status'], ['pending', 'reviewed'])): ?>
+                                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                    <?php if ($report['status'] === 'pending'): ?>
+                                    <button class="admin-action-btn btn-dismiss" onclick="openActionModal(<?= $report['id'] ?>, 'dismissed')">
                                         <i class="ph ph-x-circle"></i> Dismiss
                                     </button>
-                                    <button class="admin-action-btn btn-reviewed" onclick="updateReportStatus(<?= $report['id'] ?>, 'reviewed')">
+                                    <button class="admin-action-btn btn-reviewed" onclick="openActionModal(<?= $report['id'] ?>, 'reviewed')">
                                         <i class="ph ph-check-circle"></i> Mark Reviewed
+                                    </button>
+                                    <?php endif; ?>
+                                    <button class="admin-action-btn" style="background:#f0a500;color:white;" onclick="warnUser(<?= $report['id'] ?>, <?= (int)($report['feedback_user_id'] ?? 0) ?>)">
+                                        <i class="ph ph-warning"></i> Warn User
                                     </button>
                                     <button class="admin-action-btn btn-remove" onclick="removeFeedback(<?= $report['id'] ?>, <?= $report['feedback_id'] ?>)">
                                         <i class="ph ph-trash"></i> Remove Feedback
@@ -366,72 +358,186 @@ require_once "../app/views/layouts/adminsidebar.php";
             </div>
         <?php endif; ?>
     </div>
+
+</div>
+</div>
 </main>
+
+<!-- Admin Action Modal -->
+<div id="actionModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:white;border-radius:16px;padding:30px;max-width:480px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+        <h3 style="margin:0 0 8px;font-size:20px;color:#1a1a1a;" id="actionModalTitle">Confirm Action</h3>
+        <p style="color:#666;font-size:14px;margin-bottom:20px;" id="actionModalDesc"></p>
+        <div style="margin-bottom:20px;">
+            <label style="display:block;font-weight:600;font-size:14px;color:#333;margin-bottom:8px;">Admin Notes <span style="color:#999;font-weight:400;">(Optional)</span></label>
+            <textarea id="adminNotesInput" rows="3" placeholder="Add a note about this action..." style="width:100%;padding:12px;border:2px solid #e1eefb;border-radius:8px;font-size:14px;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+        </div>
+        <div style="display:flex;gap:12px;justify-content:flex-end;">
+            <button onclick="closeActionModal()" style="padding:10px 20px;background:white;border:2px solid #e1eefb;border-radius:8px;font-weight:600;color:#666;cursor:pointer;">Cancel</button>
+            <button id="actionModalConfirmBtn" style="padding:10px 20px;border:none;border-radius:8px;font-weight:600;color:white;cursor:pointer;">Confirm</button>
+        </div>
+    </div>
+</div>
 
 <script>
     const URLROOT = '<?= URLROOT ?>';
+    let _pendingReportId = null;
+    let _pendingStatus = null;
 
+    // ── Filter tabs ───────────────────────────────────────────
     function filterReports(status) {
         window.location.href = `${URLROOT}/FeedbackReport/index?status=${status}`;
     }
 
-    async function updateReportStatus(reportId, status) {
-        if (!confirm(`Are you sure you want to mark this report as ${status}?`)) {
-            return;
-        }
+    // ── Action Modal ──────────────────────────────────────────
+    function openActionModal(reportId, status) {
+        _pendingReportId = reportId;
+        _pendingStatus   = status;
+
+        const titles = {
+            dismissed : '⚪ Dismiss Report',
+            reviewed  : '✅ Mark as Reviewed',
+            action_taken: '🔴 Action Taken'
+        };
+        const descs = {
+            dismissed : 'This report will be dismissed. The feedback will remain visible.',
+            reviewed  : 'Mark this report as reviewed. You can still remove the feedback after.',
+            action_taken: 'Mark this report as action taken.'
+        };
+        const btnColors = {
+            dismissed : '#6c757d',
+            reviewed  : '#6583aa',
+            action_taken: '#e74c3c'
+        };
+
+        document.getElementById('actionModalTitle').textContent = titles[status] || 'Confirm Action';
+        document.getElementById('actionModalDesc').textContent  = descs[status]  || '';
+        document.getElementById('adminNotesInput').value = '';
+        const btn = document.getElementById('actionModalConfirmBtn');
+        btn.textContent = 'Confirm';
+        btn.style.background = btnColors[status] || '#6583aa';
+        btn.onclick = submitActionModal;
+
+        document.getElementById('actionModal').style.display = 'flex';
+    }
+
+    function closeActionModal() {
+        document.getElementById('actionModal').style.display = 'none';
+        _pendingReportId = null;
+        _pendingStatus   = null;
+    }
+
+    async function submitActionModal() {
+        if (!_pendingReportId || !_pendingStatus) return;
+        const notes = document.getElementById('adminNotesInput').value.trim();
+        const btn   = document.getElementById('actionModalConfirmBtn');
+        btn.disabled = true;
+        btn.textContent = 'Processing...';
 
         try {
             const formData = new FormData();
-            formData.append('report_id', reportId);
-            formData.append('status', status);
+            formData.append('report_id',   _pendingReportId);
+            formData.append('status',      _pendingStatus);
+            formData.append('admin_notes', notes);
 
             const response = await fetch(`${URLROOT}/FeedbackReport/updateStatus`, {
-                method: 'POST',
-                body: formData
+                method: 'POST', body: formData
             });
+            const result = await response.json();
 
-            const data = await response.json();
-
-            if (data.success) {
-                alert(data.message);
-                location.reload();
+            closeActionModal();
+            if (result.success) {
+                showToast(result.message || 'Status updated!', 'success');
+                setTimeout(() => location.reload(), 1200);
             } else {
-                alert(data.message || 'Failed to update status');
+                showToast(result.message || 'Failed to update status.', 'error');
             }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('An error occurred');
+        } catch (e) {
+            closeActionModal();
+            showToast('An error occurred.', 'error');
         }
     }
 
+    // Close modal on backdrop click
+    document.getElementById('actionModal').addEventListener('click', function(e) {
+        if (e.target === this) closeActionModal();
+    });
+
+    // ── Remove Feedback ───────────────────────────────────────
     async function removeFeedback(reportId, feedbackId) {
-        if (!confirm('Are you sure you want to PERMANENTLY DELETE this feedback? This action cannot be undone!')) {
-            return;
-        }
+        if (!confirm('Are you sure you want to PERMANENTLY DELETE this feedback? This action cannot be undone!')) return;
 
         try {
             const formData = new FormData();
-            formData.append('report_id', reportId);
+            formData.append('report_id',   reportId);
             formData.append('feedback_id', feedbackId);
 
             const response = await fetch(`${URLROOT}/FeedbackReport/removeFeedback`, {
-                method: 'POST',
-                body: formData
+                method: 'POST', body: formData
             });
+            const result = await response.json();
 
-            const data = await response.json();
-
-            if (data.success) {
-                alert(data.message);
-                location.reload();
+            if (result.success) {
+                showToast(result.message || 'Feedback removed!', 'success');
+                setTimeout(() => location.reload(), 1200);
             } else {
-                alert(data.message || 'Failed to remove feedback');
+                showToast(result.message || 'Failed to remove feedback.', 'error');
             }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('An error occurred');
+        } catch (e) {
+            showToast('An error occurred.', 'error');
         }
     }
+
+    // ── Warn User ─────────────────────────────────────────────
+    async function warnUser(reportId, feedbackUserId) {
+        if (!feedbackUserId) {
+            showToast('Cannot identify the feedback author.', 'error');
+            return;
+        }
+        if (!confirm('Send a warning notification to the user who wrote this feedback?')) return;
+
+        try {
+            const formData = new FormData();
+            formData.append('report_id',       reportId);
+            formData.append('feedback_user_id', feedbackUserId);
+
+            const response = await fetch(`${URLROOT}/FeedbackReport/warnUser`, {
+                method: 'POST', body: formData
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                showToast('Warning sent to user!', 'success');
+            } else {
+                showToast(result.message || 'Failed to send warning.', 'error');
+            }
+        } catch (e) {
+            showToast('An error occurred.', 'error');
+        }
+    }
+
+    // ── Toast helper ──────────────────────────────────────────
+    function showToast(message, type = 'success') {
+        document.querySelectorAll('.admin-toast').forEach(t => t.remove());
+        const toast = document.createElement('div');
+        toast.className = 'admin-toast';
+        toast.style.cssText = `
+            position:fixed;top:20px;right:20px;z-index:99999;
+            background:${type === 'success' ? '#10b981' : '#ef4444'};
+            color:white;padding:14px 22px;border-radius:10px;
+            font-weight:600;font-size:14px;box-shadow:0 4px 20px rgba(0,0,0,.2);
+            display:flex;align-items:center;gap:10px;
+            animation:slideInRight .3s ease;
+        `;
+        toast.innerHTML = `<span style="font-size:18px;">${type === 'success' ? '✓' : '✕'}</span><span>${message}</span>`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
+
+    // Slide-in animation
+    const style = document.createElement('style');
+    style.textContent = `@keyframes slideInRight{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}`;
+    document.head.appendChild(style);
 </script>
 
 <?php require_once "../app/views/layouts/footer.php"; ?>

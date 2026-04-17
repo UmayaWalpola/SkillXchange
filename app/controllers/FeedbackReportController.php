@@ -356,4 +356,54 @@ class FeedbackReportController extends Controller {
             return in_array($reason, self::FEEDBACK_REASONS, true);
         }));
     }
+
+    /**
+     * Send a warning notification to the user who wrote reported feedback
+     * POST /FeedbackReport/warnUser
+     */
+    public function warnUser() {
+        if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+            echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request method']);
+            return;
+        }
+
+        try {
+            $reportId      = (int)($_POST['report_id']       ?? 0);
+            $feedbackUserId = (int)($_POST['feedback_user_id'] ?? 0);
+
+            if (!$reportId || !$feedbackUserId) {
+                echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+                return;
+            }
+
+            // Send warning notification to the user who wrote the feedback
+            $this->notificationModel->createNotification([
+                'user_id'   => $feedbackUserId,
+                'type'      => 'warning',
+                'title'     => 'Content Warning',
+                'message'   => 'Your feedback has been reported and reviewed by our moderation team. Please ensure your feedback follows our community guidelines. Repeated violations may result in account restrictions.',
+                'link'      => URLROOT . '/Feedback/index/' . $feedbackUserId,
+                'sender_id' => $_SESSION['user_id']
+            ]);
+
+            // Also mark report as reviewed if it was pending
+            $this->feedbackReportModel->updateReportStatus(
+                $reportId,
+                'reviewed',
+                $_SESSION['user_id'],
+                'Warning notification sent to feedback author.'
+            );
+
+            echo json_encode(['success' => true, 'message' => 'Warning notification sent to user.']);
+
+        } catch (Exception $e) {
+            error_log("FeedbackReport warnUser error: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Failed to send warning.']);
+        }
+    }
 }
