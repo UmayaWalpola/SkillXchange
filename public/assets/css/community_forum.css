@@ -929,6 +929,35 @@
     transform: translateY(-2px);
 }
 
+/* Like and Comments buttons - same styles as report button */
+.feed-post-footer .like-btn,
+.feed-post-footer .comments-toggle-btn {
+    padding: 0.55rem 1rem;
+    background: var(--primary-blue);
+    color: var(--white-bg);
+    border: none;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.feed-post-footer .like-btn:hover,
+.feed-post-footer .comments-toggle-btn:hover {
+    background: var(--accent-blue);
+    color: var(--dark-bg);
+    transform: translateY(-2px);
+}
+
+.feed-post-footer .like-btn.liked {
+    background: var(--accent-blue);
+    color: var(--dark-bg);
+}
+
 .no-messages {
     background: var(--white-bg);
     border: 1px dashed var(--blue-bg);

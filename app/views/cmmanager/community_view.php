@@ -95,7 +95,6 @@
                                         <?php endif; ?>
 
                                         <div class="feed-post-footer">
-                                            <span class="feed-post-meta">Post #<?= (int)$post->id ?></span>
                                         </div>
                                     </article>
                                 <?php endforeach; ?>

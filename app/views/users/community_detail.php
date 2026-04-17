@@ -143,7 +143,6 @@
                                         <?php endif; ?>
 
                                         <div class="feed-post-footer">
-                                            <span class="feed-post-meta">Post #<?= (int)$post->id ?></span>
                                             <div class="feed-post-actions">
                                                 <!-- Like button -->
                                                 <button
@@ -164,15 +163,6 @@
                                                     <i class="ph ph-chat-circle"></i>
                                                     <?= count($commentsByParent[$post->id] ?? []) ?> Comments
                                                 </button>
-
-                                                <!-- Report -->
-                                                <?php if (isset($_SESSION['user_id']) && $_SESSION['user_id'] != $post->user_id): ?>
-                                                    <button class="report-btn-small report-content-btn"
-                                                        data-content-type="post"
-                                                        data-content-id="<?= $post->id ?>"
-                                                        title="Report this post">Report
-                                                    </button>
-                                                <?php endif; ?>
                                             </div>
                                         </div>
 
