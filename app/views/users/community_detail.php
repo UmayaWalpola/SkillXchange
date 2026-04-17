@@ -101,11 +101,7 @@
                                 ?>
                                 <?php foreach ($topPosts as $post): ?>
                                     <?php
-                                    $time = strtotime($post->created_at);
-                                    $diff = time() - $time;
-                                    if ($diff < 3600)       $timeStr = floor($diff / 60) . ' minutes ago';
-                                    elseif ($diff < 86400)  $timeStr = floor($diff / 3600) . ' hours ago';
-                                    else                    $timeStr = date('M j, Y \a\t g:i A', $time);
+                                    $timeStr = date('M j, Y \a\t g:i A', strtotime($post->created_at));
                                     $likeCount = $post->like_count ?? 0;
                                     $userLiked = $post->user_reacted ?? false;
                                     ?>
@@ -190,10 +186,7 @@
                                                             <div class="comment-body">
                                                                 <span class="comment-author"><?= htmlspecialchars($comment->author_name ?? 'Unknown') ?></span>
                                                                 <span class="comment-text"><?= htmlspecialchars($comment->content) ?></span>
-                                                                <span class="comment-time"><?php
-                                                                    $cd = time() - strtotime($comment->created_at);
-                                                                    echo $cd < 3600 ? floor($cd/60).'m ago' : (($cd < 86400) ? floor($cd/3600).'h ago' : date('M j', strtotime($comment->created_at)));
-                                                                ?></span>
+                                                                <span class="comment-time"><?= date('M j, Y g:i A', strtotime($comment->created_at)) ?></span>
                                                             </div>
                                                         </div>
                                                     <?php endforeach; ?>

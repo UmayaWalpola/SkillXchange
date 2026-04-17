@@ -53,17 +53,7 @@
                                                         <?= htmlspecialchars($post->author_name ?? 'Unknown User') ?>
                                                     </div>
                                                     <div class="feed-post-time">
-                                                        <?php
-                                                            $time = strtotime($post->created_at);
-                                                            $diff = time() - $time;
-                                                            if ($diff < 3600) {
-                                                                echo floor($diff / 60) . ' minutes ago';
-                                                            } elseif ($diff < 86400) {
-                                                                echo floor($diff / 3600) . ' hours ago';
-                                                            } else {
-                                                                echo date('M j, Y \a\t g:i A', $time);
-                                                            }
-                                                        ?>
+                                                        <?= date('M j, Y \a\t g:i A', strtotime($post->created_at)) ?>
                                                     </div>
                                                 </div>
                                             </div>
