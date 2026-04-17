@@ -298,16 +298,23 @@ public function matches() {
                 throw new Exception('User not found');
             }
             
+            $ratingData = $userModel->getAverageRating($userId);
+            $liveStats = $userModel->getLiveUserStats($userId);
+
             $userArray = [
-                'id' => $userData->id,
-                'name' => $userData->name ?? 'Unknown User',
-                'username' => $userData->username ?? strtolower(str_replace(' ', '', $userData->name ?? '')),
-                'email' => $userData->email ?? '',
-                'bio' => $userData->bio ?? 'No bio available',
-                'avatar' => $userData->avatar ?? strtoupper(substr($userData->name ?? 'U', 0, 2)),
-                'connections' => $userData->connections ?? 0,
-                'rating' => $userData->rating ?? 0.0,
-                'reviews_count' => $userData->reviews_count ?? 0
+                'id' => $userData['id'],
+                'name' => $userData['username'] ?? 'Unknown User',
+                'username' => $userData['username'] ?? 'unknown-user',
+                'email' => $userData['email'] ?? '',
+                'bio' => $userData['bio'] ?? 'No bio available',
+                'avatar' => !empty($userData['profile_picture'])
+                    ? $userData['profile_picture']
+                    : strtoupper(substr($userData['username'] ?? 'U', 0, 2)),
+                'connections' => (int) ($liveStats['connections_count'] ?? 0),
+                'skills_taught' => (int) ($liveStats['skills_taught_count'] ?? 0),
+                'skills_learning' => (int) ($liveStats['skills_learning_count'] ?? 0),
+                'rating' => $ratingData['rating'] ?? 0.0,
+                'reviews_count' => $ratingData['count'] ?? 0
             ];
             
             $userSkills = $this->getUserSkillsFromDB($userId);
@@ -335,9 +342,6 @@ public function matches() {
                 exit;
             }
         }
-        
-        $userArray['skills_taught'] = count($userSkills['teaches'] ?? []);
-        $userArray['skills_learning'] = count($userSkills['learns'] ?? []);
         
         $data = [
             'title' => $userArray['name'] . "'s Profile",
@@ -1330,9 +1334,24 @@ public function addCommunityComment() {
         try {
             $this->db->query("
                 SELECT u.id, u.username, u.email, u.bio, u.profile_picture,
-                       COALESCE(us.connections_count, 0) as connections,
-                       COALESCE(us.skills_taught_count, 0) as skills_taught,
-                       COALESCE(us.skills_learning_count, 0) as skills_learning,
+                       (
+                           SELECT COUNT(*)
+                           FROM exchanges e
+                           WHERE (e.requester_id = u.id OR e.receiver_id = u.id)
+                             AND e.status = 'active'
+                       ) as connections,
+                       (
+                           SELECT COUNT(*)
+                           FROM user_skills us_teach
+                           WHERE us_teach.user_id = u.id
+                             AND us_teach.skill_type = 'teach'
+                       ) as skills_taught,
+                       (
+                           SELECT COUNT(*)
+                           FROM user_skills us_learn
+                           WHERE us_learn.user_id = u.id
+                             AND us_learn.skill_type = 'learn'
+                       ) as skills_learning,
                        COALESCE(us.hours_exchanged, 0) as hours_exchanged
                 FROM users u
                 LEFT JOIN user_stats us ON u.id = us.user_id

@@ -71,92 +71,84 @@
             </section>
 
             <!-- Skills to Learn -->
-            <section class="form-section">
-                <h2 class="section-title">
-                    Skills You Want to Learn
-                    <span class="badge badge-required">Min 1 required</span>
-                </h2>
-                <p class="section-description">Tell us what you're interested in learning. <strong>Up to 3 skills total.</strong></p>
+<section class="form-section">
+    <h2 class="section-title">
+        Skills You Want to Learn
+        <span class="badge badge-required">Min 1 required</span>
+    </h2>
+    <p class="section-description">Tell us what you're interested in learning. <strong>Up to 3 skills total.</strong></p>
 
-                <div class="skills-group">
-                    <?php for ($i = 1; $i <= 3; $i++): ?>
-                    <div class="skill-entry">
-                        <div class="form-group skill-name-group">
-                            <label for="learn-skill-<?= $i ?>">Skill <?= $i ?><?= $i === 1 ? ' <span class="required-star">*</span>' : '' ?></label>
-                            <select id="learn-skill-<?= $i ?>" name="learn_skills[]">
-                                <option value="">Select a skill</option>
-                                <option value="web-development">Web Development</option>
-                                <option value="frontend">Frontend Frameworks</option>
-                                <option value="backend">Backend Development</option>
-                                <option value="database">Database Management</option>
-                                <option value="mobile">Mobile App Development</option>
-                                <option value="cloud">Cloud Computing</option>
-                                <option value="data-analytics">Data Analysis & Visualization</option>
-                                <option value="cybersecurity">Cybersecurity</option>
-                                <option value="devops">DevOps</option>
-                                <option value="github">GitHub and Git</option>
-                                <option value="ai">AI and ML</option>
-                                <option value="marketing">Digital Marketing</option>
-                                <option value="data-science">Data Science</option>
-                            </select>
-                        </div>
-                        <div class="form-group skill-level-group">
-                            <label for="learn-level-<?= $i ?>">Current Level</label>
-                            <select id="learn-level-<?= $i ?>" name="learn_levels[]">
-                                <option value="">Select level</option>
-                                <option value="beginner">Beginner</option>
-                                <option value="intermediate">Intermediate</option>
-                                <option value="advanced">Advanced</option>
-                            </select>
-                        </div>
-                    </div>
-                    <?php endfor; ?>
-                </div>
-            </section>
+    <div class="skills-group">
+        <?php for ($i = 1; $i <= 3; $i++): ?>
+        <div class="skill-entry">
+            <div class="form-group skill-name-group">
+                <label for="learn-skill-<?= $i ?>">Skill <?= $i ?><?= $i === 1 ? ' <span class="required-star">*</span>' : '' ?></label>
+                <select id="learn-skill-<?= $i ?>" name="learn_skills[]">
+                    <option value="">Select a skill</option>
+                    <?php
+                    $selectedSkill = $data['old']['learn_skills'][$i - 1] ?? '';
+                    foreach (($data['availableSkills'] ?? []) as $skill):
+                    ?>
+                        <option value="<?= htmlspecialchars($skill['skill_name']) ?>"
+                            <?= ($selectedSkill === $skill['skill_name']) ? 'selected' : '' ?>>
+                            <?= htmlspecialchars(ucwords(str_replace(['-', '_'], ' ', $skill['skill_name']))) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="form-group skill-level-group">
+                <label for="learn-level-<?= $i ?>">Current Level</label>
+                <select id="learn-level-<?= $i ?>" name="learn_levels[]">
+                    <option value="">Select level</option>
+                    <option value="beginner" <?= (($data['old']['learn_levels'][$i - 1] ?? '') === 'beginner') ? 'selected' : '' ?>>Beginner</option>
+                    <option value="intermediate" <?= (($data['old']['learn_levels'][$i - 1] ?? '') === 'intermediate') ? 'selected' : '' ?>>Intermediate</option>
+                    <option value="advanced" <?= (($data['old']['learn_levels'][$i - 1] ?? '') === 'advanced') ? 'selected' : '' ?>>Advanced</option>
+                </select>
+            </div>
+        </div>
+        <?php endfor; ?>
+    </div>
+</section>
 
             <!-- Skills to Teach -->
-            <section class="form-section">
-                <h2 class="section-title">
-                    Skills You Can Teach
-                    <span class="badge badge-optional">Optional</span>
-                </h2>
-                <p class="section-description">Share your expertise! Add up to 3 skills you'd like to teach others.</p>
+<section class="form-section">
+    <h2 class="section-title">
+        Skills You Can Teach
+        <span class="badge badge-optional">Optional</span>
+    </h2>
+    <p class="section-description">Share your expertise! Add up to 3 skills you'd like to teach others.</p>
 
-                <div class="skills-group">
-                    <?php for ($i = 1; $i <= 3; $i++): ?>
-                    <div class="skill-entry">
-                        <div class="form-group skill-name-group">
-                            <label for="teach-skill-<?= $i ?>">Skill <?= $i ?></label>
-                            <select id="teach-skill-<?= $i ?>" name="teach_skills[]">
-                                <option value="">Select a skill</option>
-                                <option value="web-development">Web Development</option>
-                                <option value="frontend">Frontend Frameworks</option>
-                                <option value="backend">Backend Development</option>
-                                <option value="database">Database Management</option>
-                                <option value="mobile">Mobile App Development</option>
-                                <option value="cloud">Cloud Computing</option>
-                                <option value="data-analytics">Data Analysis & Visualization</option>
-                                <option value="cybersecurity">Cybersecurity</option>
-                                <option value="devops">DevOps</option>
-                                <option value="github">GitHub and Git</option>
-                                <option value="ai">AI and ML</option>
-                                <option value="marketing">Digital Marketing</option>
-                                <option value="data-science">Data Science</option>
-                            </select>
-                        </div>
-                        <div class="form-group skill-level-group">
-                            <label for="teach-level-<?= $i ?>">Proficiency</label>
-                            <select id="teach-level-<?= $i ?>" name="teach_levels[]">
-                                <option value="">Select level</option>
-                                <option value="beginner">Beginner</option>
-                                <option value="intermediate">Intermediate</option>
-                                <option value="advanced">Advanced</option>
-                            </select>
-                        </div>
-                    </div>
-                    <?php endfor; ?>
-                </div>
-            </section>
+    <div class="skills-group">
+        <?php for ($i = 1; $i <= 3; $i++): ?>
+        <div class="skill-entry">
+            <div class="form-group skill-name-group">
+                <label for="teach-skill-<?= $i ?>">Skill <?= $i ?></label>
+                <select id="teach-skill-<?= $i ?>" name="teach_skills[]">
+                    <option value="">Select a skill</option>
+                    <?php
+                    $selectedSkill = $data['old']['teach_skills'][$i - 1] ?? '';
+                    foreach (($data['availableSkills'] ?? []) as $skill):
+                    ?>
+                        <option value="<?= htmlspecialchars($skill['skill_name']) ?>"
+                            <?= ($selectedSkill === $skill['skill_name']) ? 'selected' : '' ?>>
+                            <?= htmlspecialchars(ucwords(str_replace(['-', '_'], ' ', $skill['skill_name']))) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="form-group skill-level-group">
+                <label for="teach-level-<?= $i ?>">Proficiency Level</label>
+                <select id="teach-level-<?= $i ?>" name="teach_levels[]">
+                    <option value="">Select level</option>
+                    <option value="beginner" <?= (($data['old']['teach_levels'][$i - 1] ?? '') === 'beginner') ? 'selected' : '' ?>>Beginner</option>
+                    <option value="intermediate" <?= (($data['old']['teach_levels'][$i - 1] ?? '') === 'intermediate') ? 'selected' : '' ?>>Intermediate</option>
+                    <option value="advanced" <?= (($data['old']['teach_levels'][$i - 1] ?? '') === 'advanced') ? 'selected' : '' ?>>Advanced</option>
+                </select>
+            </div>
+        </div>
+        <?php endfor; ?>
+    </div>
+</section>
 
             <!-- Submit -->
             <div class="form-actions">
