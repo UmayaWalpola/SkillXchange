@@ -1,0 +1,319 @@
+/* Community Admin — only styles not covered by global.css or dashboard.css */
+
+/* Dashboard wrapper */
+.community-dashboard {
+    display: flex;
+    margin-left: 250px;
+    min-height: 100vh;
+    flex-direction: column;
+    background: #f5f7fb;
+}
+
+.community-main {
+    flex: 1;
+    padding: 2.5rem;
+    padding-top: 88px;
+    background: #f5f7fb;
+}
+
+/* Table row */
+.community-row {
+    transition: background 0.2s ease;
+}
+
+.community-row:hover {
+    background: rgba(59, 130, 246, 0.04);
+}
+
+/* Member badge */
+.member-badge {
+    background: linear-gradient(135deg, var(--blue-bg), rgba(101,131,150,0.12));
+    color: var(--primary-blue);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12.5px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+/* Actions cell */
+.actions-cell {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* View Feed button */
+.btn-view-community {
+    padding: 8px 16px;
+    background: var(--primary-blue);
+    color: var(--white-bg);
+    border: none;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-view-community:hover {
+    background: var(--accent-blue);
+    color: var(--dark-bg);
+    transform: translateY(-1px);
+}
+
+/* Activate button */
+.btn-activate-community {
+    padding: 8px 16px;
+    background: #10b981;
+    color: var(--white-bg);
+    border: none;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    display: inline-block;
+}
+
+.btn-activate-community:hover {
+    background: #059669;
+    transform: translateY(-1px);
+}
+
+/* Deactivate button */
+.btn-deactivate-community {
+    padding: 8px 16px;
+    background: #ef4444;
+    color: var(--white-bg);
+    border: none;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    display: inline-block;
+}
+
+.btn-deactivate-community:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: #b0b8c9;
+}
+
+.empty-state h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--dark-bg);
+    margin-bottom: 6px;
+}
+
+.empty-state p {
+    font-size: 13.5px;
+    color: #9ca3af;
+}
+
+/* Filter select */
+.filter-select {
+    padding: 10px 14px;
+    background: var(--white-bg);
+    color: var(--dark-bg);
+    border: 1.5px solid rgba(101,131,150,0.2);
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.filter-select:hover,
+.filter-select:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 2px 8px rgba(101,131,150,0.1);
+}
+
+/* Create form page wrapper */
+.community-form-wrapper {
+    margin-left: 250px;
+    min-height: 100vh;
+    padding: 108px 40px 60px;
+    background: #f5f7fb;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.community-form-container {
+    background: var(--white-bg);
+    border: 1.5px solid rgba(101,131,150,0.12);
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    padding: 40px;
+    max-width: 600px;
+    width: 100%;
+}
+
+.form-header {
+    margin-bottom: 28px;
+}
+
+.form-header h1 {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--dark-bg);
+    margin-bottom: 4px;
+    letter-spacing: -0.4px;
+}
+
+.form-header p {
+    font-size: 13.5px;
+    color: #9ca3af;
+    margin: 0;
+}
+
+/* Char count */
+.char-count {
+    display: block;
+    margin-top: 6px;
+    font-size: 11px;
+    color: #9ca3af;
+    text-align: right;
+}
+
+/* Error text */
+.error-text {
+    color: #dc2626;
+    font-size: 12px;
+    margin-top: 5px;
+    display: block;
+}
+
+/* Form actions row */
+.form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 28px;
+}
+
+.form-actions .btn-primary,
+.form-actions .btn-secondary {
+    flex: 1;
+    text-align: center;
+    justify-content: center;
+}
+
+/* Back link */
+.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--primary-blue);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.btn-back:hover { opacity: 0.8; }
+
+/* Add skill button */
+.btn-add-skill {
+    padding: 7px 14px;
+    background: #10b981;
+    color: var(--white-bg);
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-add-skill:hover {
+    background: #059669;
+    transform: translateY(-1px);
+}
+
+/* Skill modal form groups */
+.skill-form-group {
+    margin-bottom: 18px;
+}
+
+.skill-form-group label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #6b7280;
+}
+
+.skill-form-group input {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1.5px solid rgba(101,131,150,0.2);
+    font-size: 13.5px;
+    background: #fafbff;
+    font-family: inherit;
+    color: var(--dark-bg);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    outline: none;
+}
+
+.skill-form-group input:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(101,131,150,0.1);
+    background: var(--white-bg);
+}
+
+.skill-success-msg {
+    color: #15803d;
+    font-size: 12px;
+    margin-top: 5px;
+    display: none;
+}
+
+.skill-error-msg {
+    color: #dc2626;
+    font-size: 12px;
+    margin-top: 5px;
+    display: none;
+}
+
+/* Preview box */
+.preview-community {
+    border: 1.5px solid rgba(101,131,150,0.15);
+    padding: 20px;
+    border-radius: 12px;
+    margin: 20px 0;
+    background: #fafbff;
+}
+
+.preview-community h3 {
+    margin: 0 0 10px 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--dark-bg);
+}
+
+.preview-community p {
+    margin: 0;
+    color: #6b7280;
+    line-height: 1.6;
+    font-size: 13.5px;
+}
+
+/* Notification animation */
+@keyframes slideIn {
+    from { transform: translateX(120%); opacity: 0; }
+    to   { transform: translateX(0); opacity: 1; }
+}

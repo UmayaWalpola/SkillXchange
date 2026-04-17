@@ -6,7 +6,6 @@ let communityToDelete = null;
 // Initialize dashboard
 async function initDashboard() {
   await loadCommunities();
-  await loadStats();
 }
 
 // Load communities from backend
@@ -27,27 +26,7 @@ async function loadCommunities() {
   }
 }
 
-// Load statistics from backend
-async function loadStats() {
-  try {
-    const response = await fetch(`${URLROOT}/community/getStats`);
-    const result = await response.json();
-    
-    if(result.success) {
-      updateStats(result.data);
-    }
-  } catch(error) {
-    console.error('Error loading stats:', error);
-  }
-}
 
-// Update statistics display
-function updateStats(stats) {
-  document.getElementById('totalCommunities').textContent = stats.total_communities || 0;
-  document.getElementById('activeCommunities').textContent = stats.active_communities || 0;
-  document.getElementById('totalMembers').textContent = (stats.total_members || 0).toLocaleString();
-  document.getElementById('totalPosts').textContent = (stats.total_posts || 0).toLocaleString();
-}
 
 // Render community table
 function renderCommunityTable(filteredCommunities = null) {
@@ -133,7 +112,6 @@ async function toggleStatus(id, newStatus) {
     if(result.success) {
       showNotification(result.message, 'success');
       await loadCommunities();
-      await loadStats();
     } else {
       showNotification(result.message, 'error');
     }
@@ -174,7 +152,6 @@ async function confirmDelete() {
       showNotification(result.message, 'success');
       closeDeleteModal();
       await loadCommunities();
-      await loadStats();
     } else {
       showNotification(result.message, 'error');
     }

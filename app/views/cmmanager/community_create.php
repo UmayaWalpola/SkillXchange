@@ -1,214 +1,228 @@
 <?php require_once '../app/views/layouts/header_user.php'; ?>
 <?php require_once '../app/views/layouts/commanagersidebar.php'; ?>
 
-<link rel="stylesheet" href="<?php echo URLROOT; ?>/assets/css/communitycreate.css">
+<link rel="stylesheet" href="<?php echo URLROOT; ?>/assets/css/global.css">
+<link rel="stylesheet" href="<?php echo URLROOT; ?>/assets/css/dashboard.css">
+<link rel="stylesheet" href="<?php echo URLROOT; ?>/assets/css/communityadmin.css">
 
-<div class="dashboard-container">
-    <div class="builder-container">
+<div class="community-form-wrapper">
+    <div class="community-form-container">
 
-        <!-- Header -->
-        <div class="builder-header">
-            <a href="<?php echo URLROOT; ?>/community" class="btn-back">Back to Dashboard</a>
-            <h1 class="builder-title">Create a Community</h1>
-            <p class="builder-subtitle">Build your space and connect people around shared skills</p>
+        <a href="<?php echo URLROOT; ?>/communityAdmin" class="btn-back">← Back to Dashboard</a>
+
+        <div class="form-header">
+            <h1>Create a Community</h1>
+            <p>Set up a new community for your skill</p>
         </div>
 
-        <!-- Progress Steps -->
-        <div class="progress-steps">
-            <div class="step active">
-                <div class="step-dot">1</div>
-                <span class="step-label">Basics</span>
-            </div>
-            <div class="step-line"></div>
-            <div class="step">
-                <div class="step-dot">2</div>
-                <span class="step-label">Rules</span>
-            </div>
-            <div class="step-line"></div>
-            <div class="step">
-                <div class="step-dot">3</div>
-                <span class="step-label">Tags</span>
-            </div>
-            <div class="step-line"></div>
-            <div class="step">
-                <div class="step-dot">4</div>
-                <span class="step-label">Publish</span>
-            </div>
-        </div>
-
-        <!-- Section 1: Basic Info -->
-        <div class="section-card">
-            <div class="section-title-row">
-                <div class="section-number">1</div>
-                <div>
-                    <div class="section-title">Community Information</div>
-                </div>
-            </div>
-
+        <form id="communityForm">
             <div class="form-group">
-                <label for="communityName">Community Name</label>
-                <input
-                    type="text"
-                    id="communityName"
-                    placeholder="e.g. Web Development Enthusiasts"
-                    maxlength="100"
-                >
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <label for="communityName">Select Skill *</label>
+                    <button type="button" class="btn-add-skill" onclick="openAddSkillModal()">
+                        + Add New Skill
+                    </button>
+                </div>
+                <select id="communityName" required>
+                    <option value="">-- Choose a skill --</option>
+                    <?php if(isset($data['skills']) && !empty($data['skills'])): ?>
+                        <?php foreach($data['skills'] as $skill): ?>
+                            <option value="<?= htmlspecialchars($skill->id) ?>">
+                                <?= htmlspecialchars($skill->skill_name) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
                 <span class="error-text" id="nameError"></span>
             </div>
 
             <div class="form-group">
-                <label>Privacy Setting</label>
-                <div class="privacy-options">
-                    <label class="privacy-option">
-                        <input type="radio" name="privacy" value="public" checked>
-                        <div class="privacy-card">
-                            <div class="privacy-icon">🌐</div>
-                            <div class="privacy-name">Public</div>
-                            <div class="privacy-desc">Anyone can join</div>
-                        </div>
-                    </label>
-                    <label class="privacy-option">
-                        <input type="radio" name="privacy" value="private">
-                        <div class="privacy-card">
-                            <div class="privacy-icon">🔒</div>
-                            <div class="privacy-name">Private</div>
-                            <div class="privacy-desc">Approval required</div>
-                        </div>
-                    </label>
-                </div>
-                <!-- Hidden select kept for JS compatibility -->
-                <select id="communityPrivacy" style="display:none">
-                    <option value="public">Public</option>
-                    <option value="private">Private</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="communityDescription">Description</label>
+                <label for="communityDescription">Description *</label>
                 <textarea
                     id="communityDescription"
-                    placeholder="Describe your community — what it's about, who it's for, and what members can expect..."
-                    rows="4"
+                    placeholder="Describe your community..."
                     maxlength="1000"
+                    required
                 ></textarea>
+                <span class="char-count"><span id="descCharCount">0</span> / 1000 characters</span>
                 <span class="error-text" id="descriptionError"></span>
-                <span class="char-count"><span id="descCharCount">0</span> / 1000</span>
-            </div>
-        </div>
-
-        <!-- Section 2: Rules -->
-        <div class="section-card">
-            <div class="section-header">
-                <div class="section-title-row" style="margin-bottom:0">
-                    <div class="section-number">2</div>
-                    <div>
-                        <div class="section-title">Community Rules &nbsp;<span style="font-size:13px;font-weight:400;color:var(--text-3)" id="ruleCount">0 / 10</span></div>
-                    </div>
-                </div>
-                <button class="btn-add-rule" onclick="addRule()" id="addRuleBtn">
-                    + Add Rule
-                </button>
-            </div>
-
-            <div id="rulesContainer"></div>
-
-            <div id="noRulesMessage" class="rules-empty" style="display:block">
-                <span>📋</span>
-                No rules yet — add some guidelines to keep your community healthy
-            </div>
-        </div>
-
-        <!-- Section 3: Tags -->
-        <div class="section-card">
-            <div class="section-title-row">
-                <div class="section-number">3</div>
-                <div>
-                    <div class="section-title">Tags <span style="font-size:13px;font-weight:400;color:var(--text-3)">(optional)</span></div>
-                </div>
-            </div>
-            <p class="section-subtitle">Help people discover your community with relevant keywords</p>
-
-            <div class="form-group">
-                <label for="tagInput">Add a tag</label>
-                <div class="tag-input-container">
-                    <input
-                        type="text"
-                        id="tagInput"
-                        placeholder="Type a tag and press Enter"
-                        maxlength="30"
-                        onkeypress="handleTagInput(event)"
-                    >
-                </div>
-                <div id="tagsContainer" class="tags-display"></div>
-            </div>
-        </div>
-
-        <!-- Action Bar -->
-        <div class="action-bar">
-            <div class="action-bar-left">
-                <button class="btn btn-ghost" onclick="saveDraft()">Save Draft</button>
-            </div>
-            <button class="btn btn-secondary" onclick="previewCommunity()">Preview</button>
-            <button class="btn btn-primary" onclick="publishCommunity()">
-                Create Community →
-            </button>
-        </div>
-
-    </div>
-</div>
-
-<!-- Rule Modal -->
-<div id="ruleModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2 id="ruleModalTitle">Add Rule</h2>
-            <span class="close" onclick="closeRuleModal()">×</span>
-        </div>
-
-        <form id="ruleForm" onsubmit="saveRule(event)">
-            <input type="hidden" id="editingRuleIndex" value="-1">
-
-            <div class="form-group">
-                <label for="ruleTitle">Rule Title</label>
-                <input
-                    type="text"
-                    id="ruleTitle"
-                    placeholder="e.g. Be respectful to others"
-                    required
-                    maxlength="100"
-                >
-            </div>
-
-            <div class="form-group">
-                <label for="ruleDescription">Rule Description</label>
-                <textarea
-                    id="ruleDescription"
-                    placeholder="Explain what this rule means and why it matters..."
-                    rows="4"
-                    required
-                    maxlength="500"
-                ></textarea>
             </div>
 
             <div class="form-actions">
-                <button type="button" class="btn btn-secondary" onclick="closeRuleModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary">Save Rule</button>
+                <button type="button" class="btn-secondary" onclick="previewCommunity()">Preview</button>
+                <button type="button" class="btn-primary" onclick="publishCommunity()">Create Community</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div id="previewModal" class="modal-overlay" onclick="if(event.target===this) closePreviewModal()">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closePreviewModal()">&times;</button>
+        <h2>Preview Your Community</h2>
+        <div id="previewContent"></div>
+        <div class="form-footer" style="margin-top:20px;">
+            <button class="btn-secondary" onclick="closePreviewModal()">Edit</button>
+            <button class="btn-primary" onclick="publishCommunity()">Create Community</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Skill Modal -->
+<div id="addSkillModal" class="modal-overlay" onclick="if(event.target===this) closeAddSkillModal()">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeAddSkillModal()">&times;</button>
+        <h2>Add New Skill</h2>
+        <form id="addSkillForm" onsubmit="saveNewSkill(event)">
+            <div class="skill-form-group">
+                <label for="newSkillName">Skill Name *</label>
+                <input type="text" id="newSkillName" placeholder="e.g., Advanced Python" required maxlength="100">
+                <div class="skill-error-msg" id="skillNameError"></div>
+                <div class="skill-success-msg" id="skillNameSuccess"></div>
+            </div>
+            <div class="skill-form-group">
+                <label for="newSkillDescription">Description (optional)</label>
+                <input type="text" id="newSkillDescription" placeholder="Brief description..." maxlength="200">
+            </div>
+            <div class="form-footer">
+                <button type="button" class="btn-secondary" onclick="closeAddSkillModal()">Cancel</button>
+                <button type="submit" class="btn-primary" id="saveSkillBtn">Add Skill</button>
             </div>
         </form>
     </div>
 </div>
 
 <script>
-    const URLROOT = '<?php echo URLROOT; ?>';
+document.getElementById('communityDescription')?.addEventListener('input', function() {
+    document.getElementById('descCharCount').textContent = this.value.length;
+});
 
-    // Sync privacy radio buttons to hidden select
-    document.querySelectorAll('input[name="privacy"]').forEach(function(radio) {
-        radio.addEventListener('change', function() {
-            document.getElementById('communityPrivacy').value = this.value;
-        });
+function previewCommunity() {
+    const skillId = document.getElementById('communityName').value;
+    const skillName = document.getElementById('communityName').options[document.getElementById('communityName').selectedIndex].text;
+    const description = document.getElementById('communityDescription').value;
+
+    document.getElementById('nameError').textContent = '';
+    document.getElementById('descriptionError').textContent = '';
+
+    let hasError = false;
+    if (!skillId) { document.getElementById('nameError').textContent = 'Please select a skill'; hasError = true; }
+    if (!description.trim()) { document.getElementById('descriptionError').textContent = 'Please enter a description'; hasError = true; }
+    if (hasError) return;
+
+    document.getElementById('previewContent').innerHTML = `
+        <div class="preview-community">
+            <h3>${skillName}</h3>
+            <p>${description}</p>
+        </div>`;
+    document.getElementById('previewModal').classList.add('open');
+}
+
+function closePreviewModal() {
+    document.getElementById('previewModal').classList.remove('open');
+}
+
+function openAddSkillModal() {
+    document.getElementById('addSkillModal').classList.add('open');
+    document.getElementById('addSkillForm').reset();
+    document.getElementById('skillNameError').style.display = 'none';
+    document.getElementById('skillNameSuccess').style.display = 'none';
+}
+
+function closeAddSkillModal() {
+    document.getElementById('addSkillModal').classList.remove('open');
+}
+
+function saveNewSkill(event) {
+    event.preventDefault();
+    const skillName = document.getElementById('newSkillName').value.trim();
+    const skillDescription = document.getElementById('newSkillDescription').value.trim();
+
+    document.getElementById('skillNameError').style.display = 'none';
+    document.getElementById('skillNameSuccess').style.display = 'none';
+
+    if (!skillName) {
+        document.getElementById('skillNameError').textContent = 'Please enter a skill name';
+        document.getElementById('skillNameError').style.display = 'block';
+        return;
+    }
+
+    const saveBtn = document.getElementById('saveSkillBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Adding...';
+
+    fetch('<?= URLROOT ?>/communityAdmin/addSkill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ skill_name: skillName, description: skillDescription })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('skillNameSuccess').textContent = 'Skill added successfully!';
+            document.getElementById('skillNameSuccess').style.display = 'block';
+            const select = document.getElementById('communityName');
+            const opt = document.createElement('option');
+            opt.value = data.skill_id;
+            opt.text = skillName;
+            select.appendChild(opt);
+            select.value = data.skill_id;
+            setTimeout(() => closeAddSkillModal(), 1500);
+        } else {
+            document.getElementById('skillNameError').textContent = data.message || 'Failed to add skill';
+            document.getElementById('skillNameError').style.display = 'block';
+        }
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Add Skill';
+    })
+    .catch(() => {
+        document.getElementById('skillNameError').textContent = 'An error occurred.';
+        document.getElementById('skillNameError').style.display = 'block';
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Add Skill';
     });
-</script>
-<script src="<?php echo URLROOT; ?>/assets/js/communitycreate.js"></script>
+}
 
-</body>
-</html>
+function publishCommunity() {
+    const skillId = document.getElementById('communityName').value;
+    const description = document.getElementById('communityDescription').value;
+
+    document.getElementById('nameError').textContent = '';
+    document.getElementById('descriptionError').textContent = '';
+
+    let hasError = false;
+    if (!skillId) { document.getElementById('nameError').textContent = 'Please select a skill'; hasError = true; }
+    if (!description.trim()) { document.getElementById('descriptionError').textContent = 'Please enter a description'; hasError = true; }
+    if (hasError) return;
+
+    closePreviewModal();
+
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Creating...';
+
+    fetch('<?= URLROOT ?>/communityAdmin/store', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ skill_id: skillId, description: description.trim() })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = data.redirect;
+        } else {
+            alert('Error: ' + (data.errors?.[0] || 'Failed to create community'));
+            btn.disabled = false;
+            btn.textContent = 'Create Community';
+        }
+    })
+    .catch(() => {
+        alert('An error occurred. Please try again.');
+        btn.disabled = false;
+        btn.textContent = 'Create Community';
+    });
+}
+</script>
+
+<?php require_once '../app/views/layouts/footer_user.php'; ?>

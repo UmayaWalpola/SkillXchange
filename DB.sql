@@ -28,17 +28,19 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `communities` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL,
   `description` text NOT NULL,
   `privacy` enum('public','private') DEFAULT 'public',
   `rules` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`rules`)),
   `tags` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`tags`)),
   `status` enum('active','inactive') DEFAULT 'active',
+  `is_active` tinyint(1) DEFAULT 1,
   `created_by` int(11) NOT NULL,
   `created_at` datetime NOT NULL,
-  `updated_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `communities`
@@ -48,6 +50,26 @@ INSERT INTO `communities` (`id`, `name`, `description`, `privacy`, `rules`, `tag
 (1, 'Web Developers Hub', 'A community for web develop', 'public', '[]', '[\"web\",\"development\",\"coding\"]', 'active', 1, '2024-01-15 10:00:00', '2025-10-24 11:07:02'),
 (5, 'Online Learning Community', 'i', 'public', '[]', '[\"education\",\"learning\",\"courses\"]', 'active', 1, '2024-01-25 10:00:00', '2025-10-24 10:26:46'),
 (9, 'Cloud Computing', 'hi', 'private', '[]', '[]', 'active', 18, '2025-10-24 01:17:14', '2025-10-24 12:05:30');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `community_management`
+--
+
+CREATE TABLE `community_management` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `community_id` int(11) NOT NULL,
+  `skill_id` int(11) NOT NULL,
+  `is_active` tinyint(1) DEFAULT 1,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `community_id` (`community_id`),
+  KEY `skill_id` (`skill_id`),
+  CONSTRAINT `fk_community_management_community` FOREIGN KEY (`community_id`) REFERENCES `communities` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_community_management_skill` FOREIGN KEY (`skill_id`) REFERENCES `skills` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 

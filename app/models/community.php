@@ -21,39 +21,41 @@ class Community {
     public function create($data) {
         $this->db->query("
             INSERT INTO communities 
-            (name, description, privacy, rules, tags, status, created_by, goal_description, goal_count, created_at) 
-            VALUES (:name, :description, :privacy, :rules, :tags, :status, :created_by, :goal_description, :goal_count, NOW())
+            (name, description, privacy, rules, tags, status, created_by, created_at) 
+            VALUES (:name, :description, :privacy, :rules, :tags, :status, :created_by, NOW())
         ");
         
         $this->db->bind(':name', $data['name']);
         $this->db->bind(':description', $data['description']);
-        $this->db->bind(':privacy', $data['privacy']);
-        $this->db->bind(':rules', $data['rules']);
-        $this->db->bind(':tags', $data['tags']);
-        $this->db->bind(':status', $data['status']);
+        $this->db->bind(':privacy', 'public'); // Always public
+        $this->db->bind(':rules', '[]'); // No rules
+        $this->db->bind(':tags', '[]'); // No tags
+        $this->db->bind(':status', 'active');
         $this->db->bind(':created_by', $data['created_by']);
-        $this->db->bind(':goal_description', $data['goal_description']);
-        $this->db->bind(':goal_count', $data['goal_count']);
-
         
-        return $this->db->execute();
+        if ($this->db->execute()) {
+            return $this->db->lastInsertId();
+        }
+        
+        return false;
     }
     
     /**
-     * READ - Get all communities (admin view)
+     * READ - Get all communities for admin dashboard
      */
     public function getAllCommunities() {
         $this->db->query("
             SELECT 
-                c.*,
-                COUNT(DISTINCT cm.user_id) as member_count,
-                COUNT(DISTINCT cm.user_id) as members,
-                COUNT(DISTINCT p.id) as post_count,
-                COUNT(DISTINCT p.id) as totalPosts,
-                COUNT(DISTINCT p.id) as posts
+                c.id,
+                c.name,
+                c.description,
+                c.status,
+                c.created_by,
+                c.created_at,
+                c.updated_at,
+                COUNT(DISTINCT cm.user_id) as total_members
             FROM communities c
             LEFT JOIN community_members cm ON c.id = cm.community_id
-            LEFT JOIN community_posts p ON c.id = p.community_id
             GROUP BY c.id
             ORDER BY c.created_at DESC
         ");
@@ -118,6 +120,36 @@ class Community {
     }
     
     /**
+     * UPDATE - Activate a community
+     */
+    public function activateCommunity($id) {
+        $this->db->query("
+            UPDATE communities 
+            SET status = 'active',
+                updated_at = NOW()
+            WHERE id = :id
+        ");
+        
+        $this->db->bind(':id', $id);
+        return $this->db->execute();
+    }
+
+    /**
+     * UPDATE - Deactivate a community
+     */
+    public function deactivateCommunity($id) {
+        $this->db->query("
+            UPDATE communities 
+            SET status = 'inactive',
+                updated_at = NOW()
+            WHERE id = :id
+        ");
+        
+        $this->db->bind(':id', $id);
+        return $this->db->execute();
+    }
+    
+    /**
      * UPDATE - Update community status
      */
     public function updateStatus($id, $status) {
@@ -177,7 +209,7 @@ class Community {
     // ==========================================
     
     /**
-     * Get all communities for user view (shows membership status)
+     * Get all communities for user view (shows membership status, only active communities)
      * Returns both 'members' and 'member_count' for compatibility
      */
     public function getAllCommunitiesForUser($userId) {
@@ -193,7 +225,8 @@ class Community {
                 MAX(CASE WHEN c.created_by = :user_id THEN 1 ELSE 0 END) as is_owner
             FROM communities c
             LEFT JOIN community_members cm ON c.id = cm.community_id
-            LEFT JOIN community_posts p ON c.id = p.community_id            LEFT JOIN community_members cm2 ON c.id = cm2.community_id AND cm2.user_id = :user_id
+            LEFT JOIN community_posts p ON c.id = p.community_id
+            LEFT JOIN community_members cm2 ON c.id = cm2.community_id AND cm2.user_id = :user_id
             WHERE c.status = 'active'
             GROUP BY c.id
             ORDER BY is_member DESC, members DESC
