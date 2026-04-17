@@ -130,6 +130,20 @@
                         <?php
                             $iTeach = !empty($match['i_teach']) && is_array($match['i_teach']) ? $match['i_teach'] : [];
                             $theyTeach = !empty($match['they_teach']) && is_array($match['they_teach']) ? $match['they_teach'] : [];
+                            $matchType = $match['match_type'] ?? 'single';
+                            $chatSkill = '';
+                            $chatDir = '';
+
+                            if ($matchType === 'mutual') {
+                                $chatSkill = $iTeach[0]['name'] ?? '';
+                                $chatDir = $theyTeach[0]['name'] ?? '';
+                            } elseif (!empty($iTeach)) {
+                                $chatSkill = $iTeach[0]['name'] ?? '';
+                                $chatDir = 'teacher';
+                            } else {
+                                $chatSkill = $theyTeach[0]['name'] ?? '';
+                                $chatDir = 'learner';
+                            }
 
                             $allSkillNames = array_merge(
                                 array_column($iTeach, 'name'),
@@ -148,7 +162,7 @@
                                 </div>
 
                                 <div class="match-basic-info">
-                                    <h3 class="match-name" onclick="viewProfile(<?= (int)$match['id']; ?>)">
+                                    <h3 class="match-name" onclick="viewProfile(<?= (int)$match['id']; ?>, '<?= htmlspecialchars($matchType, ENT_QUOTES); ?>', '<?= htmlspecialchars($chatSkill, ENT_QUOTES); ?>', '<?= htmlspecialchars($chatDir, ENT_QUOTES); ?>')">
                                         <?= htmlspecialchars($match['name']); ?>
                                     </h3>
 
@@ -212,7 +226,7 @@
                                         <span class="badge badge-success">✓ Connected</span>
                                         <button type="button"
                                                 class="btn-chat"
-                                                onclick="openSkillChat(<?= (int)$match['id']; ?>)">
+                                                onclick="openSkillChat(<?= (int)$match['id']; ?>, '<?= htmlspecialchars($matchType, ENT_QUOTES); ?>', '<?= htmlspecialchars($chatSkill, ENT_QUOTES); ?>', '<?= htmlspecialchars($chatDir, ENT_QUOTES); ?>')">
                                             Go to Chat
                                         </button>
                                     </div>

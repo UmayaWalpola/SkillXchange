@@ -3,64 +3,80 @@
 console.log('View Profile JavaScript loaded!');
 
 // Send connection request
-function sendConnectionRequest(userName) {
+function sendConnectionRequest(userId, userName, clickEvent) {
     console.log('Sending connection request to:', userName);
-    
-    if (confirm('Send connection request to ' + userName + '?')) {
-        // Get the button
-        const button = event.target;
-        
-        // Disable button and show loading
+
+    if (!userId) {
+        showToast('Unable to send request: invalid user.');
+        return;
+    }
+
+    if (!confirm('Send connection request to ' + userName + '?')) {
+        return;
+    }
+
+    const button = clickEvent?.currentTarget;
+    if (button) {
         button.disabled = true;
         button.textContent = 'Sending...';
-        
-        // Simulate API call
-        setTimeout(() => {
-            button.textContent = 'Request Sent';
-            button.style.opacity = '0.6';
-            showToast('Connection request sent to ' + userName + '!');
-        }, 1000);
-        
-        /* 
-        // REAL IMPLEMENTATION - Uncomment when backend is ready
-        fetch('/api/connections/send', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                receiver_name: userName
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
+    }
+
+    const formData = new FormData();
+    formData.append('user_id', userId);
+
+    fetch(`${window.URLROOT}/userdashboard/connect`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (button) {
                 button.textContent = 'Request Sent';
                 button.style.opacity = '0.6';
-                showToast('Connection request sent to ' + userName + '!');
-            } else {
-                alert('Failed to send connection request: ' + data.message);
+            }
+            showToast(data.message || ('Connection request sent to ' + userName + '!'));
+        } else {
+            if (button) {
                 button.disabled = false;
                 button.textContent = 'Connect';
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred. Please try again.');
+            showToast(data.message || 'Failed to send connection request.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (button) {
             button.disabled = false;
             button.textContent = 'Connect';
-        });
-        */
-    }
+        }
+        showToast('An error occurred. Please try again.');
+    });
 }
 
 // Send message - redirect to chats
-function sendMessage() {
-    console.log('Redirecting to chats...');
-    
-    // Redirect to chats page
-    // You can pass user ID as query parameter if needed
-    window.location.href = '/userdashboard/chats';
+function sendMessage(userId) {
+    console.log('Redirecting to chat...');
+
+    if (!userId) {
+        showToast('Unable to open chat: invalid user.');
+        return;
+    }
+
+    const context = window.MATCH_CONTEXT || {};
+    const params = new URLSearchParams();
+
+    if (context.type) params.set('match_type', context.type);
+    if (context.skill) params.set('skill', context.skill);
+    if (context.dir) params.set('dir', context.dir);
+
+    let url = `${window.URLROOT}/chat/user/${userId}`;
+    const query = params.toString();
+    if (query) {
+        url += `?${query}`;
+    }
+
+    window.location.href = url;
 }
 
 // Show toast notification

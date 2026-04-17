@@ -289,58 +289,44 @@ public function matches() {
             header('Location: ' . URLROOT . '/userdashboard/matches');
             exit;
         }
-        
-        try {
-            $userModel = $this->model('User');
-            $userData = $userModel->getUserById($userId);
-            
-            if (!$userData) {
-                throw new Exception('User not found');
-            }
-            
-            $ratingData = $userModel->getAverageRating($userId);
-            $liveStats = $userModel->getLiveUserStats($userId);
 
-            $userArray = [
-                'id' => $userData['id'],
-                'name' => $userData['username'] ?? 'Unknown User',
-                'username' => $userData['username'] ?? 'unknown-user',
-                'email' => $userData['email'] ?? '',
-                'bio' => $userData['bio'] ?? 'No bio available',
-                'avatar' => !empty($userData['profile_picture'])
-                    ? $userData['profile_picture']
-                    : strtoupper(substr($userData['username'] ?? 'U', 0, 2)),
-                'connections' => (int) ($liveStats['connections_count'] ?? 0),
-                'skills_taught' => (int) ($liveStats['skills_taught_count'] ?? 0),
-                'skills_learning' => (int) ($liveStats['skills_learning_count'] ?? 0),
-                'rating' => $ratingData['rating'] ?? 0.0,
-                'reviews_count' => $ratingData['count'] ?? 0
-            ];
-            
-            $userSkills = $this->getUserSkillsFromDB($userId);
-            $userProjects = $this->getUserProjectsFromDB($userId);
-            $userFeedback = $this->getUserFeedbackFromDB($userId);
-            
-        } catch (Exception $e) {
-            $allMatches = array_merge(
-                $this->getTeachMatches($currentUserId), 
-                $this->getLearnMatches($currentUserId)
-            );
-            
-            foreach ($allMatches as $match) {
-                if ($match['id'] == $userId) {
-                    $userArray = $this->createUserDataFromMatch($match);
-                    $userSkills = $this->getSkillsForMatch($userId);
-                    $userProjects = $this->getProjectsForMatch($userId);
-                    $userFeedback = $this->getFeedbackForMatch($userId);
-                    break;
-                }
-            }
-            
-            if (!isset($userArray)) {
-                header('Location: ' . URLROOT . '/userdashboard/matches');
-                exit;
-            }
+        $userModel = $this->model('User');
+        $userData = $userModel->getUserById($userId);
+
+        if (!$userData) {
+            header('Location: ' . URLROOT . '/userdashboard/matches');
+            exit;
+        }
+
+        $ratingData = $userModel->getAverageRating($userId);
+        $liveStats = $userModel->getLiveUserStats($userId);
+
+        $userArray = [
+            'id' => $userData['id'],
+            'name' => $userData['username'] ?? 'Unknown User',
+            'username' => $userData['username'] ?? 'unknown-user',
+            'email' => $userData['email'] ?? '',
+            'bio' => $userData['bio'] ?? 'No bio available',
+            'avatar' => !empty($userData['profile_picture'])
+                ? $userData['profile_picture']
+                : strtoupper(substr($userData['username'] ?? 'U', 0, 2)),
+            'connections' => (int) ($liveStats['connections_count'] ?? 0),
+            'skills_taught' => (int) ($liveStats['skills_taught_count'] ?? 0),
+            'skills_learning' => (int) ($liveStats['skills_learning_count'] ?? 0),
+            'rating' => $ratingData['rating'] ?? 0.0,
+            'reviews_count' => $ratingData['count'] ?? 0
+        ];
+
+        $userSkills = $this->getUserSkillsFromDB($userId);
+        $userProjects = $this->getUserProjectsFromDB($userId);
+        $userFeedback = $this->getUserFeedbackFromDB($userId);
+
+        $matchType = trim($_GET['match_type'] ?? '');
+        $matchSkill = trim($_GET['skill'] ?? '');
+        $matchDir = trim($_GET['dir'] ?? '');
+
+        if (!in_array($matchType, ['mutual', 'multi', 'single'], true)) {
+            $matchType = '';
         }
         
         $data = [
@@ -350,7 +336,12 @@ public function matches() {
             'projects' => $userProjects,
             'feedback' => $userFeedback,
             'page' => 'matches',
-            'currentUserId' => $currentUserId
+            'currentUserId' => $currentUserId,
+            'matchContext' => [
+                'type' => $matchType,
+                'skill' => $matchSkill,
+                'dir' => $matchDir
+            ]
         ];
         
         $this->view('users/view_profile', $data);
@@ -1285,50 +1276,6 @@ public function addCommunityComment() {
         if ($diff < 31536000) return floor($diff / 2592000) . ' months ago';
         return floor($diff / 31536000) . ' years ago';
     }
-
-    // ============================================
-    // FALLBACK METHODS
-    // ============================================
-
-    private function createUserDataFromMatch($match) {
-        return [
-            'id'              => $match['id'],
-            'name'            => $match['name'],
-            'username'        => strtolower(str_replace(' ', '', $match['name'])),
-            'email'           => $match['email'] ?? strtolower(str_replace(' ', '', $match['name'])) . '@example.com',
-            'bio'             => $match['skill'] ?? 'No bio available',
-            'avatar'          => $match['avatar'] ?? strtoupper(substr($match['name'], 0, 2)),
-            'connections'     => rand(20, 100),
-            'skills_taught'   => rand(3, 10),
-            'skills_learning' => rand(2, 8),
-            'rating'          => 4.5,
-            'reviews_count'   => rand(5, 50)
-        ];
-    }
-
-    private function getSkillsForMatch($userId) {
-        return [
-            'teaches' => [['name' => 'Web Development', 'level' => 'Intermediate']],
-            'learns'  => [['name' => 'Advanced Topics', 'level' => 'Beginner']]
-        ];
-    }
-
-    private function getProjectsForMatch($userId) {
-        return [
-            'completed'   => [['title' => 'Sample Project', 'description' => 'A completed project.']],
-            'in_progress' => []
-        ];
-    }
-
-    private function getFeedbackForMatch($userId) {
-        return [
-            ['reviewer_name' => 'John Doe', 'date' => '1 week ago', 'rating' => 5, 'comment' => 'Great to work with!']
-        ];
-    }
-
-    // ============================================
-    // DUMMY DATA METHODS
-    // ============================================
 
     private function getUserData($userId) {
         try {

@@ -1,5 +1,6 @@
 <?php require_once "../app/views/layouts/header_user.php"; ?>
 <?php require_once "../app/views/layouts/usersidebar.php"; ?>
+<?php $matchContext = $data['matchContext'] ?? ['type' => '', 'skill' => '', 'dir' => '']; ?>
 
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/profile.css">
@@ -47,10 +48,10 @@
                 
                 <!-- Action Buttons -->
                 <div class="profile-actions">
-                    <button class="btn-action btn-primary" onclick="sendConnectionRequest('<?= htmlspecialchars($data['user']['name']); ?>')">
+                    <button class="btn-action btn-primary" onclick="sendConnectionRequest(<?= (int)($data['user']['id'] ?? 0); ?>, '<?= htmlspecialchars($data['user']['name'], ENT_QUOTES); ?>', event)">
                         Connect
                     </button>
-                    <button class="btn-action btn-secondary" onclick="sendMessage()">
+                    <button class="btn-action btn-secondary" onclick="sendMessage(<?= (int)($data['user']['id'] ?? 0); ?>)">
                         Send Message
                     </button>
                     <button class="report-btn report-user-btn" data-user-id="<?= $data['user']['id'] ?? '' ?>">
@@ -175,6 +176,11 @@
 <script>
 // Define URLROOT for reporting system
 window.URLROOT = '<?= URLROOT ?>';
+window.MATCH_CONTEXT = {
+    type: '<?= htmlspecialchars($matchContext['type'] ?? '', ENT_QUOTES) ?>',
+    skill: '<?= htmlspecialchars($matchContext['skill'] ?? '', ENT_QUOTES) ?>',
+    dir: '<?= htmlspecialchars($matchContext['dir'] ?? '', ENT_QUOTES) ?>'
+};
 </script>
 <script src="<?= URLROOT ?>/assets/js/view_profile.js"></script>
 <script src="<?= URLROOT ?>/assets/js/reporting.js"></script>
