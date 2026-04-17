@@ -8,8 +8,20 @@ class CommunityController extends Controller {
         $this->communityModel = new Community();
     }
 
-    // Redirect to user dashboard communities
+    /**
+     * Route dispatcher - Send to appropriate dashboard based on role
+     */
     public function index() {
+        // Check user role from session
+        $role = $_SESSION['role'] ?? null;
+
+        // Admin roles go to community admin dashboard
+        if ($role === 'community_admin' || $role === 'manager' || $role === 'admin') {
+            header('Location: ' . URLROOT . '/communityAdmin');
+            exit;
+        }
+
+        // Regular users go to user community list
         header('Location: ' . URLROOT . '/userdashboard/communities');
         exit;
     }
