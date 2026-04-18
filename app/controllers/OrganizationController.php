@@ -1115,15 +1115,17 @@ class OrganizationController extends Controller {
                 'GitHub and Git'
             ],
             'design' => [
-                'Web Development',
-                'Frontend Frameworks',
-                'Digital Marketing',
-                'GitHub and Git'
+                'UI/UX Design',
+                'Graphic Design',
+                'Figma',
+                'Prototyping',
+                'Digital Marketing'
             ],
             'other' => [
                 'Cloud Computing',
                 'Cybersecurity',
-                'Devops',
+                'DevOps',
+                'Project Management',
                 'AI and ML',
                 'GitHub and Git'
             ]
@@ -1154,6 +1156,9 @@ class OrganizationController extends Controller {
             'web dev' => 'web development',
             'ai' => 'ai and ml',
             'ai ml' => 'ai and ml',
+            'ui ux' => 'ui/ux design',
+            'ui/ux' => 'ui/ux design',
+            'user interface user experience' => 'ui/ux design',
             'marketing' => 'digital marketing',
             'data analytics' => 'data analysis & visualization',
             'data analysis and visualization' => 'data analysis & visualization'

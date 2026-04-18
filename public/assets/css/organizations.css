@@ -397,6 +397,132 @@
     font-weight: 600;
 }
 
+.required-skills-card {
+    background: var(--white-bg);
+    border: 2px solid var(--blue-bg);
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 6px 20px rgba(101, 131, 150, 0.08);
+    margin-bottom: 30px;
+}
+
+.required-skills-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.required-skills-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--dark-bg);
+    margin: 0 0 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.required-skills-subtitle {
+    margin: 0;
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.required-skills-category {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: var(--blue-bg);
+    color: var(--primary-blue);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.required-skills-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.required-skills-list .skill-tag {
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid #c7d8e7;
+    background: #f7fbff;
+    color: #355a72;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.required-skills-empty {
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.skills-note {
+    margin: 6px 0 8px;
+    color: #5f7386;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.skill-suggestion-list,
+.selected-skills-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.skill-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 999px;
+    border: 1px solid #c7d8e7;
+    background: #f7fbff;
+    color: #355a72;
+    padding: 8px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.skill-chip:hover {
+    background: #eaf4fb;
+    border-color: #8bb8d6;
+    transform: translateY(-1px);
+}
+
+.skill-chip.is-selected {
+    background: #658396;
+    border-color: #658396;
+    color: #fff;
+}
+
+.skill-chip .skill-remove {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.skills-hint {
+    display: block;
+    margin-top: 6px;
+    color: #355a72;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
 .project-footer {
     display: flex;
     justify-content: space-between;

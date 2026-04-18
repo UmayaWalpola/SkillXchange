@@ -72,11 +72,13 @@
                         <textarea name="description" rows="5" required><?= $isEdit ? htmlspecialchars($project->description) : '' ?></textarea>
                     </div>
 
-                    <div class="info-item">
-                        <label>Skills Needed</label>  //This shows a list of skill suggestions below when the user types
-                        <input id="requiredSkillsInput" type="text" name="required_skills" list="skillsSuggestionList" value="<?= $isEdit ? htmlspecialchars($project->required_skills) : '' ?>" placeholder="Example: Web Development, Frontend Frameworks" required>
-                        <datalist id="skillsSuggestionList"></datalist>
-                        <small id="skillsHint" style="display:block;margin-top:6px;color:#355a72;font-size:13px;line-height:1.45;"></small>
+                    <div class="info-item full-width">
+                        <label>Skills Needed</label>
+                        <p class="skills-note">Choose the skills that this project needs. Click a suggestion to add it to the required skills list.</p>
+                        <input id="requiredSkillsInput" type="text" name="required_skills" value="<?= $isEdit ? htmlspecialchars($project->required_skills) : '' ?>" placeholder="Select a category to load suggested skills" autocomplete="off" spellcheck="false" required>
+                        <div id="skillsSuggestionList" class="skill-suggestion-list"></div>
+                        <div id="selectedSkillsPreview" class="selected-skills-preview"></div>
+                        <small id="skillsHint" class="skills-hint"></small>
                     </div>
 
                     <div class="info-item">
@@ -130,6 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const requiredSkillsInput = document.getElementById('requiredSkillsInput');
     const skillsHint = document.getElementById('skillsHint');
     const skillsSuggestionList = document.getElementById('skillsSuggestionList');
+    const selectedSkillsPreview = document.getElementById('selectedSkillsPreview');
     const icon = document.getElementById('projIcon');
     const categorySkillMap = <?= json_encode($categorySkillMap ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 
@@ -167,11 +170,87 @@ document.addEventListener('DOMContentLoaded', function() {
         if (skillsSuggestionList) {
             skillsSuggestionList.innerHTML = '';
             suggestions.forEach(function(skill) {
-                const option = document.createElement('option');
-                option.value = skill;
-                skillsSuggestionList.appendChild(option);
+                const chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'skill-chip';
+                chip.textContent = skill;
+                chip.addEventListener('click', function() {
+                    const currentSkills = parseSkills(requiredSkillsInput ? requiredSkillsInput.value : '');
+                    const normalizedSkill = normalizeSkill(skill);
+
+                    if (!currentSkills.some(function(item) { return normalizeSkill(item) === normalizedSkill; })) {
+                        currentSkills.push(skill);
+                        if (requiredSkillsInput) {
+                            requiredSkillsInput.value = currentSkills.join(', ');
+                        }
+                        renderSelectedSkills();
+                    }
+                });
+                skillsSuggestionList.appendChild(chip);
             });
         }
+
+        renderSelectedSkills();
+    }
+
+    function normalizeSkill(value) {
+        return String(value || '')
+            .toLowerCase()
+            .replace(/[\s_-]+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function parseSkills(value) {
+        return String(value || '')
+            .split(',')
+            .map(function(item) { return item.trim(); })
+            .filter(Boolean);
+    }
+
+    function renderSelectedSkills() {
+        if (!selectedSkillsPreview || !requiredSkillsInput) {
+            return;
+        }
+
+        const currentSkills = parseSkills(requiredSkillsInput.value);
+        selectedSkillsPreview.innerHTML = '';
+
+        if (currentSkills.length === 0) {
+            const emptyState = document.createElement('span');
+            emptyState.className = 'skills-note';
+            emptyState.textContent = 'Selected skills will appear here.';
+            selectedSkillsPreview.appendChild(emptyState);
+            return;
+        }
+
+        currentSkills.forEach(function(skill) {
+            const chip = document.createElement('span');
+            chip.className = 'skill-chip is-selected';
+
+            const label = document.createElement('span');
+            label.textContent = skill;
+            chip.appendChild(label);
+
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'skill-remove';
+            remove.innerHTML = '&times;';
+            remove.addEventListener('click', function() {
+                const nextSkills = currentSkills.filter(function(item) {
+                    return normalizeSkill(item) !== normalizeSkill(skill);
+                });
+                requiredSkillsInput.value = nextSkills.join(', ');
+                renderSelectedSkills();
+            });
+
+            chip.appendChild(remove);
+            selectedSkillsPreview.appendChild(chip);
+        });
+    }
+
+    if (requiredSkillsInput) {
+        requiredSkillsInput.addEventListener('input', renderSelectedSkills);
     }
 
     function updateHeader() {
