@@ -8,13 +8,20 @@ class Notification {
     }
 
     public function createNotification($data) {
-        $this->db->query("INSERT INTO notifications (user_id, type, message, project_id, task_id, is_read) VALUES (:user_id, :type, :message, :project_id, :task_id, :is_read)");
+        $title = trim((string)($data['title'] ?? ''));
+        if ($title === '') {
+            $title = ucwords(str_replace(['_', '-'], ' ', (string)($data['type'] ?? 'notification')));
+        }
+
+        $this->db->query("INSERT INTO notifications (user_id, type, title, message, related_user_id, related_exchange_id, is_read, announcement_id, created_at) VALUES (:user_id, :type, :title, :message, :related_user_id, :related_exchange_id, :is_read, :announcement_id, CURRENT_TIMESTAMP)");
         $this->db->bind(':user_id', $data['user_id']);
         $this->db->bind(':type', $data['type']);
+        $this->db->bind(':title', $title);
         $this->db->bind(':message', $data['message']);
-        $this->db->bind(':project_id', $data['project_id'] ?? null);
-        $this->db->bind(':task_id', $data['task_id'] ?? null);
+        $this->db->bind(':related_user_id', $data['related_user_id'] ?? null);
+        $this->db->bind(':related_exchange_id', $data['related_exchange_id'] ?? null);
         $this->db->bind(':is_read', $data['is_read'] ?? 0);
+        $this->db->bind(':announcement_id', $data['announcement_id'] ?? null);
         return $this->db->execute();
     }
 
