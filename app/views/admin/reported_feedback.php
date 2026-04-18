@@ -138,7 +138,6 @@ require_once "../app/views/layouts/adminsidebar.php";
     }
 </style>
 
-<main class="site-main">
 <div class="dashboard-container">
 <div class="dashboard-main">
 
@@ -361,7 +360,6 @@ require_once "../app/views/layouts/adminsidebar.php";
 
 </div>
 </div>
-</main>
 
 <!-- Admin Action Modal -->
 <div id="actionModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">

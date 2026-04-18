@@ -6,7 +6,6 @@
 
 <?php $u = $data['user']; ?>
 
-<main class="site-main">
 <div class="dashboard-container">
 <div class="dashboard-main">
 
@@ -189,6 +188,5 @@
 
 </div>
 </div>
-</main>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>

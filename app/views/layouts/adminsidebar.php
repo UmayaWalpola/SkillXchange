@@ -20,7 +20,7 @@ function sidebarActive($path) {
     </a>
     <a href="<?= URLROOT ?>/admin/reports" class="sidebar-item <?= sidebarActive('/admin/reports') ?>">
         <span class="icon"><i class="ph ph-flag"></i></span>
-        <span>Reports</span>
+        <span>Reports Management</span>
     </a>
     <a href="<?= URLROOT ?>/FeedbackReport/index" class="sidebar-item <?= sidebarActive('/FeedbackReport') ?>">
         <span class="icon"><i class="ph ph-chat-circle-dots"></i></span>

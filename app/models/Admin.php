@@ -7,7 +7,7 @@ class Admin {
         $this->db = new Database();
     }
 
-    // ── Stats ──────────────────────────────────────────────
+    // stat cards
     public function getAdminStats() {
         try {
             $stats = [];
@@ -40,24 +40,10 @@ class Admin {
         }
     }
 
-    // ── Users ──────────────────────────────────────────────
-    public function getRecentUsers($limit = 5) {
-        try {
-            $this->db->query(
-                "SELECT id, username, email, role, status, created_at, warning_count
-                 FROM users WHERE role != 'admin'
-                 ORDER BY created_at DESC LIMIT :limit"
-            );
-            $this->db->bind(':limit', $limit);
-            return $this->db->resultSet();
-        } catch (Exception $e) { error_log($e->getMessage()); return []; }
-    }
-
     public function getAllUsers() {
         try {
             $this->db->query(
-                "SELECT id, username, email, role, status, created_at, warning_count,
-                        suspended_at, suspension_reason, suspension_expires_at
+                "SELECT id, username, email, role, status, created_at, warning_count
                  FROM users WHERE role != 'admin'
                  ORDER BY created_at DESC"
             );
@@ -100,7 +86,7 @@ class Admin {
     public function getReportsAboutUser($userId) {
         try {
             $this->db->query(
-                "SELECT ur.reason,  ur.details, ur.status, ur.reported_at,
+                "SELECT ur.reason,  ur.details, ur.status, ur.reported_at AS created_at,
                         reporter.username AS reporter_username,
                         p.name AS project_name
                 FROM user_reports ur
@@ -114,7 +100,7 @@ class Admin {
         } catch (Exception $e) { error_log($e->getMessage()); return []; }
     }
 
-    public function getUserActivity($userId, $limit = 15) {
+    public function getUserActivity($userId, $limit = 5) {
         try {
             $this->db->query(
                 "SELECT activity_type, description, created_at
@@ -128,7 +114,7 @@ class Admin {
         } catch (Exception $e) { error_log($e->getMessage()); return []; }
     }
 
-    // ── Suspend / Reactivate ───────────────────────────────
+    //suspend/reactivate users
     public function suspendUser($userId, $adminId, $reason, $expiresAt = null) {
         try {
             $this->db->query(
@@ -164,8 +150,8 @@ class Admin {
         } catch (Exception $e) { error_log($e->getMessage()); return false; }
     }
 
-    // ── Activity Logs ──────────────────────────────────────
-    public function getAllUserActivities($limit = 100) {
+    // Activity Logs 
+    public function getAllUserActivities($limit = 25) {
         try {
             $this->db->query(
                 "SELECT ua.activity_type, ua.description, ua.created_at,
@@ -179,7 +165,7 @@ class Admin {
         } catch (Exception $e) { error_log($e->getMessage()); return []; }
     }
 
-    public function getAllAdminActions($limit = 100) {
+    public function getAllAdminActions($limit = 25) {
         try {
             $this->db->query(
                 "SELECT aa.action_type, aa.description, aa.created_at,
@@ -188,20 +174,6 @@ class Admin {
                  FROM admin_actions aa
                  JOIN users a ON aa.admin_id = a.id
                  LEFT JOIN users u ON aa.target_user_id = u.id
-                 ORDER BY aa.created_at DESC LIMIT :limit"
-            );
-            $this->db->bind(':limit', $limit);
-            return $this->db->resultSet();
-        } catch (Exception $e) { error_log($e->getMessage()); return []; }
-    }
-
-    public function getRecentAdminActions($limit = 5) {
-        try {
-            $this->db->query(
-                "SELECT aa.action_type, aa.description, aa.created_at,
-                        a.username AS admin_username
-                 FROM admin_actions aa
-                 JOIN users a ON aa.admin_id = a.id
                  ORDER BY aa.created_at DESC LIMIT :limit"
             );
             $this->db->bind(':limit', $limit);

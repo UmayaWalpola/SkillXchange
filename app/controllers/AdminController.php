@@ -1,8 +1,10 @@
 <?php
+//controller class
 class AdminController extends Controller {
 
     private $adminModel;
 
+    //check if user is logged in and is admin, otherwise redirect to signin or home
     public function __construct() {
         if (!isset($_SESSION['user_id'])) {
             header('Location: ' . URLROOT . '/auth/signin');
@@ -12,27 +14,27 @@ class AdminController extends Controller {
             header('Location: ' . URLROOT . '/home');
             exit;
         }
+        // Load Admin model
         $this->adminModel = $this->model('Admin');
     }
 
-    // ── Dashboard ──────────────────────────────────────────
+    // Default admin dashboard
     public function index() { $this->dashboard(); }
 
     public function dashboard() {
         $data = [
             'stats'          => $this->adminModel->getAdminStats(),
-            'recent_users'   => $this->adminModel->getRecentUsers(5),
-            'recent_actions' => $this->adminModel->getRecentAdminActions(5),
         ];
         $this->view('admin/admin', $data);
     }
 
-    // ── User Management ────────────────────────────────────
+    //user management- get all users, view user details
     public function users() {
         $data = ['users' => $this->adminModel->getAllUsers()];
         $this->view('admin/admin_users', $data);
     }
 
+    //user detail page with suspend/reactivate options, warnings, reports, activity log
     public function viewUser($userId) {
         $user = $this->adminModel->getUserById($userId);
         if (!$user) {
@@ -51,12 +53,13 @@ class AdminController extends Controller {
     }
 
     public function suspendUser() {
+        //only accepts POST requests
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: ' . URLROOT . '/admin/users'); exit;
         }
         $userId   = $_POST['user_id']  ?? null;
         $reason   = trim($_POST['reason']   ?? '');
-        $duration = $_POST['duration'] ?? 'permanent';
+        $duration = $_POST['duration'] ?? 'permanent'; //optional
 
         if (!$userId || !$reason) {
             $_SESSION['error'] = 'User ID and reason are required';
@@ -64,6 +67,7 @@ class AdminController extends Controller {
         }
 
         $expiresAt = null;
+        //calculate the expiry date based on duration (e.g. 7 days, 30 days, or permanent)
         if ($duration !== 'permanent') {
             $days      = (int) $duration;
             $expiresAt = date('Y-m-d H:i:s', strtotime("+{$days} days"));
@@ -71,6 +75,7 @@ class AdminController extends Controller {
 
         if ($this->adminModel->suspendUser($userId, $_SESSION['user_id'], $reason, $expiresAt)) {
             $this->adminModel->logAdminAction(
+                //logs admin action
                 $_SESSION['user_id'], 'user_suspended', $userId,
                 'user', $userId, "Suspended user for: {$reason}",
                 $_SERVER['REMOTE_ADDR'] ?? 'unknown'
@@ -104,11 +109,11 @@ class AdminController extends Controller {
         header('Location: ' . URLROOT . '/admin/viewUser/' . $userId); exit;
     }
 
-    // ── Activity Logs ──────────────────────────────────────
+    //Activity Logs
     public function activityLogs() {
         $data = [
-            'user_activities' => $this->adminModel->getAllUserActivities(100),
-            'admin_actions'   => $this->adminModel->getAllAdminActions(100),
+            'user_activities' => $this->adminModel->getAllUserActivities(25),
+            'admin_actions'   => $this->adminModel->getAllAdminActions(25),
         ];
         $this->view('admin/admin_activity_logs', $data);
     }
@@ -118,6 +123,7 @@ class AdminController extends Controller {
     $this->view('admin/admin_reports', $data);
 }
 
+//issue warning to user based on report, update report status, log admin action, send notification to user
 public function warnUser() {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         header('Location: ' . URLROOT . '/admin/reports'); exit;
