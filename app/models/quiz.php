@@ -38,18 +38,19 @@ class Quiz {
     $this->db->query("
         INSERT INTO quizzes
             (title, description, difficulty_level, duration, category,
-             status, total_questions, manager_id, created_at)
+             status, total_questions, badge_id, manager_id, created_at)
         VALUES
             (:title, :description, :difficulty, :duration, :category,
-             :status, 0, :manager_id, NOW())
+             :status, 0, :badge_id, :manager_id, NOW())
     ");
 
     $this->db->bind(':title',       $quizData['title']);
     $this->db->bind(':description', $quizData['description']);
     $this->db->bind(':difficulty',  $quizData['difficulty_level']);
     $this->db->bind(':duration',    $quizData['duration']);
-    $this->db->bind(':category',    $quizData['category'] ?? 'General');
-    $this->db->bind(':status',      $quizData['status'] ?? 'draft');
+    $this->db->bind(':category',    isset($quizData['category']) ? $quizData['category'] : 'General');
+    $this->db->bind(':status',      isset($quizData['status']) ? $quizData['status'] : 'draft');
+    $this->db->bind(':badge_id',    isset($quizData['badge_id']) ? $quizData['badge_id'] : null);
     $this->db->bind(':manager_id',  $quizData['created_by']);
 
     if ($this->db->execute()) {
@@ -85,11 +86,11 @@ class Quiz {
         // Insert the four options (A, B, C, D)
         $letters = ['A', 'B', 'C', 'D'];
         $fields  = ['option_a', 'option_b', 'option_c', 'option_d'];
-        $correctAnswerIndex = intval($questionData['correct_answer'] ?? 0);
+        $correctAnswerIndex = intval(isset($questionData['correct_answer']) ? $questionData['correct_answer'] : 0);
 
         foreach ($letters as $idx => $letter) {
             $is_correct = ($idx === $correctAnswerIndex) ? 1 : 0;
-            $option_text = $questionData[$fields[$idx]] ?? '';
+            $option_text = isset($questionData[$fields[$idx]]) ? $questionData[$fields[$idx]] : '';
 
             $this->db->query("
                 INSERT INTO quiz_options (question_id, option_letter, option_text, is_correct)
@@ -147,7 +148,7 @@ class Quiz {
             ORDER BY q.created_at DESC
         ");
         $this->db->bind(':manager_id', $manager_id);
-        return $this->db->resultSet() ?: [];
+        return $this->db->resultSet() ?: array();
     }
 
     // -------------------------------------------------------------------------
@@ -170,12 +171,12 @@ class Quiz {
         ");
 
         $rows = $this->db->resultSet();
-        if (!$rows) return [];
+        if (!$rows) return array();
 
         foreach ($rows as $row) {
             if (!is_object($row)) continue;
             if (!isset($row->reward_amount) || (int)$row->reward_amount <= 0) {
-                $row->reward_amount = $this->computeRewardAmount($row->difficulty_level ?? '');
+                $row->reward_amount = $this->computeRewardAmount(isset($row->difficulty_level) ? $row->difficulty_level : '');
             }
         }
 
@@ -214,12 +215,12 @@ class Quiz {
 
         $this->db->bind(':user_id', $user_id);
         $rows = $this->db->resultSet();
-        if (!$rows) return [];
+        if (!$rows) return array();
 
         foreach ($rows as $row) {
             if (!is_object($row)) continue;
             if (!isset($row->reward_amount) || (int)$row->reward_amount <= 0) {
-                $row->reward_amount = $this->computeRewardAmount($row->difficulty_level ?? '');
+                $row->reward_amount = $this->computeRewardAmount(isset($row->difficulty_level) ? $row->difficulty_level : '');
             }
         }
 
@@ -242,7 +243,7 @@ class Quiz {
 
         $quizArray = (array)$result;
         if (!isset($quizArray['reward_amount']) || (int)$quizArray['reward_amount'] <= 0) {
-            $quizArray['reward_amount'] = $this->computeRewardAmount($quizArray['difficulty_level'] ?? '');
+            $quizArray['reward_amount'] = $this->computeRewardAmount(isset($quizArray['difficulty_level']) ? $quizArray['difficulty_level'] : '');
         }
         return $quizArray;
     }
@@ -271,10 +272,10 @@ class Quiz {
         $this->db->bind(':id', $quiz_id);
         $questions = $this->db->resultSet();
 
-        $parsedQuestions = [];
+        $parsedQuestions = array();
         foreach ($questions as $q) {
             $questionArray = (array)$q;
-            $questionArray['options']        = [];
+            $questionArray['options']        = array();
             $questionArray['correct_answer'] = null;
 
             if (!empty($questionArray['options_data'])) {
@@ -410,5 +411,18 @@ class Quiz {
         $this->db->bind(':is_correct',  $is_correct);
 
         return $this->db->execute();
+    }
+
+    /**
+     * Get available badges for quiz creation
+     */
+    public function getAvailableBadges() {
+        $this->db->query("SELECT id, name, icon FROM badges ORDER BY name ASC");
+        $result = $this->db->resultSet();
+        error_log("DEBUG MODEL: Query result: " . (is_array($result) ? count($result) : 'not array'));
+        if (is_array($result) && count($result) > 0) {
+            error_log("DEBUG MODEL: First badge: " . $result[0]->name);
+        }
+        return $result ?: array();
     }
 }
