@@ -39,7 +39,7 @@ class Project {
     // 2. READ ALL PROJECTS (Get all projects for an organization)
     // ============================================================
     public function getProjectsByOrganization($org_id) {
-        $this->db->query("SELECT * FROM projects WHERE organization_id = :org_id ORDER BY created_at DESC");
+        $this->db->query("SELECT p.*, (SELECT COUNT(*) FROM project_members pm WHERE pm.project_id = p.id AND pm.status = 'active') AS current_members FROM projects p WHERE p.organization_id = :org_id ORDER BY p.created_at DESC");
         $this->db->bind(':org_id', $org_id);
         
         // We use resultSet() because we need MANY records (array)
@@ -116,11 +116,11 @@ class Project {
     }
            //Filter Logic
     public function searchProjects($org_id, $filters = []) {
-        $query = "SELECT * FROM projects WHERE organization_id = :org_id";
+            $query = "SELECT p.*, (SELECT COUNT(*) FROM project_members pm WHERE pm.project_id = p.id AND pm.status = 'active') AS current_members FROM projects p WHERE p.organization_id = :org_id";
         if (!empty($filters['search'])) $query .= " AND (name LIKE :search OR description LIKE :search)";
         if (!empty($filters['status']) && $filters['status'] != 'all') $query .= " AND status = :status";
         if (!empty($filters['category']) && $filters['category'] != 'all') $query .= " AND category = :category";
-        $query .= " ORDER BY created_at DESC";
+            $query .= " ORDER BY p.created_at DESC";
         $this->db->query($query);
         $this->db->bind(':org_id', $org_id);
         if (!empty($filters['search'])) $this->db->bind(':search', "%" . $filters['search'] . "%");

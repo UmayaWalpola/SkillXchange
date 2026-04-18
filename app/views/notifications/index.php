@@ -14,6 +14,12 @@
                 </form>
             </div>
 
+            <?php if (!empty($data['unreadCount'])): ?>
+                <div style="margin: 0 0 20px; color: #6b7280; font-size: 14px;">
+                    You have <strong><?= (int)$data['unreadCount'] ?></strong> unread notification<?= (int)$data['unreadCount'] === 1 ? '' : 's' ?>.
+                </div>
+            <?php endif; ?>
+
             <div class="cards-grid">
                 <?php if (empty($data['notifications'])): ?>
                     <div class="empty-state">
@@ -24,6 +30,7 @@
                 <?php else: ?>
                     <?php foreach ($data['notifications'] as $n): ?>
                         <?php
+                            // Pick a simple icon for each notification type.
                             $iconClass = 'info';
                             $iconSymbol = '<i class="ph ph-wrench"></i>';
                             if ($n->type === 'application_accepted') { $iconClass = 'success'; $iconSymbol = '<i class="ph ph-confetti"></i>'; }
@@ -40,6 +47,7 @@
                             <div class="notification-body">
                                 <div class="notification-message"><?= htmlspecialchars($n->message) ?></div>
                                 <div class="notification-meta">
+                                    <!-- Keep the time easy to read. -->
                                     <?= date('M d, Y H:i', strtotime($n->created_at)) ?>
                                 </div>
                             </div>

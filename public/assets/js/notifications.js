@@ -20,7 +20,18 @@ function filterNotifications(filter, button) {
 }
 
 // Mark all as read
-function markAllAsRead() {
+async function markAllAsRead() {
+    try {
+        await fetch(`${window.URLROOT}/notifications/readAll`, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+    } catch (error) {
+        console.error('Failed to mark notifications as read:', error);
+    }
+
     const items = document.querySelectorAll('.notification-item');
     
     items.forEach(item => {
