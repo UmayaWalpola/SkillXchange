@@ -3,7 +3,7 @@
 
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/dashboard.css">
 
-<main class="site-main">
+
     <div class="dashboard-container">
         <div class="dashboard-main">
 
@@ -59,12 +59,11 @@
                                         <?= date('M d, Y', strtotime($announcement->created_at)) ?>
                                     </p>
                                 </div>
-                                <div class="announcement-actions">
+                                <div class="action-buttons">
                                     <button class="btn-outline" onclick="toggleEditForm(<?= $announcement->id ?>)">
                                         Edit
                                     </button>
                                     <form method="POST" action="<?= URLROOT ?>/manager/deleteAnnouncement"
-                                          style="display:inline;"
                                           onsubmit="return confirm('Delete this announcement? All user notifications for this announcement will also be removed.')">
                                         <input type="hidden" name="announcement_id" value="<?= $announcement->id ?>">
                                         <button type="submit" class="btn-outline">Delete</button>
@@ -106,7 +105,7 @@
 
         </div>
     </div>
-</main>
+
 
 <script>
 function toggleAddForm() {
