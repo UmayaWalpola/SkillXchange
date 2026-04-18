@@ -38,20 +38,21 @@ class Quiz {
     $this->db->query("
         INSERT INTO quizzes
             (title, description, difficulty_level, duration, category,
-             status, total_questions, badge_id, manager_id, created_at)
+             status, total_questions, badge_id, reward_amount, manager_id, created_at)
         VALUES
             (:title, :description, :difficulty, :duration, :category,
-             :status, 0, :badge_id, :manager_id, NOW())
+             :status, 0, :badge_id, :reward_amount, :manager_id, NOW())
     ");
 
-    $this->db->bind(':title',       $quizData['title']);
-    $this->db->bind(':description', $quizData['description']);
-    $this->db->bind(':difficulty',  $quizData['difficulty_level']);
-    $this->db->bind(':duration',    $quizData['duration']);
-    $this->db->bind(':category',    isset($quizData['category']) ? $quizData['category'] : 'General');
-    $this->db->bind(':status',      isset($quizData['status']) ? $quizData['status'] : 'draft');
-    $this->db->bind(':badge_id',    isset($quizData['badge_id']) ? $quizData['badge_id'] : null);
-    $this->db->bind(':manager_id',  $quizData['created_by']);
+    $this->db->bind(':title',         $quizData['title']);
+    $this->db->bind(':description',   $quizData['description']);
+    $this->db->bind(':difficulty',    $quizData['difficulty_level']);
+    $this->db->bind(':duration',      $quizData['duration']);
+    $this->db->bind(':category',      isset($quizData['category']) ? $quizData['category'] : 'General');
+    $this->db->bind(':status',        isset($quizData['status']) ? $quizData['status'] : 'draft');
+    $this->db->bind(':badge_id',      isset($quizData['badge_id']) ? $quizData['badge_id'] : null);
+    $this->db->bind(':reward_amount', isset($quizData['reward_amount']) ? $quizData['reward_amount'] : 0);
+    $this->db->bind(':manager_id',    $quizData['created_by']);
 
     if ($this->db->execute()) {
         return $this->db->lastInsertId();
@@ -419,10 +420,6 @@ class Quiz {
     public function getAvailableBadges() {
         $this->db->query("SELECT id, name, icon FROM badges ORDER BY name ASC");
         $result = $this->db->resultSet();
-        error_log("DEBUG MODEL: Query result: " . (is_array($result) ? count($result) : 'not array'));
-        if (is_array($result) && count($result) > 0) {
-            error_log("DEBUG MODEL: First badge: " . $result[0]->name);
-        }
         return $result ?: array();
     }
 }

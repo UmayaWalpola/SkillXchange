@@ -58,21 +58,29 @@
                     <label for="badgeToAward">Badge to Award (Optional)</label>
                     <select id="badgeToAward">
                         <option value="">No badge</option>
-                        <?php
-                        // Debug: Check if badges data exists
-                        error_log("DEBUG VIEW: available_badges exists: " . (isset($data['available_badges']) ? 'yes' : 'no'));
-                        if (isset($data['available_badges'])) {
-                            error_log("DEBUG VIEW: badges count: " . (is_array($data['available_badges']) ? count($data['available_badges']) : 'not array'));
-                        }
-                        ?>
                         <?php if (!empty($data['available_badges'])): ?>
                             <?php foreach ($data['available_badges'] as $b): ?>
                                 <option value="<?= htmlspecialchars($b->id); ?>">
                                     <?= htmlspecialchars($b->icon); ?> <?= htmlspecialchars($b->name); ?>
                                 </option>
                             <?php endforeach; ?>
+                        <?php else: ?>
+                            <option value="">-- No badges available --</option>
                         <?php endif; ?>
                     </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="quizBuckReward">Buckx to Award</label>
+                    <input
+                        type="number"
+                        id="quizBuckReward"
+                        placeholder="100"
+                        min="0"
+                        max="10000"
+                        value="0"
+                    >
+                    <small style="color: #666;">Buckx amount users receive for passing this quiz</small>
                 </div>
             </div>
 

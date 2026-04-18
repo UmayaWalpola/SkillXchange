@@ -208,9 +208,10 @@ function getQuizBasicInfo() {
     const badge = document.getElementById('quizBadge').value;
     const duration = parseInt(document.getElementById('quizDuration').value) || 30;
     const description = document.getElementById('quizDescription').value.trim();
-    const badgeId = document.getElementById('badgeToAward').value;
+    const badgeToAward = document.getElementById('badgeToAward').value;
+    const buckReward = parseInt(document.getElementById('quizBuckReward').value) || 0;
     
-    return { title, badge, duration, description, badgeId };
+    return { title, badge, duration, description, badgeToAward, buckReward };
 }
 
 // Validate quiz data

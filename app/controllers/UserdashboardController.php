@@ -97,14 +97,6 @@ class UserdashboardController extends Controller {
    $this->view('users/chats', $data);
 }
 
-public function projects() {
-        $this->checkAuth();
-        // Unified Projects page — redirect to discover/browse
-        header('Location: ' . URLROOT . '/project/browse');
-        exit;
-    }
-
-    
 private function getActiveChats($userId) {
    try {
        $this->db->query("
@@ -172,76 +164,61 @@ private function getActiveChats($userId) {
 
 
 public function matches() {
-    $userId = $this->checkAuth();
+   $userId = $this->checkAuth();
+  
+   $skillMatchModel = $this->model('SkillMatch');
+   $exchangeModel = $this->model('Exchange');
+  
+   // Get all matches with new tier system (mutual, multi, single)
+   $allMatches = $skillMatchModel->getAllMatchesWithScores($userId);
 
-    $skillMatchModel = $this->model('SkillMatch');
-    $exchangeModel = $this->model('Exchange');
 
-    // Get all matches with new tier system
-    $allMatches = $skillMatchModel->getAllMatchesWithScores($userId);
+   // Ensure arrays exist (in case model returns empty)
+   $mutual = isset($allMatches['mutual']) && is_array($allMatches['mutual']) ? $allMatches['mutual'] : [];
+   $multi = isset($allMatches['multi']) && is_array($allMatches['multi']) ? $allMatches['multi'] : [];
+   $single = isset($allMatches['single']) && is_array($allMatches['single']) ? $allMatches['single'] : [];
+  
+   // Get pending connection requests
+   $pendingRequests = $exchangeModel->getExchangeRequests($userId);
 
-    // Ensure arrays exist
-    $mutual = isset($allMatches['mutual']) && is_array($allMatches['mutual']) ? $allMatches['mutual'] : [];
-    $multi  = isset($allMatches['multi']) && is_array($allMatches['multi']) ? $allMatches['multi'] : [];
-    $single = isset($allMatches['single']) && is_array($allMatches['single']) ? $allMatches['single'] : [];
 
-    // Flatten into one array
-    $combinedMatches = [];
-
-    foreach ($mutual as $match) {
-        $match['match_type'] = 'mutual';
-        $match['match_type_label'] = 'Mutual Match';
-        $combinedMatches[] = $match;
-    }
-
-    foreach ($multi as $match) {
-        $match['match_type'] = 'multi';
-        $match['match_type_label'] = 'Multi-Skill Match';
-        $combinedMatches[] = $match;
-    }
-
-    foreach ($single as $match) {
-        $match['match_type'] = 'single';
-        $match['match_type_label'] = 'Single-Skill Match';
-        $combinedMatches[] = $match;
-    }
-
-    // Pending requests
-    $pendingRequests = $exchangeModel->getExchangeRequests($userId);
-
-    $formattedRequests = [];
-    foreach ($pendingRequests as $request) {
-        $formattedRequests[] = [
-            'exchange_id' => $request->id,
-            'sender_id' => $request->requester_id,
-            'sender_name' => $request->sender_name,
-            'sender_email' => $request->sender_email,
-            'sender_avatar' => $request->sender_avatar ?? strtoupper(substr($request->sender_name, 0, 2)),
-            'skill_offered' => $request->skill_offered,
-            'skill_wanted' => $request->skill_wanted,
-            'time_ago' => $this->timeAgo($request->created_at)
-        ];
-    }
-
-    $userSkillsData = $skillMatchModel->getUserSkillsForFilter($userId);
-    $user = $this->getUserData($userId);
-
-    $data = [
-        'title' => 'Matches',
-        'user' => $user,
-        'page' => 'matches',
-        'allMatches' => $combinedMatches,
-        'matchStats' => [
-            'total_count' => count($combinedMatches),
-            'mutual_count' => count($mutual),
-            'multi_count' => count($multi),
-            'single_count' => count($single),
-        ],
-        'userSkills' => $userSkillsData,
-        'pendingRequests' => $formattedRequests
-    ];
-
-    $this->view('users/matches', $data);
+   $formattedRequests = [];
+   foreach ($pendingRequests as $request) {
+       $formattedRequests[] = [
+           'exchange_id' => $request->id,
+           'sender_id' => $request->requester_id,
+           'sender_name' => $request->sender_name,
+           'sender_email' => $request->sender_email,
+           'sender_avatar' => $request->sender_avatar ?? strtoupper(substr($request->sender_name, 0, 2)),
+           'skill_offered' => $request->skill_offered,
+           'skill_wanted' => $request->skill_wanted,
+           'time_ago' => $this->timeAgo($request->created_at)
+       ];
+   }  
+  
+   $userSkillsData = $skillMatchModel->getUserSkillsForFilter($userId);
+   $user = $this->getUserData($userId);
+  
+   $data = [
+       'title' => 'Matches',
+       'user' => $user,
+       'page' => 'matches',
+       // Pass the three tier arrays
+       'mutual' => $mutual,
+       'multi' => $multi,
+       'single' => $single,
+       // Match statistics
+       'matchStats' => [
+           'total_count' => count($mutual) + count($multi) + count($single),
+           'mutual_count' => count($mutual),
+           'multi_count' => count($multi),
+           'single_count' => count($single)
+       ],
+       'userSkills' => $userSkillsData,
+       'pendingRequests' => $formattedRequests
+   ];
+  
+   $this->view('users/matches', $data);
 }
 
 
@@ -289,45 +266,55 @@ public function matches() {
             header('Location: ' . URLROOT . '/userdashboard/matches');
             exit;
         }
-
-        $userModel = $this->model('User');
-        $userData = $userModel->getUserById($userId);
-
-        if (!$userData) {
-            header('Location: ' . URLROOT . '/userdashboard/matches');
-            exit;
+        
+        try {
+            $userModel = $this->model('User');
+            $userData = $userModel->getUserById($userId);
+            
+            if (!$userData) {
+                throw new Exception('User not found');
+            }
+            
+            $userArray = [
+                'id' => $userData->id,
+                'name' => $userData->name ?? 'Unknown User',
+                'username' => $userData->username ?? strtolower(str_replace(' ', '', $userData->name ?? '')),
+                'email' => $userData->email ?? '',
+                'bio' => $userData->bio ?? 'No bio available',
+                'avatar' => $userData->avatar ?? strtoupper(substr($userData->name ?? 'U', 0, 2)),
+                'connections' => $userData->connections ?? 0,
+                'rating' => $userData->rating ?? 0.0,
+                'reviews_count' => $userData->reviews_count ?? 0
+            ];
+            
+            $userSkills = $this->getUserSkillsFromDB($userId);
+            $userProjects = $this->getUserProjectsFromDB($userId);
+            $userFeedback = $this->getUserFeedbackFromDB($userId);
+            
+        } catch (Exception $e) {
+            $allMatches = array_merge(
+                $this->getTeachMatches($currentUserId), 
+                $this->getLearnMatches($currentUserId)
+            );
+            
+            foreach ($allMatches as $match) {
+                if ($match['id'] == $userId) {
+                    $userArray = $this->createUserDataFromMatch($match);
+                    $userSkills = $this->getSkillsForMatch($userId);
+                    $userProjects = $this->getProjectsForMatch($userId);
+                    $userFeedback = $this->getFeedbackForMatch($userId);
+                    break;
+                }
+            }
+            
+            if (!isset($userArray)) {
+                header('Location: ' . URLROOT . '/userdashboard/matches');
+                exit;
+            }
         }
-
-        $ratingData = $userModel->getAverageRating($userId);
-        $liveStats = $userModel->getLiveUserStats($userId);
-
-        $userArray = [
-            'id' => $userData['id'],
-            'name' => $userData['username'] ?? 'Unknown User',
-            'username' => $userData['username'] ?? 'unknown-user',
-            'email' => $userData['email'] ?? '',
-            'bio' => $userData['bio'] ?? 'No bio available',
-            'avatar' => !empty($userData['profile_picture'])
-                ? $userData['profile_picture']
-                : strtoupper(substr($userData['username'] ?? 'U', 0, 2)),
-            'connections' => (int) ($liveStats['connections_count'] ?? 0),
-            'skills_taught' => (int) ($liveStats['skills_taught_count'] ?? 0),
-            'skills_learning' => (int) ($liveStats['skills_learning_count'] ?? 0),
-            'rating' => $ratingData['rating'] ?? 0.0,
-            'reviews_count' => $ratingData['count'] ?? 0
-        ];
-
-        $userSkills = $this->getUserSkillsFromDB($userId);
-        $userProjects = $this->getUserProjectsFromDB($userId);
-        $userFeedback = $this->getUserFeedbackFromDB($userId);
-
-        $matchType = trim($_GET['match_type'] ?? '');
-        $matchSkill = trim($_GET['skill'] ?? '');
-        $matchDir = trim($_GET['dir'] ?? '');
-
-        if (!in_array($matchType, ['mutual', 'multi', 'single'], true)) {
-            $matchType = '';
-        }
+        
+        $userArray['skills_taught'] = count($userSkills['teaches'] ?? []);
+        $userArray['skills_learning'] = count($userSkills['learns'] ?? []);
         
         $data = [
             'title' => $userArray['name'] . "'s Profile",
@@ -336,12 +323,7 @@ public function matches() {
             'projects' => $userProjects,
             'feedback' => $userFeedback,
             'page' => 'matches',
-            'currentUserId' => $currentUserId,
-            'matchContext' => [
-                'type' => $matchType,
-                'skill' => $matchSkill,
-                'dir' => $matchDir
-            ]
+            'currentUserId' => $currentUserId
         ];
         
         $this->view('users/view_profile', $data);
@@ -375,71 +357,28 @@ public function matches() {
     }
 
     public function searchMatches() {
-    header('Content-Type: application/json');
-
-    if (ob_get_length()) {
-        ob_clean();
-    }
-
-    try {
+        header('Content-Type: application/json');
+        
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode([
-                'success' => false,
-                'message' => 'Invalid request'
-            ]);
+            echo json_encode(['success' => false, 'message' => 'Invalid request']);
             exit;
         }
-
-        $currentUserId = $this->checkAuth(true);
-        $skillName = trim($_POST['skill'] ?? '');
+        
+        $currentUserId = $this->checkAuth();
+        $skillName = $_POST['skill'] ?? '';
         $matchType = $_POST['type'] ?? 'all';
-
-        if ($skillName === '') {
-            echo json_encode([
-                'success' => false,
-                'message' => 'Skill name is required'
-            ]);
+        
+        if (empty($skillName)) {
+            echo json_encode(['success' => false, 'message' => 'Skill name is required']);
             exit;
         }
-
+        
         $skillMatchModel = $this->model('SkillMatch');
         $matches = $skillMatchModel->searchMatchesBySkill($currentUserId, $skillName, $matchType);
-
-        // Optional: normalize match type labels if needed
-        foreach ($matches as &$match) {
-            if (!isset($match['match_type'])) {
-                $match['match_type'] = $matchType !== 'all' ? $matchType : 'single';
-            }
-
-            if (!isset($match['match_type_label'])) {
-                if ($match['match_type'] === 'mutual') {
-                    $match['match_type_label'] = 'Mutual Match';
-                } elseif ($match['match_type'] === 'multi') {
-                    $match['match_type_label'] = 'Multi-Skill Match';
-                } else {
-                    $match['match_type_label'] = 'Single-Skill Match';
-                }
-            }
-        }
-
-        echo json_encode([
-            'success' => true,
-            'matches' => $matches
-        ]);
-        exit;
-
-    } catch (\Throwable $e) {
-        error_log('searchMatches error: ' . $e->getMessage());
-
-        http_response_code(500);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Server error while searching matches',
-            'error' => $e->getMessage()
-        ]);
+        
+        echo json_encode(['success' => true, 'matches' => $matches]);
         exit;
     }
-}
 
     // ============================================
     // COMMUNITY METHODS
@@ -551,83 +490,34 @@ public function matches() {
 
     public function postToCommunity() {
         header('Content-Type: application/json');
- 
+        
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             echo json_encode(['success' => false, 'message' => 'Invalid request']);
             exit;
         }
- 
-        $userId      = $this->checkAuth(true);
+        
+        $userId = $this->checkAuth();
         $communityId = $_POST['community_id'] ?? null;
-        $title       = trim($_POST['title'] ?? '');
-        $content     = trim($_POST['content'] ?? '');
-        $postType    = trim($_POST['post_type'] ?? 'discussion');
-        $linkUrl     = trim($_POST['link_url'] ?? '');
- 
+        $content = trim($_POST['content'] ?? '');
+        
         if (!$communityId || empty($content)) {
-            echo json_encode(['success' => false, 'message' => 'Content is required']);
+            echo json_encode(['success' => false, 'message' => 'Missing required fields']);
             exit;
         }
- 
+        
         $communityModel = $this->model('Community');
- 
+        
         if (!$communityModel->isMember($userId, $communityId)) {
             echo json_encode(['success' => false, 'message' => 'You must be a member to post']);
             exit;
         }
- 
-        $member = $communityModel->getMemberRole($userId, $communityId);
-        if ($postType === 'announcement' && !in_array($member->role, ['admin', 'moderator'])) {
-            $postType = 'discussion';
-        }
- 
-        // Handle image upload
-        $imagePath = null;
-        if (!empty($_FILES['image']['name'])) {
-            $file      = $_FILES['image'];
-            $allowed   = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-            $maxSize   = 5 * 1024 * 1024; // 5 MB
- 
-            if (!in_array($file['type'], $allowed)) {
-                echo json_encode(['success' => false, 'message' => 'Only JPEG, PNG, GIF and WebP images are allowed']);
-                exit;
-            }
-            if ($file['size'] > $maxSize) {
-                echo json_encode(['success' => false, 'message' => 'Image must be under 5 MB']);
-                exit;
-            }
- 
-            $uploadDir = APPROOT . '/../public/assets/uploads/community_posts/';
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
- 
-            $ext       = pathinfo($file['name'], PATHINFO_EXTENSION);
-            $filename  = 'post_' . $userId . '_' . time() . '.' . strtolower($ext);
-            $destPath  = $uploadDir . $filename;
- 
-            if (!move_uploaded_file($file['tmp_name'], $destPath)) {
-                echo json_encode(['success' => false, 'message' => 'Failed to upload image']);
-                exit;
-            }
- 
-            $imagePath = 'assets/uploads/community_posts/' . $filename;
-        }
- 
-        $postId = $communityModel->createPost(
-            $userId,
-            $communityId,
-            $title    ?: null,
-            $content,
-            $postType ?: 'discussion',
-            $linkUrl  ?: null,
-            $imagePath
-        );
- 
+        
+        $postId = $communityModel->createPost($userId, $communityId, $content);
+        
         if ($postId) {
-            echo json_encode(['success' => true, 'message' => 'Post created successfully', 'post_id' => $postId]);
+            echo json_encode(['success' => true, 'message' => 'Message posted successfully', 'post_id' => $postId]);
         } else {
-            echo json_encode(['success' => false, 'message' => 'Failed to create post']);
+            echo json_encode(['success' => false, 'message' => 'Failed to post message']);
         }
         exit;
     }
@@ -706,83 +596,7 @@ public function matches() {
             $this->view('users/create_community', $data);
         }
     }
-public function addCommunityComment() {
-    header('Content-Type: application/json');
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        echo json_encode(['success' => false, 'message' => 'Invalid request']);
-        exit;
-    }
-
-    $userId = $this->checkAuth();
-
-    $communityId = $_POST['community_id'] ?? null;
-    $parentId = $_POST['parent_id'] ?? null;
-    $content = trim($_POST['content'] ?? '');
-
-    if (!$communityId || !$parentId || $content === '') {
-        echo json_encode(['success' => false, 'message' => 'Missing required fields']);
-        exit;
-    }
-
-    $communityModel = $this->model('Community');
-
-    if (!$communityModel->isMember($userId, $communityId)) {
-        echo json_encode(['success' => false, 'message' => 'You must be a member to comment']);
-        exit;
-    }
-
-    $commentId = $communityModel->createComment($userId, $communityId, $parentId, $content);
-
-    if ($commentId) {
-        echo json_encode(['success' => true, 'message' => 'Comment added']);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to add comment']);
-    }
-
-    exit;
-}
-   public function reactToPost() {
-        header('Content-Type: application/json');
- 
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(['success' => false, 'message' => 'Invalid request']);
-            exit;
-        }
- 
-        $userId = $this->checkAuth(true);
-        $postId = $_POST['post_id'] ?? null;
-        $type   = $_POST['reaction_type'] ?? 'like';
- 
-        if (!$postId) {
-            echo json_encode(['success' => false, 'message' => 'Post ID required']);
-            exit;
-        }
- 
-        $communityModel = $this->model('Community');
- 
-        // Toggle: if already reacted with same type, remove it; otherwise add/swap
-        $existing = $communityModel->getUserReaction($userId, $postId);
- 
-        if ($existing && $existing->reaction_type === $type) {
-            // Unlike
-            $communityModel->removeReaction($userId, $postId);
-            $reacted = false;
-        } else {
-            // Like (or swap reaction)
-            $communityModel->addReaction($userId, $postId, $type);
-            $reacted = true;
-        }
- 
-        $likeCount = $communityModel->getReactionCount($postId, $type);
- 
-        echo json_encode([
-            'success'    => true,
-            'reacted'    => $reacted,
-            'like_count' => (int) $likeCount
-        ]);
-        exit;
-    }
     // ============================================
     // QUIZ METHODS
     // ============================================
@@ -908,9 +722,7 @@ public function addCommunityComment() {
         $this->view('users/take_quiz', $data);
     }
 
-    // ============================================
-    // SUBMIT QUIZ - FIXED
-    // ============================================
+   
 
     public function submitQuiz() {
         ini_set('display_errors', '0');
@@ -1096,9 +908,13 @@ public function addCommunityComment() {
                 $existingBadge = $this->db->single();
 
                 if (!$existingBadge) {
-                    $this->db->query("INSERT INTO user_badges (user_id, badge_id, earned_at) VALUES (:user_id, :badge_id, NOW())");
+                    $this->db->query("INSERT INTO user_badges (user_id, badge_id, badge_name, badge_icon, source_type, source_id, earned_at) VALUES (:user_id, :badge_id, :badge_name, :badge_icon, :source_type, :source_id, NOW())");
                     $this->db->bind(':user_id', $userId);
                     $this->db->bind(':badge_id', $badge->id);
+                    $this->db->bind(':badge_name', $badge->name);
+                    $this->db->bind(':badge_icon', $badge->icon);
+                    $this->db->bind(':source_type', 'quiz');
+                    $this->db->bind(':source_id', $quizId);
                     $this->db->execute();
 
                     $badgeEarned = [
@@ -1214,7 +1030,7 @@ public function addCommunityComment() {
             
             foreach ($results as $project) {
                 $projectData = [
-                    'title' => $project->title,
+                    'title'       => $project->title,
                     'description' => $project->description
                 ];
                 
@@ -1231,7 +1047,6 @@ public function addCommunityComment() {
             return $this->getProjectsForMatch($userId);
         }
     }
-
 
     private function getUserFeedbackFromDB($userId) {
         try {
@@ -1277,28 +1092,57 @@ public function addCommunityComment() {
         return floor($diff / 31536000) . ' years ago';
     }
 
+    // ============================================
+    // FALLBACK METHODS
+    // ============================================
+
+    private function createUserDataFromMatch($match) {
+        return [
+            'id'              => $match['id'],
+            'name'            => $match['name'],
+            'username'        => strtolower(str_replace(' ', '', $match['name'])),
+            'email'           => $match['email'] ?? strtolower(str_replace(' ', '', $match['name'])) . '@example.com',
+            'bio'             => $match['skill'] ?? 'No bio available',
+            'avatar'          => $match['avatar'] ?? strtoupper(substr($match['name'], 0, 2)),
+            'connections'     => rand(20, 100),
+            'skills_taught'   => rand(3, 10),
+            'skills_learning' => rand(2, 8),
+            'rating'          => 4.5,
+            'reviews_count'   => rand(5, 50)
+        ];
+    }
+
+    private function getSkillsForMatch($userId) {
+        return [
+            'teaches' => [['name' => 'Web Development', 'level' => 'Intermediate']],
+            'learns'  => [['name' => 'Advanced Topics', 'level' => 'Beginner']]
+        ];
+    }
+
+    private function getProjectsForMatch($userId) {
+        return [
+            'completed'   => [['title' => 'Sample Project', 'description' => 'A completed project.']],
+            'in_progress' => []
+        ];
+    }
+
+    private function getFeedbackForMatch($userId) {
+        return [
+            ['reviewer_name' => 'John Doe', 'date' => '1 week ago', 'rating' => 5, 'comment' => 'Great to work with!']
+        ];
+    }
+
+    // ============================================
+    // DUMMY DATA METHODS
+    // ============================================
+
     private function getUserData($userId) {
         try {
             $this->db->query("
                 SELECT u.id, u.username, u.email, u.bio, u.profile_picture,
-                       (
-                           SELECT COUNT(*)
-                           FROM exchanges e
-                           WHERE (e.requester_id = u.id OR e.receiver_id = u.id)
-                             AND e.status = 'active'
-                       ) as connections,
-                       (
-                           SELECT COUNT(*)
-                           FROM user_skills us_teach
-                           WHERE us_teach.user_id = u.id
-                             AND us_teach.skill_type = 'teach'
-                       ) as skills_taught,
-                       (
-                           SELECT COUNT(*)
-                           FROM user_skills us_learn
-                           WHERE us_learn.user_id = u.id
-                             AND us_learn.skill_type = 'learn'
-                       ) as skills_learning,
+                       COALESCE(us.connections_count, 0) as connections,
+                       COALESCE(us.skills_taught_count, 0) as skills_taught,
+                       COALESCE(us.skills_learning_count, 0) as skills_learning,
                        COALESCE(us.hours_exchanged, 0) as hours_exchanged
                 FROM users u
                 LEFT JOIN user_stats us ON u.id = us.user_id
@@ -1494,11 +1338,17 @@ public function addCommunityComment() {
         try {
             $this->db->query("
                 SELECT 
-                    b.id, b.name, b.description, b.icon,
-                    b.badge_type, b.requirement_type, b.requirement_value,
-                    b.color, ub.earned_at
+                    COALESCE(b.id, ub.badge_id) AS id,
+                    COALESCE(b.name, ub.badge_name) AS name,
+                    COALESCE(b.description, '') AS description,
+                    COALESCE(b.icon, ub.badge_icon, '🏆') AS icon,
+                    COALESCE(b.badge_type, 'quiz') AS badge_type,
+                    b.requirement_type,
+                    b.requirement_value,
+                    COALESCE(b.color, '#3b82f6') AS color,
+                    ub.earned_at
                 FROM user_badges ub
-                INNER JOIN badges b ON ub.badge_id = b.id
+                LEFT JOIN badges b ON ub.badge_id = b.id
                 WHERE ub.user_id = :user_id
                 ORDER BY ub.earned_at DESC
             ");
