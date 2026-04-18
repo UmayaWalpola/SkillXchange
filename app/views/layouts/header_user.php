@@ -22,7 +22,7 @@
             left: 250px !important;
             width: calc(100% - 250px) !important;
             height: 64px;
-            background: var(--primary-blue);
+            background: #000000;
             display: flex;
             align-items: center;
             z-index: 1000;

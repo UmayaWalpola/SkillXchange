@@ -3,7 +3,7 @@
 
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/dashboard.css">
 
-<main class="site-main">
+
     <div class="dashboard-container">
         <div class="dashboard-main">
 
@@ -152,7 +152,7 @@
 
         </div>
     </div>
-</main>
+
 
 <script>
 function toggleAddForm() {
