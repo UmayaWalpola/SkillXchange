@@ -49,14 +49,6 @@
                                         <td>
                                             <div class="action-buttons">
 
-                                                <?php if (!empty($org->org_cert)): ?>
-                                                    <a class="btn-outline" href="<?= URLROOT ?>/manager/viewCertificate/<?= (int)($org->id ?? 0) ?>?file=<?= rawurlencode(basename((string)$org->org_cert)) ?>" target="_blank" rel="noopener">
-                                                        View Certificate
-                                                    </a>
-                                                <?php else: ?>
-                                                    <span>No certificate</span>
-                                                <?php endif; ?>
-
                                                 <!-- Suspend / Reactivate -->
                                                 <?php if ($org->status === 'active'): ?>
                                                    <button class="btn-outline" onclick="toggleSuspendForm(<?= $org->id ?>)">

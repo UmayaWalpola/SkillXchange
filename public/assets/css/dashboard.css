@@ -519,21 +519,29 @@
     display: flex; 
     gap: 8px; 
     align-items: center; 
+    justify-content: center;
 }
 
 .announcement-actions form {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     margin: 0;
     padding: 0;
 }
 
-.announcement-actions .btn-outline {
+.announcement-actions .btn-outline,
+.announcement-actions button,
+.announcement-actions form button {
     padding: 8px 18px;
     font-size: 13px;
     height: 36px;
     line-height: 1;
     box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
 }
 
 /* ── Action Buttons Container ───────────────────────────────── */
@@ -541,21 +549,28 @@
     display: flex;
     gap: 8px;
     align-items: center;
+    justify-content: center;
     flex-wrap: wrap;
 }
 
 .action-buttons form {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     margin: 0;
     padding: 0;
 }
 
 .action-buttons .btn-outline,
-.action-buttons button {
+.action-buttons button,
+.action-buttons form button {
     height: 36px;
     padding: 8px 18px;
     box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
 }
 
 .announcement-title {

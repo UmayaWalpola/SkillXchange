@@ -43,96 +43,6 @@ class ManagerController extends Controller {
         $this->view('managerdashboard/organizations', $data);
     }
 
-    // View organization certificate (manager-only)
-    public function viewCertificate($orgId = null) {
-        if (($_SESSION['role'] ?? null) !== 'manager') {
-            http_response_code(404);
-            $this->view('errors/404');
-            return;
-        }
-
-        $fileParam = isset($_GET['file']) ? (string)$_GET['file'] : '';
-        $fileName = '';
-
-        // Preferred path: if the view passed a file name, use it.
-        if (!empty($fileParam)) {
-            $fileName = basename(str_replace('\\', '/', $fileParam));
-        } else {
-            // Fallback: look up the org and derive the file name from the stored org_cert.
-            $orgId = is_numeric($orgId) ? (int)$orgId : 0;
-            if ($orgId <= 0) {
-                http_response_code(404);
-                $this->view('errors/404');
-                return;
-            }
-
-            $org = $this->managerModel->getOrganizationById($orgId);
-            if (!$org || empty($org->org_cert)) {
-                http_response_code(404);
-                $this->view('errors/404');
-                return;
-            }
-
-            $stored = str_replace('\\', '/', (string)$org->org_cert);
-            $fileName = basename($stored);
-        }
-
-        if (empty($fileName) || $fileName === '.' || $fileName === '..') {
-            http_response_code(404);
-            $this->view('errors/404');
-            return;
-        }
-
-        // Allow-list filename chars
-        if (!preg_match('/^[A-Za-z0-9._-]+$/', $fileName)) {
-            http_response_code(404);
-            $this->view('errors/404');
-            return;
-        }
-
-        $certsDir = realpath(__DIR__ . '/../../public/uploads/org_certs');
-        if (!$certsDir) {
-            http_response_code(404);
-            $this->view('errors/404');
-            return;
-        }
-
-        $diskPath = realpath($certsDir . DIRECTORY_SEPARATOR . $fileName);
-        if (!$diskPath || !is_file($diskPath) || strpos($diskPath, $certsDir) !== 0) {
-            http_response_code(404);
-            $this->view('errors/404');
-            return;
-        }
-
-        // Stream the file inline (works regardless of static-file rewrite behavior)
-        http_response_code(200);
-        if (!headers_sent()) {
-            header((isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.1') . ' 200 OK');
-        }
-
-        // If any output buffering is active, clear it to avoid corrupting the file output
-        // or mixing it with HTML.
-        while (ob_get_level() > 0) {
-            ob_end_clean();
-        }
-
-        $mime = 'application/octet-stream';
-        if (function_exists('mime_content_type')) {
-            $detected = @mime_content_type($diskPath);
-            if (is_string($detected) && $detected !== '') {
-                $mime = $detected;
-            }
-        }
-
-        header('Content-Type: ' . $mime);
-        header('Content-Length: ' . filesize($diskPath));
-        header('Content-Disposition: inline; filename="' . $fileName . '"');
-        header('X-Content-Type-Options: nosniff');
-
-        readfile($diskPath);
-        exit;
-    }
-
     // Suspend organization
     public function suspendOrganization() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -291,8 +201,31 @@ class ManagerController extends Controller {
         exit;
     }
 
-    // Remove user
-    public function removeUser() {
+    // Suspend user
+    public function suspendUser() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ' . URLROOT . '/manager/users');
+            exit;
+        }
+
+        $userId = $_POST['user_id'] ?? null;
+        $reason = trim($_POST['reason'] ?? 'Suspended by manager');
+
+        if (empty($userId)) {
+            $_SESSION['error'] = 'User ID is required';
+            header('Location: ' . URLROOT . '/manager/users');
+            exit;
+        }
+
+        $result = $this->managerModel->suspendUser($userId, $reason);
+        $_SESSION[$result['success'] ? 'success' : 'error'] = $result['message'];
+
+        header('Location: ' . URLROOT . '/manager/users');
+        exit;
+    }
+
+    // Reactivate user
+    public function reactivateUser() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Location: ' . URLROOT . '/manager/users');
             exit;
@@ -306,7 +239,7 @@ class ManagerController extends Controller {
             exit;
         }
 
-        $result = $this->managerModel->removeUser($userId);
+        $result = $this->managerModel->reactivateUser($userId);
         $_SESSION[$result['success'] ? 'success' : 'error'] = $result['message'];
 
         header('Location: ' . URLROOT . '/manager/users');

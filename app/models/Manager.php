@@ -94,7 +94,7 @@ class Manager {
     // Get all admin-type users
     public function getAllAdminUsers() {
         $this->db->query("
-            SELECT id, username AS name, email, role, created_at 
+            SELECT id, username AS name, email, role, status, created_at 
             FROM users 
             WHERE role IN ('admin', 'quiz_manager', 'manager', 'community_admin')
             ORDER BY created_at DESC
@@ -109,6 +109,13 @@ class Manager {
         $this->db->bind(':email', $email);
         if ($this->db->single()) {
             return ['success' => false, 'message' => 'Email already exists'];
+        }
+
+        // Check if username already exists
+        $this->db->query("SELECT id FROM users WHERE username = :username");
+        $this->db->bind(':username', $name);
+        if ($this->db->single()) {
+            return ['success' => false, 'message' => 'Username already exists'];
         }
 
         $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
@@ -130,6 +137,22 @@ class Manager {
 
     // Update an existing user
     public function updateUser($userId, $name, $email, $role, $password = '') {
+        // Check if email already exists for a different user
+        $this->db->query("SELECT id FROM users WHERE email = :email AND id != :id");
+        $this->db->bind(':email', $email);
+        $this->db->bind(':id', $userId);
+        if ($this->db->single()) {
+            return ['success' => false, 'message' => 'Email already exists for another user'];
+        }
+
+        // Check if username already exists for a different user
+        $this->db->query("SELECT id FROM users WHERE username = :username AND id != :id");
+        $this->db->bind(':username', $name);
+        $this->db->bind(':id', $userId);
+        if ($this->db->single()) {
+            return ['success' => false, 'message' => 'Username already exists for another user'];
+        }
+
         if (!empty($password)) {
             $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
             $this->db->query("
@@ -157,15 +180,27 @@ class Manager {
         return ['success' => false, 'message' => 'Failed to update user'];
     }
 
-    // Remove a user
-    public function removeUser($userId) {
-        $this->db->query("DELETE FROM users WHERE id = :id");
+    // Suspend a user (instead of deleting to maintain referential integrity)
+    public function suspendUser($userId, $reason = 'Suspended by manager') {
+        $this->db->query("UPDATE users SET status = 'suspended', suspended_at = NOW(), suspension_reason = :reason WHERE id = :id");
+        $this->db->bind(':reason', $reason);
         $this->db->bind(':id', $userId);
 
         if ($this->db->execute()) {
-            return ['success' => true, 'message' => 'User removed successfully'];
+            return ['success' => true, 'message' => 'User suspended successfully'];
         }
-        return ['success' => false, 'message' => 'Failed to remove user'];
+        return ['success' => false, 'message' => 'Failed to suspend user'];
+    }
+
+    // Reactivate a suspended user
+    public function reactivateUser($userId) {
+        $this->db->query("UPDATE users SET status = 'active', suspended_at = NULL, suspension_reason = NULL WHERE id = :id");
+        $this->db->bind(':id', $userId);
+
+        if ($this->db->execute()) {
+            return ['success' => true, 'message' => 'User reactivated successfully'];
+        }
+        return ['success' => false, 'message' => 'Failed to reactivate user'];
     }
 
 
@@ -183,11 +218,15 @@ class Manager {
         $this->db->query("SELECT COUNT(*) AS total FROM users WHERE role IN ('admin', 'quiz_manager', 'manager', 'community_admin')");
         $admins = $this->db->single();
 
+        // Total announcements
+        $this->db->query("SELECT COUNT(*) AS total FROM announcements");
+        $announcements = $this->db->single();
+
         return [
             'total_organizations' => $orgs->total ?? 0,
             'total_users'         => $users->total ?? 0,
             'total_admins'        => $admins->total ?? 0,
-            'total_announcements' => 0
+            'total_announcements' => $announcements->total ?? 0
         ];
     }
 

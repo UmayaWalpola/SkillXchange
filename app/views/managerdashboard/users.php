@@ -89,11 +89,20 @@
                                                     onclick="toggleEditForm(<?= $user->id ?>)">
                                                     Edit
                                                 </button>
-                                                <form method="POST" action="<?= URLROOT ?>/manager/removeUser"
-                                                    onsubmit="return confirm('Remove <?= htmlspecialchars($user->name) ?>? This cannot be undone.')">
-                                                    <input type="hidden" name="user_id" value="<?= $user->id ?>">
-                                                    <button type="submit" class="btn-outline">Remove</button>
-                                                </form>
+                                                <?php if ((string)($user->status ?? 'active') === 'active'): ?>
+                                                    <form method="POST" action="<?= URLROOT ?>/manager/suspendUser"
+                                                        onsubmit="return confirm('Suspend <?= htmlspecialchars($user->name) ?>?');">
+                                                        <input type="hidden" name="user_id" value="<?= $user->id ?>">
+                                                        <input type="hidden" name="reason" value="Suspended by manager">
+                                                        <button type="submit" class="btn-outline btn-danger">Suspend</button>
+                                                    </form>
+                                                <?php else: ?>
+                                                    <form method="POST" action="<?= URLROOT ?>/manager/reactivateUser"
+                                                        onsubmit="return confirm('Reactivate <?= htmlspecialchars($user->name) ?>?');">
+                                                        <input type="hidden" name="user_id" value="<?= $user->id ?>">
+                                                        <button type="submit" class="btn-outline btn-success">Reactivate</button>
+                                                    </form>
+                                                <?php endif; ?>
                                             </div>
 
                                             <!-- Inline Edit Form -->
