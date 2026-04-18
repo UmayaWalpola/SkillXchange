@@ -33,11 +33,11 @@ class UserdashboardController extends Controller {
     public function index() {
         $userId = $this->checkAuth();
         
-        $userData = $this->getUserData($userId);
-        $userSkills = $this->getUserSkills($userId);
+        $userData    = $this->getUserData($userId);
+        $userSkills  = $this->getUserSkills($userId);
         $userProjects = $this->getUserProjects($userId);
         $userFeedback = $this->getUserFeedback($userId);
-        $userBadges = $this->getUserBadges($userId);
+        $userBadges  = $this->getUserBadges($userId);
         
         if (!is_array($userData)) {
             die("ERROR: getUserData returned: " . print_r($userData, true));
@@ -46,14 +46,14 @@ class UserdashboardController extends Controller {
         $userData['badge_count'] = count($userBadges);
         
         $data = [
-            'title' => 'My Profile',
-            'user' => $userData,
-            'skills' => $userSkills,
-            'projects' => $userProjects,
-            'feedback' => $userFeedback,
-            'badges' => $userBadges,
+            'title'          => 'My Profile',
+            'user'           => $userData,
+            'skills'         => $userSkills,
+            'projects'       => $userProjects,
+            'feedback'       => $userFeedback,
+            'badges'         => $userBadges,
             'is_own_profile' => true,
-            'page' => 'profile'
+            'page'           => 'profile'
         ];
         
         $this->view('users/profile', $data);
@@ -62,13 +62,13 @@ class UserdashboardController extends Controller {
     public function notifications() {
         $userId = $this->checkAuth();
         
-        $user = $this->getUserData($userId);
+        $user          = $this->getUserData($userId);
         $notifications = $this->getNotifications($userId);
         
         $data = [
-            'title' => 'Notifications',
-            'user' => $user,
-            'page' => 'notifications',
+            'title'         => 'Notifications',
+            'user'          => $user,
+            'page'          => 'notifications',
             'notifications' => $notifications
         ];
         
@@ -78,149 +78,138 @@ class UserdashboardController extends Controller {
     public function chats() {
         $userId = $this->checkAuth();
         
-        $user = $this->getUserData($userId);
+        $user      = $this->getUserData($userId);
         $chatModel = $this->model('Chat');
 
-       $rawChats = $chatModel->getUserChats($userId);
-       $allChats = $chatModel->formatChatsForDisplay($rawChats, $userId);
+        $rawChats = $chatModel->getUserChats($userId);
+        $allChats = $chatModel->formatChatsForDisplay($rawChats, $userId);
 
+        $data = [
+            'title'        => 'Chats',
+            'user'         => $user,
+            'page'         => 'chats',
+            'allChats'     => $allChats,
+            'buckxBalance' => 0
+        ];
 
-   $data = [
-       'title' => 'Chats',
-       'user' => $user,
-       'page' => 'chats',
-       'allChats' => $allChats,
-       'buckxBalance' => 0
-   ];
+        $this->view('users/chats', $data);
+    }
 
+    private function getActiveChats($userId) {
+        try {
+            $this->db->query("
+                SELECT
+                    c.id as chat_id,
+                    CASE
+                        WHEN c.user1_id = :user_id THEN c.user2_id
+                        ELSE c.user1_id
+                    END as partner_id,
+                    CASE
+                        WHEN c.user1_id = :user_id THEN u2.username
+                        ELSE u1.username
+                    END as partner_name,
+                    CASE
+                        WHEN c.user1_id = :user_id THEN u2.profile_picture
+                        ELSE u1.profile_picture
+                    END as partner_avatar,
+                    cm.message as last_message,
+                    COALESCE(cm.created_at, c.created_at) as last_message_time,
+                    (SELECT COUNT(*) FROM chat_messages
+                     WHERE chat_id = c.id
+                     AND sender_id != :user_id
+                     AND read_status = 0) as unread_count
+                FROM chats c
+                INNER JOIN users u1 ON c.user1_id = u1.id
+                INNER JOIN users u2 ON c.user2_id = u2.id
+                LEFT JOIN (
+                    SELECT chat_id, message, created_at
+                    FROM chat_messages cm1
+                    WHERE id = (
+                        SELECT MAX(id)
+                        FROM chat_messages cm2
+                        WHERE cm2.chat_id = cm1.chat_id
+                    )
+                ) cm ON c.id = cm.chat_id
+                WHERE (c.user1_id = :user_id OR c.user2_id = :user_id)
+                ORDER BY last_message_time DESC
+            ");
+           
+            $this->db->bind(':user_id', $userId);
+            $results = $this->db->resultSet();
+           
+            $chats = [];
+            foreach ($results as $row) {
+                $chats[] = [
+                    'id'          => $row->chat_id,
+                    'partner_id'  => $row->partner_id,
+                    'name'        => $row->partner_name,
+                    'avatar'      => $row->partner_avatar ?? strtoupper(substr($row->partner_name, 0, 2)),
+                    'lastMessage' => $row->last_message ?? 'No messages yet',
+                    'time'        => $this->timeAgo($row->last_message_time),
+                    'unread'      => $row->unread_count > 0,
+                    'unreadCount' => $row->unread_count ?? 0,
+                    'online'      => false
+                ];
+            }
+           
+            return $chats;
+           
+        } catch (Exception $e) {
+            error_log("getActiveChats error: " . $e->getMessage());
+            return [];
+        }
+    }
 
-   $this->view('users/chats', $data);
-}
+    public function matches() {
+        $userId = $this->checkAuth();
+       
+        $skillMatchModel = $this->model('SkillMatch');
+        $exchangeModel   = $this->model('Exchange');
+       
+        $allMatches = $skillMatchModel->getAllMatchesWithScores($userId);
 
-private function getActiveChats($userId) {
-   try {
-       $this->db->query("
-           SELECT
-               c.id as chat_id,
-               CASE
-                   WHEN c.user1_id = :user_id THEN c.user2_id
-                   ELSE c.user1_id
-               END as partner_id,
-               CASE
-                   WHEN c.user1_id = :user_id THEN u2.username
-                   ELSE u1.username
-               END as partner_name,
-               CASE
-                   WHEN c.user1_id = :user_id THEN u2.profile_picture
-                   ELSE u1.profile_picture
-               END as partner_avatar,
-               cm.message as last_message,
-               COALESCE(cm.created_at, c.created_at) as last_message_time,
-               (SELECT COUNT(*) FROM chat_messages
-                WHERE chat_id = c.id
-                AND sender_id != :user_id
-                AND read_status = 0) as unread_count
-           FROM chats c
-           INNER JOIN users u1 ON c.user1_id = u1.id
-           INNER JOIN users u2 ON c.user2_id = u2.id
-           LEFT JOIN (
-               SELECT chat_id, message, created_at
-               FROM chat_messages cm1
-               WHERE id = (
-                   SELECT MAX(id)
-                   FROM chat_messages cm2
-                   WHERE cm2.chat_id = cm1.chat_id
-               )
-           ) cm ON c.id = cm.chat_id
-           WHERE (c.user1_id = :user_id OR c.user2_id = :user_id)
-           ORDER BY last_message_time DESC
-       ");
-      
-       $this->db->bind(':user_id', $userId);
-       $results = $this->db->resultSet();
-      
-       $chats = [];
-       foreach ($results as $row) {
-           $chats[] = [
-               'id' => $row->chat_id,
-               'partner_id' => $row->partner_id,
-               'name' => $row->partner_name,
-               'avatar' => $row->partner_avatar ?? strtoupper(substr($row->partner_name, 0, 2)),
-               'lastMessage' => $row->last_message ?? 'No messages yet',
-               'time' => $this->timeAgo($row->last_message_time),
-               'unread' => $row->unread_count > 0,
-               'unreadCount' => $row->unread_count ?? 0,
-               'online' => false
-           ];
-       }
-      
-       return $chats;
-      
-   } catch (Exception $e) {
-       error_log("getActiveChats error: " . $e->getMessage());
-       return [];
-   }
-}
+        $mutual = isset($allMatches['mutual']) && is_array($allMatches['mutual']) ? $allMatches['mutual'] : [];
+        $multi  = isset($allMatches['multi'])  && is_array($allMatches['multi'])  ? $allMatches['multi']  : [];
+        $single = isset($allMatches['single']) && is_array($allMatches['single']) ? $allMatches['single'] : [];
+       
+        $pendingRequests = $exchangeModel->getExchangeRequests($userId);
 
-
-public function matches() {
-   $userId = $this->checkAuth();
-  
-   $skillMatchModel = $this->model('SkillMatch');
-   $exchangeModel = $this->model('Exchange');
-  
-   // Get all matches with new tier system (mutual, multi, single)
-   $allMatches = $skillMatchModel->getAllMatchesWithScores($userId);
-
-
-   // Ensure arrays exist (in case model returns empty)
-   $mutual = isset($allMatches['mutual']) && is_array($allMatches['mutual']) ? $allMatches['mutual'] : [];
-   $multi = isset($allMatches['multi']) && is_array($allMatches['multi']) ? $allMatches['multi'] : [];
-   $single = isset($allMatches['single']) && is_array($allMatches['single']) ? $allMatches['single'] : [];
-  
-   // Get pending connection requests
-   $pendingRequests = $exchangeModel->getExchangeRequests($userId);
-
-
-   $formattedRequests = [];
-   foreach ($pendingRequests as $request) {
-       $formattedRequests[] = [
-           'exchange_id' => $request->id,
-           'sender_id' => $request->requester_id,
-           'sender_name' => $request->sender_name,
-           'sender_email' => $request->sender_email,
-           'sender_avatar' => $request->sender_avatar ?? strtoupper(substr($request->sender_name, 0, 2)),
-           'skill_offered' => $request->skill_offered,
-           'skill_wanted' => $request->skill_wanted,
-           'time_ago' => $this->timeAgo($request->created_at)
-       ];
-   }  
-  
-   $userSkillsData = $skillMatchModel->getUserSkillsForFilter($userId);
-   $user = $this->getUserData($userId);
-  
-   $data = [
-       'title' => 'Matches',
-       'user' => $user,
-       'page' => 'matches',
-       // Pass the three tier arrays
-       'mutual' => $mutual,
-       'multi' => $multi,
-       'single' => $single,
-       // Match statistics
-       'matchStats' => [
-           'total_count' => count($mutual) + count($multi) + count($single),
-           'mutual_count' => count($mutual),
-           'multi_count' => count($multi),
-           'single_count' => count($single)
-       ],
-       'userSkills' => $userSkillsData,
-       'pendingRequests' => $formattedRequests
-   ];
-  
-   $this->view('users/matches', $data);
-}
-
+        $formattedRequests = [];
+        foreach ($pendingRequests as $request) {
+            $formattedRequests[] = [
+                'exchange_id'  => $request->id,
+                'sender_id'    => $request->requester_id,
+                'sender_name'  => $request->sender_name,
+                'sender_email' => $request->sender_email,
+                'sender_avatar'=> $request->sender_avatar ?? strtoupper(substr($request->sender_name, 0, 2)),
+                'skill_offered'=> $request->skill_offered,
+                'skill_wanted' => $request->skill_wanted,
+                'time_ago'     => $this->timeAgo($request->created_at)
+            ];
+        }
+       
+        $userSkillsData = $skillMatchModel->getUserSkillsForFilter($userId);
+        $user = $this->getUserData($userId);
+       
+        $data = [
+            'title'          => 'Matches',
+            'user'           => $user,
+            'page'           => 'matches',
+            'mutual'         => $mutual,
+            'multi'          => $multi,
+            'single'         => $single,
+            'matchStats'     => [
+                'total_count'  => count($mutual) + count($multi) + count($single),
+                'mutual_count' => count($mutual),
+                'multi_count'  => count($multi),
+                'single_count' => count($single)
+            ],
+            'userSkills'     => $userSkillsData,
+            'pendingRequests'=> $formattedRequests
+        ];
+       
+        $this->view('users/matches', $data);
+    }
 
     public function handleRequest() {
         header('Content-Type: application/json');
@@ -231,8 +220,8 @@ public function matches() {
         }
         
         $currentUserId = $this->checkAuth();
-        $exchangeId = $_POST['exchange_id'] ?? null;
-        $action = $_POST['action'] ?? null;
+        $exchangeId    = $_POST['exchange_id'] ?? null;
+        $action        = $_POST['action'] ?? null;
         
         if (!$exchangeId || !$action) {
             echo json_encode(['success' => false, 'message' => 'Missing required parameters']);
@@ -242,20 +231,17 @@ public function matches() {
         $exchangeModel = $this->model('Exchange');
         
         if ($action === 'accept') {
-            $result = $exchangeModel->acceptExchange($exchangeId, $currentUserId);
+            $result  = $exchangeModel->acceptExchange($exchangeId, $currentUserId);
             $message = $result ? 'Connection request accepted!' : 'Failed to accept request';
         } elseif ($action === 'reject') {
-            $result = $exchangeModel->rejectExchange($exchangeId, $currentUserId);
+            $result  = $exchangeModel->rejectExchange($exchangeId, $currentUserId);
             $message = $result ? 'Connection request rejected' : 'Failed to reject request';
         } else {
             echo json_encode(['success' => false, 'message' => 'Invalid action']);
             exit;
         }
         
-        echo json_encode([
-            'success' => $result,
-            'message' => $message
-        ]);
+        echo json_encode(['success' => $result, 'message' => $message]);
         exit;
     }
 
@@ -269,38 +255,38 @@ public function matches() {
         
         try {
             $userModel = $this->model('User');
-            $userData = $userModel->getUserById($userId);
+            $userData  = $userModel->getUserById($userId);
             
             if (!$userData) {
                 throw new Exception('User not found');
             }
             
             $userArray = [
-                'id' => $userData->id,
-                'name' => $userData->name ?? 'Unknown User',
-                'username' => $userData->username ?? strtolower(str_replace(' ', '', $userData->name ?? '')),
-                'email' => $userData->email ?? '',
-                'bio' => $userData->bio ?? 'No bio available',
-                'avatar' => $userData->avatar ?? strtoupper(substr($userData->name ?? 'U', 0, 2)),
-                'connections' => $userData->connections ?? 0,
-                'rating' => $userData->rating ?? 0.0,
-                'reviews_count' => $userData->reviews_count ?? 0
+                'id'           => $userData->id,
+                'name'         => $userData->name ?? 'Unknown User',
+                'username'     => $userData->username ?? strtolower(str_replace(' ', '', $userData->name ?? '')),
+                'email'        => $userData->email ?? '',
+                'bio'          => $userData->bio ?? 'No bio available',
+                'avatar'       => $userData->avatar ?? strtoupper(substr($userData->name ?? 'U', 0, 2)),
+                'connections'  => $userData->connections ?? 0,
+                'rating'       => $userData->rating ?? 0.0,
+                'reviews_count'=> $userData->reviews_count ?? 0
             ];
             
-            $userSkills = $this->getUserSkillsFromDB($userId);
+            $userSkills   = $this->getUserSkillsFromDB($userId);
             $userProjects = $this->getUserProjectsFromDB($userId);
             $userFeedback = $this->getUserFeedbackFromDB($userId);
             
         } catch (Exception $e) {
             $allMatches = array_merge(
-                $this->getTeachMatches($currentUserId), 
+                $this->getTeachMatches($currentUserId),
                 $this->getLearnMatches($currentUserId)
             );
             
             foreach ($allMatches as $match) {
                 if ($match['id'] == $userId) {
-                    $userArray = $this->createUserDataFromMatch($match);
-                    $userSkills = $this->getSkillsForMatch($userId);
+                    $userArray    = $this->createUserDataFromMatch($match);
+                    $userSkills   = $this->getSkillsForMatch($userId);
                     $userProjects = $this->getProjectsForMatch($userId);
                     $userFeedback = $this->getFeedbackForMatch($userId);
                     break;
@@ -313,16 +299,16 @@ public function matches() {
             }
         }
         
-        $userArray['skills_taught'] = count($userSkills['teaches'] ?? []);
-        $userArray['skills_learning'] = count($userSkills['learns'] ?? []);
+        $userArray['skills_taught']   = count($userSkills['teaches'] ?? []);
+        $userArray['skills_learning']  = count($userSkills['learns'] ?? []);
         
         $data = [
-            'title' => $userArray['name'] . "'s Profile",
-            'user' => $userArray,
-            'skills' => $userSkills,
-            'projects' => $userProjects,
-            'feedback' => $userFeedback,
-            'page' => 'matches',
+            'title'         => $userArray['name'] . "'s Profile",
+            'user'          => $userArray,
+            'skills'        => $userSkills,
+            'projects'      => $userProjects,
+            'feedback'      => $userFeedback,
+            'page'          => 'matches',
             'currentUserId' => $currentUserId
         ];
         
@@ -338,7 +324,7 @@ public function matches() {
         }
         
         $currentUserId = $this->checkAuth();
-        $targetUserId = $_POST['user_id'] ?? null;
+        $targetUserId  = $_POST['user_id'] ?? null;
         
         if (!$targetUserId) {
             echo json_encode(['success' => false, 'message' => 'User ID is required']);
@@ -346,7 +332,7 @@ public function matches() {
         }
         
         $exchangeModel = $this->model('Exchange');
-        $result = $exchangeModel->createExchangeRequest($currentUserId, $targetUserId);
+        $result        = $exchangeModel->createExchangeRequest($currentUserId, $targetUserId);
         
         if ($result) {
             echo json_encode(['success' => true, 'message' => 'Connection request sent successfully!']);
@@ -365,8 +351,8 @@ public function matches() {
         }
         
         $currentUserId = $this->checkAuth();
-        $skillName = $_POST['skill'] ?? '';
-        $matchType = $_POST['type'] ?? 'all';
+        $skillName     = $_POST['skill'] ?? '';
+        $matchType     = $_POST['type'] ?? 'all';
         
         if (empty($skillName)) {
             echo json_encode(['success' => false, 'message' => 'Skill name is required']);
@@ -374,7 +360,7 @@ public function matches() {
         }
         
         $skillMatchModel = $this->model('SkillMatch');
-        $matches = $skillMatchModel->searchMatchesBySkill($currentUserId, $skillName, $matchType);
+        $matches         = $skillMatchModel->searchMatchesBySkill($currentUserId, $skillName, $matchType);
         
         echo json_encode(['success' => true, 'matches' => $matches]);
         exit;
@@ -386,15 +372,15 @@ public function matches() {
 
     public function communities() {
         $userId = $this->checkAuth();
-        $user = $this->getUserData($userId);
+        $user   = $this->getUserData($userId);
         
         $communityModel = $this->model('Community');
-        $communities = $communityModel->getAllCommunitiesForUser($userId);
+        $communities    = $communityModel->getAllCommunitiesForUser($userId);
         
         $data = [
-            'title' => 'Communities',
-            'user' => $user,
-            'page' => 'communities',
+            'title'       => 'Communities',
+            'user'        => $user,
+            'page'        => 'communities',
             'communities' => $communities
         ];
         
@@ -403,7 +389,7 @@ public function matches() {
 
     public function viewCommunity($communityId = null) {
         $userId = $this->checkAuth();
-        $user = $this->getUserData($userId);
+        $user   = $this->getUserData($userId);
         
         if (!$communityId) {
             header('Location: ' . URLROOT . '/userdashboard/communities');
@@ -411,7 +397,7 @@ public function matches() {
         }
         
         $communityModel = $this->model('Community');
-        $community = $communityModel->getCommunityById($communityId, $userId);
+        $community      = $communityModel->getCommunityById($communityId, $userId);
         
         if (!$community) {
             $_SESSION['error'] = 'Community not found';
@@ -420,15 +406,15 @@ public function matches() {
         }
         
         $members = $communityModel->getCommunityMembers($communityId);
-        $posts = $communityModel->getCommunityPosts($communityId);
+        $posts   = $communityModel->getCommunityPosts($communityId);
         
         $data = [
-            'title' => $community->name,
-            'user' => $user,
-            'page' => 'communities',
+            'title'     => $community->name,
+            'user'      => $user,
+            'page'      => 'communities',
             'community' => $community,
-            'members' => $members,
-            'posts' => $posts
+            'members'   => $members,
+            'posts'     => $posts
         ];
         
         $this->view('users/community_detail', $data);
@@ -442,7 +428,7 @@ public function matches() {
             exit;
         }
         
-        $userId = $this->checkAuth();
+        $userId      = $this->checkAuth();
         $communityId = $_POST['community_id'] ?? null;
         
         if (!$communityId) {
@@ -451,7 +437,7 @@ public function matches() {
         }
         
         $communityModel = $this->model('Community');
-        $result = $communityModel->joinCommunity($userId, $communityId);
+        $result         = $communityModel->joinCommunity($userId, $communityId);
         
         if ($result) {
             echo json_encode(['success' => true, 'message' => 'Successfully joined community!']);
@@ -469,7 +455,7 @@ public function matches() {
             exit;
         }
         
-        $userId = $this->checkAuth();
+        $userId      = $this->checkAuth();
         $communityId = $_POST['community_id'] ?? null;
         
         if (!$communityId) {
@@ -478,7 +464,7 @@ public function matches() {
         }
         
         $communityModel = $this->model('Community');
-        $result = $communityModel->leaveCommunity($userId, $communityId);
+        $result         = $communityModel->leaveCommunity($userId, $communityId);
         
         if ($result) {
             echo json_encode(['success' => true, 'message' => 'Successfully left community']);
@@ -496,9 +482,9 @@ public function matches() {
             exit;
         }
         
-        $userId = $this->checkAuth();
+        $userId      = $this->checkAuth();
         $communityId = $_POST['community_id'] ?? null;
-        $content = trim($_POST['content'] ?? '');
+        $content     = trim($_POST['content'] ?? '');
         
         if (!$communityId || empty($content)) {
             echo json_encode(['success' => false, 'message' => 'Missing required fields']);
@@ -525,7 +511,7 @@ public function matches() {
     public function getCommunityMessages() {
         header('Content-Type: application/json');
         
-        $userId = $this->checkAuth();
+        $userId      = $this->checkAuth();
         $communityId = $_GET['community_id'] ?? null;
         
         if (!$communityId) {
@@ -557,13 +543,12 @@ public function matches() {
             $category    = $_POST['category'] ?? null;
             
             $errors = [];
-            
-            if (empty($name)) $errors[] = 'Community name is required';
+            if (empty($name))        $errors[] = 'Community name is required';
             if (empty($description)) $errors[] = 'Description is required';
             
             if (empty($errors)) {
                 $communityModel = $this->model('Community');
-                $communityId = $communityModel->createCommunity($userId, $name, $description, $about, $icon, $category);
+                $communityId    = $communityModel->createCommunity($userId, $name, $description, $about, $icon, $category);
                 
                 if ($communityId) {
                     $_SESSION['success'] = 'Community created successfully!';
@@ -576,20 +561,20 @@ public function matches() {
             
             $user = $this->getUserData($userId);
             $data = [
-                'title' => 'Create Community',
-                'user' => $user,
-                'page' => 'communities',
+                'title'  => 'Create Community',
+                'user'   => $user,
+                'page'   => 'communities',
                 'errors' => $errors,
-                'old' => $_POST
+                'old'    => $_POST
             ];
             
             $this->view('users/create_community', $data);
         } else {
             $user = $this->getUserData($userId);
             $data = [
-                'title' => 'Create Community',
-                'user' => $user,
-                'page' => 'communities',
+                'title'  => 'Create Community',
+                'user'   => $user,
+                'page'   => 'communities',
                 'errors' => []
             ];
             
@@ -603,10 +588,10 @@ public function matches() {
 
     public function quiz() {
         $userId = $this->checkAuth();
-        $user = $this->getUserData($userId);
+        $user   = $this->getUserData($userId);
         
-        $quizModel = $this->model('Quiz');
-        $dbQuizzes = $quizModel->getQuizzesForUser($userId);
+        $quizModel  = $this->model('Quiz');
+        $dbQuizzes  = $quizModel->getQuizzesForUser($userId);
         
         $formattedQuizzes = array_map(function($quiz) {
             $quizArray = is_object($quiz) ? (array)$quiz : $quiz;
@@ -697,9 +682,9 @@ public function matches() {
             'badge'         => null,
             'questions'     => array_map(function($q) {
                 return [
-                    'id'       => $q['question_id'],
-                    'question' => $q['question_text'],
-                    'options'  => [
+                    'id'      => $q['question_id'],
+                    'question'=> $q['question_text'],
+                    'options' => [
                         $q['option_a'] ?? '',
                         $q['option_b'] ?? '',
                         $q['option_c'] ?? '',
@@ -709,7 +694,7 @@ public function matches() {
             }, $dbQuestions)
         ];
         
-        $attemptId          = $quizModel->startAttempt($userId, $quizId, count($dbQuestions));
+        $attemptId              = $quizModel->startAttempt($userId, $quizId, count($dbQuestions));
         $quizData['attempt_id'] = $attemptId;
         
         $data = [
@@ -721,8 +706,6 @@ public function matches() {
         
         $this->view('users/take_quiz', $data);
     }
-
-   
 
     public function submitQuiz() {
         ini_set('display_errors', '0');
@@ -751,7 +734,7 @@ public function matches() {
 
         // Accept both JSON and form-urlencoded submissions
         $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
-        $data = null;
+        $data        = null;
         if (stripos($contentType, 'application/json') !== false) {
             $json = file_get_contents('php://input');
             $data = json_decode($json, true);
@@ -766,7 +749,7 @@ public function matches() {
             }
             $data = [
                 'attempt_id' => $_POST['attempt_id'] ?? null,
-                'quiz_id'    => $_POST['quiz_id'] ?? null,
+                'quiz_id'    => $_POST['quiz_id']    ?? null,
                 'answers'    => $answersDecoded ?? $answersRaw,
                 'time_taken' => $_POST['time_taken'] ?? 0,
             ];
@@ -775,8 +758,8 @@ public function matches() {
         error_log("Quiz submission data: " . print_r($data, true));
 
         $attemptId = $data['attempt_id'] ?? null;
-        $quizId    = $data['quiz_id'] ?? null;
-        $answers   = $data['answers'] ?? [];
+        $quizId    = $data['quiz_id']    ?? null;
+        $answers   = $data['answers']    ?? [];
         $timeTaken = $data['time_taken'] ?? 0;
 
         if (!$quizId) {
@@ -848,7 +831,7 @@ public function matches() {
 
         foreach ($answers as $answer) {
             if (!is_array($answer)) continue;
-            $questionId     = $answer['question_id'] ?? null;
+            $questionId     = $answer['question_id']     ?? null;
             $selectedAnswer = isset($answer['selected_answer']) ? intval($answer['selected_answer']) : null;
             if (!$questionId || $selectedAnswer === null) continue;
 
@@ -865,20 +848,29 @@ public function matches() {
         $score  = ($correctCount / $totalQuestions) * 100;
         $passed = $score >= 70;
 
-        // FIX 1: Use stored reward_amount from DB (set by trigger), fallback to difficulty_level
+        // =====================================================================
+        // FIX (Bug 3): Use ONLY the reward_amount the manager saved in the DB.
+        // The old getQuizById() was silently replacing this with a
+        // difficulty-based fallback, causing random/wrong amounts.
+        // Now getQuizById() returns the raw stored value, so we trust it here.
+        // The fallback below only fires when the manager genuinely left it at 0,
+        // and it logs so you can see when that happens.
+        // =====================================================================
         $rewardAmount = (int)($quiz['reward_amount'] ?? 0);
         if ($rewardAmount <= 0) {
+            // Manager did not set a reward — use difficulty default as last resort
             $difficulty   = $quiz['difficulty_level'] ?? '';
             $key          = strtolower(trim($difficulty));
             $map          = ['beginner' => 10, 'intermediate' => 20, 'expert' => 30];
             $rewardAmount = (int)($map[$key] ?? 0);
+            error_log("[Quiz] Quiz {$quizId}: reward_amount was 0 in DB, using difficulty fallback: {$rewardAmount}");
         }
 
-        // FIX 2: Check for first completion BEFORE marking attempt complete
+        // Check for first completion BEFORE marking attempt complete
         $isFirstCompletion = false;
         if ($passed && $rewardAmount > 0) {
             $this->db->query("
-                SELECT COUNT(*) AS cnt FROM user_quiz_attempts 
+                SELECT COUNT(*) AS cnt FROM user_quiz_attempts
                 WHERE user_id = :uid AND quiz_id = :qid AND status = 'completed'
             ");
             $this->db->bind(':uid', $userId);
@@ -887,7 +879,7 @@ public function matches() {
             $isFirstCompletion = !($prev && (int)$prev->cnt > 0);
         }
 
-        // FIX 3: NOW mark attempt as complete (after the retake check)
+        // Mark attempt as complete AFTER the retake check
         $quizModel->completeAttempt($attemptId, $correctCount, $totalQuestions, $timeTaken);
 
         // Check badge eligibility
@@ -903,18 +895,18 @@ public function matches() {
 
             if ($badge) {
                 $this->db->query("SELECT id FROM user_badges WHERE user_id = :user_id AND badge_id = :badge_id");
-                $this->db->bind(':user_id', $userId);
+                $this->db->bind(':user_id',  $userId);
                 $this->db->bind(':badge_id', $badge->id);
                 $existingBadge = $this->db->single();
 
                 if (!$existingBadge) {
                     $this->db->query("INSERT INTO user_badges (user_id, badge_id, badge_name, badge_icon, source_type, source_id, earned_at) VALUES (:user_id, :badge_id, :badge_name, :badge_icon, :source_type, :source_id, NOW())");
-                    $this->db->bind(':user_id', $userId);
-                    $this->db->bind(':badge_id', $badge->id);
+                    $this->db->bind(':user_id',    $userId);
+                    $this->db->bind(':badge_id',   $badge->id);
                     $this->db->bind(':badge_name', $badge->name);
                     $this->db->bind(':badge_icon', $badge->icon);
-                    $this->db->bind(':source_type', 'quiz');
-                    $this->db->bind(':source_id', $quizId);
+                    $this->db->bind(':source_type','quiz');
+                    $this->db->bind(':source_id',  $quizId);
                     $this->db->execute();
 
                     $badgeEarned = [
@@ -927,7 +919,7 @@ public function matches() {
             }
         }
 
-        // FIX 4: Award BuckX only when passed AND first completion
+        // Award BuckX only when passed AND first completion
         $rewardGiven   = 0;
         $newBalance    = null;
         $rewardMessage = null;
@@ -952,7 +944,7 @@ public function matches() {
                     'is_read'    => 0
                 ]);
             } else {
-                error_log("Quiz reward credit failed for user {$userId}, quiz {$quizId}, amount {$rewardAmount}");
+                error_log("[Quiz] Reward credit FAILED for user {$userId}, quiz {$quizId}, amount {$rewardAmount}");
             }
         }
 
@@ -1115,7 +1107,7 @@ public function matches() {
     private function getSkillsForMatch($userId) {
         return [
             'teaches' => [['name' => 'Web Development', 'level' => 'Intermediate']],
-            'learns'  => [['name' => 'Advanced Topics', 'level' => 'Beginner']]
+            'learns'  => [['name' => 'Advanced Topics',  'level' => 'Beginner']]
         ];
     }
 
@@ -1274,24 +1266,23 @@ public function matches() {
     }
 
     private function getNotifications($userId) {
-    $notificationModel = $this->model('Notification');
-    $results = $notificationModel->getUserNotifications($userId);
-    
-    $notifications = [];
-    foreach ($results as $n) {
-        $notifications[] = [
-            'id'      => $n->id,
-            'type'    => $n->type,
-            'title'   => $n->type === 'reward' ? 'BuckX Reward' : ucfirst($n->type),
-            'message' => $n->message,
-            'time'    => $this->timeAgo($n->created_at),
-            'read'    => (bool)$n->is_read
-        ];
+        $notificationModel = $this->model('Notification');
+        $results           = $notificationModel->getUserNotifications($userId);
+        
+        $notifications = [];
+        foreach ($results as $n) {
+            $notifications[] = [
+                'id'      => $n->id,
+                'type'    => $n->type,
+                'title'   => $n->type === 'reward' ? 'BuckX Reward' : ucfirst($n->type),
+                'message' => $n->message,
+                'time'    => $this->timeAgo($n->created_at),
+                'read'    => (bool)$n->is_read
+            ];
+        }
+        
+        return $notifications;
     }
-    
-    return $notifications;
-}
-
 
     private function getAllCommunities() {
         try {
@@ -1308,9 +1299,9 @@ public function matches() {
                 ORDER BY members DESC
             ");
             
-            $results = $this->db->resultSet();
+            $results     = $this->db->resultSet();
             $communities = [];
-            $icons = ['🌐', '🤖', '💻', '📊', '🎨', '📱', '🔧', '📚'];
+            $icons       = ['🌐', '🤖', '💻', '📊', '🎨', '📱', '🔧', '📚'];
             
             foreach ($results as $index => $community) {
                 $communities[] = [
@@ -1333,19 +1324,18 @@ public function matches() {
         }
     }
 
-
     private function getUserBadges($userId) {
         try {
             $this->db->query("
                 SELECT 
-                    COALESCE(b.id, ub.badge_id) AS id,
-                    COALESCE(b.name, ub.badge_name) AS name,
-                    COALESCE(b.description, '') AS description,
-                    COALESCE(b.icon, ub.badge_icon, '🏆') AS icon,
-                    COALESCE(b.badge_type, 'quiz') AS badge_type,
+                    COALESCE(b.id, ub.badge_id)               AS id,
+                    COALESCE(b.name, ub.badge_name)           AS name,
+                    COALESCE(b.description, '')               AS description,
+                    COALESCE(b.icon, ub.badge_icon, '🏆')     AS icon,
+                    COALESCE(b.badge_type, 'quiz')            AS badge_type,
                     b.requirement_type,
                     b.requirement_value,
-                    COALESCE(b.color, '#3b82f6') AS color,
+                    COALESCE(b.color, '#3b82f6')              AS color,
                     ub.earned_at
                 FROM user_badges ub
                 LEFT JOIN badges b ON ub.badge_id = b.id
@@ -1359,14 +1349,14 @@ public function matches() {
             $badges = [];
             foreach ($results as $badge) {
                 $badges[] = [
-                    'id'         => $badge->id,
-                    'name'       => $badge->name,
-                    'description'=> $badge->description,
-                    'icon'       => $badge->icon,
-                    'badge_type' => $badge->badge_type,
-                    'color'      => $badge->color ?? '#3b82f6',
-                    'earned_at'  => $this->timeAgo($badge->earned_at),
-                    'earned_date'=> date('M d, Y', strtotime($badge->earned_at))
+                    'id'          => $badge->id,
+                    'name'        => $badge->name,
+                    'description' => $badge->description,
+                    'icon'        => $badge->icon,
+                    'badge_type'  => $badge->badge_type,
+                    'color'       => $badge->color ?? '#3b82f6',
+                    'earned_at'   => $this->timeAgo($badge->earned_at),
+                    'earned_date' => date('M d, Y', strtotime($badge->earned_at))
                 ];
             }
             

@@ -34,31 +34,31 @@ class Quiz {
      * Create a new quiz (simple insert, returns new quiz ID)
      * Used by QuizmanagerController::save()
      */
-   public function createQuiz($quizData) {
-    $this->db->query("
-        INSERT INTO quizzes
-            (title, description, difficulty_level, duration, category,
-             status, total_questions, badge_id, reward_amount, manager_id, created_at)
-        VALUES
-            (:title, :description, :difficulty, :duration, :category,
-             :status, 0, :badge_id, :reward_amount, :manager_id, NOW())
-    ");
+    public function createQuiz($quizData) {
+        $this->db->query("
+            INSERT INTO quizzes
+                (title, description, difficulty_level, duration, category,
+                 status, total_questions, badge_id, reward_amount, manager_id, created_at)
+            VALUES
+                (:title, :description, :difficulty, :duration, :category,
+                 :status, 0, :badge_id, :reward_amount, :manager_id, NOW())
+        ");
 
-    $this->db->bind(':title',         $quizData['title']);
-    $this->db->bind(':description',   $quizData['description']);
-    $this->db->bind(':difficulty',    $quizData['difficulty_level']);
-    $this->db->bind(':duration',      $quizData['duration']);
-    $this->db->bind(':category',      isset($quizData['category']) ? $quizData['category'] : 'General');
-    $this->db->bind(':status',        isset($quizData['status']) ? $quizData['status'] : 'draft');
-    $this->db->bind(':badge_id',      isset($quizData['badge_id']) ? $quizData['badge_id'] : null);
-    $this->db->bind(':reward_amount', isset($quizData['reward_amount']) ? $quizData['reward_amount'] : 0);
-    $this->db->bind(':manager_id',    $quizData['created_by']);
+        $this->db->bind(':title',         $quizData['title']);
+        $this->db->bind(':description',   $quizData['description']);
+        $this->db->bind(':difficulty',    $quizData['difficulty_level']);
+        $this->db->bind(':duration',      $quizData['duration']);
+        $this->db->bind(':category',      isset($quizData['category']) ? $quizData['category'] : 'General');
+        $this->db->bind(':status',        isset($quizData['status']) ? $quizData['status'] : 'draft');
+        $this->db->bind(':badge_id',      isset($quizData['badge_id']) ? $quizData['badge_id'] : null);
+        $this->db->bind(':reward_amount', isset($quizData['reward_amount']) ? $quizData['reward_amount'] : 0);
+        $this->db->bind(':manager_id',    $quizData['created_by']);
 
-    if ($this->db->execute()) {
-        return $this->db->lastInsertId();
+        if ($this->db->execute()) {
+            return $this->db->lastInsertId();
+        }
+        return false;
     }
-    return false;
-}
 
     /**
      * Add a single question to a quiz
@@ -90,7 +90,7 @@ class Quiz {
         $correctAnswerIndex = intval(isset($questionData['correct_answer']) ? $questionData['correct_answer'] : 0);
 
         foreach ($letters as $idx => $letter) {
-            $is_correct = ($idx === $correctAnswerIndex) ? 1 : 0;
+            $is_correct  = ($idx === $correctAnswerIndex) ? 1 : 0;
             $option_text = isset($questionData[$fields[$idx]]) ? $questionData[$fields[$idx]] : '';
 
             $this->db->query("
@@ -140,7 +140,7 @@ class Quiz {
         $this->db->query("
             SELECT
                 q.*,
-                COUNT(DISTINCT ua.user_id)                                          AS participant_count,
+                COUNT(DISTINCT ua.user_id)                                            AS participant_count,
                 COALESCE(AVG(CASE WHEN ua.status = 'completed' THEN ua.score END), 0) AS avg_score
             FROM quizzes q
             LEFT JOIN user_quiz_attempts ua ON q.id = ua.quiz_id
@@ -174,13 +174,6 @@ class Quiz {
         $rows = $this->db->resultSet();
         if (!$rows) return array();
 
-        foreach ($rows as $row) {
-            if (!is_object($row)) continue;
-            if (!isset($row->reward_amount) || (int)$row->reward_amount <= 0) {
-                $row->reward_amount = $this->computeRewardAmount(isset($row->difficulty_level) ? $row->difficulty_level : '');
-            }
-        }
-
         return $rows;
     }
 
@@ -193,7 +186,7 @@ class Quiz {
                 q.*,
                 q.id AS quiz_id,
                 CASE
-                    WHEN sq.id IS NOT NULL      THEN 'saved'
+                    WHEN sq.id IS NOT NULL       THEN 'saved'
                     WHEN ua.status = 'completed' THEN 'completed'
                     ELSE 'not_started'
                 END AS user_status,
@@ -218,13 +211,6 @@ class Quiz {
         $rows = $this->db->resultSet();
         if (!$rows) return array();
 
-        foreach ($rows as $row) {
-            if (!is_object($row)) continue;
-            if (!isset($row->reward_amount) || (int)$row->reward_amount <= 0) {
-                $row->reward_amount = $this->computeRewardAmount(isset($row->difficulty_level) ? $row->difficulty_level : '');
-            }
-        }
-
         return $rows;
     }
 
@@ -234,6 +220,10 @@ class Quiz {
 
     /**
      * Get quiz by ID
+     *
+     * FIX (Bug 3): Removed the fallback that was silently overwriting the
+     * manager's saved reward_amount with a difficulty-based computed value.
+     * The stored value is now always returned as-is.
      */
     public function getQuizById($quiz_id) {
         $this->db->query("SELECT *, id AS quiz_id FROM quizzes WHERE id = :id");
@@ -242,11 +232,8 @@ class Quiz {
 
         if (!$result) return null;
 
-        $quizArray = (array)$result;
-        if (!isset($quizArray['reward_amount']) || (int)$quizArray['reward_amount'] <= 0) {
-            $quizArray['reward_amount'] = $this->computeRewardAmount(isset($quizArray['difficulty_level']) ? $quizArray['difficulty_level'] : '');
-        }
-        return $quizArray;
+        // Return the stored data exactly as saved — do NOT override reward_amount
+        return (array)$result;
     }
 
     /**
@@ -331,8 +318,8 @@ class Quiz {
             INSERT IGNORE INTO user_saved_quizzes (user_id, quiz_id, saved_at)
             VALUES (:user_id, :quiz_id, NOW())
         ");
-        $this->db->bind(':user_id',  $user_id);
-        $this->db->bind(':quiz_id',  $quiz_id);
+        $this->db->bind(':user_id', $user_id);
+        $this->db->bind(':quiz_id', $quiz_id);
         return $this->db->execute();
     }
 
@@ -341,8 +328,8 @@ class Quiz {
             DELETE FROM user_saved_quizzes
             WHERE user_id = :user_id AND quiz_id = :quiz_id
         ");
-        $this->db->bind(':user_id',  $user_id);
-        $this->db->bind(':quiz_id',  $quiz_id);
+        $this->db->bind(':user_id', $user_id);
+        $this->db->bind(':quiz_id', $quiz_id);
         return $this->db->execute();
     }
 
@@ -360,9 +347,9 @@ class Quiz {
             VALUES
                 (:user_id, :quiz_id, :total, 0, 0, 'in_progress', NOW())
         ");
-        $this->db->bind(':user_id',  $user_id);
-        $this->db->bind(':quiz_id',  $quiz_id);
-        $this->db->bind(':total',    $total_questions);
+        $this->db->bind(':user_id', $user_id);
+        $this->db->bind(':quiz_id', $quiz_id);
+        $this->db->bind(':total',   $total_questions);
 
         if ($this->db->execute()) {
             return $this->db->lastInsertId();
@@ -416,10 +403,18 @@ class Quiz {
 
     /**
      * Get available badges for quiz creation
+     *
+     * FIX (Bug 1): Ensures all rows are returned as stdClass objects
+     * consistently, regardless of how the DB wrapper returns them.
      */
     public function getAvailableBadges() {
         $this->db->query("SELECT id, name, icon FROM badges ORDER BY name ASC");
-        $result = $this->db->resultSet();
-        return $result ?: array();
+        $results = $this->db->resultSet();
+        if (!$results) return array();
+
+        // Normalise: always return objects so the view can use $b->id, $b->name, $b->icon
+        return array_map(function($row) {
+            return is_array($row) ? (object)$row : $row;
+        }, $results);
     }
 }
