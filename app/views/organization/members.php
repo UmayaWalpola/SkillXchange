@@ -244,9 +244,6 @@
                                     <span class="stat-item">
                                         <span class="icon"><i class="ph ph-star"></i></span> Rating: <?= $member->user_rating ?? '0' ?>
                                     </span>
-                                    <span class="stat-item">
-                                        <span class="icon"><i class="ph ph-check"></i></span> Completed: <?= $member->completed_projects ?? 0 ?>
-                                    </span>
                                 </div>
                             </div>
 
@@ -447,7 +444,7 @@
                 
                 <div class="form-group">
                     <label style="display:block;font-weight:600;margin-bottom:5px;">Deadline</label>
-                    <input type="date" name="due_date" id="modal_deadline" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;">
+                    <input type="date" name="due_date" id="modal_deadline" min="" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:6px;">
                 </div>
             </div>
 
@@ -599,6 +596,10 @@ document.querySelectorAll('.assign-task-btn').forEach(btn => {
         document.getElementById('modal_priority').value = 'medium';
         document.getElementById('modal_deadline').value = '';
         document.getElementById('modal_buckx_allocated').value = '';
+        
+        // Set minimum date to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('modal_deadline').min = today;
         
         document.getElementById('taskModal').style.display = 'flex';
     });
