@@ -46,7 +46,6 @@
                     <tr>
                         <th>User</th>
                         <th>Role</th>
-                        <th>Warnings</th>
                         <th>Status</th>
                         <th>Joined</th>
                         <th></th>
@@ -64,20 +63,13 @@
                             <br><small style="color:#aaa"><?= htmlspecialchars($u->email) ?></small>
                         </td>
                         <td><span class="role-text"><?= htmlspecialchars($u->role) ?></span></td>
-                        <td>
-                            <?php if ($u->warning_count > 0): ?>
-                                <span class="warning-badge"><?= $u->warning_count ?></span>
-                            <?php else: ?>
-                                <span style="color:#aaa">0</span>
-                            <?php endif; ?>
-                        </td>
                         <td><span class="status-dot <?= $u->status ?>"><?= ucfirst($u->status) ?></span></td>
                         <td><?= date('M d, Y', strtotime($u->created_at)) ?></td>
                         <td><a href="<?= URLROOT ?>/admin/viewUser/<?= $u->id ?>" class="btn-outline">View</a></td>
                     </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
-                    <tr><td colspan="6" class="no-data">No users found</td></tr>
+                    <tr><td colspan="5" class="no-data">No users found</td></tr>
                 <?php endif; ?>
                 </tbody>
             </table>
