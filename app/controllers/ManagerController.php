@@ -130,12 +130,6 @@ class ManagerController extends Controller {
             exit;
         }
 
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $_SESSION['error'] = 'Invalid email format';
-            header('Location: ' . URLROOT . '/manager/users');
-            exit;
-        }
-
        $result = $this->managerModel->addUser($name, $email, $role, $password);
 
         if ($result['success']) {
@@ -171,12 +165,6 @@ class ManagerController extends Controller {
 
         if (empty($userId) || empty($name) || empty($email) || empty($role)) {
             $_SESSION['error'] = 'All fields except password are required';
-            header('Location: ' . URLROOT . '/manager/users');
-            exit;
-        }
-
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $_SESSION['error'] = 'Invalid email format';
             header('Location: ' . URLROOT . '/manager/users');
             exit;
         }

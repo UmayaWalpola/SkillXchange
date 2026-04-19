@@ -20,7 +20,7 @@ if (file_exists(__DIR__ . '/db.local.php')) {
 
 
 // Start session for authentication
-if (session_status() === PHP_SESSION_NONE) {
+if (session_id() === '') {
     session_start();
 }
 

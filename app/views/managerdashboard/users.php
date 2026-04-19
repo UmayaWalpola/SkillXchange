@@ -2,6 +2,18 @@
 <?php require_once "../app/views/layouts/managersidebar.php"; ?>
 
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/dashboard.css">
+<style>
+    .input-error {
+        border-color: #dc3545 !important;
+        background-color: #fff5f5;
+    }
+    .error-text {
+        color: #dc3545;
+        font-size: 12px;
+        margin-top: 4px;
+        display: block;
+    }
+</style>
 
 
     <div class="dashboard-container">
@@ -27,7 +39,7 @@
             <!-- Add New User Form (hidden by default) -->
             <div id="addUserForm" class="section-card inline-form-panel">
                 <h2 class="section-title">Add New User</h2>
-                <form method="POST" action="<?= URLROOT ?>/manager/addUser">
+                <form method="POST" action="<?= URLROOT ?>/manager/addUser" onsubmit="return validateAddUserForm()">
                     <div class="form-grid-2">
                         <div class="form-group">
                             <label for="add-name">Full Name</label>
@@ -107,7 +119,7 @@
 
                                             <!-- Inline Edit Form -->
                                             <div id="edit-<?= $user->id ?>" class="inline-form-panel">
-                                                <form method="POST" action="<?= URLROOT ?>/manager/updateUser">
+                                                <form method="POST" action="<?= URLROOT ?>/manager/updateUser" onsubmit="return validateEditUserForm(<?= $user->id ?>)">
                                                     <input type="hidden" name="user_id" value="<?= $user->id ?>">
                                                     <div class="form-grid-2">
                                                         <div class="form-group">
@@ -176,3 +188,5 @@ function toggleEditForm(userId) {
 </script>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>
+
+<script src="<?= URLROOT ?>/js/manager-users.js"></script>
