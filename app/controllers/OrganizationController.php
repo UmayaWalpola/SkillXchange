@@ -986,21 +986,15 @@ class OrganizationController extends Controller {
             // Send task data to Database Model to create
             $taskId = $this->taskModel->createTask($taskData);
 
-            // Step 7: Notify User and return Success
+            // Step 7: Tell the member that a new task was assigned.
             if ($taskId) {
-                // Send an automated notification to the user who got the task
-                try {
-                    $this->notificationModel->createNotification([
-                        'user_id'    => $memberId,
-                        'type'       => 'task_assigned',
-                        'message'    => 'You have been assigned a new task: ' . $taskData['title'],
-                        'project_id' => $projectId,
-                        'task_id'    => $taskId
-                    ]);
-                } catch (Throwable $e) {
-                    // Ignore notification crashes so task creation still succeeds
-                    error_log("Notification error: " . $e->getMessage());
-                }
+                $this->sendTaskNotification(
+                    $memberId,
+                    'task_assigned',
+                    'You have been assigned a new task: ' . $taskData['title'],
+                    $projectId,
+                    $taskId
+                );
 
                 // Return AJAX success!
                 echo json_encode([
@@ -1057,19 +1051,15 @@ class OrganizationController extends Controller {
 
             // Step 4: Tell Database to delete the task!
             if ($this->taskModel->deleteTask($taskId)) {
-                // If success, notify the assignee that the task was removed
+                // If there was an assignee, send a small notice about the removal.
                 if (!empty($task->assigned_to)) {
-                    try {
-                        $this->notificationModel->createNotification([
-                            'user_id'    => $task->assigned_to,
-                            'type'       => 'task_removed',
-                            'message'    => 'A task assigned to you was removed: ' . $task->title,
-                            'project_id' => $task->project_id,
-                            'task_id'    => null
-                        ]);
-                    } catch (Exception $e) {
-                        error_log('Notify member on task remove: ' . $e->getMessage());
-                    }
+                    $this->sendTaskNotification(
+                        (int)$task->assigned_to,
+                        'task_removed',
+                        'A task assigned to you was removed: ' . $task->title,
+                        (int)$task->project_id,
+                        null
+                    );
                 }
                 echo json_encode(['success' => true, 'message' => 'Task removed successfully']);
             } else {
@@ -1081,6 +1071,24 @@ class OrganizationController extends Controller {
         }
         exit;
     }
+
+    // Small helper so task notifications stay in one place.
+    private function sendTaskNotification($userId, $type, $message, $projectId, $taskId = null)
+    {
+        try {
+            $this->notificationModel->createNotification([
+                'user_id'    => $userId,
+                'type'       => $type,
+                'message'    => $message,
+                'project_id' => $projectId,
+                'task_id'    => $taskId
+            ]);
+        } catch (Throwable $e) {
+            // If notification fails, the main task action should still continue.
+            error_log('Task notification error: ' . $e->getMessage());
+        }
+    }
+
          // category related skills map for validation and suggestions
     private function getCategorySkillMap()
     {
@@ -1107,15 +1115,17 @@ class OrganizationController extends Controller {
                 'GitHub and Git'
             ],
             'design' => [
-                'Web Development',
-                'Frontend Frameworks',
-                'Digital Marketing',
-                'GitHub and Git'
+                'UI/UX Design',
+                'Graphic Design',
+                'Figma',
+                'Prototyping',
+                'Digital Marketing'
             ],
             'other' => [
                 'Cloud Computing',
                 'Cybersecurity',
-                'Devops',
+                'DevOps',
+                'Project Management',
                 'AI and ML',
                 'GitHub and Git'
             ]
@@ -1146,6 +1156,9 @@ class OrganizationController extends Controller {
             'web dev' => 'web development',
             'ai' => 'ai and ml',
             'ai ml' => 'ai and ml',
+            'ui ux' => 'ui/ux design',
+            'ui/ux' => 'ui/ux design',
+            'user interface user experience' => 'ui/ux design',
             'marketing' => 'digital marketing',
             'data analytics' => 'data analysis & visualization',
             'data analysis and visualization' => 'data analysis & visualization'

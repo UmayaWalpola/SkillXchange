@@ -45,6 +45,9 @@
     </div>
 </div>
 
+<script>
+    window.URLROOT = '<?php echo URLROOT; ?>';
+</script>
 <!-- Link JavaScript -->
 <script src="<?php echo URLROOT; ?>/assets/js/quizmandashboard.js"></script>
 

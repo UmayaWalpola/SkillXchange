@@ -1,33 +1,25 @@
 <?php
 // Simple test script to check badge functionality
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 echo "Testing badge functionality...\n";
 
-// Try to include the bootstrap
-@include 'app/bootstrap.php';
+require 'app/config/config.php';
+require 'app/config/db.php';
+require 'core/Database.php';
+require 'app/models/Quiz.php';
 
-if (class_exists('Database')) {
-    echo "Database class loaded successfully\n";
+$quiz = new Quiz();
+$badges = $quiz->getAvailableBadges();
 
-    $db = new Database();
-    $db->query('SELECT COUNT(*) as count FROM badges WHERE status = "active"');
-    $result = $db->single();
-
-    if ($result) {
-        echo "Found " . $result->count . " active badges in database\n";
-
-        if ($result->count > 0) {
-            $db->query('SELECT id, name, icon FROM badges WHERE status = "active" LIMIT 3');
-            $badges = $db->resultSet();
-            echo "Sample badges:\n";
-            foreach ($badges as $badge) {
-                echo "  ID: {$badge->id}, Name: {$badge->name}, Icon: {$badge->icon}\n";
-            }
-        }
-    } else {
-        echo "Could not query badges\n";
+if (is_array($badges)) {
+    echo "Badges loaded: " . count($badges) . "\n";
+    if (count($badges) > 0) {
+        echo "First badge: " . $badges[0]->name . "\n";
     }
 } else {
-    echo "Database class not loaded\n";
+    echo "Badges did not load as array\n";
 }
 
 echo "Test completed\n";

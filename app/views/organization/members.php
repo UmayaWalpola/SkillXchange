@@ -27,6 +27,33 @@
             </div>
         </div>
 
+            <?php
+                $projectSkills = array_filter(array_map('trim', explode(',', (string)($data['project']->required_skills ?? ''))));
+            ?>
+
+            <div class="required-skills-card">
+                <div class="required-skills-head">
+                    <div>
+                        <h2 class="required-skills-title">
+                            <i class="ph ph-target" style="color: var(--primary-blue, #658396); font-size: 22px;"></i>
+                            Required Skills
+                        </h2>
+                        <p class="required-skills-subtitle">These are the skills set by the organization when the project was created.</p>
+                    </div>
+                    <span class="required-skills-category"><?= htmlspecialchars(ucfirst($data['project']->category ?? 'project')) ?> project</span>
+                </div>
+
+                <div class="required-skills-list">
+                    <?php if (!empty($projectSkills)): ?>
+                        <?php foreach ($projectSkills as $skill): ?>
+                            <span class="skill-tag"><?= htmlspecialchars($skill) ?></span>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <span class="required-skills-empty">No required skills have been set for this project yet.</span>
+                    <?php endif; ?>
+                </div>
+            </div>
+
         <!-- Success/Error Messages -->
         <?php if(isset($_SESSION['success'])): ?>
             <div class="alert alert-success">

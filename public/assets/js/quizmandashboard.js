@@ -109,37 +109,82 @@ function filterQuizzes() {
   }
 }
 
-// Quiz management functions (placeholders for future)
+// Quiz management functions
 function viewQuiz(id) { 
-  alert(`Viewing quiz ${id}`); 
-  // Future: window.location.href = `${URLROOT}/quizmanager/view/${id}`;
+  const urlRoot = window.URLROOT || '/SkillXchange';
+  window.location.href = `${urlRoot}/quizmanager/preview/${id}`;
 }
 
 function editQuiz(id) { 
-  alert(`Editing quiz ${id}`); 
-  // Future: window.location.href = `${URLROOT}/quizmanager/edit/${id}`;
+  const urlRoot = window.URLROOT || '/SkillXchange';
+  window.location.href = `${urlRoot}/quizmanager/edit/${id}`;
 }
 
 function activateQuiz(id) {
-  const quiz = quizzes.find(q => q.id === id);
-  quiz.status = 'active'; 
-  renderQuizTable();
-  // Future: Make AJAX call to backend
+  updateQuizStatus(id, 'active');
 }
 
 function pauseQuiz(id) {
-  const quiz = quizzes.find(q => q.id === id);
-  quiz.status = 'paused'; 
-  renderQuizTable();
-  // Future: Make AJAX call to backend
+  updateQuizStatus(id, 'paused');
+}
+
+function updateQuizStatus(id, status) {
+  const urlRoot = window.URLROOT || '/SkillXchange';
+  
+  fetch(`${urlRoot}/quizmanager/updateStatus/${id}/${status}`, {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Update local state
+      const quiz = quizzes.find(q => q.id === id);
+      if (quiz) {
+        quiz.status = status;
+        renderQuizTable();
+      }
+      alert(data.message);
+    } else {
+      alert('Error: ' + data.message);
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Failed to update quiz status');
+  });
 }
 
 function deleteQuiz(id) {
-  if(confirm('Are you sure you want to delete this quiz?')) {
-    quizzes = quizzes.filter(q => q.id !== id); 
-    renderQuizTable();
-    // Future: Make AJAX call to backend
+  if(!confirm('Are you sure you want to delete this quiz? This action cannot be undone.')) {
+    return;
   }
+  
+  const urlRoot = window.URLROOT || '/SkillXchange';
+  
+  fetch(`${urlRoot}/quizmanager/delete/${id}`, {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Remove from local state
+      quizzes = quizzes.filter(q => q.id !== id);
+      renderQuizTable();
+      alert(data.message);
+    } else {
+      alert('Error: ' + data.message);
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('Failed to delete quiz');
+  });
 }
 
 // Modal functions

@@ -57,4 +57,10 @@ app/config/db.local.php
 .DS_Store
 public/uploads/
 app/config/mail.local.php
+.gitignore.save
+CHANGES_MADE.md
+check_badges.php
+Day 01 Note_EXAM_IF_TASK_COMES_OPEN_THESE_FILES_FIRST.md
+Day 01 Note_EXAM_MODULE_MAP_NOTEBOOK_PAGES.md
+Day 01 Note_EXAM_PROJECT_TASK_CRUD_FLOW_SUMMARY.md
 
