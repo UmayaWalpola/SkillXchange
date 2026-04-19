@@ -50,6 +50,9 @@ class WalletController extends Controller {
             $totalPending = $this->walletModel->getTotalPendingAllocation($userId);
             $availableBalance = $this->walletModel->getAvailableBalance($userId, $userRole);
             
+            // For organizations, the main balance card should show available balance
+            $data['actualBalance'] = number_format($balance, 2);
+            $data['balance'] = number_format($availableBalance, 2);
             $data['pendingAllocations'] = $pendingAllocations;
             $data['totalPendingAllocation'] = number_format($totalPending, 2);
             $data['availableBalance'] = number_format($availableBalance, 2);

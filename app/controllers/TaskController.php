@@ -574,8 +574,9 @@ class TaskController extends Controller {
                                     $this->taskModel->markBuckXDistributed($taskId);
                                     $buckxTransferMessage = " - {$task->buckx_allocated} BuckX rewarded to user";
                                     
-                                    // Notify user about reward
-                                    $rewardMsg = "Congratulations! You received {$task->buckx_allocated} BuckX reward for completing task '{$taskLabel}'";
+                                    // Notify user about reward with project details
+                                    $projectName = $project->name ?? 'Project';
+                                    $rewardMsg = "Congratulations! You received {$task->buckx_allocated} BuckX reward from '{$projectName}' project for completing task '{$taskLabel}'";
                                     $this->notificationModel->createNotification([
                                         'user_id' => $task->assigned_to,
                                         'type' => 'buckx_reward',

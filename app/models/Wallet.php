@@ -276,13 +276,32 @@ class Wallet {
     ============================================================ */
 
     /**
-     * Get pending Buckx allocations for an organization
+     * Mark pending allocations older than 1 year as expired
+     */
+    public function expireOldAllocations() {
+        $this->db->query("
+            UPDATE project_tasks 
+            SET buckx_allocated = 0, buckx_distributed = 2, buckx_distributed_at = NOW()
+            WHERE buckx_allocated > 0 
+            AND buckx_distributed = 0 
+            AND created_at < DATE_SUB(NOW(), INTERVAL 1 YEAR)
+            AND status != 'done'
+        ");
+        return $this->db->execute();
+    }
+
+    /**
+     * Get pending Buckx allocations for an organization (excluding expired ones)
      */
     public function getPendingAllocations($organizationId) {
+        // First expire old allocations
+        $this->expireOldAllocations();
+        
         $this->db->query("
             SELECT pt.id, pt.title, pt.assigned_to, pt.buckx_allocated, 
                    u.username as assigned_user, u.profile_picture,
-                   p.name as project_name, p.id as project_id
+                   p.name as project_name, p.id as project_id,
+                   pt.created_at
             FROM project_tasks pt
             INNER JOIN projects p ON pt.project_id = p.id
             LEFT JOIN users u ON pt.assigned_to = u.id
@@ -290,6 +309,7 @@ class Wallet {
             AND pt.buckx_allocated > 0 
             AND pt.buckx_distributed = 0
             AND pt.status != 'done'
+            AND pt.created_at > DATE_SUB(NOW(), INTERVAL 1 YEAR)
             ORDER BY pt.created_at DESC
         ");
         $this->db->bind(':org_id', $organizationId);
@@ -297,7 +317,7 @@ class Wallet {
     }
 
     /**
-     * Get total pending Buckx allocation for an organization
+     * Get total pending Buckx allocation for an organization (excluding expired ones)
      */
     public function getTotalPendingAllocation($organizationId) {
         $this->db->query("
@@ -307,6 +327,7 @@ class Wallet {
             WHERE p.organization_id = :org_id 
             AND pt.buckx_allocated > 0 
             AND pt.buckx_distributed = 0
+            AND pt.created_at > DATE_SUB(NOW(), INTERVAL 1 YEAR)
         ");
         $this->db->bind(':org_id', $organizationId);
         $result = $this->db->single();

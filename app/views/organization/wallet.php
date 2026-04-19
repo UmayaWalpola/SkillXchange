@@ -30,9 +30,9 @@
     <?php endif; ?>
 
     <!-- Low Balance Warning -->
-    <?php if (floatval(str_replace(',', '', $data['balance'])) <= $data['lowBalanceThreshold']): ?>
+    <?php if (floatval(str_replace(',', '', $data['availableBalance'] ?? $data['balance'])) <= $data['lowBalanceThreshold']): ?>
         <div class="alert alert-warning">
-            Your BuckX balance is running low!
+            Your available BuckX balance is running low!
         </div>
     <?php endif; ?>
     
@@ -40,7 +40,7 @@
     <div class="stats-row">
         <div class="stat-card balance-card">
             <div class="stat-value" id="currentBalance"><?= $data['balance'] ?></div>
-            <div class="stat-label">Current BuckX Balance</div>
+            <div class="stat-label">BuckX Balance</div>
             <a href="<?= URLROOT ?>/wallet/purchaseBuckx" class="btn-primary" style="margin-top: 1rem; padding: 0.7rem 1.5rem; font-size: 0.95rem;">
             <i class="ph ph-credit-card"></i> More BuckX
             </a>
