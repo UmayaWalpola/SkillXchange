@@ -17,6 +17,7 @@ class Database {
         ];
         try {
             $this->dbh = new PDO($dsn, $this->user, $this->pass, $options);
+            $this->dbh->exec("SET time_zone = '" . DB_TIMEZONE_OFFSET . "'");
         } catch (PDOException $e) {
             die('Database Connection Error: ' . $e->getMessage());
         }

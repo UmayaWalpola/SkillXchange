@@ -7,6 +7,8 @@ define('APPROOT', dirname(dirname(__FILE__)) . '/app');
 define('BASE_URL', 'http://localhost/SkillXchange/public');
 define('URLROOT', 'http://localhost/SkillXchange/public');
 define('SYSTEM_REWARD_SENDER_ID', 1);
+define('APP_TIMEZONE', 'Asia/Colombo');
+define('DB_TIMEZONE_OFFSET', '+05:30');
 
 // Site name (for reference in headers, titles, etc.)
 define('SITENAME', 'SkillXchange');
@@ -23,6 +25,8 @@ if (file_exists(__DIR__ . '/db.local.php')) {
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
+date_default_timezone_set(APP_TIMEZONE);
 
 // Mail configuration (legacy constant style)
 // NOTE: Do not commit real credentials. Put local credentials in app/config/mail.local.php (gitignored).
@@ -49,4 +53,3 @@ if (!defined('MAIL_FROM')) {
 if (!defined('MAIL_NAME')) {
     define('MAIL_NAME', 'SkillXchange');
 }
-

@@ -273,10 +273,42 @@ function scrollToBottom() {
     if (container) container.scrollTop = container.scrollHeight;
 }
 
+function parseSqlTimestamp(timestamp) {
+    if (!timestamp) return null;
+    if (timestamp instanceof Date) return timestamp;
+
+    const normalized = String(timestamp).trim().replace(' ', 'T');
+    const match = normalized.match(
+        /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/
+    );
+
+    if (match) {
+        const [, year, month, day, hour, minute, second = '0'] = match;
+        return new Date(
+            Number(year),
+            Number(month) - 1,
+            Number(day),
+            Number(hour),
+            Number(minute),
+            Number(second)
+        );
+    }
+
+    const fallback = new Date(timestamp);
+    return Number.isNaN(fallback.getTime()) ? null : fallback;
+}
+
 function formatMessageTime(timestamp) {
-    const date = new Date(timestamp);
+    const date = parseSqlTimestamp(timestamp);
+    if (!date) return '';
+
     const now  = new Date();
     const diff = now - date;
+
+    if (diff < 0) {
+        return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+
     if (diff < 60000)    return 'Just now';
     if (diff < 3600000)  return `${Math.floor(diff / 60000)}m ago`;
     if (date.toDateString() === now.toDateString())
