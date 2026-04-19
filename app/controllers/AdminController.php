@@ -30,7 +30,7 @@ class AdminController extends Controller {
 
     //user management- get all users, view user details
     public function users() {
-        $data = ['users' => $this->adminModel->getAllUsers()];
+        $data = ['users' => $this->adminModel->getAllNonStaffUsers()];
         $this->view('admin/admin_users', $data);
     }
 

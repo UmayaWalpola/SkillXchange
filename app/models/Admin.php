@@ -40,11 +40,13 @@ class Admin {
         }
     }
 
-    public function getAllUsers() {
+    // Get all non-staff users (exclude admin, quiz_manager, community_admin, manager)
+    public function getAllNonStaffUsers() {
         try {
             $this->db->query(
                 "SELECT id, username, email, role, status, created_at, warning_count
-                 FROM users WHERE role != 'admin'
+                 FROM users 
+                 WHERE role NOT IN ('admin', 'quiz_manager', 'community_admin', 'manager')
                  ORDER BY created_at DESC"
             );
             return $this->db->resultSet();
