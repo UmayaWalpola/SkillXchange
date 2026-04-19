@@ -205,16 +205,23 @@ class Admin {
     public function getProjectMemberReports() {
         try {
             $this->db->query(
-                "SELECT ur.*,
+                "SELECT ur.id,
+                        ur.project_id,
+                        ur.reported_user_id,
+                        ur.reporter_org_id,
+                        ur.reason,
+                        ur.details AS description,
+                        ur.status,
+                        ur.reported_at,
                         reporter.username AS reporter_name,
                         reported.username AS reported_name,
                         reported.email    AS reported_email,
                         reported.warning_count,
                         p.name            AS project_name
                 FROM user_reports ur
-                JOIN users reporter ON ur.reporter_org_id  = reporter.id
-                JOIN users reported ON ur.reported_user_id = reported.id
-                JOIN projects p     ON ur.project_id   = p.id
+                LEFT JOIN users reporter ON ur.reporter_org_id  = reporter.id
+                LEFT JOIN users reported ON ur.reported_user_id = reported.id
+                LEFT JOIN projects p     ON ur.project_id   = p.id
                 ORDER BY ur.reported_at DESC"
             );
             return $this->db->resultSet();

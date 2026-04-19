@@ -138,7 +138,7 @@ public function warnUser() {
     }
 
     if ($this->adminModel->warnUser($userId, $_SESSION['user_id'], $reason)) {
-        $this->adminModel->updateProjectReport($reportId, 'warned');
+        $this->adminModel->updateProjectReport($reportId, 'reviewed');
 
         $db = new Database();
         $db->query(

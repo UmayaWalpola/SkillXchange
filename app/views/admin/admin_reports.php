@@ -42,11 +42,11 @@
                 <?php foreach ($data['reports'] as $r): ?>
                 <tr>
                     <td>
-                        <?= htmlspecialchars($r->reported_name) ?>
-                        <br><small style="color:#aaa"><?= htmlspecialchars($r->reported_email) ?></small>
+                        <?= htmlspecialchars($r->reported_name ?? 'Unknown User') ?>
+                        <br><small style="color:#aaa"><?= htmlspecialchars($r->reported_email ?? 'N/A') ?></small>
                     </td>
-                    <td><?= htmlspecialchars($r->reporter_name) ?></td>
-                    <td><?= htmlspecialchars($r->project_name) ?></td>
+                    <td><?= htmlspecialchars($r->reporter_name ?? 'Unknown Org') ?></td>
+                    <td><?= htmlspecialchars($r->project_name ?? 'Unknown Project') ?></td>
                     <td><?= htmlspecialchars($r->reason) ?>
                         <?php if (!empty($r->description)): ?>
                             <br><small style="color:#aaa"><?= htmlspecialchars($r->description) ?></small>
@@ -57,18 +57,16 @@
                             <?= ucfirst($r->status) ?>
                         </span>
                     </td>
-                    <td><?= date('M d, Y', strtotime($r->created_at)) ?></td>
+                    <td><?= date('M d, Y', strtotime($r->reported_at)) ?></td>
                     <td>
                         <?php if ($r->status === 'pending'): ?>
-                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                            <!-- Warn button triggers inline form -->
-                            <button class="btn-outline" style="color:#d97706;border-color:#d97706;font-size:13px;"
-                                onclick="document.getElementById('warn-<?= $r->id ?>').classList.toggle('open')">
-                                 Warn
+                        <div class="action-buttons">
+                            <button class="btn-outline" onclick="document.getElementById('warn-<?= $r->id ?>').classList.toggle('open')">
+                                Warn
                             </button>
                             <form method="POST" action="<?= URLROOT ?>/admin/dismissReport">
                                 <input type="hidden" name="report_id" value="<?= $r->id ?>">
-                                <button type="submit" class="btn-outline" style="font-size:13px;">Dismiss</button>
+                                <button type="submit" class="btn-outline">Dismiss</button>
                             </form>
                         </div>
 
