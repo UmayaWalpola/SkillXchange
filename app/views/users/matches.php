@@ -41,9 +41,21 @@
 
                 <div class="requests-list">
                     <?php foreach ($data['pendingRequests'] as $request): ?>
+                        <?php
+                            $requestAvatar = $request['sender_avatar'] ?? '';
+                            $requestHasImage = is_string($requestAvatar) && strpos($requestAvatar, 'uploads/') === 0;
+                        ?>
                         <div class="request-card">
                             <div class="request-avatar">
-                                <?= htmlspecialchars($request['sender_avatar']); ?>
+                                <?php if ($requestHasImage): ?>
+                                    <img
+                                        src="<?= URLROOT ?>/<?= htmlspecialchars($requestAvatar); ?>"
+                                        alt="<?= htmlspecialchars($request['sender_name']); ?> profile picture"
+                                        class="avatar-image"
+                                    >
+                                <?php else: ?>
+                                    <?= htmlspecialchars($requestAvatar ?: strtoupper(substr($request['sender_name'] ?? 'U', 0, 2))); ?>
+                                <?php endif; ?>
                             </div>
 
                             <div class="request-info">
@@ -131,6 +143,8 @@
                             $iTeach = !empty($match['i_teach']) && is_array($match['i_teach']) ? $match['i_teach'] : [];
                             $theyTeach = !empty($match['they_teach']) && is_array($match['they_teach']) ? $match['they_teach'] : [];
                             $matchType = $match['match_type'] ?? 'single';
+                            $matchAvatar = $match['avatar'] ?? '';
+                            $matchHasImage = is_string($matchAvatar) && strpos($matchAvatar, 'uploads/') === 0;
                             $chatSkill = '';
                             $chatDir = '';
 
@@ -158,7 +172,15 @@
 
                             <div class="match-header">
                                 <div class="match-avatar">
-                                    <?= htmlspecialchars($match['avatar'] ?? '??'); ?>
+                                    <?php if ($matchHasImage): ?>
+                                        <img
+                                            src="<?= URLROOT ?>/<?= htmlspecialchars($matchAvatar); ?>"
+                                            alt="<?= htmlspecialchars($match['name']); ?> profile picture"
+                                            class="avatar-image"
+                                        >
+                                    <?php else: ?>
+                                        <?= htmlspecialchars($matchAvatar ?: '??'); ?>
+                                    <?php endif; ?>
                                 </div>
 
                                 <div class="match-basic-info">
