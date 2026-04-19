@@ -96,7 +96,7 @@ class WalletController extends Controller {
         $this->view('organization/purchase_buckx', $data);
     }
 
-    //Create Stripe checkout session (AJAX)
+    //Create Stripe checkout session 
     public function createCheckoutSession() {
         header('Content-Type: application/json');
 
@@ -294,7 +294,7 @@ class WalletController extends Controller {
         exit;
     }
 
-    //Get current balance (AJAX)
+    //Get current balance 
     public function getCurrentBalance() {
         header('Content-Type: application/json');
 

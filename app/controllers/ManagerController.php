@@ -323,7 +323,7 @@ class ManagerController extends Controller {
             foreach ($users as $user) {
                 $this->managerModel->sendNotification(
                     $user->id,
-                    '📢 Updated: ' . $title,
+                    ' Updated: ' . $title,
                     $content
                 );
             }
