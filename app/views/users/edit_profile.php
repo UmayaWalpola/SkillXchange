@@ -53,137 +53,151 @@ foreach ($availableSkills as $skillOption) {
 }
 ?>
 
-<div class="profile-setup-container">
-    <div class="setup-card">
-        <h1>Edit Your Profile</h1>
-        <p class="subtitle">Update your information and skills</p>
-
-        <?php if (!empty($data['errors'])): ?>
-            <div class="error-messages">
-                <?php foreach ($data['errors'] as $error): ?>
-                    <p class="error"><?= htmlspecialchars($error) ?></p>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
-
-        <form method="POST" action="<?= URLROOT ?>/users/editProfile" enctype="multipart/form-data">
-
-            <!-- Profile Picture -->
-            <div class="form-group">
-                <label>Profile Picture</label>
-
-                <?php if (!empty($data['user']['profile_picture'])): ?>
-                    <div class="current-picture">
-                        <img
-                            src="<?= URLROOT ?>/<?= htmlspecialchars($data['user']['profile_picture']) ?>"
-                            alt="Current profile picture"
-                            style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 10px;"
-                        >
-                        <p style="font-size: 0.9rem; color: #666;">Current picture</p>
+<main class="site-main">
+    <div class="dashboard-container">
+        <div class="dashboard-main">
+            <div class="profile-setup-container edit-profile-page">
+                <div class="setup-card">
+                    <div class="setup-header setup-header-left">
+                        <span class="setup-eyebrow">Profile Settings</span>
+                        <h1 class="setup-title">Edit Your Profile</h1>
+                        <p class="setup-subtitle">Update your details, refresh your bio, and keep your teaching and learning skills in sync.</p>
                     </div>
-                <?php endif; ?>
 
-                <input type="hidden" name="existing_profile_picture" value="<?= htmlspecialchars($data['user']['profile_picture'] ?? '') ?>">
-                <input type="file" name="profile_picture" accept="image/*">
-                <small>Leave empty to keep current picture. Max 5MB (JPG, PNG, GIF)</small>
-            </div>
-
-            <!-- Username -->
-            <div class="form-group">
-                <label for="username">Username *</label>
-                <input
-                    type="text"
-                    id="username"
-                    name="username"
-                    value="<?= htmlspecialchars($old['username'] ?? $data['user']['username'] ?? '') ?>"
-                    required
-                >
-            </div>
-
-            <!-- Bio -->
-            <div class="form-group">
-                <label for="bio">Bio</label>
-                <textarea
-                    id="bio"
-                    name="bio"
-                    rows="4"
-                    placeholder="Tell us about yourself..."
-                ><?= htmlspecialchars($old['bio'] ?? $data['user']['bio'] ?? '') ?></textarea>
-            </div>
-
-            <!-- Skills I Teach -->
-            <div class="form-section">
-                <h3>Skills I Can Teach</h3>
-                <div id="teach-skills-container">
-                    <?php foreach ($existingTeachSkills as $skill): ?>
-                        <div class="skill-row">
-                            <select name="teach_skills[]" class="skill-select">
-                                <option value="">Select a skill</option>
-                                <?php foreach ($availableSkills as $skillOption): ?>
-                                    <option
-                                        value="<?= htmlspecialchars($skillOption['skill_name']) ?>"
-                                        <?= (($skill['name'] ?? '') === $skillOption['skill_name']) ? 'selected' : '' ?>
-                                    >
-                                        <?= htmlspecialchars(ucwords(str_replace(['-', '_'], ' ', $skillOption['skill_name']))) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-
-                            <select name="teach_levels[]" class="level-select">
-                                <option value="">Level</option>
-                                <option value="beginner" <?= (($skill['level'] ?? '') === 'beginner') ? 'selected' : '' ?>>Beginner</option>
-                                <option value="intermediate" <?= (($skill['level'] ?? '') === 'intermediate') ? 'selected' : '' ?>>Intermediate</option>
-                                <option value="advanced" <?= (($skill['level'] ?? '') === 'advanced') ? 'selected' : '' ?>>Advanced</option>
-                            </select>
-
-                            <button type="button" class="remove-skill-btn" onclick="removeSkillRow(this)">Remove</button>
+                    <?php if (!empty($data['errors'])): ?>
+                        <div class="error-messages">
+                            <?php foreach ($data['errors'] as $error): ?>
+                                <p class="error"><?= htmlspecialchars($error) ?></p>
+                            <?php endforeach; ?>
                         </div>
-                    <?php endforeach; ?>
-                </div>
+                    <?php endif; ?>
 
-                <button type="button" class="add-skill-btn" onclick="addTeachSkill()">+ Add Teaching Skill</button>
-            </div>
+                    <form method="POST" action="<?= URLROOT ?>/users/editProfile" enctype="multipart/form-data" class="profile-setup-form">
 
-            <!-- Skills I Want to Learn -->
-            <div class="form-section">
-                <h3>Skills I Want to Learn</h3>
-                <div id="learn-skills-container">
-                    <?php foreach ($existingLearnSkills as $skill): ?>
-                        <div class="skill-row">
-                            <select name="learn_skills[]" class="skill-select">
-                                <option value="">Select a skill</option>
-                                <?php foreach ($availableSkills as $skillOption): ?>
-                                    <option
-                                        value="<?= htmlspecialchars($skillOption['skill_name']) ?>"
-                                        <?= (($skill['name'] ?? '') === $skillOption['skill_name']) ? 'selected' : '' ?>
-                                    >
-                                        <?= htmlspecialchars(ucwords(str_replace(['-', '_'], ' ', $skillOption['skill_name']))) ?>
-                                    </option>
+                        <!-- Profile Picture -->
+                        <section class="form-section">
+                            <h2 class="section-title">Basic Information</h2>
+                            <div class="section-divider"></div>
+
+                            <div class="form-group">
+                                <label>Profile Picture</label>
+
+                                <?php if (!empty($data['user']['profile_picture'])): ?>
+                                    <div class="current-picture">
+                                        <img
+                                            src="<?= URLROOT ?>/<?= htmlspecialchars($data['user']['profile_picture']) ?>"
+                                            alt="Current profile picture"
+                                            class="current-picture-image"
+                                        >
+                                        <p class="current-picture-label">Current picture</p>
+                                    </div>
+                                <?php endif; ?>
+
+                                <input type="hidden" name="existing_profile_picture" value="<?= htmlspecialchars($data['user']['profile_picture'] ?? '') ?>">
+                                <input type="file" name="profile_picture" accept="image/*">
+                                <small class="field-hint">Leave empty to keep your current picture. Max 5MB (JPG, PNG, GIF)</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="username">Username *</label>
+                                <input
+                                    type="text"
+                                    id="username"
+                                    name="username"
+                                    value="<?= htmlspecialchars($old['username'] ?? $data['user']['username'] ?? '') ?>"
+                                    required
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="bio">Bio</label>
+                                <textarea
+                                    id="bio"
+                                    name="bio"
+                                    rows="4"
+                                    placeholder="Tell us about yourself..."
+                                ><?= htmlspecialchars($old['bio'] ?? $data['user']['bio'] ?? '') ?></textarea>
+                            </div>
+                        </section>
+
+                        <!-- Skills I Teach -->
+                        <section class="form-section">
+                            <h2 class="section-title">Skills I Can Teach</h2>
+                            <p class="section-description">Keep your teaching skills current so matching stays relevant.</p>
+                            <div id="teach-skills-container" class="skills-group dynamic-skills-group">
+                                <?php foreach ($existingTeachSkills as $skill): ?>
+                                    <div class="skill-row">
+                                        <select name="teach_skills[]" class="skill-select">
+                                            <option value="">Select a skill</option>
+                                            <?php foreach ($availableSkills as $skillOption): ?>
+                                                <option
+                                                    value="<?= htmlspecialchars($skillOption['skill_name']) ?>"
+                                                    <?= (($skill['name'] ?? '') === $skillOption['skill_name']) ? 'selected' : '' ?>
+                                                >
+                                                    <?= htmlspecialchars(ucwords(str_replace(['-', '_'], ' ', $skillOption['skill_name']))) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+
+                                        <select name="teach_levels[]" class="level-select">
+                                            <option value="">Level</option>
+                                            <option value="beginner" <?= (($skill['level'] ?? '') === 'beginner') ? 'selected' : '' ?>>Beginner</option>
+                                            <option value="intermediate" <?= (($skill['level'] ?? '') === 'intermediate') ? 'selected' : '' ?>>Intermediate</option>
+                                            <option value="advanced" <?= (($skill['level'] ?? '') === 'advanced') ? 'selected' : '' ?>>Advanced</option>
+                                        </select>
+
+                                        <button type="button" class="remove-skill-btn" onclick="removeSkillRow(this)">Remove</button>
+                                    </div>
                                 <?php endforeach; ?>
-                            </select>
+                            </div>
 
-                            <select name="learn_levels[]" class="level-select">
-                                <option value="">Level</option>
-                                <option value="beginner" <?= (($skill['level'] ?? '') === 'beginner') ? 'selected' : '' ?>>Beginner</option>
-                                <option value="intermediate" <?= (($skill['level'] ?? '') === 'intermediate') ? 'selected' : '' ?>>Intermediate</option>
-                                <option value="advanced" <?= (($skill['level'] ?? '') === 'advanced') ? 'selected' : '' ?>>Advanced</option>
-                            </select>
+                            <button type="button" class="add-skill-btn" onclick="addTeachSkill()">+ Add Teaching Skill</button>
+                        </section>
 
-                            <button type="button" class="remove-skill-btn" onclick="removeSkillRow(this)">Remove</button>
+                        <!-- Skills I Want to Learn -->
+                        <section class="form-section">
+                            <h2 class="section-title">Skills I Want to Learn</h2>
+                            <p class="section-description">Adjust your learning goals to keep recommendations and matches aligned.</p>
+                            <div id="learn-skills-container" class="skills-group dynamic-skills-group">
+                                <?php foreach ($existingLearnSkills as $skill): ?>
+                                    <div class="skill-row">
+                                        <select name="learn_skills[]" class="skill-select">
+                                            <option value="">Select a skill</option>
+                                            <?php foreach ($availableSkills as $skillOption): ?>
+                                                <option
+                                                    value="<?= htmlspecialchars($skillOption['skill_name']) ?>"
+                                                    <?= (($skill['name'] ?? '') === $skillOption['skill_name']) ? 'selected' : '' ?>
+                                                >
+                                                    <?= htmlspecialchars(ucwords(str_replace(['-', '_'], ' ', $skillOption['skill_name']))) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+
+                                        <select name="learn_levels[]" class="level-select">
+                                            <option value="">Level</option>
+                                            <option value="beginner" <?= (($skill['level'] ?? '') === 'beginner') ? 'selected' : '' ?>>Beginner</option>
+                                            <option value="intermediate" <?= (($skill['level'] ?? '') === 'intermediate') ? 'selected' : '' ?>>Intermediate</option>
+                                            <option value="advanced" <?= (($skill['level'] ?? '') === 'advanced') ? 'selected' : '' ?>>Advanced</option>
+                                        </select>
+
+                                        <button type="button" class="remove-skill-btn" onclick="removeSkillRow(this)">Remove</button>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+
+                            <button type="button" class="add-skill-btn" onclick="addLearnSkill()">+ Add Learning Skill</button>
+                        </section>
+
+                        <div class="form-actions">
+                            <a href="<?= URLROOT ?>/users/userprofile" class="cancel-btn">Cancel</a>
+                            <button type="submit" class="save-btn">Save Changes</button>
                         </div>
-                    <?php endforeach; ?>
+                    </form>
                 </div>
-
-                <button type="button" class="add-skill-btn" onclick="addLearnSkill()">+ Add Learning Skill</button>
             </div>
-
-            <div class="form-actions">
-                <a href="<?= URLROOT ?>/users/userprofile" class="cancel-btn">Cancel</a>
-                <button type="submit" class="save-btn">Save Changes</button>
-            </div>
-        </form>
+        </div>
     </div>
-</div>
+</main>
 
 <script>
 const skillOptionsHtml = `<?= $skillOptionsHtml ?>`;

@@ -2,31 +2,67 @@
    profile_setup.css  —  SkillXchange
    ============================================================ */
 
-/* ---------- CSS variables (override in :root of global.css) */
+/* ---------- Local aliases built from global.css tokens */
 :root {
-    --primary-blue:  #2563eb;
-    --accent-blue:   #60a5fa;
-    --dark-bg:       #1e293b;
-    --blue-bg:       #eff6ff;
-    --white-bg:      #ffffff;
-    --border-color:  #dbeafe;
-    --muted:         #64748b;
+    --border-color: #d6e5ee;
+    --muted: #5f6f7b;
+    --surface-tint: #eef6fb;
+    --surface-shadow: 0 20px 40px rgba(18, 18, 13, 0.08);
 }
 
 .header {
+    background: var(--dark-bg) !important;
     left: 0 !important;
     width: 100% !important;
+    box-shadow: 0 12px 32px rgba(18, 18, 13, 0.18) !important;
+}
+
+.sidebar {
+    background: var(--primary-blue);
 }
 
 .dashboard-container {
-    margin-left: 0 !important;
+    min-height: calc(100vh - 100px);
+}
+
+.dashboard-main {
+    background:
+        radial-gradient(circle at top right, rgba(156, 199, 223, 0.35), transparent 28%),
+        linear-gradient(180deg, rgba(213, 234, 246, 0.4) 0%, rgba(255, 255, 255, 0.98) 48%);
 }
 
 /* ---------- Page container */
 .profile-setup-container {
-    max-width: 780px;
-    margin: 2.5rem auto;
+    max-width: 920px;
+    margin: 0 auto;
     padding: 0 1.5rem 3rem;
+}
+
+.setup-card {
+    background: var(--white-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 24px;
+    padding: 2rem;
+    box-shadow: var(--surface-shadow);
+}
+
+.setup-header-left {
+    text-align: left;
+    margin-bottom: 2.25rem;
+}
+
+.setup-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.85rem;
+    margin-bottom: 1rem;
+    border-radius: 999px;
+    background: var(--blue-bg);
+    color: var(--primary-blue);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
 }
 
 /* ---------- Page header */
@@ -39,12 +75,13 @@
     font-size: 2rem;
     font-weight: 700;
     color: var(--dark-bg);
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.55rem;
 }
 
 .setup-subtitle {
-    font-size: 0.95rem;
+    font-size: 1rem;
     color: var(--muted);
+    max-width: 640px;
 }
 
 /* ---------- Progress bar */
@@ -83,15 +120,17 @@
 
 /* ---------- Section cards */
 .form-section {
-    background: var(--white-bg);
+    background: linear-gradient(180deg, rgba(213, 234, 246, 0.2), rgba(255, 255, 255, 0.98));
     border: 1.5px solid var(--border-color);
-    border-radius: 14px;
+    border-radius: 18px;
     padding: 1.75rem;
-    transition: box-shadow 0.2s ease;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
 .form-section:hover {
-    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.08);
+    box-shadow: 0 12px 24px rgba(101, 131, 150, 0.1);
+    border-color: #b5cfde;
+    transform: translateY(-1px);
 }
 
 .section-title {
@@ -134,13 +173,13 @@
 }
 
 .badge-required {
-    background: #dbeafe;
+    background: var(--blue-bg);
     color: var(--primary-blue);
 }
 
 .badge-optional {
-    background: #dcfce7;
-    color: #166534;
+    background: #edf6fb;
+    color: var(--dark-bg);
 }
 
 /* ---------- Form groups & inputs */
@@ -164,11 +203,13 @@
 }
 
 .form-group input[type="text"],
-.form-group select {
+.form-group input[type="file"],
+.form-group select,
+.form-group textarea {
     width: 100%;
-    padding: 10px 14px;
-    border: 1.5px solid #cbd5e1;
-    border-radius: 8px;
+    padding: 0.95rem 1rem;
+    border: 1.5px solid #c8dbe7;
+    border-radius: 12px;
     font-size: 0.95rem;
     background: var(--white-bg);
     color: var(--dark-bg);
@@ -178,14 +219,23 @@
 }
 
 .form-group input[type="text"]:focus,
-.form-group select:focus {
+.form-group input[type="file"]:focus,
+.form-group select:focus,
+.form-group textarea:focus {
     border-color: var(--primary-blue);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    box-shadow: 0 0 0 4px rgba(101, 131, 150, 0.14);
 }
 
 .form-group input[type="text"]:hover:not(:focus),
-.form-group select:hover:not(:focus) {
+.form-group input[type="file"]:hover:not(:focus),
+.form-group select:hover:not(:focus),
+.form-group textarea:hover:not(:focus) {
     border-color: var(--accent-blue);
+}
+
+.form-group textarea {
+    min-height: 132px;
+    resize: vertical;
 }
 
 .field-hint {
@@ -274,9 +324,68 @@
     margin-bottom: 0;
 }
 
+.dynamic-skills-group {
+    gap: 1rem;
+}
+
+.skill-row {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(160px, 1fr) auto;
+    gap: 0.9rem;
+    align-items: center;
+    padding: 1rem;
+    background: var(--surface-tint);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+}
+
+.skill-select,
+.level-select {
+    margin-bottom: 0;
+}
+
+.add-skill-btn,
+.remove-skill-btn,
+.cancel-btn,
+.save-btn {
+    border-radius: 10px;
+    font-weight: 600;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.add-skill-btn {
+    margin-top: 1rem;
+    padding: 0.85rem 1.15rem;
+    border: 1px dashed var(--primary-blue);
+    background: var(--blue-bg);
+    color: var(--primary-blue);
+    cursor: pointer;
+}
+
+.add-skill-btn:hover {
+    background: #e8f3f9;
+    transform: translateY(-1px);
+}
+
+.remove-skill-btn {
+    padding: 0.85rem 1rem;
+    border: 1px solid #d5dee4;
+    background: var(--white-bg);
+    color: var(--dark-bg);
+    cursor: pointer;
+}
+
+.remove-skill-btn:hover {
+    border-color: var(--primary-blue);
+    color: var(--primary-blue);
+}
+
 /* ---------- Submit area */
 .form-actions {
-    text-align: center;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1rem;
     padding: 1.5rem 0 0;
 }
 
@@ -306,6 +415,84 @@
     margin-top: 0.75rem;
     font-size: 0.8rem;
     color: var(--muted);
+}
+
+.cancel-btn,
+.save-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 150px;
+    padding: 0.95rem 1.4rem;
+    text-decoration: none;
+}
+
+.cancel-btn {
+    border: 1px solid var(--border-color);
+    background: var(--white-bg);
+    color: var(--dark-bg);
+}
+
+.cancel-btn:hover {
+    border-color: var(--primary-blue);
+    color: var(--primary-blue);
+}
+
+.save-btn {
+    border: 1px solid var(--primary-blue);
+    background: var(--primary-blue);
+    color: var(--white-bg);
+    cursor: pointer;
+    box-shadow: 0 12px 24px rgba(101, 131, 150, 0.18);
+}
+
+.save-btn:hover {
+    background: var(--accent-blue);
+    border-color: var(--accent-blue);
+    color: var(--dark-bg);
+    transform: translateY(-1px);
+}
+
+.current-picture {
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 0.85rem 1rem;
+    background: var(--surface-tint);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+}
+
+.current-picture-image {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--white-bg);
+    box-shadow: 0 6px 18px rgba(18, 18, 13, 0.12);
+}
+
+.current-picture-label {
+    font-size: 0.92rem;
+    color: var(--muted);
+}
+
+.error-messages {
+    background: #fff5f5;
+    color: #c53030;
+    padding: 1.1rem 1.25rem;
+    border-radius: 14px;
+    border-left: 4px solid #e53e3e;
+    margin-bottom: 1.5rem;
+}
+
+.error {
+    margin: 0;
+}
+
+.error + .error {
+    margin-top: 0.4rem;
 }
 
 /* ---------- Error messages */
@@ -350,6 +537,11 @@
         padding: 0 1rem 2rem;
     }
 
+    .setup-card {
+        padding: 1.25rem;
+        border-radius: 18px;
+    }
+
     .setup-title {
         font-size: 1.6rem;
     }
@@ -362,7 +554,18 @@
         grid-template-columns: 1fr;
     }
 
-    .btn-large {
+    .skill-row {
+        grid-template-columns: 1fr;
+    }
+
+    .btn-large,
+    .cancel-btn,
+    .save-btn {
         width: 100%;
+    }
+
+    .form-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
     }
 }
