@@ -4,8 +4,17 @@ class ManagerController extends Controller {
     private $managerModel;
 
     public function __construct() {
+        // Check if user is logged in and is manager
+        if (!isset($_SESSION['user_id'])) {
+            header('Location: ' . URLROOT . '/auth/signin');
+            exit;
+        }
+        if ($_SESSION['role'] !== 'manager') {
+            header('Location: ' . URLROOT . '/home');
+            exit;
+        }
         require_once '../app/models/Manager.php';
-        require_once '../app/helpers/Mailer.php'; 
+        require_once '../app/helpers/Mailer.php';
         $this->managerModel = new Manager();
     }
 
@@ -97,7 +106,7 @@ class ManagerController extends Controller {
 
     // USER MANAGEMENT
     public function users() {
-        $users = $this->managerModel->getAllAdminUsers();
+        $users = $this->managerModel->getAllAdminUsers($_SESSION['user_id']);
 
         $data = [
             'title'   => 'User Management',

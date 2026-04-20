@@ -91,14 +91,23 @@ class Manager {
     }
 
     // USERS (admin, quiz_manager, manager, community_admin)
-    // Get all admin-type users
-    public function getAllAdminUsers() {
-        $this->db->query("
-            SELECT id, username AS name, email, role, status, created_at 
-            FROM users 
-            WHERE role IN ('admin', 'quiz_manager', 'manager', 'community_admin')
-            ORDER BY created_at DESC
-        ");
+    public function getAllAdminUsers($currentUserId = null) {
+        $query = "
+            SELECT id, username AS name, email, role, status, created_at
+            FROM users
+            WHERE role IN ('admin', 'quiz_manager', 'manager', 'community_admin', 'organization')";
+
+        // Exclude current manager from the list
+        if ($currentUserId) {
+            $query .= " AND id != :current_user_id";
+        }
+
+        $query .= " ORDER BY created_at DESC";
+
+        $this->db->query($query);
+        if ($currentUserId) {
+            $this->db->bind(':current_user_id', $currentUserId);
+        }
         return $this->db->resultSet();
     }
 

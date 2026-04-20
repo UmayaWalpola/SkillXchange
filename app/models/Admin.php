@@ -74,7 +74,7 @@ class Admin {
                         created_at,
                         {$warningCountSelect}
                  FROM users 
-                 WHERE role != 'admin'
+                 WHERE role = 'individual'
                  ORDER BY created_at DESC"
             );
             return $this->db->resultSet();
