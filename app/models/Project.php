@@ -359,7 +359,7 @@ class Project {
     }
 
     // ============================================================
-    // ROLE ASSIGNMENT / MEMBERS MANAGEMENT (Assigned to: Kithsara)
+    // ROLE ASSIGNMENT / MEMBERS MANAGEMENT 
     // ============================================================
     
     // Get all accepted members for a project
@@ -863,6 +863,9 @@ class Project {
         return $this->db->single() ? true : false;
     }
 
+}
+
+?>
 }
 
 ?>

@@ -994,6 +994,16 @@
 }
 
 /* ===== PROJECT CREATION FORM ===== */
+/* Feature flag: project priority dropdown (default hidden).
+   To show it, change `--project-priority-display` to `block`. */
+:root {
+    --project-priority-display: none;
+}
+
+.project-priority-field {
+    display: var(--project-priority-display);
+}
+
 .form-container {
     max-width: 900px;
     margin: 0 auto;

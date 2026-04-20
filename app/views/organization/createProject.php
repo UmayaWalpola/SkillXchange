@@ -26,6 +26,12 @@
             $selectedSkills = $isEdit
                 ? array_values(array_filter(array_map('trim', explode(',', (string)($project->required_skills ?? '')))))
                 : [];
+
+            // Project priority (UI can be toggled via CSS; backend still supports it with a default)
+            $priorityValue = $isEdit ? strtolower((string)($project->priority ?? 'medium')) : 'medium';
+            if (!in_array($priorityValue, ['low', 'medium', 'high'], true)) {
+                $priorityValue = 'medium';
+            }
         ?>
 
         <h1><?= $title ?></h1>
@@ -117,6 +123,16 @@
                     <div class="small-card">
                         <label>Max Members</label>
                         <input type="number" name="max_members" min="1" value="<?= $isEdit ? $project->max_members : 5 ?>" required>
+                    </div>
+
+                    <!-- Priority (hidden by default via CSS: .project-priority-field) -->
+                    <div class="small-card project-priority-field">
+                        <label>Priority</label>
+                        <select name="priority" class="form-select">
+                            <option value="low" <?= $priorityValue === 'low' ? 'selected' : '' ?>>Low</option>
+                            <option value="medium" <?= $priorityValue === 'medium' ? 'selected' : '' ?>>Medium</option>
+                            <option value="high" <?= $priorityValue === 'high' ? 'selected' : '' ?>>High</option>
+                        </select>
                     </div>
 
                     <div class="small-card">

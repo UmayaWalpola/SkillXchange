@@ -127,12 +127,18 @@ class OrganizationController extends Controller {
             
             // Clean up the user inputs
             $category = strtolower(trim((string)($_POST['category'] ?? '')));
+            $priority = strtolower(trim((string)($_POST['priority'] ?? 'medium')));
             $rawRequiredSkills = trim((string)($_POST['required_skills'] ?? ''));
             $startDate = trim((string)($_POST['start_date'] ?? ''));
             $endDate = trim((string)($_POST['end_date'] ?? ''));
             $skillsValidation = null; // Will store skill checks later
             // For creation require future dates (from tomorrow)
             $tomorrow = date('Y-m-d', strtotime('+1 day'));
+
+            // Keep priority safe even if the UI is hidden / tampered with.
+            if (!in_array($priority, ['low', 'medium', 'high'], true)) {
+                $priority = 'medium';
+            }
 
             // --- Step 1: Form Validation ---
             
@@ -198,6 +204,7 @@ class OrganizationController extends Controller {
                     'name'            => trim($_POST['name']),
                     'category'        => $category,
                     'status'          => !empty($_POST['status']) ? trim($_POST['status']) : 'active', // Default is 'active'
+                    'priority'        => $priority,
                     'description'     => trim($_POST['description']),
                     'max_members'     => (int)$_POST['max_members'],
                     'start_date'      => $startDate !== '' ? $startDate : null,
@@ -270,10 +277,15 @@ class OrganizationController extends Controller {
 
             $errors = [];
             $category = strtolower(trim((string)($_POST['category'] ?? '')));
+            $priority = strtolower(trim((string)($_POST['priority'] ?? ($project->priority ?? 'medium'))));
             $rawRequiredSkills = trim((string)($_POST['required_skills'] ?? ''));
             $startDate = trim((string)($_POST['start_date'] ?? ''));
             $endDate = trim((string)($_POST['end_date'] ?? ''));
             $skillsValidation = null;
+
+            if (!in_array($priority, ['low', 'medium', 'high'], true)) {
+                $priority = 'medium';
+            }
 
             // Form validation - same basics as Create Project
             if (empty(trim($_POST['name']))) {
@@ -328,6 +340,7 @@ class OrganizationController extends Controller {
                     'name'            => trim($_POST['name']),
                     'category'        => $category,
                     'status'          => trim($_POST['status']), // Editing lets you change status
+                    'priority'        => $priority,
                     'description'     => trim($_POST['description']),
                     'max_members'     => (int)$_POST['max_members'],
                     'start_date'      => $startDate !== '' ? $startDate : null,

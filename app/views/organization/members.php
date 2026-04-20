@@ -268,7 +268,11 @@
                                         <option value="custom" <?= ($isCustom ? 'selected' : '') ?>>Custom Role</option>
                                     </select>
 
-                                    <input type="text" name="custom_role" class="custom-role-input" id="custom_<?= $member->id ?>" placeholder="Enter custom role..." value="<?= ($isCustom ? htmlspecialchars($currentRole) : '') ?>" style="display:<?= ($isCustom ? 'inline-block' : 'none') ?>;padding:6px;border-radius:6px;border:1px solid #e1eefb;" />
+                                    <input type="text" name="custom_role" class="custom-role-input" id="custom_<?= $member->id ?>"
+       placeholder="Enter custom role..." value="<?= ($isCustom ? htmlspecialchars($currentRole) : '') ?>"
+       maxlength="100" pattern="^[^0-9]+$"
+       title="Role cannot contain numbers "
+       style="display:<?= ($isCustom ? 'inline-block' : 'none') ?>;padding:6px;border-radius:6px;border:1px solid #e1eefb;" />
 
                                     <button type="submit" class="btn btn-primary">Save Role</button>
                                 </form>

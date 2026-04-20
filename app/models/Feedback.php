@@ -414,6 +414,21 @@ class Feedback extends Database {
             'total_count' => $total_count
         ];
     }
+
+    // ADD before the closing } of the class (Line 417):
+public function getCategoryCount($user_id) {
+    $sql = "SELECT category, COUNT(*) as count
+            FROM user_feedback
+            WHERE user_id = :user_id
+            GROUP BY category
+            ORDER BY count DESC";
+
+    $stmt = $this->connect()->prepare($sql);
+    $stmt->bindValue(':user_id', $user_id);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
 }
 
 ?>
