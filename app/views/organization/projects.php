@@ -74,7 +74,6 @@
                             </div>
 
                             <div class="simple-project-meta">
-                                <span class="meta-item"><i class="ph ph-folder"></i> <?= ucfirst($project->category) ?></span>
                                 <span class="meta-item"><i class="ph ph-users"></i> <?= $project->current_members ?? 0 ?>/<?= $project->max_members ?> Members</span>
                             </div>
 
