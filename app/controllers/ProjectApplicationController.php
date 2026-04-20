@@ -103,6 +103,22 @@ class ProjectApplicationController extends Controller {
         $userId = $_SESSION['user_id'];
 
         $applied = $this->projectModel->applyToProjectAdvanced($projectId, $userId, $experience, $skills, $contribution, $commitment, $duration, $motivation, $portfolio);
+        if ($applied) {
+            $project = $this->projectModel->getProjectById($projectId);
+            if ($project && !empty($project->organization_id)) {
+                $notificationModel = $this->model('Notification');
+                $notificationModel->createNotification([
+                    'user_id' => (int)$project->organization_id,
+                    'type' => 'project_application_submitted',
+                    'message' => ($_SESSION['username'] ?? 'A user') . ' applied to "' . ($project->name ?? 'your project') . '".',
+                    'project_id' => $projectId,
+                    'target_url' => URLROOT . '/organization/applications',
+                    'entity_type' => 'project_application',
+                    'entity_id' => $projectId,
+                    'actor_user_id' => $userId
+                ]);
+            }
+        }
 
         if ($isAjax) {
             header('Content-Type: application/json');

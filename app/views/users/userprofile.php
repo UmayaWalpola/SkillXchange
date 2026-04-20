@@ -16,12 +16,18 @@
                     <a href="<?= URLROOT ?>/users/editProfile" class="edit-profile-btn">Edit details</a>
                 <?php endif; ?>
                 
+                <?php
+                    $profileImagePath = ltrim((string) ($data['user']['profile_picture'] ?? $data['user']['avatar'] ?? ''), '/');
+                    $hasProfileImage = $profileImagePath !== '' && strpos($profileImagePath, 'uploads/') === 0;
+                ?>
                 <div class="profile-info">
                     <div class="profile-avatar">
-                        <?php if (!empty($data['user']['avatar']) && strpos($data['user']['avatar'], 'uploads/') === 0): ?>
-                            <img src="<?= URLROOT ?>/<?= htmlspecialchars($data['user']['avatar']) ?>" 
-                                 alt="Profile Picture" 
-                                 style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                        <?php if ($hasProfileImage): ?>
+                            <img
+                                src="<?= URLROOT ?>/<?= htmlspecialchars($profileImagePath) ?>"
+                                alt="<?= htmlspecialchars($data['user']['name']); ?> profile picture"
+                                class="profile-avatar-image"
+                            >
                         <?php else: ?>
                             <?= htmlspecialchars($data['user']['avatar']); ?>
                         <?php endif; ?>

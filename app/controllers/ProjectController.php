@@ -380,6 +380,9 @@ class Books extends Controller {
 
         // Save via model
         $saved = $this->projectModel->saveFullApplication($data);
+        if ($saved) {
+            $this->notifyOrganizationOfApplication((int)$projectId, (int)$_SESSION['user_id']);
+        }
 
         if ($isAjax) {
             header('Content-Type: application/json');
@@ -399,6 +402,32 @@ class Books extends Controller {
 
         header('Location: ' . URLROOT . '/project/detail/' . $projectId);
         exit();
+    }
+
+    private function notifyOrganizationOfApplication(int $projectId, int $applicantId): void
+    {
+        $project = $this->projectModel->getProjectById($projectId);
+        if (!$project || empty($project->organization_id)) {
+            return;
+        }
+
+        $db = new Database();
+        $db->query("SELECT username FROM users WHERE id = :id LIMIT 1");
+        $db->bind(':id', $applicantId);
+        $applicant = $db->single();
+
+        $applicantName = $applicant->username ?? 'A user';
+        $notificationModel = $this->model('Notification');
+        $notificationModel->createNotification([
+            'user_id' => (int)$project->organization_id,
+            'type' => 'project_application_submitted',
+            'message' => $applicantName . ' applied to "' . ($project->name ?? 'your project') . '".',
+            'project_id' => $projectId,
+            'target_url' => URLROOT . '/organization/applications',
+            'entity_type' => 'project_application',
+            'entity_id' => $projectId,
+            'actor_user_id' => $applicantId
+        ]);
     }
 
     /**
@@ -441,6 +470,45 @@ class Books extends Controller {
             }
 
             if ($taskModel->updateTaskStatus($taskId, 'done', (int)$_SESSION['user_id'])) {
+                $rewardMessage = '';
+                if ((float)($task->buckx_allocated ?? 0) > 0 && empty($task->buckx_distributed) && !empty($task->assigned_to)) {
+                    try {
+                        $walletModel = $this->model('Wallet');
+                        $project = $this->projectModel->getProjectById($projectId);
+
+                        if ($project && !empty($project->organization_id)) {
+                            $transferResult = $walletModel->transferTaskReward(
+                                $taskId,
+                                (int)$project->organization_id,
+                                (int)$task->assigned_to,
+                                (float)$task->buckx_allocated
+                            );
+
+                            if (!empty($transferResult['success'])) {
+                                $taskModel->markBuckXDistributed($taskId);
+                                $rewardMessage = ' You received ' . rtrim(rtrim(number_format((float)$task->buckx_allocated, 2, '.', ''), '0'), '.') . ' BuckX.';
+
+                                try {
+                                    $this->notificationModel->createNotification([
+                                        'user_id'    => (int)$task->assigned_to,
+                                        'type'       => 'buckx_reward',
+                                        'message'    => "Congratulations! You received {$task->buckx_allocated} BuckX reward for completing task '{$task->title}'",
+                                        'project_id' => $projectId,
+                                        'task_id'    => $taskId,
+                                        'target_url' => URLROOT . '/userdashboard/wallet'
+                                    ]);
+                                } catch (Throwable $notificationError) {
+                                    error_log('Reward notification error: ' . $notificationError->getMessage());
+                                }
+                            } else {
+                                error_log("Project completeTask BuckX transfer failed for task {$taskId}: " . ($transferResult['message'] ?? 'Unknown error'));
+                            }
+                        }
+                    } catch (Throwable $buckxError) {
+                        error_log('Project completeTask BuckX transfer error: ' . $buckxError->getMessage());
+                    }
+                }
+
                 try {
                     $project = $this->projectModel->getProjectById($projectId);
                     if ($project && !empty($project->organization_id)) {
@@ -458,7 +526,7 @@ class Books extends Controller {
                     error_log('Notify org on task complete: ' . $e->getMessage());
                 }
 
-                echo json_encode(['success' => true, 'message' => 'Task marked as complete!']);
+                echo json_encode(['success' => true, 'message' => 'Task marked as complete!' . $rewardMessage]);
             } else {
                 echo json_encode(['success' => false, 'message' => 'Failed to update task status']);
             }

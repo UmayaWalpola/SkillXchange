@@ -891,7 +891,7 @@
                                 <?php endif; ?>
                             <?php else: ?>
                                 <button id="applyToggle" class="btn-primary">Apply to Join This Project</button>
-                            <form id="applyForm" class="apply-form" method="post" action="<?= URLROOT . '/ProjectApplication/apply/' . $project->id ?>">
+                            <form id="applyForm" class="apply-form" method="post" action="<?= URLROOT . '/project/submitApplication/' . $project->id ?>">
                                 
                                 <!-- Personal Statement Section -->
                                 <div class="form-section">

@@ -13,8 +13,22 @@
             <!-- Profile Header - SHORTENED -->
             <div class="profile-header">
                 <a href="<?= URLROOT ?>/users/editProfile" class="edit-profile-btn">Edit details</a>
+                <?php
+                    $profileImagePath = ltrim((string) ($data['user']['profile_picture'] ?? $data['user']['avatar'] ?? ''), '/');
+                    $hasProfileImage = $profileImagePath !== '' && strpos($profileImagePath, 'uploads/') === 0;
+                ?>
                 <div class="profile-info">
-                    <div class="profile-avatar"><?= strtoupper(substr($data['user']['name'], 0, 2)); ?></div>
+                    <div class="profile-avatar">
+                        <?php if ($hasProfileImage): ?>
+                            <img
+                                src="<?= URLROOT ?>/<?= htmlspecialchars($profileImagePath) ?>"
+                                alt="<?= htmlspecialchars($data['user']['name']); ?> profile picture"
+                                class="profile-avatar-image"
+                            >
+                        <?php else: ?>
+                            <?= htmlspecialchars(strtoupper(substr($data['user']['name'], 0, 2))); ?>
+                        <?php endif; ?>
+                    </div>
                     <div class="profile-details">
                         <h1><?= htmlspecialchars($data['user']['name']); ?></h1>
                         <p class="profile-username">@<?= htmlspecialchars($data['user']['username']); ?></p>

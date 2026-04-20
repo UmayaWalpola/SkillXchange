@@ -271,8 +271,11 @@ private function handleProfileSetup($userId) {
                 'username' => $user['username'],
                 'email' => $user['email'],
                 'bio' => $user['bio'] ?? 'No bio yet.',
+                'profile_picture' => !empty($user['profile_picture'])
+                    ? ltrim($user['profile_picture'], '/')
+                    : null,
                 'avatar' => !empty($user['profile_picture']) 
-                    ? $user['profile_picture']
+                    ? ltrim($user['profile_picture'], '/')
                     : strtoupper(substr($user['username'], 0, 2)),
                 'connections' => $userStats['connections_count'] ?? 0,
                 'skills_taught' => $userStats['skills_taught_count'] ?? 0,
