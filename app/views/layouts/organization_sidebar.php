@@ -19,8 +19,5 @@
                 <span>Wallet</span>
             </a>
             
-            <a href="<?= URLROOT ?>/Feedback/index" class="sidebar-item <?= (strpos($_SERVER['REQUEST_URI'], '/Feedback') !== false) ? 'active' : '' ?>">
-                <span>Feedback</span>
-            </a>
         </nav>
     </div>
