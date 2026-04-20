@@ -17,10 +17,12 @@
             $availableSkills = $availableSkills ?? [];
             $projectCategory = $isEdit ? ($project->category ?? 'other') : 'other';
             $today = date('Y-m-d');
+            $tomorrow = date('Y-m-d', strtotime('+1 day'));
             $existingStartDate = $isEdit ? (string)($project->start_date ?? '') : '';
-            $existingEndDate = $isEdit ? (string)($project->end_date ?? '') : '';
-            $startDateMin = ($existingStartDate !== '' && $existingStartDate < $today) ? $existingStartDate : $today;
-            $endDateMin = ($existingEndDate !== '' && $existingEndDate < $today) ? $existingEndDate : $today;
+            $existingEndDate   = $isEdit ? (string)($project->end_date ?? '') : '';
+            // For new projects require future dates (from tomorrow). For edits, preserve existing earlier dates.
+            $startDateMin = ($existingStartDate !== '' && $existingStartDate < $tomorrow) ? $existingStartDate : $tomorrow;
+            $endDateMin   = ($existingEndDate !== '' && $existingEndDate < $tomorrow) ? $existingEndDate : $tomorrow;
             $selectedSkills = $isEdit
                 ? array_values(array_filter(array_map('trim', explode(',', (string)($project->required_skills ?? '')))))
                 : [];
@@ -208,23 +210,27 @@ document.addEventListener('DOMContentLoaded', function() {
         endDateInput.value = endDateInput.min;
     }
 
-    // Set minimum date for start_date to today if not already set
+    // Set minimum date for start_date to tomorrow if not already set
     if (startDateInput) {
-        const today = new Date().toISOString().split('T')[0];
-        if (!startDateInput.min || startDateInput.min < today) {
-            startDateInput.min = today;
+        const t = new Date();
+        t.setDate(t.getDate() + 1);
+        const tomorrowStr = t.toISOString().split('T')[0];
+        if (!startDateInput.min || startDateInput.min < tomorrowStr) {
+            startDateInput.min = tomorrowStr;
         }
     }
 
-    // Set up end_date minimum based on start_date
+    // Set up end_date minimum based on start_date (default to tomorrow)
     if (startDateInput && endDateInput) {
-        // If start_date is already set, initialize end_date min
+        const t2 = new Date();
+        t2.setDate(t2.getDate() + 1);
+        const tomorrowStr = t2.toISOString().split('T')[0];
+
+        // If start_date is already set, initialize end_date min from start_date
         if (startDateInput.value) {
             endDateInput.min = startDateInput.value;
         } else {
-            // Otherwise, set to today
-            const today = new Date().toISOString().split('T')[0];
-            endDateInput.min = today;
+            endDateInput.min = tomorrowStr;
         }
 
         // When start_date changes, update end_date minimum

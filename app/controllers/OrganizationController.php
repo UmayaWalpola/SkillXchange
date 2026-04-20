@@ -131,6 +131,8 @@ class OrganizationController extends Controller {
             $startDate = trim((string)($_POST['start_date'] ?? ''));
             $endDate = trim((string)($_POST['end_date'] ?? ''));
             $skillsValidation = null; // Will store skill checks later
+            // For creation require future dates (from tomorrow)
+            $tomorrow = date('Y-m-d', strtotime('+1 day'));
 
             // --- Step 1: Form Validation ---
             
@@ -161,12 +163,17 @@ class OrganizationController extends Controller {
                 $errors['max_members'] = 'Max members must be at least 1';
             }
 
-            if ($startDate !== '' && $startDate < date('Y-m-d')) {
-                $errors['start_date'] = 'Start date cannot be earlier than today';
+            if ($startDate !== '' && $startDate < $tomorrow) {
+                $errors['start_date'] = 'Start date must be tomorrow or later';
             }
 
-            if ($endDate !== '' && $endDate < date('Y-m-d')) {
-                $errors['end_date'] = 'End date cannot be earlier than today';
+            if ($endDate !== '' && $endDate < $tomorrow) {
+                $errors['end_date'] = 'End date must be tomorrow or later';
+            }
+
+            // Ensure end date is not earlier than start date
+            if ($startDate !== '' && $endDate !== '' && $endDate < $startDate) {
+                $errors['end_date'] = 'End date cannot be earlier than start date';
             }
             
             // Validate specific skills against the chosen category
