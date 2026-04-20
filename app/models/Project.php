@@ -8,6 +8,11 @@ class Project {
         $this->db = new Database();
     }
 
+    public function getAllSkills() {
+        $this->db->query("SELECT id, skill_name FROM skills ORDER BY skill_name ASC");
+        return $this->db->resultSet() ?: [];
+    }
+
     
        //CREATE / READ / UPDATE / DELETE
 

@@ -205,26 +205,33 @@ window.onclick = function(event) {
 // Get quiz basic info
 function getQuizBasicInfo() {
     const title = document.getElementById('quizTitle').value.trim();
+    const category = document.getElementById('quizSkill').value;
     const badge = document.getElementById('quizBadge').value;
     const duration = parseInt(document.getElementById('quizDuration').value) || 30;
     const description = document.getElementById('quizDescription').value.trim();
     const badgeId = document.getElementById('badgeToAward').value;
     
-    return { title, badge, duration, description, badgeId };
+    return { title, category, badge, duration, description, badgeId };
 }
 
 // Validate quiz data
 function validateQuiz() {
-    const { title, badge } = getQuizBasicInfo();
+    const { title, category, badge } = getQuizBasicInfo();
     
     // Clear previous errors
     document.getElementById('titleError').textContent = '';
+    document.getElementById('skillError').textContent = '';
     document.getElementById('badgeError').textContent = '';
     
     let isValid = true;
     
     if (!title) {
         document.getElementById('titleError').textContent = 'Quiz title is required';
+        isValid = false;
+    }
+
+    if (!category) {
+        document.getElementById('skillError').textContent = 'Quiz skill is required';
         isValid = false;
     }
     
@@ -283,6 +290,7 @@ function showPreviewModal(quizData) {
                 <span class="close" onclick="closePreviewModal()">&times;</span>
                 <h2 style="color: var(--primary-blue); margin-bottom: 10px;">${quizData.title}</h2>
                 <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <span style="color: #666;">Skill: ${quizData.category}</span>
                     <span class="badge badge-${quizData.badge.toLowerCase()}">${quizData.badge}</span>
                     <span style="color: #666;">&#x23F1;&#xFE0F; ${quizData.duration} minutes</span>
                     <span style="color: #666;">&#x1F4DD; ${quizData.questions.length} questions</span>
@@ -472,4 +480,3 @@ if (!document.getElementById('notification-styles')) {
     `;
     document.head.appendChild(style);
 }
-

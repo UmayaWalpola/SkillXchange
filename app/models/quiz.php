@@ -18,6 +18,11 @@ class Quiz {
         $this->db = new Database();
     }
 
+    public function getAllSkills() {
+        $this->db->query("SELECT id, skill_name FROM skills ORDER BY skill_name ASC");
+        return $this->db->resultSet() ?: [];
+    }
+
     private function computeRewardAmount($difficultyLevel) {
         $key = strtolower(trim((string)$difficultyLevel));
         if ($key === 'beginner')     return 10;

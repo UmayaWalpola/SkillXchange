@@ -35,6 +35,7 @@ class QuizmanagerController extends Controller {
             'quiz_title'  => '',
             'badge'       => '',
             'description' => '',
+            'available_skills' => $this->quizModel->getAllSkills(),
         ];
         $this->view('quizmanager/quiz_create', $data);
     }
@@ -53,6 +54,7 @@ class QuizmanagerController extends Controller {
         // Validate
         $errors = [];
         if (empty($quizData['title']))     $errors[] = 'Quiz title is required';
+        if (empty($quizData['category']))  $errors[] = 'Quiz skill is required';
         if (empty($quizData['badge']))     $errors[] = 'Difficulty level is required';
         if (empty($quizData['questions']) || count($quizData['questions']) < 1)
                                            $errors[] = 'At least one question is required';
@@ -69,7 +71,7 @@ class QuizmanagerController extends Controller {
             'difficulty_level' => $quizData['badge'],
             'duration'         => intval($quizData['duration'] ?? 30),
             'status'           => $quizData['status'] ?? 'draft',
-            'category'         => $quizData['category'] ?? 'General',
+            'category'         => trim((string)($quizData['category'] ?? '')),
             'reward_amount'    => intval($quizData['reward'] ?? 0),
             'created_by'       => $_SESSION['user_id']
         ]);

@@ -2515,3 +2515,38 @@
         box-shadow: none;
     }
 }
+
+.selected-skills-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-height: 20px;
+    margin-top: 12px;
+}
+
+.selected-skill-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: var(--blue-bg);
+    color: var(--dark-bg);
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid rgba(101, 131, 150, 0.25);
+}
+
+.selected-skill-remove {
+    border: none;
+    background: transparent;
+    color: var(--primary-blue);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+}
+
+.selected-skill-remove:hover {
+    color: var(--dark-bg);
+}

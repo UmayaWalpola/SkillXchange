@@ -14,6 +14,16 @@
             $action = $isEdit 
                 ? URLROOT . "/organization/editProject/" . $project->id 
                 : URLROOT . "/organization/createProject";
+            $availableSkills = $availableSkills ?? [];
+            $projectCategory = $isEdit ? ($project->category ?? 'other') : 'other';
+            $today = date('Y-m-d');
+            $existingStartDate = $isEdit ? (string)($project->start_date ?? '') : '';
+            $existingEndDate = $isEdit ? (string)($project->end_date ?? '') : '';
+            $startDateMin = ($existingStartDate !== '' && $existingStartDate < $today) ? $existingStartDate : $today;
+            $endDateMin = ($existingEndDate !== '' && $existingEndDate < $today) ? $existingEndDate : $today;
+            $selectedSkills = $isEdit
+                ? array_values(array_filter(array_map('trim', explode(',', (string)($project->required_skills ?? '')))))
+                : [];
         ?>
 
         <h1><?= $title ?></h1>
@@ -30,11 +40,12 @@
         <?php endif; ?>
 
         <form action="<?= $action ?>" method="POST" class="project-form">
+            <input type="hidden" name="category" value="<?= htmlspecialchars($projectCategory) ?>">
 
             <!-- Card-style header with category icon and inline status -->
-            <div id="projectCardHeader" class="project-card-header <?= $isEdit ? ($project->category ?? 'web') : 'web'?>">
+            <div id="projectCardHeader" class="project-card-header <?= htmlspecialchars($projectCategory) ?>">
                 <div class="header-left">
-                    <div id="projIcon" class="proj-icon web"><i class="ph ph-code"></i></div>
+                    <div id="projIcon" class="proj-icon <?= htmlspecialchars($projectCategory) ?>"><i class="ph ph-sparkle"></i></div>
                     <div>
                         <div class="proj-title"><?= $title ?></div>
                         <div class="proj-sub">Fill in the details below to create your project</div>
@@ -73,22 +84,27 @@
                     </div>
 
                     <div class="info-item">
-                        <label>Skills Needed</label>  //This shows a list of skill suggestions below when the user types
-                        <input id="requiredSkillsInput" type="text" name="required_skills" list="skillsSuggestionList" value="<?= $isEdit ? htmlspecialchars($project->required_skills) : '' ?>" placeholder="Example: Web Development, Frontend Frameworks" required>
-                        <datalist id="skillsSuggestionList"></datalist>
-                        <small id="skillsHint" style="display:block;margin-top:6px;color:#355a72;font-size:13px;line-height:1.45;"></small>
-                    </div>
-
-                    <div class="info-item">
-                        <label>Category</label>
-                        <select id="categorySelect" name="category" required>
-                            <?php 
-                                $categories = ['web','mobile','data','design','other'];
-                                foreach ($categories as $cat):
-                            ?>
-                                <option value="<?= $cat ?>" <?= $isEdit && $project->category == $cat ? 'selected' : '' ?>><?= ucfirst($cat) ?></option>
+                        <label>Skills Needed</label>
+                        <select id="requiredSkillsSelect" class="form-select">
+                            <option value="">Select a skill</option>
+                            <?php foreach ($availableSkills as $skill): ?>
+                                <option value="<?= htmlspecialchars($skill->skill_name ?? '') ?>">
+                                    <?= htmlspecialchars($skill->skill_name ?? '') ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
+                        <input id="requiredSkillsInput" type="hidden" name="required_skills" value="<?= htmlspecialchars(implode(', ', $selectedSkills)) ?>" required>
+                        <div id="selectedSkillsList" class="selected-skills-list">
+                            <?php foreach ($selectedSkills as $skillName): ?>
+                                <span class="selected-skill-chip" data-skill="<?= htmlspecialchars($skillName) ?>">
+                                    <span><?= htmlspecialchars($skillName) ?></span>
+                                    <button type="button" class="selected-skill-remove" aria-label="Remove skill">&times;</button>
+                                </span>
+                            <?php endforeach; ?>
+                        </div>
+                        <small id="skillsHint" style="display:block;margin-top:6px;color:#355a72;font-size:13px;line-height:1.45;">
+                            Pick from the platform skill list. Selected skills will be added below.
+                        </small>
                     </div>
                 </div>
             </div>
@@ -103,12 +119,12 @@
 
                     <div class="small-card">
                         <label>Start Date</label>
-                        <input class="info-input" type="date" name="start_date" value="<?= $isEdit ? $project->start_date : '' ?>">
+                        <input class="info-input" type="date" name="start_date" value="<?= $isEdit ? $project->start_date : '' ?>" min="<?= htmlspecialchars($startDateMin) ?>">
                     </div>
 
                     <div class="small-card">
                         <label>End Date</label>
-                        <input class="info-input" type="date" name="end_date" value="<?= $isEdit ? $project->end_date : '' ?>">
+                        <input class="info-input" type="date" name="end_date" value="<?= $isEdit ? $project->end_date : '' ?>" min="<?= htmlspecialchars($endDateMin) ?>">
                     </div>
                 </div>
             </div>
@@ -124,65 +140,74 @@
 <?php require_once "../app/views/layouts/footer_user.php"; ?>
 
 <script>
-// UI polish for Create Project form: update icon and skill hints based on category
 document.addEventListener('DOMContentLoaded', function() {
-    const categorySelect = document.getElementById('categorySelect');
-    const requiredSkillsInput = document.getElementById('requiredSkillsInput');
-    const skillsHint = document.getElementById('skillsHint');
-    const skillsSuggestionList = document.getElementById('skillsSuggestionList');
-    const icon = document.getElementById('projIcon');
-    const categorySkillMap = <?= json_encode($categorySkillMap ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    const skillSelect = document.getElementById('requiredSkillsSelect');
+    const hiddenInput = document.getElementById('requiredSkillsInput');
+    const selectedSkillsList = document.getElementById('selectedSkillsList');
+    const startDateInput = document.querySelector('input[name="start_date"]');
+    const endDateInput = document.querySelector('input[name="end_date"]');
+    const selectedSkills = new Set(
+        (hiddenInput.value || '')
+            .split(',')
+            .map(skill => skill.trim())
+            .filter(Boolean)
+    );
 
-      //create a map of category to icon and css class for easy reference
-    const map = {
-        'web': {class: 'web', icon: '<i class="ph ph-code"></i>'},
-        'mobile': {class: 'mobile', icon: '<i class="ph ph-device-mobile"></i>'},
-        'data': {class: 'data', icon: '<i class="ph ph-chart-bar"></i>'},
-        'design': {class: 'design', icon: '<i class="ph ph-paint-brush"></i>'},
-        'other': {class: 'other', icon: '<i class="ph ph-sparkle"></i>'}
-    };
+    function syncHiddenInput() {
+        hiddenInput.value = Array.from(selectedSkills).join(', ');
+    }
 
-    function updateSkillsHint() {
-        if (!categorySelect) return;
+    function renderSelectedSkills() {
+        selectedSkillsList.innerHTML = '';
 
-        const category = categorySelect.value || 'web';
-        const suggestions = categorySkillMap[category] || [];
+        selectedSkills.forEach(function(skill) {
+            const chip = document.createElement('span');
+            chip.className = 'selected-skill-chip';
+            chip.dataset.skill = skill;
+            chip.innerHTML = '<span>' + skill + '</span><button type="button" class="selected-skill-remove" aria-label="Remove skill">&times;</button>';
+            selectedSkillsList.appendChild(chip);
+        });
 
-        if (requiredSkillsInput) {
-            if (suggestions.length > 0) {
-                requiredSkillsInput.placeholder = 'Example: ' + suggestions.join(', ');
-            } else {
-                requiredSkillsInput.placeholder = 'Enter required skills separated by commas';
+        syncHiddenInput();
+    }
+
+    if (skillSelect) {
+        skillSelect.addEventListener('change', function() {
+            const skill = (skillSelect.value || '').trim();
+            if (!skill) {
+                return;
             }
-        }
 
-        if (skillsHint) {
-            if (suggestions.length > 0) {
-                skillsHint.textContent = 'Allowed ' + category + ' skills: ' + suggestions.join(' | ');
-            } else {
-                skillsHint.textContent = '';
+            selectedSkills.add(skill);
+            renderSelectedSkills();
+            skillSelect.value = '';
+        });
+    }
+
+    if (selectedSkillsList) {
+        selectedSkillsList.addEventListener('click', function(event) {
+            if (!event.target.classList.contains('selected-skill-remove')) {
+                return;
             }
-        }
 
-        if (skillsSuggestionList) {
-            skillsSuggestionList.innerHTML = '';
-            suggestions.forEach(function(skill) {
-                const option = document.createElement('option');
-                option.value = skill;
-                skillsSuggestionList.appendChild(option);
-            });
-        }
+            const chip = event.target.closest('.selected-skill-chip');
+            if (!chip) {
+                return;
+            }
+
+            selectedSkills.delete(chip.dataset.skill || '');
+            renderSelectedSkills();
+        });
     }
 
-    function updateHeader() {
-        const val = categorySelect ? categorySelect.value : 'web';
-        icon.innerHTML = map[val].icon;
-        updateSkillsHint();
+    if (startDateInput && startDateInput.min && startDateInput.value && startDateInput.value < startDateInput.min) {
+        startDateInput.value = startDateInput.min;
     }
 
-    if (categorySelect) {
-        categorySelect.addEventListener('change', updateHeader);
-        updateHeader();
+    if (endDateInput && endDateInput.min && endDateInput.value && endDateInput.value < endDateInput.min) {
+        endDateInput.value = endDateInput.min;
     }
+
+    renderSelectedSkills();
 });
 </script>

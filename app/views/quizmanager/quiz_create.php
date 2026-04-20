@@ -55,6 +55,19 @@
 
             <div class="form-row">
                 <div class="form-group">
+                    <label for="quizSkill">Skill *</label>
+                    <select id="quizSkill">
+                        <option value="">Select skill</option>
+                        <?php foreach (($data['available_skills'] ?? []) as $skill): ?>
+                            <option value="<?= htmlspecialchars($skill->skill_name ?? '') ?>">
+                                <?= htmlspecialchars($skill->skill_name ?? '') ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <span class="error-text" id="skillError"></span>
+                </div>
+
+                <div class="form-group">
                     <label for="badgeToAward">Badge to Award (Optional)</label>
                     <select id="badgeToAward">
                         <option value="">No badge</option>

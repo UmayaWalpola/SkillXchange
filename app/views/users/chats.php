@@ -283,10 +283,10 @@
                <label>Your Role</label>
                <div class="role-fixed-display">
                    <?php if ($matchDir === 'teacher'): ?>
-                       <span class="role-badge role-teacher">🎓 You are the Teacher</span>
+                       <span class="role-badge role-teacher"> You are the Teacher</span>
                        <small>You will receive payment for this session.</small>
                    <?php else: ?>
-                       <span class="role-badge role-learner">📚 You are the Learner</span>
+                       <span class="role-badge role-learner"> You are the Learner</span>
                        <small>You will pay for this session.</small>
                    <?php endif; ?>
                </div>

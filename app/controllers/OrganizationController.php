@@ -117,6 +117,7 @@ class OrganizationController extends Controller {
     // Assigned to: Kithsara
     // ============================================================
     public function createProject() {
+        $availableSkills = $this->projectModel->getAllSkills();
         
         // This if statement runs ONLY when the user clicks the 'Submit' button
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -127,6 +128,8 @@ class OrganizationController extends Controller {
             // Clean up the user inputs
             $category = strtolower(trim((string)($_POST['category'] ?? '')));
             $rawRequiredSkills = trim((string)($_POST['required_skills'] ?? ''));
+            $startDate = trim((string)($_POST['start_date'] ?? ''));
+            $endDate = trim((string)($_POST['end_date'] ?? ''));
             $skillsValidation = null; // Will store skill checks later
 
             // --- Step 1: Form Validation ---
@@ -149,7 +152,7 @@ class OrganizationController extends Controller {
             // Check Category is valid
             if ($category === '') {
                 $errors['category'] = 'Project category is required';
-            } elseif (!isset($this->getCategorySkillMap()[$category])) {
+            } elseif (!in_array($category, $this->getProjectCategories(), true)) {
                 $errors['category'] = 'Invalid project category';
             }
             
@@ -157,15 +160,23 @@ class OrganizationController extends Controller {
             if (empty($_POST['max_members']) || $_POST['max_members'] < 1) {
                 $errors['max_members'] = 'Max members must be at least 1';
             }
+
+            if ($startDate !== '' && $startDate < date('Y-m-d')) {
+                $errors['start_date'] = 'Start date cannot be earlier than today';
+            }
+
+            if ($endDate !== '' && $endDate < date('Y-m-d')) {
+                $errors['end_date'] = 'End date cannot be earlier than today';
+            }
             
             // Validate specific skills against the chosen category
-            if (!isset($errors['required_skills']) && !isset($errors['category'])) {
-                // Call private function to check if typed skills map to real category skills
-                $skillsValidation = $this->validateRequiredSkillsForCategory($category, $rawRequiredSkills);
+            if (!isset($errors['required_skills'])) {
+                // Validate typed skills against the platform skills table
+                $skillsValidation = $this->validateRequiredSkillsAgainstSystem($rawRequiredSkills, $availableSkills);
                 
                 // If it fails, create an error
                 if (!$skillsValidation['valid']) {
-                    $errors['required_skills'] = 'Use only ' . ucfirst($category) . ' related skills. Invalid: ' . implode(', ', $skillsValidation['invalid']);
+                    $errors['required_skills'] = 'Use only platform skills from the system list. Invalid: ' . implode(', ', $skillsValidation['invalid']);
                 }
             }
 
@@ -182,8 +193,8 @@ class OrganizationController extends Controller {
                     'status'          => !empty($_POST['status']) ? trim($_POST['status']) : 'active', // Default is 'active'
                     'description'     => trim($_POST['description']),
                     'max_members'     => (int)$_POST['max_members'],
-                    'start_date'      => $_POST['start_date'] ?? null,
-                    'end_date'        => $_POST['end_date'] ?? null,
+                    'start_date'      => $startDate !== '' ? $startDate : null,
+                    'end_date'        => $endDate !== '' ? $endDate : null,
                     // If skills were valid, use the formatted version. Else, use raw text.
                     'required_skills' => $skillsValidation ? $skillsValidation['formatted'] : $rawRequiredSkills
                 ];
@@ -210,7 +221,7 @@ class OrganizationController extends Controller {
             'title' => 'Create Project',
             'errors' => $_SESSION['errors'] ?? [], // Pass errors to view
             'project' => null, // project is null because we are creating, not editing
-            'categorySkillMap' => $this->getCategorySkillMap()
+            'availableSkills' => $availableSkills
         ];
 
         // Clear errors so they don't show up again on refresh
@@ -225,6 +236,7 @@ class OrganizationController extends Controller {
     // Assigned to: Kithsara
     // ============================================================
     public function editProject($projectId = null) {
+        $availableSkills = $this->projectModel->getAllSkills();
         
         // --- Step 1: Security & Loading Existing Data ---
 
@@ -252,6 +264,8 @@ class OrganizationController extends Controller {
             $errors = [];
             $category = strtolower(trim((string)($_POST['category'] ?? '')));
             $rawRequiredSkills = trim((string)($_POST['required_skills'] ?? ''));
+            $startDate = trim((string)($_POST['start_date'] ?? ''));
+            $endDate = trim((string)($_POST['end_date'] ?? ''));
             $skillsValidation = null;
 
             // Form validation - same basics as Create Project
@@ -269,17 +283,30 @@ class OrganizationController extends Controller {
 
             if ($category === '') {
                 $errors['category'] = 'Project category is required';
-            } elseif (!isset($this->getCategorySkillMap()[$category])) {
+            } elseif (!in_array($category, $this->getProjectCategories(), true)) {
                 $errors['category'] = 'Invalid project category';
             }
+
+            if ($startDate !== '' && $startDate < date('Y-m-d')) {
+                $existingStartDate = trim((string)($project->start_date ?? ''));
+                if ($existingStartDate === '' || $startDate !== $existingStartDate) {
+                    $errors['start_date'] = 'Start date cannot be earlier than today';
+                }
+            }
+
+            if ($endDate !== '' && $endDate < date('Y-m-d')) {
+                $existingEndDate = trim((string)($project->end_date ?? ''));
+                if ($existingEndDate === '' || $endDate !== $existingEndDate) {
+                    $errors['end_date'] = 'End date cannot be earlier than today';
+                }
+            }
                          
-            // Only validate skills if category is valid and skills are provided
-            if (!isset($errors['required_skills']) && !isset($errors['category'])) {   
-                // Validate skills against the category's allowed skill set
-                $skillsValidation = $this->validateRequiredSkillsForCategory($category, $rawRequiredSkills);          
+            // Only validate skills if they were provided
+            if (!isset($errors['required_skills'])) {   
+                // Validate skills against the platform skill list
+                $skillsValidation = $this->validateRequiredSkillsAgainstSystem($rawRequiredSkills, $availableSkills);          
                 if (!$skillsValidation['valid']) {
-                    // If not valid, add error message listing the invalid skills
-                    $errors['required_skills'] = 'Use only ' . ucfirst($category) . ' related skills. Invalid: ' . implode(', ', $skillsValidation['invalid']);             
+                    $errors['required_skills'] = 'Use only platform skills from the system list. Invalid: ' . implode(', ', $skillsValidation['invalid']);             
                 }
             }
 
@@ -296,8 +323,8 @@ class OrganizationController extends Controller {
                     'status'          => trim($_POST['status']), // Editing lets you change status
                     'description'     => trim($_POST['description']),
                     'max_members'     => (int)$_POST['max_members'],
-                    'start_date'      => $_POST['start_date'] ?? null,
-                    'end_date'        => $_POST['end_date'] ?? null,
+                    'start_date'      => $startDate !== '' ? $startDate : null,
+                    'end_date'        => $endDate !== '' ? $endDate : null,
                     'required_skills' => $skillsValidation ? $skillsValidation['formatted'] : $rawRequiredSkills
                 ];
 
@@ -320,7 +347,7 @@ class OrganizationController extends Controller {
             'title' => 'Edit Project',
             'project' => $project, // We pass ($project) so the form can be pre-filled
             'errors' => $_SESSION['errors'] ?? [],
-            'categorySkillMap' => $this->getCategorySkillMap()
+            'availableSkills' => $availableSkills
         ];
 
         unset($_SESSION['errors']);
@@ -1081,45 +1108,9 @@ class OrganizationController extends Controller {
         }
         exit;
     }
-         // category related skills map for validation and suggestions
-    private function getCategorySkillMap()
+    private function getProjectCategories()
     {
-        return [
-            'web' => [
-                'Web Development',
-                'Frontend Frameworks',
-                'Backend Development',
-                'Database Management',
-                'GitHub and Git'
-            ],
-            'mobile' => [
-                'Mobile App Development',
-                'Frontend Frameworks',
-                'Backend Development',
-                'Database Management',
-                'GitHub and Git'
-            ],
-            'data' => [
-                'Data Science',
-                'Data Analysis & Visualization',
-                'Database Management',
-                'AI and ML',
-                'GitHub and Git'
-            ],
-            'design' => [
-                'Web Development',
-                'Frontend Frameworks',
-                'Digital Marketing',
-                'GitHub and Git'
-            ],
-            'other' => [
-                'Cloud Computing',
-                'Cybersecurity',
-                'Devops',
-                'AI and ML',
-                'GitHub and Git'
-            ]
-        ];
+        return ['web', 'mobile', 'data', 'design', 'other'];
     }
 
     private function normalizeSkillName($skill)
@@ -1154,10 +1145,16 @@ class OrganizationController extends Controller {
         return $aliases[$skill] ?? $skill;
     }
 
-    private function validateRequiredSkillsForCategory($category, $requiredSkillsCsv)
+    private function validateRequiredSkillsAgainstSystem($requiredSkillsCsv, $availableSkills = [])
     {
-        $categoryMap = $this->getCategorySkillMap();
-        $allowedSkills = $categoryMap[$category] ?? [];
+        $allowedSkills = [];
+        foreach ($availableSkills as $skill) {
+            if (is_object($skill) && isset($skill->skill_name)) {
+                $allowedSkills[] = $skill->skill_name;
+            } elseif (is_array($skill) && isset($skill['skill_name'])) {
+                $allowedSkills[] = $skill['skill_name'];
+            }
+        }
 
         $allowedByKey = [];
         foreach ($allowedSkills as $skillLabel) {
