@@ -20,8 +20,25 @@
                         </div>
                     <?php else: ?>
                         <?php foreach ($data['communities'] as $community): ?>
+                            <?php
+                                $communityImage = trim((string)($community->cover_image ?? $community->image ?? ''));
+                                if ($communityImage !== '') {
+                                    if (!preg_match('#^(https?://|/)#', $communityImage) && strpos($communityImage, 'assets/') !== 0) {
+                                        $communityImage = 'assets/images/' . ltrim($communityImage, '/');
+                                    }
+                                    $communityImage = URLROOT . '/' . ltrim($communityImage, '/');
+                                } else {
+                                    $communityImage = URLROOT . '/assets/images/community-default.svg';
+                                }
+                            ?>
                             <div class="community-card">
-                                <div class="community-icon"><?= strtoupper(substr($community->name, 0, 1)) ?></div>
+                                <div class="community-icon">
+                                    <img
+                                        src="<?= htmlspecialchars($communityImage) ?>"
+                                        alt="<?= htmlspecialchars(($community->name ?? 'Community') . ' image') ?>"
+                                        onerror="this.onerror=null;this.src='<?= URLROOT ?>/assets/images/community-default.svg';"
+                                    >
+                                </div>
                                 <h3><?= htmlspecialchars($community->name ?? '') ?></h3>
                                 <p><?= htmlspecialchars($community->description ?? '') ?></p>
                                 
