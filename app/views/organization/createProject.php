@@ -208,6 +208,37 @@ document.addEventListener('DOMContentLoaded', function() {
         endDateInput.value = endDateInput.min;
     }
 
+    // Set minimum date for start_date to today if not already set
+    if (startDateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        if (!startDateInput.min || startDateInput.min < today) {
+            startDateInput.min = today;
+        }
+    }
+
+    // Set up end_date minimum based on start_date
+    if (startDateInput && endDateInput) {
+        // If start_date is already set, initialize end_date min
+        if (startDateInput.value) {
+            endDateInput.min = startDateInput.value;
+        } else {
+            // Otherwise, set to today
+            const today = new Date().toISOString().split('T')[0];
+            endDateInput.min = today;
+        }
+
+        // When start_date changes, update end_date minimum
+        startDateInput.addEventListener('change', function() {
+            if (this.value) {
+                endDateInput.min = this.value;
+                // If end_date is set and is now less than the new start_date, clear it
+                if (endDateInput.value && endDateInput.value < this.value) {
+                    endDateInput.value = '';
+                }
+            }
+        });
+    }
+
     renderSelectedSkills();
 });
 </script>
