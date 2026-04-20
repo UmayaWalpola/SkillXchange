@@ -110,6 +110,51 @@
         <?php endif; ?>
     </div>
 
+    <div class="transaction-section">
+        <div class="transaction-header">
+            <div class="transaction-title">Recent Skill Debt Settlements</div>
+            <div class="transaction-count"><?= count($data['debtSettlements'] ?? []) ?></div>
+        </div>
+
+        <?php if (empty($data['debtSettlements'])): ?>
+            <div class="empty-state"><p>No debt settlements yet</p></div>
+        <?php else: ?>
+            <table class="transaction-table">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>User</th>
+                        <th>Source Skill</th>
+                        <th>Session Skill</th>
+                        <th>Date</th>
+                        <th style="text-align:right;">Hours</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach (($data['debtSettlements'] ?? []) as $settlement): ?>
+                    <?php $isCreditor = ((int)($settlement->creditor_id ?? 0) === (int)($_SESSION['user_id'] ?? 0)); ?>
+                    <tr>
+                        <td>
+                            <span class="type-label" style="color:<?= $isCreditor ? '#16a34a' : '#dc2626' ?>;">
+                                <?= $isCreditor ? 'PAID USING DEBT' : 'DEBT APPLIED' ?>
+                            </span>
+                        </td>
+                        <td><?= htmlspecialchars($isCreditor ? ($settlement->debtor_name ?? 'User') : ($settlement->creditor_name ?? 'User')) ?></td>
+                        <td><?= htmlspecialchars($settlement->source_skill_name ?? 'Skill Debt') ?></td>
+                        <td><?= htmlspecialchars($settlement->settlement_skill_name ?? 'Session') ?></td>
+                        <td><span class="transaction-date"><?= date('M d, Y', strtotime($settlement->created_at ?? 'now')) ?></span></td>
+                        <td>
+                            <div class="transaction-amount <?= $isCreditor ? 'received' : 'sent' ?>">
+                                <?= $isCreditor ? '+' : '-' ?><?= number_format((float)($settlement->hours_applied ?? 0), 2) ?> hrs
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+    </div>
+
     <!-- Transaction History Table -->
     <div class="transaction-section">
         <div class="transaction-header">

@@ -72,6 +72,157 @@ class TransactionController extends Controller
        return (bool) $this->db->single();
    }
 
+   private function getOffsettableSkillDebts($creditorId, $debtorId)
+   {
+       $this->db->query("
+           SELECT *
+           FROM skill_debt
+           WHERE creditor_id = :creditor_id
+             AND debtor_id = :debtor_id
+             AND status = 'active'
+           ORDER BY COALESCE(activated_at, created_at) ASC, id ASC
+       ");
+       $this->db->bind(':creditor_id', $creditorId);
+       $this->db->bind(':debtor_id', $debtorId);
+       return $this->db->resultSet() ?: [];
+   }
+
+   private function getEventSkillDebt($eventId)
+   {
+       $this->db->query("
+           SELECT *
+           FROM skill_debt
+           WHERE event_id = :event_id
+           ORDER BY id DESC
+           LIMIT 1
+       ");
+       $this->db->bind(':event_id', $eventId);
+       return $this->db->single();
+   }
+
+   private function recordSkillDebtSettlement($debtId, $eventId, $debtorId, $creditorId, $hoursApplied, $sourceSkillName, $settlementSkillName)
+   {
+       $this->db->query("
+           INSERT INTO skill_debt_settlements
+           (debt_id, event_id, debtor_id, creditor_id, hours_applied, source_skill_name, settlement_skill_name)
+           VALUES (:debt_id, :event_id, :debtor_id, :creditor_id, :hours_applied, :source_skill_name, :settlement_skill_name)
+       ");
+       $this->db->bind(':debt_id', $debtId);
+       $this->db->bind(':event_id', $eventId);
+       $this->db->bind(':debtor_id', $debtorId);
+       $this->db->bind(':creditor_id', $creditorId);
+       $this->db->bind(':hours_applied', $hoursApplied);
+       $this->db->bind(':source_skill_name', $sourceSkillName);
+       $this->db->bind(':settlement_skill_name', $settlementSkillName);
+       $this->db->execute();
+   }
+
+   private function settleSkillDebtForSession($event)
+   {
+       $eventDebt = $this->getEventSkillDebt($event->id);
+       if (!$eventDebt) {
+           throw new Exception('Missing skill debt record for this session.');
+       }
+
+       $sessionHours = (float)($event->skill_debt_hours ?? 0);
+       $remainingHours = $sessionHours;
+       $appliedHours = 0.0;
+
+       foreach ($this->getOffsettableSkillDebts($event->learner_id, $event->teacher_id) as $offsetDebt) {
+           if ($remainingHours <= 0) {
+               break;
+           }
+
+           $availableHours = (float)($offsetDebt->hours_owed ?? 0);
+           if ($availableHours <= 0) {
+               continue;
+           }
+
+           $hoursToApply = min($availableHours, $remainingHours);
+           $remainingOnDebt = $availableHours - $hoursToApply;
+
+           if ($remainingOnDebt <= 0.00001) {
+               $this->db->query("
+                   UPDATE skill_debt
+                   SET hours_owed = 0,
+                       status = 'fulfilled',
+                       fulfilled_at = NOW()
+                   WHERE id = :debt_id
+               ");
+               $this->db->bind(':debt_id', $offsetDebt->id);
+               $this->db->execute();
+           } else {
+               $this->db->query("
+                   UPDATE skill_debt
+                   SET hours_owed = :hours_owed
+                   WHERE id = :debt_id
+               ");
+               $this->db->bind(':hours_owed', $remainingOnDebt);
+               $this->db->bind(':debt_id', $offsetDebt->id);
+               $this->db->execute();
+           }
+
+           $this->db->query("
+               UPDATE users
+               SET skillx_debt_hours = GREATEST(skillx_debt_hours - :hours, 0)
+               WHERE id = :debtor_id
+           ");
+           $this->db->bind(':hours', $hoursToApply);
+           $this->db->bind(':debtor_id', $event->teacher_id);
+           $this->db->execute();
+
+           $this->recordSkillDebtSettlement(
+               (int)$offsetDebt->id,
+               (int)$event->id,
+               (int)$event->teacher_id,
+               (int)$event->learner_id,
+               $hoursToApply,
+               $offsetDebt->skill_name ?? null,
+               $event->skill_name ?? null
+           );
+
+           $appliedHours += $hoursToApply;
+           $remainingHours -= $hoursToApply;
+       }
+
+       if ($remainingHours > 0.00001) {
+           $this->db->query("
+               UPDATE skill_debt
+               SET hours_owed = :hours_owed,
+                   status = 'active',
+                   activated_at = NOW()
+               WHERE id = :debt_id
+           ");
+           $this->db->bind(':hours_owed', $remainingHours);
+           $this->db->bind(':debt_id', $eventDebt->id);
+           $this->db->execute();
+
+           $this->db->query("
+               UPDATE users
+               SET skillx_debt_hours = skillx_debt_hours + :hours
+               WHERE id = :learner_id
+           ");
+           $this->db->bind(':hours', $remainingHours);
+           $this->db->bind(':learner_id', $event->learner_id);
+           $this->db->execute();
+       } else {
+           $this->db->query("
+               UPDATE skill_debt
+               SET status = 'fulfilled',
+                   activated_at = NOW(),
+                   fulfilled_at = NOW()
+               WHERE id = :debt_id
+           ");
+           $this->db->bind(':debt_id', $eventDebt->id);
+           $this->db->execute();
+       }
+
+       return [
+           'applied_hours' => $appliedHours,
+           'remaining_hours' => max(0, $remainingHours),
+       ];
+   }
+
 
    // ============================================
    // 1. CREATE TRANSACTION OFFER
@@ -691,9 +842,11 @@ class TransactionController extends Controller
            }
 
 
+           $skillSettlement = ['applied_hours' => 0, 'remaining_hours' => 0];
+
            // Activate SkillX debt if applicable
            if ($event->payment_type === 'skillx') {
-               $this->activateSkillDebt($eventId, $event->learner_id, $event->skill_debt_hours);
+               $skillSettlement = $this->settleSkillDebtForSession($event);
            }
 
 
@@ -701,13 +854,29 @@ class TransactionController extends Controller
 
 
            // Notifications
-           $this->createNotification($eventId, $event->teacher_id, 'payment_transferred',
-               'Payment has been transferred. Transaction complete!');
-           $this->createNotification($eventId, $event->learner_id, 'payment_transferred',
-               'Transaction completed successfully!');
+           $teacherMessage = 'Payment has been transferred. Transaction complete!';
+           $learnerMessage = 'Transaction completed successfully!';
+           $responseMessage = 'Transaction completed successfully!';
+
+           if ($event->payment_type === 'skillx' && $skillSettlement['applied_hours'] > 0) {
+               $formattedApplied = number_format((float)$skillSettlement['applied_hours'], 2);
+               $teacherMessage = "Transaction complete. {$formattedApplied} skill hour(s) were settled from debt you owed the learner.";
+               $learnerMessage = "Transaction completed. {$formattedApplied} skill hour(s) were paid using existing debt owed to you.";
+               $responseMessage = $learnerMessage;
+
+               if ($skillSettlement['remaining_hours'] > 0) {
+                   $formattedRemaining = number_format((float)$skillSettlement['remaining_hours'], 2);
+                   $teacherMessage .= " Remaining debt created for learner: {$formattedRemaining} hour(s).";
+                   $learnerMessage .= " Remaining skill debt created: {$formattedRemaining} hour(s).";
+                   $responseMessage = $learnerMessage;
+               }
+           }
+
+           $this->createNotification($eventId, $event->teacher_id, 'payment_transferred', $teacherMessage);
+           $this->createNotification($eventId, $event->learner_id, 'payment_transferred', $learnerMessage);
 
 
-           echo json_encode(['success' => true, 'message' => 'Transaction completed successfully!']);
+           echo json_encode(['success' => true, 'message' => $responseMessage]);
 
 
        } catch (\Throwable $e) {
@@ -902,27 +1071,6 @@ class TransactionController extends Controller
    /**
     * Activate SkillX debt (learner now owes teacher)
     */
-   private function activateSkillDebt($eventId, $learnerId, $hours)
-   {
-       // Update debt status
-       $this->db->query("UPDATE skill_debt SET status = 'active', activated_at = NOW() WHERE event_id = :event_id");
-       $this->db->bind(':event_id', $eventId);
-       $this->db->execute();
-
-
-       // Update learner's total debt hours
-       $this->db->query("UPDATE users SET skillx_debt_hours = skillx_debt_hours + :hours WHERE id = :learner_id");
-       $this->db->bind(':hours', $hours);
-       $this->db->bind(':learner_id', $learnerId);
-       $this->db->execute();
-
-
-       // Log transaction
-       $this->logTransaction($eventId, 'skillx_transfer', null, null, null, $hours,
-           "SkillX debt activated for transaction #{$eventId}");
-   }
-
-
    /**
     * Create a notification for a user
     */

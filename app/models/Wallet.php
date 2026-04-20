@@ -271,6 +271,49 @@ class Wallet {
         ];
     }
 
+    public function getCounterpartyDebtSummary($creditorId, $debtorId) {
+        $this->db->query("
+            SELECT
+                COALESCE(SUM(hours_owed), 0) AS total_hours,
+                COUNT(*) AS debt_count
+            FROM skill_debt
+            WHERE creditor_id = :creditor_id
+              AND debtor_id = :debtor_id
+              AND status = 'active'
+        ");
+        $this->db->bind(':creditor_id', $creditorId);
+        $this->db->bind(':debtor_id', $debtorId);
+        $row = $this->db->single();
+
+        return [
+            'total_hours' => (float)($row->total_hours ?? 0),
+            'debt_count' => (int)($row->debt_count ?? 0),
+        ];
+    }
+
+    public function getRecentDebtSettlements($userId, $limit = 10) {
+        try {
+            $this->db->query("
+                SELECT
+                    s.*,
+                    d.username AS debtor_name,
+                    c.username AS creditor_name
+                FROM skill_debt_settlements s
+                INNER JOIN users d ON d.id = s.debtor_id
+                INNER JOIN users c ON c.id = s.creditor_id
+                WHERE s.debtor_id = :user_id OR s.creditor_id = :user_id
+                ORDER BY s.created_at DESC, s.id DESC
+                LIMIT :limit
+            ");
+            $this->db->bind(':user_id', $userId);
+            $this->db->bind(':limit', (int)$limit);
+            return $this->db->resultSet() ?: [];
+        } catch (Exception $e) {
+            error_log('Debt settlements unavailable: ' . $e->getMessage());
+            return [];
+        }
+    }
+
     /* ============================================================
        BUCKX TASK ALLOCATION & REWARD TRANSFER
     ============================================================ */

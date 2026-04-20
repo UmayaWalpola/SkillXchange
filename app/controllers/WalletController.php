@@ -27,6 +27,7 @@ class WalletController extends Controller {
         $totalSent = $this->walletModel->getTotalSent($userId);
         $totalReceived = $this->walletModel->getTotalReceived($userId);
         $debts = $this->walletModel->getDebts($userId);
+        $debtSettlements = $this->walletModel->getRecentDebtSettlements($userId);
         $unreadNotifications = $this->notificationModel->getUnreadCount($userId);
         
         $this->notificationModel->checkLowBalance($userId, $balance);
@@ -41,7 +42,8 @@ class WalletController extends Controller {
             'lowBalanceThreshold' => 50.00,
             'userRole' => $userRole,
             'debtsOwed'    => $debts['owed'],       // I owe these
-            'debtsOwedToMe' => $debts['owed_to_me'] // owed to me
+            'debtsOwedToMe' => $debts['owed_to_me'], // owed to me
+            'debtSettlements' => $debtSettlements
         ];
 
         // Add pending BuckX allocations for organizations

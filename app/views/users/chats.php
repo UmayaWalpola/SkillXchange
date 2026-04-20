@@ -337,6 +337,9 @@
                    </select>
                    <small>Select the skill that will be recorded as the SkillX debt.</small>
                <?php endif; ?>
+               <div class="transaction-debt-hint" id="transactionDebtHint" style="display:none;">
+                   Existing skill debt can be used to settle this session automatically.
+               </div>
            </div>
 
            <div class="form-group">
@@ -393,6 +396,8 @@
     const MATCH_TYPE      = '<?= htmlspecialchars($data['matchType'] ?? 'single') ?>';
     const MATCH_DIR       = '<?= htmlspecialchars($data['matchDir']  ?? 'teacher') ?>';
     const MATCH_SKILL     = '<?= htmlspecialchars($data['matchSkill'] ?? '') ?>';
+    const DEBT_AVAILABLE_TO_CURRENT_USER = <?= json_encode($data['debtAvailableToCurrentUser'] ?? ['total_hours' => 0, 'debt_count' => 0]) ?>;
+    const DEBT_AVAILABLE_TO_PARTNER = <?= json_encode($data['debtAvailableToPartner'] ?? ['total_hours' => 0, 'debt_count' => 0]) ?>;
 </script>
 <script src="<?= URLROOT ?>/assets/js/chats.js"></script>
 

@@ -78,6 +78,8 @@ class ChatController extends Controller
         $db = new Database();
         $walletModel->ensureWalletExists($currentUserId, $_SESSION['role'] ?? 'individual');
         $currentWalletBalance = $walletModel->getBalance($currentUserId);
+        $debtAvailableToCurrentUser = $walletModel->getCounterpartyDebtSummary($currentUserId, $partnerId);
+        $debtAvailableToPartner = $walletModel->getCounterpartyDebtSummary($partnerId, $currentUserId);
 
         // ── Active transaction event ──────────────────────────────────────────
         $db->query("
@@ -148,6 +150,8 @@ class ChatController extends Controller
             'buckxBalance'      => $currentWalletBalance,
             'activeTransaction' => $activeTransaction,
             'availableSkills'   => $availableSkills,
+            'debtAvailableToCurrentUser' => $debtAvailableToCurrentUser,
+            'debtAvailableToPartner' => $debtAvailableToPartner,
             // Match context — consumed by chats.php to adapt the transaction modal
             'matchType'         => $matchType,  // 'mutual' | 'multi' | 'single'
             'matchSkill'        => $matchSkill, // skill name (teach skill for mutual)

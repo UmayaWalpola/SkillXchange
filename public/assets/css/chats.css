@@ -937,3 +937,14 @@
     color: var(--dark-bg);
     opacity: 0.6;
 }
+
+.transaction-debt-hint {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(101, 131, 150, 0.12);
+    border: 1px solid rgba(101, 131, 150, 0.28);
+    color: var(--dark-bg);
+    font-size: 13px;
+    line-height: 1.5;
+}

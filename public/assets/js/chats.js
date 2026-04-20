@@ -124,6 +124,37 @@ function closeTransactionModal() {
     if (modal) modal.style.display = 'none';
 }
 
+function updateDebtHint() {
+    const paymentType = document.getElementById('paymentType')?.value || '';
+    const role =
+        document.querySelector('#transactionRole')?.value ||
+        document.querySelector('#transactionRoleHidden')?.value ||
+        '';
+    const hint = document.getElementById('transactionDebtHint');
+
+    if (!hint) return;
+
+    if (paymentType !== 'skillx' || !role) {
+        hint.style.display = 'none';
+        hint.textContent = '';
+        return;
+    }
+
+    const summary = role === 'learner' ? DEBT_AVAILABLE_TO_CURRENT_USER : DEBT_AVAILABLE_TO_PARTNER;
+    const totalHours = parseFloat(summary?.total_hours || 0);
+    const debtCount = parseInt(summary?.debt_count || 0, 10);
+
+    if (totalHours <= 0 || debtCount <= 0) {
+        hint.style.display = 'none';
+        hint.textContent = '';
+        return;
+    }
+
+    const ownerLabel = role === 'learner' ? 'You already have' : 'Your partner already has';
+    hint.textContent = `${ownerLabel} ${totalHours.toFixed(2)} skill hour(s) available from existing debt. The system will automatically apply that debt first when this session is completed.`;
+    hint.style.display = 'block';
+}
+
 // ── Report modal ──────────────────────────────────────────────────────────────
 
 function openReportModal(eventId) {
@@ -465,7 +496,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const roleSelect = document.getElementById('transactionRole');
     if (roleSelect) {
-        roleSelect.addEventListener('change', updateMatchedSkillDisplay);
+        roleSelect.addEventListener('change', function () {
+            updateMatchedSkillDisplay();
+            updateDebtHint();
+        });
     }
 
     // Payment type toggle
@@ -484,6 +518,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (buckxGroup)  buckxGroup.style.display  = 'none';
                 if (skillxGroup) skillxGroup.style.display = 'none';
             }
+            updateDebtHint();
         });
     }
 
@@ -595,6 +630,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
         });
     }
+
+    updateDebtHint();
 
     // Report form submit
     const reportForm = document.getElementById('reportForm');
