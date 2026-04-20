@@ -87,19 +87,35 @@
     border-color: var(--accent-blue);
 }
 
-.community-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
-    background: var(--blue-bg);
-    color: var(--primary-blue);
+.community-card .community-icon {
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    max-width: 56px;
+    min-height: 56px;
+    max-height: 56px;
+    flex: 0 0 56px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--blue-bg) 0%, rgba(156, 199, 223, 0.6) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.1rem;
-    font-weight: 700;
     margin-bottom: 1rem;
     line-height: 1;
+    overflow: hidden;
+    border: 1px solid rgba(101, 131, 150, 0.18);
+}
+
+.community-card .community-icon img {
+    width: 100%;
+    height: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    min-height: 100%;
+    max-height: 100%;
+    object-fit: cover;
+    display: block;
+    flex: 0 0 auto;
 }
 
 .community-card h3 {
