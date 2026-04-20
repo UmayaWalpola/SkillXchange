@@ -904,6 +904,37 @@
     border-top: 1px solid var(--blue-bg);
 }
 
+.feed-post-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    flex-wrap: nowrap;
+    width: fit-content;
+    margin-left: auto;
+}
+
+.feed-post-action-form {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    flex: 0 0 auto;
+}
+
+.feed-post-actions .btn-outline {
+    margin: 0;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.community-post-action-btn {
+    height: 34px;
+    min-height: 34px;
+    padding: 7px 14px;
+    font-size: 12.5px;
+    border-radius: 9px;
+}
+
 .feed-post-meta {
     font-size: 0.85rem;
     color: var(--dark-bg);
