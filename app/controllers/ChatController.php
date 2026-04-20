@@ -15,9 +15,10 @@ class ChatController extends Controller
     public function index($projectId = null)
     {
         $currentUserId = $_SESSION['user_id'];
+        $currentRole = $_SESSION['role'] ?? 'individual';
 
         if (!$projectId) {
-            header('Location: ' . URLROOT . '/organization/projects');
+            header('Location: ' . URLROOT . ($currentRole === 'organization' ? '/organization/projects' : '/project/browse'));
             exit();
         }
 
@@ -26,24 +27,27 @@ class ChatController extends Controller
         $project = $projectModel->getProjectById($projectId);
 
         if (!$project) {
-            header('Location: ' . URLROOT . '/organization/projects');
+            header('Location: ' . URLROOT . ($currentRole === 'organization' ? '/organization/projects' : '/project/browse'));
             exit();
         }
 
         // Verify user has access to this project
-        if ($project->created_by != $currentUserId && !$projectModel->isProjectMember($projectId, $currentUserId)) {
-            header('Location: ' . URLROOT . '/organization/projects');
+        if ((int)($project->organization_id ?? 0) !== (int)$currentUserId && !$projectModel->isProjectMember($projectId, $currentUserId)) {
+            header('Location: ' . URLROOT . ($currentRole === 'organization' ? '/organization/projects' : '/project/browse'));
             exit();
         }
+
+        $members = $projectModel->getProjectMembers($projectId);
 
         $data = [
             'title'     => 'Project Chat',
             'page'      => 'project-chat',
             'project'   => $project,
-            'projectId' => $projectId
+            'projectId' => $projectId,
+            'members'   => $members
         ];
 
-        $this->view('organization/chats', $data);
+        $this->view($currentRole === 'organization' ? 'organization/chats' : 'userdashboard/project_chats', $data);
     }
 
     public function user($partnerId = null)
@@ -274,6 +278,109 @@ class ChatController extends Controller
         }
 
         $ok = $chatModel->sendMessage($chatId, $userId, $message);
+
+        echo json_encode([
+            'success' => $ok,
+            'message' => $ok ? 'Message sent' : 'Failed to send message'
+        ]);
+    }
+
+    public function fetchMessages()
+    {
+        header('Content-Type: application/json');
+
+        $userId = (int)$_SESSION['user_id'];
+        $projectId = isset($_GET['project_id']) ? (int)$_GET['project_id'] : 0;
+
+        if ($projectId <= 0) {
+            echo json_encode(['success' => false, 'message' => 'Invalid project ID']);
+            return;
+        }
+
+        $projectModel = $this->model('Project');
+        $project = $projectModel->getProjectById($projectId);
+
+        if (!$project) {
+            echo json_encode(['success' => false, 'message' => 'Project not found']);
+            return;
+        }
+
+        $isOwner = (int)($project->organization_id ?? 0) === $userId;
+        $isMember = $projectModel->isProjectMember($projectId, $userId);
+
+        if (!$isOwner && !$isMember) {
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            return;
+        }
+
+        $db = new Database();
+        $db->query("
+            SELECT
+                pcm.id,
+                pcm.project_id,
+                pcm.sender_id,
+                pcm.message,
+                pcm.created_at,
+                u.username AS sender_name,
+                u.profile_picture AS sender_profile_pic
+            FROM project_chat_messages pcm
+            INNER JOIN users u ON u.id = pcm.sender_id
+            WHERE pcm.project_id = :project_id
+            ORDER BY pcm.created_at ASC, pcm.id ASC
+        ");
+        $db->bind(':project_id', $projectId);
+        $messages = $db->resultSet();
+
+        echo json_encode([
+            'success' => true,
+            'messages' => $messages ?: [],
+            'current_user_id' => $userId,
+        ]);
+    }
+
+    public function sendMessage()
+    {
+        header('Content-Type: application/json');
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Invalid request method']);
+            return;
+        }
+
+        $userId = (int)$_SESSION['user_id'];
+        $projectId = isset($_POST['project_id']) ? (int)$_POST['project_id'] : 0;
+        $message = trim($_POST['message'] ?? '');
+
+        if ($projectId <= 0 || $message === '') {
+            echo json_encode(['success' => false, 'message' => 'Missing project or message']);
+            return;
+        }
+
+        $projectModel = $this->model('Project');
+        $project = $projectModel->getProjectById($projectId);
+
+        if (!$project) {
+            echo json_encode(['success' => false, 'message' => 'Project not found']);
+            return;
+        }
+
+        $isOwner = (int)($project->organization_id ?? 0) === $userId;
+        $isMember = $projectModel->isProjectMember($projectId, $userId);
+
+        if (!$isOwner && !$isMember) {
+            echo json_encode(['success' => false, 'message' => 'Access denied']);
+            return;
+        }
+
+        $db = new Database();
+        $db->query("
+            INSERT INTO project_chat_messages (project_id, sender_id, message, created_at)
+            VALUES (:project_id, :sender_id, :message, NOW())
+        ");
+        $db->bind(':project_id', $projectId);
+        $db->bind(':sender_id', $userId);
+        $db->bind(':message', $message);
+        $ok = $db->execute();
 
         echo json_encode([
             'success' => $ok,
