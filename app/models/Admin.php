@@ -9,34 +9,49 @@ class Admin {
 
     // stat cards
     public function getAdminStats() {
+        return [
+            'total_users' => $this->safeCount("
+                SELECT COUNT(*) AS n
+                FROM users
+                WHERE role NOT IN ('admin', 'quiz_manager', 'community_admin', 'manager')
+            "),
+            'active_users' => $this->safeCount("
+                SELECT COUNT(*) AS n
+                FROM users
+                WHERE role NOT IN ('admin', 'quiz_manager', 'community_admin', 'manager')
+                  AND COALESCE(status, 'active') = 'active'
+            "),
+            'suspended_users' => $this->safeCount("
+                SELECT COUNT(*) AS n
+                FROM users
+                WHERE role NOT IN ('admin', 'quiz_manager', 'community_admin', 'manager')
+                  AND status = 'suspended'
+            "),
+            'pending_reports' => $this->safeCount("
+                SELECT
+                    COALESCE((SELECT COUNT(*) FROM user_reports WHERE status = 'pending'), 0) +
+                    COALESCE((SELECT COUNT(*) FROM feedback_reports WHERE status = 'pending'), 0) AS n
+            "),
+            'total_reports' => $this->safeCount("
+                SELECT
+                    COALESCE((SELECT COUNT(*) FROM user_reports), 0) +
+                    COALESCE((SELECT COUNT(*) FROM feedback_reports), 0) AS n
+            "),
+            'total_warnings' => $this->safeCount("
+                SELECT COUNT(*) AS n
+                FROM user_warnings
+            "),
+        ];
+    }
+
+    private function safeCount($sql) {
         try {
-            $stats = [];
-
-            $this->db->query("SELECT COUNT(*) AS n FROM users WHERE role != 'admin'");
-            $stats['total_users'] = $this->db->single()->n ?? 0;
-
-            $this->db->query("SELECT COUNT(*) AS n FROM users WHERE role != 'admin' AND status = 'active'");
-            $stats['active_users'] = $this->db->single()->n ?? 0;
-
-            $this->db->query("SELECT COUNT(*) AS n FROM users WHERE status = 'suspended'");
-            $stats['suspended_users'] = $this->db->single()->n ?? 0;
-
-            $this->db->query("SELECT COUNT(*) AS n FROM reports WHERE status = 'pending'");
-            $stats['pending_reports'] = $this->db->single()->n ?? 0;
-
-            $this->db->query("SELECT COUNT(*) AS n FROM reports");
-            $stats['total_reports'] = $this->db->single()->n ?? 0;
-
-            $this->db->query("SELECT COUNT(*) AS n FROM user_warnings");
-            $stats['total_warnings'] = $this->db->single()->n ?? 0;
-
-            return $stats;
+            $this->db->query($sql);
+            $row = $this->db->single();
+            return (int)($row->n ?? 0);
         } catch (Exception $e) {
-            error_log("getAdminStats: " . $e->getMessage());
-            return array_fill_keys([
-                'total_users','active_users','suspended_users',
-                'pending_reports','total_reports','total_warnings'
-            ], 0);
+            error_log("Admin stats query failed: " . $e->getMessage());
+            return 0;
         }
     }
 
