@@ -112,6 +112,128 @@ class CommunityAdminController extends Controller {
         $this->view('cmmanager/community_view', $data);
     }
 
+    public function postAnnouncement($communityId = null) {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !$communityId) {
+            header('Location: ' . URLROOT . '/communityAdmin');
+            exit;
+        }
+
+        $community = $this->communityAdminModel->getCommunityById($communityId);
+        if (!$community) {
+            $_SESSION['error'] = 'Community not found';
+            header('Location: ' . URLROOT . '/communityAdmin');
+            exit;
+        }
+
+        $title = trim($_POST['title'] ?? '');
+        $content = trim($_POST['content'] ?? '');
+
+        if ($title === '' || $content === '') {
+            $_SESSION['error'] = 'Announcement title and content are required';
+            header('Location: ' . URLROOT . '/communityAdmin/viewCommunity/' . $communityId);
+            exit;
+        }
+
+        $announcementId = $this->communityAdminModel->createAnnouncement(
+            (int)$communityId,
+            (int)($_SESSION['user_id'] ?? 1),
+            $title,
+            $content
+        );
+
+        if ($announcementId) {
+            $this->communityAdminModel->logAction(
+                (int)($_SESSION['user_id'] ?? 1),
+                (int)$communityId,
+                'announcement_posted',
+                'Posted announcement in community: ' . $community->name
+            );
+            $_SESSION['success'] = 'Announcement posted successfully';
+        } else {
+            $_SESSION['error'] = 'Failed to post announcement';
+        }
+
+        header('Location: ' . URLROOT . '/communityAdmin/viewCommunity/' . $communityId);
+        exit;
+    }
+
+    public function removePost() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ' . URLROOT . '/communityAdmin');
+            exit;
+        }
+
+        $communityId = (int)($_POST['community_id'] ?? 0);
+        $postId = (int)($_POST['post_id'] ?? 0);
+
+        if (!$communityId || !$postId) {
+            $_SESSION['error'] = 'Invalid post removal request';
+            header('Location: ' . URLROOT . '/communityAdmin');
+            exit;
+        }
+
+        $post = $this->communityAdminModel->getCommunityPostById($postId, $communityId);
+        if (!$post) {
+            $_SESSION['error'] = 'Post not found';
+            header('Location: ' . URLROOT . '/communityAdmin/viewCommunity/' . $communityId);
+            exit;
+        }
+
+        if ($this->communityAdminModel->deleteCommunityPost($postId, $communityId)) {
+            $this->communityAdminModel->logAction(
+                (int)($_SESSION['user_id'] ?? 1),
+                $communityId,
+                'post_removed',
+                'Removed post by ' . ($post->author_name ?? 'user') . ': ' . ($post->title ?: (strlen((string)$post->content) > 60 ? substr((string)$post->content, 0, 57) . '...' : (string)$post->content))
+            );
+            $_SESSION['success'] = 'Post removed successfully';
+        } else {
+            $_SESSION['error'] = 'Failed to remove post';
+        }
+
+        header('Location: ' . URLROOT . '/communityAdmin/viewCommunity/' . $communityId);
+        exit;
+    }
+
+    public function warnPostAuthor() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: ' . URLROOT . '/communityAdmin');
+            exit;
+        }
+
+        $communityId = (int)($_POST['community_id'] ?? 0);
+        $postId = (int)($_POST['post_id'] ?? 0);
+        $reason = trim($_POST['reason'] ?? '');
+
+        if (!$communityId || !$postId || $reason === '') {
+            $_SESSION['error'] = 'Warning reason is required';
+            header('Location: ' . URLROOT . '/communityAdmin/viewCommunity/' . $communityId);
+            exit;
+        }
+
+        $post = $this->communityAdminModel->getCommunityPostById($postId, $communityId);
+        if (!$post) {
+            $_SESSION['error'] = 'Post not found';
+            header('Location: ' . URLROOT . '/communityAdmin/viewCommunity/' . $communityId);
+            exit;
+        }
+
+        if ($this->communityAdminModel->sendPostWarning($postId, $communityId, (int)($_SESSION['user_id'] ?? 1), $reason)) {
+            $this->communityAdminModel->logAction(
+                (int)($_SESSION['user_id'] ?? 1),
+                $communityId,
+                'post_author_warned',
+                'Warned post author ' . ($post->author_name ?? 'user') . ' for post #' . $postId
+            );
+            $_SESSION['success'] = 'Warning sent to post author';
+        } else {
+            $_SESSION['error'] = 'Failed to send warning';
+        }
+
+        header('Location: ' . URLROOT . '/communityAdmin/viewCommunity/' . $communityId);
+        exit;
+    }
+
     public function activate() {
         if($_SERVER['REQUEST_METHOD'] == 'POST') {
             header('Content-Type: application/json');

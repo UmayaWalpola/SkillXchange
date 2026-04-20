@@ -33,6 +33,27 @@
 
                     <!-- Left: Feed (read-only) -->
                     <section class="chat-container community-feed-section">
+                        <div class="inline-form-panel" style="margin-bottom:20px;">
+                            <h3 style="margin-bottom:14px;">Post Community Announcement</h3>
+                            <form method="POST" action="<?= URLROOT ?>/communityAdmin/postAnnouncement/<?= (int)$data['community']->id ?>">
+                                <div style="display:grid; gap:12px;">
+                                    <div>
+                                        <label for="announcement-title" style="display:block; font-weight:600; margin-bottom:6px;">Title</label>
+                                        <input id="announcement-title" type="text" name="title" required placeholder="Enter announcement title"
+                                               style="width:100%; padding:12px 14px; border:1px solid #d7e3eb; border-radius:10px;">
+                                    </div>
+                                    <div>
+                                        <label for="announcement-content" style="display:block; font-weight:600; margin-bottom:6px;">Content</label>
+                                        <textarea id="announcement-content" name="content" rows="4" required placeholder="Write the announcement for this community..."
+                                                  style="width:100%; padding:12px 14px; border:1px solid #d7e3eb; border-radius:10px; resize:vertical;"></textarea>
+                                    </div>
+                                    <div>
+                                        <button type="submit" class="btn-primary">Post Announcement</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
                         <h3>Community Feed</h3>
 
                         <div class="community-feed" id="messagesList">
@@ -95,6 +116,39 @@
                                         <?php endif; ?>
 
                                         <div class="feed-post-footer">
+                                            <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; width:100%;">
+                                                <form method="POST" action="<?= URLROOT ?>/communityAdmin/removePost" onsubmit="return confirm('Remove this post from the community feed?');">
+                                                    <input type="hidden" name="community_id" value="<?= (int)$data['community']->id ?>">
+                                                    <input type="hidden" name="post_id" value="<?= (int)$post->id ?>">
+                                                    <button type="submit" class="btn-outline" style="border-color:#fecaca; color:#b91c1c;">Remove Post</button>
+                                                </form>
+
+                                                <?php if (!empty($post->user_id)): ?>
+                                                    <button type="button"
+                                                            class="btn-outline"
+                                                            style="border-color:#fcd34d; color:#92400e;"
+                                                            onclick="toggleWarnForm(<?= (int)$post->id ?>)">
+                                                        Warn Author
+                                                    </button>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+
+                                        <div id="warn-form-<?= (int)$post->id ?>" class="inline-form-panel" style="display:none; margin-top:12px; border:1px solid #f3d28b; background:#fffaf0;">
+                                            <form method="POST" action="<?= URLROOT ?>/communityAdmin/warnPostAuthor">
+                                                <input type="hidden" name="community_id" value="<?= (int)$data['community']->id ?>">
+                                                <input type="hidden" name="post_id" value="<?= (int)$post->id ?>">
+                                                <div style="display:grid; gap:10px;">
+                                                    <label for="warn-reason-<?= (int)$post->id ?>" style="font-weight:600;">Warning reason</label>
+                                                    <textarea id="warn-reason-<?= (int)$post->id ?>" name="reason" rows="3" required
+                                                              placeholder="Explain why this post violates community rules..."
+                                                              style="width:100%; padding:12px 14px; border:1px solid #ead7ad; border-radius:10px; resize:vertical;"></textarea>
+                                                    <div style="display:flex; gap:10px; justify-content:flex-end;">
+                                                        <button type="button" class="btn-cancel" onclick="toggleWarnForm(<?= (int)$post->id ?>)">Cancel</button>
+                                                        <button type="submit" class="btn-primary">Send Warning</button>
+                                                    </div>
+                                                </div>
+                                            </form>
                                         </div>
                                     </article>
                                 <?php endforeach; ?>
@@ -145,5 +199,13 @@
         </div>
     </div>
 </main>
+
+<script>
+function toggleWarnForm(postId) {
+    const form = document.getElementById('warn-form-' + postId);
+    if (!form) return;
+    form.style.display = form.style.display === 'none' || form.style.display === '' ? 'block' : 'none';
+}
+</script>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>

@@ -248,6 +248,111 @@ class CommunityAdmin {
         return $this->db->resultSet();
     }
 
+    public function getCommunityPostById($postId, $communityId) {
+        $this->db->query("
+            SELECT cp.*, u.username AS author_name
+            FROM community_posts cp
+            JOIN users u ON cp.user_id = u.id
+            WHERE cp.id = :post_id AND cp.community_id = :community_id
+            LIMIT 1
+        ");
+        $this->db->bind(':post_id', $postId);
+        $this->db->bind(':community_id', $communityId);
+        return $this->db->single();
+    }
+
+    public function createAnnouncement($communityId, $adminId, $title, $content) {
+        $this->db->query("
+            INSERT INTO community_posts (
+                community_id,
+                user_id,
+                title,
+                content,
+                post_type,
+                is_pinned,
+                created_at,
+                updated_at
+            ) VALUES (
+                :community_id,
+                :user_id,
+                :title,
+                :content,
+                'announcement',
+                1,
+                NOW(),
+                NOW()
+            )
+        ");
+        $this->db->bind(':community_id', $communityId);
+        $this->db->bind(':user_id', $adminId);
+        $this->db->bind(':title', $title);
+        $this->db->bind(':content', $content);
+
+        if ($this->db->execute()) {
+            return $this->db->lastInsertId();
+        }
+
+        return false;
+    }
+
+    public function deleteCommunityPost($postId, $communityId) {
+        try {
+            $this->db->query('START TRANSACTION');
+
+            $this->db->query("DELETE FROM community_posts WHERE parent_id = :post_id AND community_id = :community_id");
+            $this->db->bind(':post_id', $postId);
+            $this->db->bind(':community_id', $communityId);
+            $this->db->execute();
+
+            $this->db->query("DELETE FROM community_posts WHERE id = :post_id AND community_id = :community_id");
+            $this->db->bind(':post_id', $postId);
+            $this->db->bind(':community_id', $communityId);
+            $deleted = $this->db->execute();
+
+            $this->db->query('COMMIT');
+            return $deleted;
+        } catch (Exception $e) {
+            $this->db->query('ROLLBACK');
+            error_log('deleteCommunityPost error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function sendPostWarning($postId, $communityId, $adminId, $reason) {
+        $post = $this->getCommunityPostById($postId, $communityId);
+        if (!$post) {
+            return false;
+        }
+
+        $community = $this->getCommunityById($communityId);
+        $communityName = $community->name ?? 'community';
+
+        $this->db->query("
+            INSERT INTO notifications (
+                user_id,
+                type,
+                title,
+                message,
+                related_user_id,
+                is_read,
+                created_at
+            ) VALUES (
+                :user_id,
+                'system_warning',
+                'Community Post Warning',
+                :message,
+                :related_user_id,
+                0,
+                NOW()
+            )
+        ");
+        $this->db->bind(':user_id', $post->user_id);
+        $this->db->bind(':message', 'Your post in the ' . $communityName . ' community has been flagged by a community manager. Reason: ' . $reason);
+        $this->db->bind(':related_user_id', $adminId);
+
+        return $this->db->execute();
+    }
+
     public function getCommunityMembers($communityId) {
         $this->db->query("
             SELECT u.id AS user_id, u.username AS name, u.profile_picture, cm.joined_at, cm.role
