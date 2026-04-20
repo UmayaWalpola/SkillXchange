@@ -351,7 +351,7 @@
     max-width: 1400px;
 }
 
-.status-message {
+.application-status-message {
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -362,21 +362,35 @@
     border-left: 4px solid #658396;
 }
 
-.status-badge {
+.application-status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
     padding: 0.6rem 1.2rem;
     border-radius: 6px;
     font-weight: 600;
     font-size: 0.9rem;
 }
 
-.status-badge.pending {
+.application-status-badge.pending {
     background: #fef3c7;
     color: #92400e;
 }
 
-.status-badge.approved {
+.application-status-badge.approved {
     background: #d1fae5;
     color: #065f46;
+}
+
+.application-status-copy {
+    flex: 1;
+    min-width: 0;
+}
+
+.application-status-copy p {
+    margin: 0;
+    color: #4b5563;
 }
 
 .status-badge.rejected {
@@ -1064,6 +1078,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 // Hide form and the toggle button — application is submitted
                 applyForm.classList.remove('show');
+                applyForm.style.display = 'none';
                 const toggleBtn = document.getElementById('applyToggle');
                 if (toggleBtn) toggleBtn.style.display = 'none';
 
@@ -1072,16 +1087,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 const container = document.querySelector('.application-section');
                 if (container) {
                     // Remove old status message if present
-                    const old = container.querySelector('.status-message');
+                    const old = container.querySelector('.application-status-message');
                     if (old) old.remove();
 
                     const statusDiv = document.createElement('div');
-                    statusDiv.className = 'status-message';
+                    statusDiv.className = 'application-status-message';
                     const badge = document.createElement('span');
-                    badge.className = 'status-badge pending';
+                    badge.className = 'application-status-badge pending';
                     badge.textContent = 'Pending';
                     const txt = document.createElement('div');
-                    txt.innerHTML = '<p style="margin:0;color:#4b5563;">Your application status: <strong>Pending</strong> - Your application is pending review by the organization.</p>';
+                    txt.className = 'application-status-copy';
+                    txt.innerHTML = '<p>Your application status: <strong>Pending</strong> - Your application is pending review by the organization.</p>';
                     statusDiv.appendChild(badge);
                     statusDiv.appendChild(txt);
                     container.insertBefore(statusDiv, container.firstChild);

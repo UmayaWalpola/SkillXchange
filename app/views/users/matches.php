@@ -249,7 +249,7 @@
                                         <button type="button"
                                                 class="btn-chat"
                                                 onclick="openSkillChat(<?= (int)$match['id']; ?>, '<?= htmlspecialchars($matchType, ENT_QUOTES); ?>', '<?= htmlspecialchars($chatSkill, ENT_QUOTES); ?>', '<?= htmlspecialchars($chatDir, ENT_QUOTES); ?>')">
-                                            Go to Chat
+                                            Go to Session
                                         </button>
                                     </div>
 
