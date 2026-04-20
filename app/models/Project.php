@@ -271,7 +271,7 @@ class Project {
     }
 
     // ============================================================
-    // ACCEPT PROJECT APPLICATION (Assigned to: Kithsara)
+    // ACCEPT PROJECT APPLICATION
     // ============================================================
     public function acceptApplication($applicationId, $org_id) {
         
@@ -328,7 +328,7 @@ class Project {
     }
 
     // ============================================================
-    // REJECT PROJECT APPLICATION (Assigned to: Kithsara)
+    // REJECT PROJECT APPLICATION
     // ============================================================
     public function rejectApplication($applicationId, $org_id) {
         
@@ -371,7 +371,7 @@ class Project {
     }
 
     // ============================================================
-    // ASSIGN ROLES TO MEMBERS (Assigned to: Kithsara)
+    // ASSIGN ROLES TO MEMBERS
     // ============================================================
     public function updateMemberRoleWithOrg($memberId, $role, $org_id) {
         

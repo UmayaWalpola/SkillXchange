@@ -89,7 +89,6 @@ class OrganizationController extends Controller {
 
     // ============================================================
     // PROJECT LIST PAGE (Read All Projects)
-    // Assigned to: Kithsara
     // ============================================================
     public function projects() {
         // Step 1: Get all projects for the logged-in organization from the model
@@ -114,7 +113,6 @@ class OrganizationController extends Controller {
 
     // ============================================================
     // CREATE PROJECT (Handles both loading the form and form submission)
-    // Assigned to: Kithsara
     // ============================================================
     public function createProject() {
         $availableSkills = $this->projectModel->getAllSkills();
@@ -247,7 +245,6 @@ class OrganizationController extends Controller {
 
     // ============================================================
     // EDIT PROJECT (Handles both loading the pre-filled form & submission)
-    // Assigned to: Kithsara
     // ============================================================
     public function editProject($projectId = null) {
         $availableSkills = $this->projectModel->getAllSkills();
@@ -378,7 +375,6 @@ class OrganizationController extends Controller {
 
     // ============================================================
     // DELETE PROJECT (AJAX request - happens without page reload)
-    // Assigned to: Kithsara
     // ============================================================
     public function deleteProject() {
         
@@ -421,7 +417,6 @@ class OrganizationController extends Controller {
 
     // ============================================================
     // VIEW PROJECT APPLICATIONS (List page for applications)
-    // Assigned to: Kithsara
     // ============================================================
     public function applications() {
         // Step 1: Get all people who applied to your organization's projects
@@ -453,7 +448,7 @@ class OrganizationController extends Controller {
 
     // ============================================================
     // CHATS PAGE (Group chat for project)
-    // Assigned to: Kithsara / Umaya
+    // Assigned to: Umaya
     // ============================================================
     public function chats() {
         $data = [
@@ -466,7 +461,6 @@ class OrganizationController extends Controller {
 
     // ============================================================
     // ACCEPT/REJECT APPLICATIONS (Updates status in Database)
-    // Assigned to: Kithsara
     // URL looks like: /organization/handleApplication/12/accept
     // ============================================================
     public function handleApplication($applicationId = null, $action = null)
@@ -510,7 +504,6 @@ class OrganizationController extends Controller {
 
     // ============================================================
     // MANAGE MEMBERS & ROLES
-    // Assigned to: Kithsara
     // ============================================================
     public function members($projectId = null) {
         // Must have project ID
@@ -640,7 +633,7 @@ class OrganizationController extends Controller {
     }
 
     // ============================================================
-    // EDIT MEMBER ROLE (Assigned to: Kithsara)
+    // EDIT MEMBER ROLE
     // AJAX Request
     // ============================================================
     public function updateRole() {
@@ -682,7 +675,7 @@ class OrganizationController extends Controller {
     }
 
     // ============================================================
-    // REMOVE MEMBER FROM PROJECT (Assigned to: Kithsara)
+    // REMOVE MEMBER FROM PROJECT
     // AJAX Request
     // ============================================================
     public function removeMember() {
@@ -952,7 +945,7 @@ class OrganizationController extends Controller {
     }
 
     // ============================================================
-    // ASSIGN NEW TASK (Assigned to: Kithsara)
+    // ASSIGN NEW TASK
     // AJAX Request to give a task to a project member
     // ============================================================
     public function assignTask() {
@@ -1070,7 +1063,7 @@ class OrganizationController extends Controller {
     }
 
     // ============================================================
-    // DELETE TASK (Assigned to: Kithsara)
+    // DELETE TASK
     // AJAX Request to delete a task completely
     // ============================================================
     public function removeTask() {
