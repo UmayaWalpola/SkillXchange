@@ -130,8 +130,16 @@ class ManagerController extends Controller {
             exit;
         }
 
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $_SESSION['error'] = 'Invalid email format';
+        // Validate email - must contain @ sign
+        if (strpos($email, '@') === false) {
+            $_SESSION['error'] = 'Email must contain @ sign';
+            header('Location: ' . URLROOT . '/manager/users');
+            exit;
+        }
+
+        // Validate password - must be at least 8 characters
+        if (strlen($password) < 8) {
+            $_SESSION['error'] = 'Password must be at least 8 characters long';
             header('Location: ' . URLROOT . '/manager/users');
             exit;
         }
@@ -175,8 +183,16 @@ class ManagerController extends Controller {
             exit;
         }
 
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $_SESSION['error'] = 'Invalid email format';
+        // Validate email - must contain @ sign
+        if (strpos($email, '@') === false) {
+            $_SESSION['error'] = 'Email must contain @ sign';
+            header('Location: ' . URLROOT . '/manager/users');
+            exit;
+        }
+
+        // Validate password - must be at least 8 characters if provided
+        if (!empty($password) && strlen($password) < 8) {
+            $_SESSION['error'] = 'Password must be at least 8 characters long';
             header('Location: ' . URLROOT . '/manager/users');
             exit;
         }

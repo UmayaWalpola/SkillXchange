@@ -27,7 +27,7 @@
             <!-- Add New User Form (hidden by default) -->
             <div id="addUserForm" class="section-card inline-form-panel">
                 <h2 class="section-title">Add New User</h2>
-                <form method="POST" action="<?= URLROOT ?>/manager/addUser">
+                <form method="POST" action="<?= URLROOT ?>/manager/addUser" onsubmit="return validateAddUserForm(event)">
                     <div class="form-grid-2">
                         <div class="form-group">
                             <label for="add-name">Full Name</label>
@@ -35,7 +35,7 @@
                         </div>
                         <div class="form-group">
                             <label for="add-email">Email Address</label>
-                            <input id="add-email" type="email" name="email" required placeholder="Enter email">
+                            <input id="add-email" type="email" name="email" required placeholder="Enter email" title="Email must contain @ sign">
                         </div>
                         <div class="form-group">
                             <label for="add-role">Role</label>
@@ -48,7 +48,7 @@
                         </div>
                         <div class="form-group">
                             <label for="add-password">Password</label>
-                            <input id="add-password" type="password" name="password" required placeholder="Enter password">
+                            <input id="add-password" type="password" name="password" required placeholder="Enter password (minimum 8 characters)" title="Password must be at least 8 characters">
                         </div>
                     </div>
                     <div class="form-footer">
@@ -107,7 +107,7 @@
 
                                             <!-- Inline Edit Form -->
                                             <div id="edit-<?= $user->id ?>" class="inline-form-panel">
-                                                <form method="POST" action="<?= URLROOT ?>/manager/updateUser">
+                                                <form method="POST" action="<?= URLROOT ?>/manager/updateUser" onsubmit="return validateEditUserForm(event, <?= $user->id ?>)">
                                                     <input type="hidden" name="user_id" value="<?= $user->id ?>">
                                                     <div class="form-grid-2">
                                                         <div class="form-group">
@@ -118,7 +118,7 @@
                                                         <div class="form-group">
                                                             <label for="edit-email-<?= $user->id ?>">Email</label>
                                                             <input id="edit-email-<?= $user->id ?>" type="email" name="email" required
-                                                                value="<?= htmlspecialchars($user->email) ?>">
+                                                                value="<?= htmlspecialchars($user->email) ?>" title="Email must contain @ sign">
                                                         </div>
                                                         <div class="form-group">
                                                             <label for="edit-role-<?= $user->id ?>">Role</label>
@@ -131,7 +131,7 @@
                                                         <div class="form-group">
                                                             <label for="edit-password-<?= $user->id ?>">New Password (leave blank to keep current)</label>
                                                             <input id="edit-password-<?= $user->id ?>" type="password" name="password"
-                                                                placeholder="Leave blank to keep current">
+                                                                placeholder="Leave blank to keep current (minimum 8 characters if changed)" title="Password must be at least 8 characters">
                                                         </div>
                                                     </div>
                                                     <div class="form-footer">
@@ -172,6 +172,56 @@ function toggleAddForm() {
 function toggleEditForm(userId) {
     const form = document.getElementById('edit-' + userId);
     form.classList.toggle('open');
+}
+
+
+function validateEmail(email) {
+    return email.includes('@');
+}
+
+
+function validatePassword(password) {
+    return password.length >= 8;
+}
+
+
+function validateAddUserForm(event) {
+    const email = document.getElementById('add-email').value.trim();
+    const password = document.getElementById('add-password').value;
+
+    if (!validateEmail(email)) {
+        event.preventDefault();
+        alert('Email must contain @ sign');
+        return false;
+    }
+
+    if (!validatePassword(password)) {
+        event.preventDefault();
+        alert('Password must be at least 8 characters long');
+        return false;
+    }
+
+    return true;
+}
+
+
+function validateEditUserForm(event, userId) {
+    const email = document.getElementById('edit-email-' + userId).value.trim();
+    const password = document.getElementById('edit-password-' + userId).value;
+
+    if (!validateEmail(email)) {
+        event.preventDefault();
+        alert('Email must contain @ sign');
+        return false;
+    }
+
+    if (password && !validatePassword(password)) {
+        event.preventDefault();
+        alert('Password must be at least 8 characters long');
+        return false;
+    }
+
+    return true;
 }
 </script>
 
