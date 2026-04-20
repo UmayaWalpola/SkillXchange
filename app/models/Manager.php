@@ -95,7 +95,7 @@ class Manager {
         $query = "
             SELECT id, username AS name, email, role, status, created_at
             FROM users
-            WHERE role IN ('admin', 'quiz_manager', 'manager', 'community_admin', 'organization')";
+            WHERE role IN ('admin', 'quiz_manager', 'manager', 'community_admin')";
 
         // Exclude current manager from the list
         if ($currentUserId) {
