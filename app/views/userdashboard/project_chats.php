@@ -45,6 +45,7 @@
 </main>
 
 <script>
+window.URLROOT = window.URLROOT || '<?= URLROOT ?>';
 const CHAT_PROJECT_ID = <?= isset($data['projectId']) ? (int)$data['projectId'] : 0 ?>;
 let typingTimeout = null;
 
@@ -66,7 +67,7 @@ function renderMessages(payload) {
     if (emptyState) emptyState.style.display = 'none';
 
     messages.forEach(m => {
-        const isMine = (parseInt(m.sender_id, 10) === parseInt(currentUserId, 10));
+        const isMine = parseInt(m.sender_id, 10) === parseInt(currentUserId, 10);
         const wrapper = document.createElement('div');
         wrapper.className = 'chat-message-row ' + (isMine ? 'mine' : 'theirs');
 
@@ -88,68 +89,75 @@ function renderMessages(payload) {
         bubble.appendChild(header);
         bubble.appendChild(body);
         bubble.appendChild(meta);
-+        wrapper.appendChild(bubble);
-+        area.appendChild(wrapper);
-+    });
-+
-+    area.scrollTop = area.scrollHeight;
-+}
-+
-+function fetchMessages() {
-+    if (!CHAT_PROJECT_ID) return;
-+    fetch(`${window.URLROOT}/chat/fetchMessages?project_id=${CHAT_PROJECT_ID}`, { credentials: 'same-origin' })
-+        .then(r => r.json())
-+        .then(data => {
-+            if (!data.success) return;
-+            renderMessages(data);
-+        })
-+        .catch(() => {});
-+}
-+
-+function sendMessage() {
-+    const input = document.getElementById('chatInput');
-+    if (!input) return;
-+    const msg = input.value.trim();
-+    if (!msg || !CHAT_PROJECT_ID) return;
-+
-+    fetch(`${window.URLROOT}/chat/sendMessage`, {
-+        method: 'POST',
-+        credentials: 'same-origin',
-+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-+        body: `project_id=${encodeURIComponent(CHAT_PROJECT_ID)}&message=${encodeURIComponent(msg)}`
-+    })
-+    .then(r => r.json())
-+    .then(data => {
-+        if (!data.success) return;
-+        input.value = '';
-+        fetchMessages();
-+    })
-+    .catch(() => {});
-+}
-+
-+document.addEventListener('DOMContentLoaded', () => {
-+    const btn = document.getElementById('sendBtn');
-+    const input = document.getElementById('chatInput');
-+    if (btn) btn.addEventListener('click', sendMessage);
-+    if (input) {
-+        input.addEventListener('keydown', e => {
-+            if (e.key === 'Enter' && !e.shiftKey) {
-+                e.preventDefault();
-+                sendMessage();
-+            }
-+        });
-+        input.addEventListener('input', () => {
-+            const ind = document.getElementById('typingIndicator');
-+            if (!ind) return;
-+            ind.style.display = 'block';
-+            if (typingTimeout) clearTimeout(typingTimeout);
-+            typingTimeout = setTimeout(() => { ind.style.display = 'none'; }, 1000);
-+        });
-+    }
-+
-+    setInterval(fetchMessages, 2000);
-+    fetchMessages();
-+});
-+</script>
+        wrapper.appendChild(bubble);
+        area.appendChild(wrapper);
+    });
+
+    area.scrollTop = area.scrollHeight;
+}
+
+function fetchMessages() {
+    if (!CHAT_PROJECT_ID) return;
+    fetch(`${window.URLROOT}/chat/fetchMessages?project_id=${CHAT_PROJECT_ID}`, { credentials: 'same-origin' })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+            renderMessages(data);
+        })
+        .catch(() => {});
+}
+
+function sendMessage() {
+    const input = document.getElementById('chatInput');
+    if (!input) return;
+
+    const msg = input.value.trim();
+    if (!msg || !CHAT_PROJECT_ID) return;
+
+    fetch(`${window.URLROOT}/chat/sendMessage`, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `project_id=${encodeURIComponent(CHAT_PROJECT_ID)}&message=${encodeURIComponent(msg)}`
+    })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+            input.value = '';
+            fetchMessages();
+        })
+        .catch(() => {});
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('sendBtn');
+    const input = document.getElementById('chatInput');
+
+    if (btn) btn.addEventListener('click', sendMessage);
+
+    if (input) {
+        input.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        input.addEventListener('input', () => {
+            const ind = document.getElementById('typingIndicator');
+            if (!ind) return;
+
+            ind.style.display = 'block';
+            if (typingTimeout) clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                ind.style.display = 'none';
+            }, 1000);
+        });
+    }
+
+    setInterval(fetchMessages, 2000);
+    fetchMessages();
+});
+</script>
 
 <?php require_once "../app/views/layouts/footer_user.php"; ?>

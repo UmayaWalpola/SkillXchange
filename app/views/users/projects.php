@@ -64,12 +64,12 @@
                                     <span style="font-size: 0.875rem; color: #888;">
                                         Joined: <?= date('M d, Y', strtotime($project->joined_at)) ?>
                                     </span>
-                                    <div style="display:flex; gap:8px;">
+                                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
                                         <a href="<?= URLROOT ?>/project/detail/<?= htmlspecialchars($project->id) ?>" class="view-details-btn">
                                             View Details
                                         </a>
-                                        <a href="<?= URLROOT ?>/userdashboard/chats?partnerId=<?= htmlspecialchars($project->id) ?>" class="view-details-btn" style="background:#0ea5e9;border-color:#0ea5e9;">
-                                            <i class="ph ph-chat-circle-dots"></i> Chat
+                                        <a href="<?= URLROOT ?>/chat/index/<?= htmlspecialchars($project->id) ?>" class="view-details-btn view-details-btn--chat">
+                                            <i class="ph ph-chat-circle-dots"></i> Project Chat
                                         </a>
                                     </div>
                                 </div>

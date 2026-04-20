@@ -863,6 +863,14 @@
                             <div class="alert alert-success" style="border-radius:8px;padding:12px;margin-bottom:12px;">
                                 You are a team member of this project.
                             </div>
+                            <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top: 1rem;">
+                                <a href="<?= URLROOT . '/chat/index/' . (int)$project->id ?>" class="btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:8px;">
+                                    <i class="ph ph-chat-circle-dots"></i> Open Project Chat
+                                </a>
+                                <a href="<?= URLROOT . '/userdashboard/projects' ?>" class="btn-secondary" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:8px;">
+                                    <i class="ph ph-folders"></i> My Projects
+                                </a>
+                            </div>
                         <?php else: ?>
                             <?php if (isset($application) && $application): ?>
                                 <?php $status = strtolower($application->status); ?>
@@ -876,6 +884,14 @@
                                 <?php elseif ($status === 'accepted'): ?>
                                     <div class="alert alert-success" style="border-radius:8px;padding:12px;margin-bottom:12px;">
                                         Your application is accepted — you are now a member of this project.
+                                    </div>
+                                    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top: 1rem;">
+                                        <a href="<?= URLROOT . '/chat/index/' . (int)$project->id ?>" class="btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:8px;">
+                                            <i class="ph ph-chat-circle-dots"></i> Open Project Chat
+                                        </a>
+                                        <a href="<?= URLROOT . '/userdashboard/projects' ?>" class="btn-secondary" style="text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:8px;">
+                                            <i class="ph ph-folders"></i> My Projects
+                                        </a>
                                     </div>
                                 <?php elseif ($status === 'rejected'): ?>
                                     <div class="alert alert-error" style="border-radius:8px;padding:12px;margin-bottom:12px;">

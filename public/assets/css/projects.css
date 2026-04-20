@@ -288,6 +288,18 @@
     transform: translateY(-2px);
 }
 
+.view-details-btn--chat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: var(--dark-bg);
+}
+
+.view-details-btn--chat:hover {
+    background: var(--primary-blue);
+    color: var(--white-bg);
+}
+
 /* ===== PROJECT DETAIL PAGE ===== */
 .project-detail {
     padding: 0;
