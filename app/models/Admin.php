@@ -2,6 +2,9 @@
 class Admin {
 
     private $db;
+    private $userColumns = null;
+    private $adminActionColumns = null;
+    private $tables = null;
 
     public function __construct() {
         $this->db = new Database();
@@ -55,17 +58,69 @@ class Admin {
         }
     }
 
-    // Get all non-staff users (exclude admin, quiz_manager, community_admin, manager)
+    // Get all manageable users for admin list (exclude only system admins)
     public function getAllNonStaffUsers() {
         try {
+            $warningCountSelect = $this->hasUserColumn('warning_count')
+                ? 'warning_count'
+                : '0 AS warning_count';
+
             $this->db->query(
-                "SELECT id, username, email, role, status, created_at, warning_count
+                "SELECT id,
+                        username,
+                        email,
+                        role,
+                        COALESCE(status, 'active') AS status,
+                        created_at,
+                        {$warningCountSelect}
                  FROM users 
-                 WHERE role NOT IN ('admin', 'quiz_manager', 'community_admin', 'manager')
+                 WHERE role != 'admin'
                  ORDER BY created_at DESC"
             );
             return $this->db->resultSet();
         } catch (Exception $e) { error_log($e->getMessage()); return []; }
+    }
+
+    private function hasUserColumn($columnName) {
+        if ($this->userColumns === null) {
+            try {
+                $this->db->query('SHOW COLUMNS FROM users');
+                $rows = $this->db->resultSet();
+                $this->userColumns = [];
+                foreach ($rows as $row) {
+                    if (isset($row->Field)) {
+                        $this->userColumns[] = $row->Field;
+                    }
+                }
+            } catch (Exception $e) {
+                error_log('Unable to inspect users columns: ' . $e->getMessage());
+                $this->userColumns = [];
+            }
+        }
+
+        return in_array($columnName, $this->userColumns, true);
+    }
+
+    private function hasTable($tableName) {
+        if ($this->tables === null) {
+            try {
+                $this->db->query('SHOW TABLES');
+                $rows = $this->db->resultSet();
+                $this->tables = [];
+
+                foreach ($rows as $row) {
+                    $values = array_values((array) $row);
+                    if (!empty($values[0])) {
+                        $this->tables[] = $values[0];
+                    }
+                }
+            } catch (Exception $e) {
+                error_log('Unable to inspect database tables: ' . $e->getMessage());
+                $this->tables = [];
+            }
+        }
+
+        return in_array($tableName, $this->tables, true);
     }
 
     public function getUserById($userId) {
@@ -172,9 +227,10 @@ class Admin {
         try {
             $this->db->query(
                 "SELECT ua.activity_type, ua.description, ua.created_at,
-                        u.username, u.email
+                        COALESCE(u.username, 'Deleted User') AS username,
+                        COALESCE(u.email, '') AS email
                  FROM user_activity ua
-                 JOIN users u ON ua.user_id = u.id
+                 LEFT JOIN users u ON ua.user_id = u.id
                  ORDER BY ua.created_at DESC LIMIT :limit"
             );
             $this->db->bind(':limit', $limit);
@@ -184,13 +240,24 @@ class Admin {
 
     public function getAllAdminActions($limit = 25) {
         try {
+            if (!$this->hasTable('admin_actions')) {
+                return [];
+            }
+
+            $targetUserSelect = $this->hasAdminActionColumn('target_user_id')
+                ? 'u.username AS target_username'
+                : 'NULL AS target_username';
+            $targetUserJoin = $this->hasAdminActionColumn('target_user_id')
+                ? 'LEFT JOIN users u ON aa.target_user_id = u.id'
+                : '';
+
             $this->db->query(
                 "SELECT aa.action_type, aa.description, aa.created_at,
-                        a.username AS admin_username,
-                        u.username AS target_username
+                        COALESCE(a.username, 'Deleted Admin') AS admin_username,
+                        {$targetUserSelect}
                  FROM admin_actions aa
-                 JOIN users a ON aa.admin_id = a.id
-                 LEFT JOIN users u ON aa.target_user_id = u.id
+                 LEFT JOIN users a ON aa.admin_id = a.id
+                 {$targetUserJoin}
                  ORDER BY aa.created_at DESC LIMIT :limit"
             );
             $this->db->bind(':limit', $limit);
@@ -200,21 +267,66 @@ class Admin {
 
     public function logAdminAction($adminId, $actionType, $targetUserId, $targetType, $targetId, $description, $ipAddress) {
         try {
+            if (!$this->hasTable('admin_actions')) {
+                return false;
+            }
+
+            $fieldMap = [
+                'admin_id' => $adminId,
+                'action_type' => $actionType,
+                'target_user_id' => $targetUserId,
+                'target_type' => $targetType,
+                'target_id' => $targetId,
+                'description' => $description,
+                'ip_address' => $ipAddress,
+            ];
+
+            $columns = [];
+            $placeholders = [];
+            foreach ($fieldMap as $column => $value) {
+                if ($this->hasAdminActionColumn($column)) {
+                    $columns[] = $column;
+                    $placeholders[] = ':' . $column;
+                }
+            }
+
             $this->db->query(
                 "INSERT INTO admin_actions
-                    (admin_id, action_type, target_user_id, target_type, target_id, description, ip_address)
+                    (" . implode(', ', $columns) . ")
                  VALUES
-                    (:admin_id, :action_type, :target_user_id, :target_type, :target_id, :description, :ip)"
+                    (" . implode(', ', $placeholders) . ")"
             );
-            $this->db->bind(':admin_id',      $adminId);
-            $this->db->bind(':action_type',   $actionType);
-            $this->db->bind(':target_user_id', $targetUserId);
-            $this->db->bind(':target_type',   $targetType);
-            $this->db->bind(':target_id',     $targetId);
-            $this->db->bind(':description',   $description);
-            $this->db->bind(':ip',            $ipAddress);
+
+            foreach ($columns as $column) {
+                $this->db->bind(':' . $column, $fieldMap[$column]);
+            }
+
             return $this->db->execute();
         } catch (Exception $e) { error_log($e->getMessage()); return false; }
+    }
+
+    private function hasAdminActionColumn($columnName) {
+        if (!$this->hasTable('admin_actions')) {
+            return false;
+        }
+
+        if ($this->adminActionColumns === null) {
+            try {
+                $this->db->query('SHOW COLUMNS FROM admin_actions');
+                $rows = $this->db->resultSet();
+                $this->adminActionColumns = [];
+                foreach ($rows as $row) {
+                    if (isset($row->Field)) {
+                        $this->adminActionColumns[] = $row->Field;
+                    }
+                }
+            } catch (Exception $e) {
+                error_log('Unable to inspect admin_actions columns: ' . $e->getMessage());
+                $this->adminActionColumns = [];
+            }
+        }
+
+        return in_array($columnName, $this->adminActionColumns, true);
     }
 
     public function getProjectMemberReports() {
