@@ -562,12 +562,12 @@ public function matches() {
         $communityId = $_POST['community_id'] ?? null;
         $title       = trim($_POST['title'] ?? '');
         $content     = trim($_POST['content'] ?? '');
-        $postType    = trim($_POST['post_type'] ?? 'Normal');
+        $postType    = trim($_POST['post_type'] ?? 'normal'); // Default to 'normal' 
         $linkUrl     = trim($_POST['link_url'] ?? '');
 
-        $allowedPostTypes = ['Normal', 'Famous',];
+        $allowedPostTypes = ['normal', 'famous'];
         if (!in_array($postType, $allowedPostTypes, true)) {
-            $postType = 'Normal';
+            $postType = 'normal';  //validation added to check if likes>=5
         }
  
         $hasImageUpload = isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE;
@@ -806,18 +806,18 @@ public function addCommunityComment() {
         }
  
         $likeCount = $communityModel->getReactionCount($postId, $type);
+        $newPostType = null;
 
         if ($type === 'like' && (int)$likeCount >= 5) {
             $communityModel->updatePostType($postId, 'famous');
+            $newPostType = 'famous';
         }
-        $postType = ((int)$likeCount >= 5) ? 'famous' : null;
 
         echo json_encode([
             'success'    => true,
             'reacted'    => $reacted,
-            'like_count' => (int) $likeCount, 
-            'post_type' => ((int)$likeCount >= 5) ? 'famous' : null
-
+            'like_count' => (int) $likeCount,
+            'post_type'  => $newPostType
         ]);
         exit;
     }

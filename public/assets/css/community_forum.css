@@ -842,25 +842,28 @@
     font-weight: 600;
     white-space: nowrap;
 }
-
-.post-type-badge.discussion {
+/* normal badge css added */
+.post-type-badge.normal {
     background: var(--blue-bg);
     color: var(--primary-blue);
     border: 1px solid var(--primary-blue);
 }
 
-/* CODECHECK GUIDE: Add a class here for every post_type option shown in the create-post dropdown. */
-.post-type-badge.question {
-    background: #dcfce7;
-    color: #166534;
-    border: 1px solid #22c55e;
+.post-type-badge.famous {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #ef4444;
 }
+
+
 
 .post-type-badge.announcement {
     background: #fef3c7;
     color: #b45309;
     border: 1px solid #d97706;
 }
+
+
 
 .pinned-badge {
     background: #ede9fe;

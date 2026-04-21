@@ -215,7 +215,7 @@ public function getCommunityPosts($communityId, $userId = null) {
     /**     *
      * Create a post in community
      */
-    public function createPost($userId, $communityId, $title, $content, $postType = 'Normal', $linkUrl = null, $imagePath = null) {
+    public function createPost($userId, $communityId, $title, $content, $postType = 'normal', $linkUrl = null, $imagePath = null) {
     $this->db->query("
         INSERT INTO community_posts (
             user_id,
@@ -253,6 +253,7 @@ public function getCommunityPosts($communityId, $userId = null) {
     return false;
 }
 
+//new model function added to update post type when likes>=5
 public function updatePostType($postId, $postType) {
     $this->db->query("
         UPDATE community_posts

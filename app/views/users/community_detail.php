@@ -49,7 +49,7 @@
                                     <div class="create-post-form">
                                         <input type="text" id="postTitle" class="post-input" placeholder="Post title (optional)">
                                          
-                                        
+                                        <!-- added PostType drop down menu with default value of "Normal". -->
                                         <select id="postType" class="post-input">
                                             <h3>Post Type</h3>
                                             <option value="normal" default>Normal</option>

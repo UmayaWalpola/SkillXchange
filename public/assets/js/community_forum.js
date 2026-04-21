@@ -61,7 +61,7 @@ async function createCommunityPost(communityId) {
     // CODECHECK GUIDE: These IDs must match the form fields in app/views/users/community_detail.php.
     const title     = document.getElementById('postTitle')?.value.trim() || '';
     const content   = document.getElementById('postContent')?.value.trim() || '';
-    const postType  = document.getElementById('postType')?.value || 'discussion';
+    const postType  = document.getElementById('postType')?.value || 'Normal';
     const linkUrl   = document.getElementById('postLink')?.value.trim() || '';
     const imageFile = document.getElementById('postImage')?.files[0] || null;
 
@@ -160,6 +160,10 @@ async function likePost(postId) {
 
             // Update count
             if (countEl) countEl.textContent = data.like_count;
+
+            if (data.post_type === 'famous') {
+                location.reload();
+            }
         } else {
             showNotification(data.message || 'Could not react', 'error');
         }
