@@ -1,7 +1,6 @@
 <?php
 class User extends Database {
 
-    // CODECHECK GUIDE: Organization account insert.
     // If the controller sends a new organization field, add the column, placeholder, and bind here.
     public function registerOrganization($name, $email, $password, $certPath) {
         $sql = "INSERT INTO users (username, email, password, role, org_cert)
@@ -14,7 +13,6 @@ class User extends Database {
         return $stmt->execute();
     }
 
-    // CODECHECK GUIDE: Individual account insert.
     // Registration-only fields are added to this INSERT after AuthController validates them.
     public function registerIndividual($name, $email, $password) {
 
@@ -36,8 +34,6 @@ class User extends Database {
         return false;
     }
 
-    
-    // CODECHECK GUIDE: Login lookup + password verification.
     // AuthController decides the redirect; this model only returns the matched user or false.
     public function login($email, $password) {
         $sql = "SELECT * FROM users WHERE email = :email";
@@ -78,7 +74,6 @@ class User extends Database {
         return false;
     }
 
-    // CODECHECK GUIDE: Most profile pages use this SELECT * result.
     // If a saved field is not showing, check whether the controller remaps this array before the view.
     public function getUserById($id) {
         $sql = "SELECT * FROM users WHERE id = :id";
@@ -88,7 +83,6 @@ class User extends Database {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // CODECHECK GUIDE: Profile setup update helper.
     // Add profile-completion fields here only if the controller calls this helper for that flow.
     public function completeProfile($userId, $username, $profilePicture, $bio = null) {
         $sql = "UPDATE users 
@@ -105,7 +99,6 @@ class User extends Database {
         return $stmt->execute();
     }
 
-    // CODECHECK GUIDE: Skill setup insert.
     // Profile setup passes teach/learn skill arrays here or inserts them directly in UsersController.
     public function addUserSkills($userId, $skills, $levels, $type) {
         $sql = "INSERT INTO user_skills (user_id, skill_name, skill_type, proficiency_level) 

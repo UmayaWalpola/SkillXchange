@@ -9,7 +9,6 @@ class SkillMatch extends Database {
     }
 
     /**
-     * CODECHECK GUIDE: Main matching entry point.
      * This builds three groups for the matches page:
      * mutual = both users can teach each other, multi = 2+ one-way skill matches, single = 1 skill match.
      *

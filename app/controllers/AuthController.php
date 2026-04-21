@@ -12,7 +12,6 @@ class AuthController extends Controller {
         $this->signin();
     }
 
-    // CODECHECK GUIDE: GET request for registration only loads the form.
     // Add new registration fields in app/views/auth/register.php first, then read them in the POST handlers below.
     public function register() {
         $data = [
@@ -22,7 +21,6 @@ class AuthController extends Controller {
         $this->view('auth/register', $data);
     }
 
-    // CODECHECK GUIDE: Organization registration flow.
     // Form names use the "org-" prefix, validation happens here, and the final insert is in User::registerOrganization().
     public function registerOrganization() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -105,7 +103,6 @@ class AuthController extends Controller {
         }
     }
 
-    // CODECHECK GUIDE: Individual registration flow.
     // For tasks like "add phone", read $_POST here, validate it, then pass it to User::registerIndividual().
     public function registerIndividual() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -160,7 +157,6 @@ class AuthController extends Controller {
         }
     }
 
-    // CODECHECK GUIDE: Login flow.
     // User::login() verifies the password hash; this controller only sets session values and redirects by role.
     public function signin() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
