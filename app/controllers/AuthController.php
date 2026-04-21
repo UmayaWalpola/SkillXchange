@@ -12,7 +12,8 @@ class AuthController extends Controller {
         $this->signin();
     }
 
-    // Show registration page
+    // CODECHECK GUIDE: GET request for registration only loads the form.
+    // Add new registration fields in app/views/auth/register.php first, then read them in the POST handlers below.
     public function register() {
         $data = [
             'errors' => [],
@@ -21,7 +22,8 @@ class AuthController extends Controller {
         $this->view('auth/register', $data);
     }
 
-    // Register Organization
+    // CODECHECK GUIDE: Organization registration flow.
+    // Form names use the "org-" prefix, validation happens here, and the final insert is in User::registerOrganization().
     public function registerOrganization() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors = [];
@@ -32,7 +34,7 @@ class AuthController extends Controller {
             $confirm = $_POST['org-password-confirm'] ?? '';
             $file = $_FILES['org-cert'] ?? null;
 
-            // Validation
+            // Validate required organization fields before touching the database.
             if (empty($name)) $errors[] = "Organization name is required.";
             if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $errors[] = "Valid email is required.";
@@ -44,7 +46,7 @@ class AuthController extends Controller {
                 $errors[] = "Passwords do not match.";
             }
 
-            // Handle file upload with validation
+            // Validate and store the organization certificate before creating the account.
             $filePath = null;
             if ($file && $file['error'] === 0) {
                 $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
@@ -77,7 +79,7 @@ class AuthController extends Controller {
                 $errors[] = "Certificate file is required.";
             }
 
-            // Register if no errors
+            // Only call the model when every validation rule has passed.
             if (empty($errors)) {
                 if ($this->userModel->registerOrganization($name, $email, $password, $publicRelativePath)) {
                     $_SESSION['success'] = "Organization registered successfully! Please login.";
@@ -103,7 +105,8 @@ class AuthController extends Controller {
         }
     }
 
-    // Register Individual
+    // CODECHECK GUIDE: Individual registration flow.
+    // For tasks like "add phone", read $_POST here, validate it, then pass it to User::registerIndividual().
     public function registerIndividual() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors = [];
@@ -113,7 +116,7 @@ class AuthController extends Controller {
             $password = $_POST['ind-password'] ?? '';
             $confirm = $_POST['ind-password-confirm'] ?? '';
 
-            // Validation
+            // Validate required individual fields before creating the user row.
             if (empty($name)) $errors[] = "Full name is required.";
             if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $errors[] = "Valid email is required.";
@@ -125,7 +128,7 @@ class AuthController extends Controller {
                 $errors[] = "Passwords do not match.";
             }
 
-            // Register if no errors
+            // Successful registration auto-logs the user in and sends them to profile setup.
             if (empty($errors)) {
                 $userId = $this->userModel->registerIndividual($name, $email, $password);
                 if ($userId) {
@@ -157,7 +160,8 @@ class AuthController extends Controller {
         }
     }
 
-    // Show signin page
+    // CODECHECK GUIDE: Login flow.
+    // User::login() verifies the password hash; this controller only sets session values and redirects by role.
     public function signin() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $email = trim($_POST['email'] ?? '');
@@ -183,7 +187,7 @@ class AuthController extends Controller {
 
             // 2. Standard Login Success
             if (is_array($user)) {
-                // Set session variables
+                // Session variables control role-based access across the app.
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];
                 $_SESSION['role'] = $user['role'];

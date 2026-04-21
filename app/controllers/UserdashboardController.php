@@ -557,19 +557,25 @@ public function matches() {
             exit;
         }
  
+        // CODECHECK GUIDE: Community post form fields arrive here from community_forum.js.
+        // Add new post fields here first, then pass them into Community::createPost().
         $userId      = $this->checkAuth(true);
         $communityId = $_POST['community_id'] ?? null;
         $title       = trim($_POST['title'] ?? '');
         $content     = trim($_POST['content'] ?? '');
         $postType    = trim($_POST['post_type'] ?? 'discussion');
+        $linkUrl     = trim($_POST['link_url'] ?? '');
+
+        // CODECHECK GUIDE: Post type validation.
+        // "Question" reuses community_posts.post_type, so no extra DB column is needed.
         $allowedPostTypes = ['discussion', 'question', 'announcement'];
         if (!in_array($postType, $allowedPostTypes, true)) {
             $postType = 'discussion';
         }
-        $linkUrl     = trim($_POST['link_url'] ?? '');
  
         $hasImageUpload = isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE;
 
+        // Allow image-only posts, but block completely empty submissions.
         if (!$communityId || (empty($content) && !$hasImageUpload)) {
             echo json_encode(['success' => false, 'message' => 'Post content or an image is required']);
             exit;
@@ -583,11 +589,14 @@ public function matches() {
         }
  
         $member = $communityModel->getMemberRole($userId, $communityId);
+
+        // Only admins/moderators can create announcements; regular members fall back to discussion.
         if ($postType === 'announcement' && !in_array($member->role, ['admin', 'moderator'])) {
             $postType = 'discussion';
         }
  
-        // Handle image upload
+        // CODECHECK GUIDE: Image upload validation.
+        // Use MIME detection, not just the file extension, when checking uploaded files.
         $imagePath = null;
         if ($hasImageUpload) {
             $file      = $_FILES['image'];
@@ -638,6 +647,7 @@ public function matches() {
         }
  
         try {
+            // Final save: model inserts the post and stores the selected post_type.
             $postId = $communityModel->createPost(
                 $userId,
                 $communityId,

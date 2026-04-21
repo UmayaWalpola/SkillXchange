@@ -849,6 +849,7 @@
     border: 1px solid var(--primary-blue);
 }
 
+/* CODECHECK GUIDE: Add a class here for every post_type option shown in the create-post dropdown. */
 .post-type-badge.question {
     background: #dcfce7;
     color: #166534;

@@ -3,6 +3,8 @@ class ChatController extends Controller
 {
     public function __construct()
     {
+        // CODECHECK GUIDE: Every chat route requires a logged-in user.
+        // If a messaging task fails before loading, check this session guard first.
         if (!isset($_SESSION['user_id'])) {
             header('Location: ' . URLROOT . '/auth/signin');
             exit();
@@ -10,6 +12,9 @@ class ChatController extends Controller
     }
 
     /**
+     * CODECHECK GUIDE: Project-wide chat page.
+     * This verifies the project exists and the current user is either the organization owner or a project member.
+     *
      * Project Chat - index method for accessing project-wide chat
      */
     public function index($projectId = null)
@@ -52,6 +57,8 @@ class ChatController extends Controller
 
     public function user($partnerId = null)
     {
+        // CODECHECK GUIDE: One-to-one skill chat page.
+        // This creates/loads the chat, prepares wallet/debt data, and sends match context to users/chats.php.
         $currentUserId = $_SESSION['user_id'];
 
         if (!$partnerId) {
@@ -85,7 +92,7 @@ class ChatController extends Controller
         $debtAvailableToCurrentUser = $walletModel->getCounterpartyDebtSummary($currentUserId, $partnerId);
         $debtAvailableToPartner = $walletModel->getCounterpartyDebtSummary($partnerId, $currentUserId);
 
-        // ── Active transaction event ──────────────────────────────────────────
+        // Active transaction event: only one in-progress exchange is shown in the chat at a time.
         $db->query("
             SELECT *
             FROM chat_transaction_events
@@ -122,7 +129,7 @@ class ChatController extends Controller
             }
         }
 
-        // ── Match context from URL params (set by matches.js openSkillChat) ──
+        // Match context from URL params (set by matches.js openSkillChat).
         // match_type: 'mutual' | 'multi' | 'single'
         // For mutual:       skill  = skill current user teaches, dir = skill current user learns
         // For single/multi: skill  = matched skill name,         dir = 'teacher' | 'learner'
@@ -218,7 +225,8 @@ class ChatController extends Controller
         return $iTeach > 0 ? 'teacher' : 'learner';
     }
 
-    // ── AJAX endpoints ────────────────────────────────────────────────────────
+    // CODECHECK GUIDE: AJAX endpoints used by the chat UI.
+    // Most validation tasks for messages/session actions start in one of these methods.
 
     public function fetchUserMessages()
     {
@@ -254,6 +262,8 @@ class ChatController extends Controller
 
     public function sendUserMessage()
     {
+        // CODECHECK GUIDE: 1-to-1 message send flow.
+        // Validate chat_id/message here, check access, then save through Chat::sendMessage().
         header('Content-Type: application/json');
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -287,6 +297,8 @@ class ChatController extends Controller
 
     public function fetchMessages()
     {
+        // CODECHECK GUIDE: Project chat message fetch flow.
+        // This is separate from 1-to-1 skill chat messages.
         header('Content-Type: application/json');
 
         $userId = (int)$_SESSION['user_id'];
@@ -340,6 +352,8 @@ class ChatController extends Controller
 
     public function sendMessage()
     {
+        // CODECHECK GUIDE: Project chat message send flow.
+        // Keep project access checks before inserting the message.
         header('Content-Type: application/json');
 
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

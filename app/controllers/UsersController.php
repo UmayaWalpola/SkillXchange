@@ -11,7 +11,8 @@ class UsersController extends Controller {
         return $skillName !== '' && $this->userModel->skillExists($skillName);
     }
 
-    // Profile Setup - GET/POST
+    // CODECHECK GUIDE: Profile setup GET/POST flow.
+    // Add profile-completion fields in profile_setup.php, validate them in handleProfileSetup(), then save below.
     public function profileSetup() {
     if (!isset($_SESSION['user_id'])) {
         header('Location: ' . URLROOT . '/auth/signin');
@@ -41,7 +42,10 @@ class UsersController extends Controller {
     $this->view('users/profile_setup', $data);
 }
 
- // Handle Profile Setup Form Submission
+// CODECHECK GUIDE: Main profile setup save handler.
+// This method validates username, teach/learn skills, levels, and uploads before updating the user.
+// If a task says "save field after profile setup", read $_POST here and add it to the UPDATE users query.
+// Handle Profile Setup Form Submission
 private function handleProfileSetup($userId) {
     $errors = [];
 
@@ -135,6 +139,7 @@ private function handleProfileSetup($userId) {
         }
     }
 
+    // If validation fails, reload the form with old input so the user does not lose progress.
     if (!empty($errors)) {
         $user = $this->userModel->getUserById($userId);
         $data = [
@@ -151,6 +156,7 @@ private function handleProfileSetup($userId) {
         $db = new Database();
         $db->query("START TRANSACTION");
 
+        // Save basic user profile data before inserting teach/learn skills.
         $db->query("UPDATE users SET 
             username = :username,
             profile_picture = :profile_picture,
@@ -164,6 +170,7 @@ private function handleProfileSetup($userId) {
             throw new Exception("Failed to update profile");
         }
 
+        // Teaching skills are stored as one row per skill in user_skills.
         foreach ($validTeachSkills as $index => $skill) {
             $db->query("INSERT INTO user_skills (user_id, skill_name, skill_type, proficiency_level)
                         VALUES (:user_id, :skill_name, 'teach', :proficiency_level)");
@@ -176,6 +183,7 @@ private function handleProfileSetup($userId) {
             }
         }
 
+        // Learning skills use the same table, but skill_type is "learn".
         foreach ($validLearnSkills as $index => $skill) {
             $db->query("INSERT INTO user_skills (user_id, skill_name, skill_type, proficiency_level)
                         VALUES (:user_id, :skill_name, 'learn', :proficiency_level)");
@@ -228,6 +236,9 @@ private function handleProfileSetup($userId) {
     }
 }
 
+    // CODECHECK GUIDE: Profile display flow.
+    // getUserById() returns the full DB row, but this method remaps selected fields into $data['user'].
+    // If a saved field is not visible in userprofile.php, add it to the array below.
     // Show user profile
     public function userprofile($userId = null) {
         if (!isset($_SESSION['user_id'])) {

@@ -186,8 +186,11 @@ class Community {
     $this->db->bind(':community_id', $communityId);
     return $this->db->resultSet();
 }
- /**
-  * Get posts in a community (for forum view)
+/**
+ * CODECHECK GUIDE: Community feed query.
+ * The view gets post_type from p.*, so badges like Discussion/Question/Announcement render automatically.
+ *
+ * Get posts in a community (for forum view)
  */
 public function getCommunityPosts($communityId, $userId = null) {
         $this->db->query("
@@ -210,6 +213,9 @@ public function getCommunityPosts($communityId, $userId = null) {
         return $this->db->resultSet();
     }
     /**
+     * CODECHECK GUIDE: Community post insert.
+     * If a task adds a saved field to posts, add it to this method signature, INSERT columns, placeholders, and binds.
+     *
      * Create a post in community
      */
     public function createPost($userId, $communityId, $title, $content, $postType = 'discussion', $linkUrl = null, $imagePath = null) {
@@ -250,6 +256,7 @@ public function getCommunityPosts($communityId, $userId = null) {
     return false;
 }
 
+// CODECHECK GUIDE: Comments are saved as child rows in community_posts using parent_id.
 public function createComment($userId, $communityId, $parentId, $content) {
     $this->db->query("
         INSERT INTO community_posts (
@@ -307,6 +314,7 @@ public function getCommentsForPost($postId) {
     return $this->db->resultSet();
 }
 
+// CODECHECK GUIDE: Reaction toggle flow uses this upsert, then the controller returns the new like count.
 public function addReaction($userId, $postId, $type) {
     $this->db->query("
         INSERT INTO community_post_reactions (user_id, post_id, reaction_type)
@@ -321,6 +329,7 @@ public function addReaction($userId, $postId, $type) {
     return $this->db->execute();
 }
 
+// CODECHECK GUIDE: Role-based post rules, such as "only moderators can announce", depend on this method.
 public function getMemberRole($userId, $communityId) {
     $this->db->query("
         SELECT role 

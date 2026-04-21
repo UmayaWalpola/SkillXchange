@@ -45,11 +45,12 @@
                         <?php if ($data['community']->is_member): ?>
                             <div class="create-post-card">
                                 <h4>Create a Post</h4>
-                                <!-- NOTE: must be a real <form> with enctype for file upload -->
+                                <!-- CODECHECK GUIDE: This form is submitted by public/assets/js/community_forum.js using FormData. -->
                                 <form id="createPostForm" enctype="multipart/form-data">
                                     <div class="create-post-form">
                                         <input type="text" id="postTitle" class="post-input" placeholder="Post title (optional)">
 
+                                        <!-- CODECHECK GUIDE: Add new post categories here, then allow them in UserdashboardController::postToCommunity(). -->
                                         <select id="postType" class="post-input">
                                             <option value="discussion">Discussion</option>
                                             <option value="question">Question</option>
@@ -117,6 +118,7 @@
                                                 </div>
                                             </div>
                                             <div class="feed-post-badges">
+                                                <!-- CODECHECK GUIDE: Badge text comes directly from community_posts.post_type. -->
                                                 <?php if (!empty($post->post_type)): ?>
                                                     <span class="post-type-badge <?= htmlspecialchars($post->post_type) ?>"><?= ucfirst(htmlspecialchars($post->post_type)) ?></span>
                                                 <?php endif; ?>

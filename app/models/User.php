@@ -1,7 +1,8 @@
 <?php
 class User extends Database {
 
-    // Register Organization
+    // CODECHECK GUIDE: Organization account insert.
+    // If the controller sends a new organization field, add the column, placeholder, and bind here.
     public function registerOrganization($name, $email, $password, $certPath) {
         $sql = "INSERT INTO users (username, email, password, role, org_cert)
                 VALUES (:name, :email, :password, 'organization', :cert)";
@@ -13,7 +14,8 @@ class User extends Database {
         return $stmt->execute();
     }
 
-    // Register Individual
+    // CODECHECK GUIDE: Individual account insert.
+    // Registration-only fields are added to this INSERT after AuthController validates them.
     public function registerIndividual($name, $email, $password) {
 
         $sql = "INSERT INTO users (username, email, password, role, profile_completed)
@@ -21,12 +23,13 @@ class User extends Database {
         $stmt = $this->connect()->prepare($sql);
         $stmt->bindValue(':name', $name);
         $stmt->bindValue(':email', $email);
+        // Always hash passwords before saving; never store the plain password.
         $stmt->bindValue(':password', password_hash($password, PASSWORD_BCRYPT));
         
         
         if ($stmt->execute()) {
             $userId = $this->connect()->lastInsertId();
-            // Initialize user stats
+            // New individual users need a stats row for profile counters and dashboards.
             $this->initializeUserStats($userId);
             return $userId;
         }
@@ -34,7 +37,8 @@ class User extends Database {
     }
 
     
-    // Login (Updated with Suspension Logic)
+    // CODECHECK GUIDE: Login lookup + password verification.
+    // AuthController decides the redirect; this model only returns the matched user or false.
     public function login($email, $password) {
         $sql = "SELECT * FROM users WHERE email = :email";
         $stmt = $this->connect()->prepare($sql);
@@ -42,6 +46,7 @@ class User extends Database {
         $stmt->execute();
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
+        // password_verify() checks the submitted password against the saved hash.
         if ($user && password_verify($password, $user['password'])) {
 
             $status = strtolower(trim((string)($user['status'] ?? '')));
@@ -73,7 +78,8 @@ class User extends Database {
         return false;
     }
 
-    //  Find user by ID
+    // CODECHECK GUIDE: Most profile pages use this SELECT * result.
+    // If a saved field is not showing, check whether the controller remaps this array before the view.
     public function getUserById($id) {
         $sql = "SELECT * FROM users WHERE id = :id";
         $stmt = $this->connect()->prepare($sql);
@@ -82,7 +88,8 @@ class User extends Database {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    //  Complete Profile Setup
+    // CODECHECK GUIDE: Profile setup update helper.
+    // Add profile-completion fields here only if the controller calls this helper for that flow.
     public function completeProfile($userId, $username, $profilePicture, $bio = null) {
         $sql = "UPDATE users 
                 SET username = :username, 
@@ -98,7 +105,8 @@ class User extends Database {
         return $stmt->execute();
     }
 
-    //  Add User Skills (both teach and learn)
+    // CODECHECK GUIDE: Skill setup insert.
+    // Profile setup passes teach/learn skill arrays here or inserts them directly in UsersController.
     public function addUserSkills($userId, $skills, $levels, $type) {
         $sql = "INSERT INTO user_skills (user_id, skill_name, skill_type, proficiency_level) 
                 VALUES (:user_id, :skill_name, :type, :level)";

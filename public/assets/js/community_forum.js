@@ -1,4 +1,5 @@
-// Get configuration from PHP
+// CODECHECK GUIDE: PHP sets these globals in the community views before this script loads.
+// If an AJAX route breaks, first confirm urlRoot is set correctly.
 const currentUser = {
     id: window.currentUserId || 1,
     name: window.currentUserName || 'You'
@@ -57,10 +58,11 @@ function viewCommunity(communityId) {
 // ============================================
 
 async function createCommunityPost(communityId) {
-    const title    = document.getElementById('postTitle')?.value.trim() || '';
-    const content  = document.getElementById('postContent')?.value.trim() || '';
-    const postType = document.getElementById('postType')?.value || 'discussion';
-    const linkUrl  = document.getElementById('postLink')?.value.trim() || '';
+    // CODECHECK GUIDE: These IDs must match the form fields in app/views/users/community_detail.php.
+    const title     = document.getElementById('postTitle')?.value.trim() || '';
+    const content   = document.getElementById('postContent')?.value.trim() || '';
+    const postType  = document.getElementById('postType')?.value || 'discussion';
+    const linkUrl   = document.getElementById('postLink')?.value.trim() || '';
     const imageFile = document.getElementById('postImage')?.files[0] || null;
 
     if (!content && !imageFile) {
@@ -74,6 +76,8 @@ async function createCommunityPost(communityId) {
     formData.append('content', content);
     formData.append('post_type', postType);
     formData.append('link_url', linkUrl);
+
+    // File uploads must stay in FormData; do not set Content-Type manually.
     if (imageFile) formData.append('image', imageFile);
 
     const btn = document.getElementById('postSubmitBtn');
@@ -82,7 +86,7 @@ async function createCommunityPost(communityId) {
     try {
         const res = await fetch(urlRoot + '/userdashboard/postToCommunity', {
             method: 'POST',
-            body: formData   // no Content-Type header — browser sets multipart boundary
+            body: formData
         });
         const result = await res.json();
 

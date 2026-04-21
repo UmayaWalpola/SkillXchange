@@ -11,10 +11,13 @@ class Chat extends Database {
    }
   
    /**
+    * CODECHECK GUIDE: Chat lookup/creation.
+    * If a task adds skill-specific chats, keep skill_context and exchange_direction in this method.
+    *
     * Get or create a chat between two users (with optional skill context)
     */
    public function getOrCreateChat($userId1, $userId2, $skillName = null, $direction = null) {
-       // Check if chat exists
+       // First reuse an existing chat so the same pair does not get duplicate threads.
        $query = "
            SELECT id FROM chats
            WHERE ((user1_id = :user1 AND user2_id = :user2)
@@ -44,7 +47,7 @@ class Chat extends Database {
            return $chat->id;
        }
       
-       // Create new chat
+       // No existing chat matched the pair/context, so create one.
        $this->db->query("
            INSERT INTO chats (user1_id, user2_id, skill_context, exchange_direction, created_at)
            VALUES (:user1, :user2, :skill, :direction, NOW())
@@ -59,6 +62,9 @@ class Chat extends Database {
    }
   
    /**
+    * CODECHECK GUIDE: Chat sidebar data source.
+    * This query finds the partner, last message, avatar, and unread count for each conversation.
+    *
     * Get all chats for a user with detailed information
     */
    public function getUserChats($userId) {
@@ -106,6 +112,9 @@ class Chat extends Database {
    }
   
    /**
+    * CODECHECK GUIDE: UI formatter.
+    * If the sidebar needs a new label/tag, add it to the returned array here.
+    *
     * Format chat data for display (helper method)
     */
    public function formatChatsForDisplay($chats, $userId) {
@@ -141,6 +150,9 @@ class Chat extends Database {
    }
   
    /**
+    * CODECHECK GUIDE: Raw message history.
+    * ChatController::fetchUserMessages() calls this through getChatTimeline().
+    *
     * Get messages for a specific chat
     */
    public function getChatMessages($chatId) {
@@ -162,6 +174,9 @@ class Chat extends Database {
    }
 
    /**
+    * CODECHECK GUIDE: Combined chat timeline.
+    * This merges normal messages with exchange lifecycle milestones like offer created/completed.
+    *
     * Get a combined timeline of messages and session milestones for a chat.
     */
    public function getChatTimeline($chatId) {
@@ -218,6 +233,9 @@ class Chat extends Database {
    }
   
    /**
+    * CODECHECK GUIDE: Message insert.
+    * Input validation belongs in ChatController; this model only writes the trusted message.
+    *
     * Send a message
     */
    public function sendMessage($chatId, $senderId, $message) {
@@ -249,6 +267,9 @@ class Chat extends Database {
    }
   
    /**
+    * CODECHECK GUIDE: Access control helper.
+    * Always call this before showing or writing messages for a chat.
+    *
     * Verify user has access to chat
     */
    public function userHasAccess($chatId, $userId) {
@@ -310,6 +331,7 @@ class Chat extends Database {
        return date('M j', $time);
    }
 
+   // CODECHECK GUIDE: Converts transaction status timestamps into readable timeline cards.
    private function buildTimelineMilestones($event) {
        $milestones = [];
        $sessionLabel = $this->buildSessionLabel($event);

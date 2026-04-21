@@ -9,6 +9,9 @@ class Exchange extends Database {
     }
     
     /**
+     * CODECHECK GUIDE: Connection request creation.
+     * Matching page actions usually end here; this prevents duplicate pending/active exchanges.
+     *
      * Create an exchange/connection request
      */
     public function createExchangeRequest($senderId, $receiverId, $skillOffered = null, $skillWanted = null) {
@@ -36,7 +39,7 @@ class Exchange extends Database {
             }
         }
         
-        // Get matching skills automatically if not provided
+        // If the caller did not pass skills, infer the first matching teach/learn pair.
         if (!$skillOffered || !$skillWanted) {
             $matchingSkills = $this->getMatchingSkills($senderId, $receiverId);
             $skillOffered = $matchingSkills['offered'] ?? 'general';
@@ -81,6 +84,9 @@ class Exchange extends Database {
     }
     
     /**
+     * CODECHECK GUIDE: Automatic skill-pair detection.
+     * Used when an exchange request is created without explicit skill names.
+     *
      * Get matching skills between two users
      */
     private function getMatchingSkills($userId1, $userId2) {
@@ -163,6 +169,9 @@ class Exchange extends Database {
     }
     
     /**
+     * CODECHECK GUIDE: Pending exchange inbox.
+     * This powers "connection request" style views where the receiver accepts or rejects.
+     *
      * Get all exchange requests for a user (FIXED)
      */
     public function getExchangeRequests($userId) {
@@ -190,6 +199,9 @@ class Exchange extends Database {
     }
     
     /**
+     * CODECHECK GUIDE: Accepted/active connections.
+     * The app uses status='active' after acceptance, not status='accepted'.
+     *
      * Get all active exchanges (accepted connections)
      * CHANGED: 'accepted' → 'active'
      */
@@ -226,6 +238,9 @@ class Exchange extends Database {
     }
     
     /**
+     * CODECHECK GUIDE: Accept request lifecycle.
+     * Accepting changes status to active and creates the 1-to-1 chat between both users.
+     *
      * Accept an exchange request
      * CHANGED: status 'accepted' → 'active'
      */
@@ -268,6 +283,9 @@ class Exchange extends Database {
     }
 
     /**
+     * CODECHECK GUIDE: Chat bootstrap after accepting an exchange.
+     * Keeps messaging connected to matching/exchange requests.
+     *
      * Create a chat when exchange is accepted
      */
     private function createChatForExchange($userId1, $userId2) {
@@ -369,6 +387,9 @@ class Exchange extends Database {
     }
     
     /**
+     * CODECHECK GUIDE: Duplicate connection guard.
+     * Matching pages should call this before offering a new request button.
+     *
      * Check if connection exists between two users
      * CHANGED: Checks for 'pending' and 'active' (not 'accepted')
      */

@@ -9,6 +9,10 @@ class SkillMatch extends Database {
     }
 
     /**
+     * CODECHECK GUIDE: Main matching entry point.
+     * This builds three groups for the matches page:
+     * mutual = both users can teach each other, multi = 2+ one-way skill matches, single = 1 skill match.
+     *
      * Get ALL matches with simplified tier categorization
      * Returns array grouped by: mutual, multi, single
      */
@@ -74,7 +78,7 @@ class SkillMatch extends Database {
         $this->db->bind(':current_user_id', $userId);
         $results = $this->db->resultSet();
 
-        // Process results and categorize by tier
+        // Process raw SQL rows into cards the view can render, then put each one into a tier.
         $matches = [
             'mutual' => [],
             'multi' => [],
@@ -96,6 +100,9 @@ class SkillMatch extends Database {
     }
 
     /**
+     * CODECHECK GUIDE: Raw SQL strings become clean arrays here.
+     * If a task asks to show "common skill count" or proficiency labels, this is a good place to add it.
+     *
      * Process raw database row into structured match data
      */
     private function processMatch($row) {
@@ -146,7 +153,7 @@ class SkillMatch extends Database {
             }
         }
 
-        // Determine if mutual and count total skills
+        // These two values drive categorization and ranking in the matches UI.
         $match['is_mutual'] = !empty($match['i_teach']) && !empty($match['they_teach']);
         $match['total_skills'] = count($match['i_teach']) + count($match['they_teach']);
 
@@ -154,6 +161,9 @@ class SkillMatch extends Database {
     }
 
     /**
+     * CODECHECK GUIDE: Ranking category decision.
+     * For tasks like "prioritize mutual matches" or "add top match tag", start from this logic.
+     *
      * Categorize match into tiers: mutual, multi, or single
      * MUTUAL = Both can teach AND learn from each other
      * MULTI = 2+ skills matched (but not mutual)
@@ -178,6 +188,9 @@ class SkillMatch extends Database {
     }
 
     /**
+     * CODECHECK GUIDE: Filter dropdown data source.
+     * The matches page uses this to let users filter by skills they teach or want to learn.
+     *
      * Get user's skills for filter dropdown
      */
     public function getUserSkillsForFilter($userId) {
@@ -206,6 +219,9 @@ class SkillMatch extends Database {
     }
 
     /**
+     * CODECHECK GUIDE: One-way match where current user is the teacher.
+     * A proficiency-level task usually changes the ORDER BY or SELECT fields in this query.
+     *
      * Get users who want to LEARN skills that current user TEACHES
      */
     public function getTeachMatches($userId) {
@@ -275,6 +291,9 @@ class SkillMatch extends Database {
     }
 
     /**
+     * CODECHECK GUIDE: One-way match where current user is the learner.
+     * This is the opposite direction of getTeachMatches().
+     *
      * Get users who TEACH skills that the current user wants to LEARN
      */
     public function getLearnMatches($userId) {
@@ -344,6 +363,9 @@ class SkillMatch extends Database {
     }
 
     /**
+     * CODECHECK GUIDE: Strongest match type.
+     * This query requires both directions to exist: I teach them one skill, and they teach me one skill.
+     *
      * Get mutual matches (users where both can teach AND learn from each other)
      */
     public function getMutualMatches($userId) {
