@@ -14,6 +14,19 @@ const MAX_QUESTIONS = 20;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
+    if (window.initialQuizData) {
+        quizData = {
+            title: window.initialQuizData.title || '',
+            badge: window.initialQuizData.badge || '',
+            duration: window.initialQuizData.duration || 30,
+            description: window.initialQuizData.description || '',
+            category: window.initialQuizData.category || '',
+            badgeId: window.initialQuizData.badgeId || '',
+            rewardAmount: parseInt(window.initialQuizData.rewardAmount) || 0,
+            questions: Array.isArray(window.initialQuizData.questions) ? window.initialQuizData.questions : []
+        };
+        renderQuestions();
+    }
     updateQuestionCount();
 });
 
@@ -151,7 +164,7 @@ function editQuestion(index) {
     document.getElementById('option1').value = question.options[1];
     document.getElementById('option2').value = question.options[2];
     document.getElementById('option3').value = question.options[3];
-    document.getElementById(`correct${question.correctAnswer}`).checked = true;
+    document.getElementById(`correct${question.correct}`).checked = true;
     document.getElementById('editingQuestionIndex').value = index;
     document.getElementById('modalTitle').textContent = 'Edit Question';
     
@@ -210,8 +223,9 @@ function getQuizBasicInfo() {
     const duration = parseInt(document.getElementById('quizDuration').value) || 30;
     const description = document.getElementById('quizDescription').value.trim();
     const badgeId = document.getElementById('badgeToAward').value;
+    const rewardAmount = parseInt(document.getElementById('buckxReward')?.value || '0') || 0;
     
-    return { title, category, badge, duration, description, badgeId };
+    return { title, category, badge, duration, description, badgeId, rewardAmount };
 }
 
 // Validate quiz data
@@ -294,6 +308,7 @@ function showPreviewModal(quizData) {
                     <span class="badge badge-${quizData.badge.toLowerCase()}">${quizData.badge}</span>
                     <span style="color: #666;">&#x23F1;&#xFE0F; ${quizData.duration} minutes</span>
                     <span style="color: #666;">&#x1F4DD; ${quizData.questions.length} questions</span>
+                    <span style="color: #666;">${quizData.rewardAmount || 0} BuckX</span>
                 </div>
                 ${quizData.description ? `<p style="color: #666; margin-bottom: 25px;">${quizData.description}</p>` : ''}
                 
@@ -304,10 +319,10 @@ function showPreviewModal(quizData) {
                             <p style="font-weight: 600; margin-bottom: 15px; color: var(--dark-bg);">${q.question}</p>
                             <div style="display: flex; flex-direction: column; gap: 10px;">
                                 ${q.options.map((opt, i) => `
-                                    <div style="padding: 10px 15px; background: ${i === q.correctAnswer ? '#dcfce7' : 'white'}; 
-                                         border-radius: 8px; border: 2px solid ${i === q.correctAnswer ? '#22c55e' : '#ddd'};">
+                                    <div style="padding: 10px 15px; background: ${i === q.correct ? '#dcfce7' : 'white'}; 
+                                         border-radius: 8px; border: 2px solid ${i === q.correct ? '#22c55e' : '#ddd'};">
                                         <strong>${['A', 'B', 'C', 'D'][i]}.</strong> ${opt}
-                                        ${i === q.correctAnswer ? ' <span style="color: #22c55e;">✓ Correct Answer</span>' : ''}
+                                        ${i === q.correct ? ' <span style="color: #22c55e;">✓ Correct Answer</span>' : ''}
                                     </div>
                                 `).join('')}
                             </div>
@@ -363,7 +378,7 @@ function saveQuizToBackend(data, successMessage) {
     showNotification('Saving quiz...', 'info');
     
     // AJAX call to backend
-    fetch(`${URLROOT}/quizmanager/save`, {
+    fetch(window.quizSaveUrl || `${URLROOT}/quizmanager/save`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

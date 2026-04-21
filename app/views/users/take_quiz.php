@@ -5,8 +5,10 @@
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/take_quiz.css">
 
 
-<main class="main-content">
-    <div class="take-quiz-container">
+<main class="site-main">
+<div class="dashboard-container">
+    <div class="dashboard-main">
+        <div class="take-quiz-container">
         <!-- Quiz Header -->
         <div class="quiz-header-section">
             <button onclick="window.location.href='<?= URLROOT ?>/userdashboard/quiz'" class="back-btn">
@@ -68,6 +70,8 @@
         <!-- Results Section -->
         <div id="resultsSection" class="results-section"></div>
     </div>
+</div>
+</div>
 </main>
 
 <!-- Hidden data element -->

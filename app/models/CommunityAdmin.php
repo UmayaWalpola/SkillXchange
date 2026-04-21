@@ -125,6 +125,86 @@ class CommunityAdmin {
         $this->db->query("SELECT id, skill_name FROM skills ORDER BY skill_name ASC");
         return $this->db->resultSet();
     }
+
+    private function normalizeSkillCommunityName($name) {
+        $name = strtolower(trim((string)$name));
+        $name = str_replace(['_', '-', '/', '&'], ' ', $name);
+        $name = preg_replace('/\s+/', ' ', $name);
+        $name = trim($name);
+
+        $aliases = [
+            'ai' => 'ai',
+            'ai and ml' => 'ai',
+            'artificial intelligence' => 'ai',
+            'data science ai' => 'data-science',
+            'data science and ai' => 'data-science',
+            'data science' => 'data-science',
+            'data analytics' => 'data-analytics',
+            'data analysis' => 'data-analytics',
+            'web developers hub' => 'web-development',
+            'web developers' => 'web-development',
+            'web development' => 'web-development',
+            'web dev' => 'web-development',
+            'ui ux design' => 'frontend',
+            'frontend frameworks' => 'frontend',
+            'front end' => 'frontend',
+            'cloud computing' => 'cloud',
+            'mobile development' => 'mobile',
+            'mobile app development' => 'mobile',
+            'digital marketing' => 'marketing',
+            'github and git' => 'github',
+            'git and github' => 'github',
+            'github git' => 'github',
+            'db management' => 'database',
+            'database management' => 'database',
+        ];
+
+        if (isset($aliases[$name])) {
+            return $aliases[$name];
+        }
+
+        return str_replace(' ', '-', $name);
+    }
+
+    /**
+     * READ - Get only skills that do not already have a community.
+     */
+    public function getSkillsWithoutCommunities() {
+        $skills = $this->getAllSkills();
+
+        $this->db->query("SELECT name FROM communities");
+        $communities = $this->db->resultSet() ?: [];
+
+        $usedSkillKeys = [];
+        foreach ($communities as $community) {
+            $usedSkillKeys[$this->normalizeSkillCommunityName($community->name ?? '')] = true;
+        }
+
+        $availableSkills = [];
+        foreach ($skills as $skill) {
+            $skillKey = $this->normalizeSkillCommunityName($skill->skill_name ?? '');
+            if ($skillKey !== '' && !isset($usedSkillKeys[$skillKey])) {
+                $availableSkills[] = $skill;
+            }
+        }
+
+        return $availableSkills;
+    }
+
+    public function skillHasCommunity($skillName) {
+        $skillKey = $this->normalizeSkillCommunityName($skillName);
+
+        $this->db->query("SELECT name FROM communities");
+        $communities = $this->db->resultSet() ?: [];
+
+        foreach ($communities as $community) {
+            if ($this->normalizeSkillCommunityName($community->name ?? '') === $skillKey) {
+                return true;
+            }
+        }
+
+        return false;
+    }
     
     /**
      * READ - Get skill by ID

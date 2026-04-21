@@ -184,24 +184,7 @@
                     </div>
                 </section>
 
-                <!-- Recent Activity -->
-                <section class="profile-section">
-                    <div class="section-header">
-                        <h2 class="section-title">Recent Activity</h2>
-                    </div>
-                    <div class="activity-timeline">
-                        <?php if (!empty($data['activity'])): ?>
-                            <?php foreach ($data['activity'] as $activity): ?>
-                                <div class="activity-item">
-                                    <div class="activity-date"><?= htmlspecialchars($activity['date']); ?></div>
-                                    <div class="activity-description"><?= htmlspecialchars($activity['description']); ?></div>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <p>No recent activity.</p>
-                        <?php endif; ?>
-                    </div>
-                </section>
+            
 
                 <!-- System Feedback Box - Only for own profile -->
                 <?php if ($data['is_own_profile']): ?>

@@ -20,7 +20,12 @@ class Quiz {
 
     public function getAllSkills() {
         $this->db->query("SELECT id, skill_name FROM skills ORDER BY skill_name ASC");
-        return $this->db->resultSet() ?: [];
+        $results = $this->db->resultSet();
+        if (!$results) return [];
+
+        return array_map(function($row) {
+            return is_array($row) ? (object)$row : $row;
+        }, $results);
     }
 
     private function computeRewardAmount($difficultyLevel) {
@@ -43,10 +48,10 @@ class Quiz {
     $this->db->query("
         INSERT INTO quizzes
             (title, description, difficulty_level, duration, category,
-             status, total_questions, badge_id, manager_id, created_at)
+             status, total_questions, badge_id, reward_amount, manager_id, created_at)
         VALUES
             (:title, :description, :difficulty, :duration, :category,
-             :status, 0, :badge_id, :manager_id, NOW())
+             :status, 0, :badge_id, :reward_amount, :manager_id, NOW())
     ");
 
     $this->db->bind(':title',       $quizData['title']);
@@ -56,6 +61,7 @@ class Quiz {
     $this->db->bind(':category',    isset($quizData['category']) ? $quizData['category'] : 'General');
     $this->db->bind(':status',      isset($quizData['status']) ? $quizData['status'] : 'draft');
     $this->db->bind(':badge_id',    isset($quizData['badge_id']) ? $quizData['badge_id'] : null);
+    $this->db->bind(':reward_amount', isset($quizData['reward_amount']) ? max(0, (int)$quizData['reward_amount']) : 0);
     $this->db->bind(':manager_id',  $quizData['created_by']);
 
     if ($this->db->execute()) {
@@ -88,23 +94,27 @@ class Quiz {
 
         $question_id = $this->db->lastInsertId();
 
-        // Insert the four options (A, B, C, D)
-        $letters = ['A', 'B', 'C', 'D'];
-        $fields  = ['option_a', 'option_b', 'option_c', 'option_d'];
+        // Insert options. The current UI uses A-D; option E is accepted for compatibility.
+        $letters = ['A', 'B', 'C', 'D', 'E'];
+        $fields  = ['option_a', 'option_b', 'option_c', 'option_d', 'option_e'];
         $correctAnswerIndex = intval(isset($questionData['correct_answer']) ? $questionData['correct_answer'] : 0);
 
         foreach ($letters as $idx => $letter) {
             $is_correct = ($idx === $correctAnswerIndex) ? 1 : 0;
             $option_text = isset($questionData[$fields[$idx]]) ? $questionData[$fields[$idx]] : '';
+            if ($option_text === '') {
+                continue;
+            }
 
             $this->db->query("
-                INSERT INTO quiz_options (question_id, option_letter, option_text, is_correct)
-                VALUES (:question_id, :letter, :text, :is_correct)
+                INSERT INTO quiz_options (question_id, option_letter, option_text, is_correct, option_order)
+                VALUES (:question_id, :letter, :text, :is_correct, :option_order)
             ");
             $this->db->bind(':question_id', $question_id);
             $this->db->bind(':letter',      $letter);
             $this->db->bind(':text',        $option_text);
             $this->db->bind(':is_correct',  $is_correct);
+            $this->db->bind(':option_order', $idx + 1);
 
             if (!$this->db->execute()) {
                 return false;
@@ -123,6 +133,72 @@ class Quiz {
         $this->db->bind(':count', $count);
         $this->db->bind(':id',    $quiz_id);
         return $this->db->execute();
+    }
+
+    /**
+     * Update quiz metadata for QuizmanagerController::update().
+     */
+    public function updateQuiz($quiz_id, $quizData) {
+        $this->db->query("
+            UPDATE quizzes
+            SET title = :title,
+                description = :description,
+                difficulty_level = :difficulty,
+                duration = :duration,
+                category = :category,
+                status = :status,
+                badge_id = :badge_id,
+                reward_amount = :reward_amount,
+                updated_at = NOW()
+            WHERE id = :id
+        ");
+
+        $this->db->bind(':title',       $quizData['title']);
+        $this->db->bind(':description', $quizData['description']);
+        $this->db->bind(':difficulty',  $quizData['difficulty_level']);
+        $this->db->bind(':duration',    $quizData['duration']);
+        $this->db->bind(':category',    isset($quizData['category']) ? $quizData['category'] : 'General');
+        $this->db->bind(':status',      isset($quizData['status']) ? $quizData['status'] : 'draft');
+        $this->db->bind(':badge_id',    isset($quizData['badge_id']) ? $quizData['badge_id'] : null);
+        $this->db->bind(':reward_amount', isset($quizData['reward_amount']) ? max(0, (int)$quizData['reward_amount']) : 0);
+        $this->db->bind(':id',          $quiz_id);
+
+        return $this->db->execute();
+    }
+
+    /**
+     * Replace all quiz questions/options after an edit.
+     */
+    public function replaceQuestions($quiz_id, $questions) {
+        $this->db->beginTransaction();
+
+        try {
+            $this->db->query("DELETE FROM quiz_questions WHERE quiz_id = :quiz_id");
+            $this->db->bind(':quiz_id', $quiz_id);
+            $this->db->execute();
+
+            $questionsSaved = 0;
+            foreach ($questions as $q) {
+                $saved = $this->addQuestion($quiz_id, [
+                    'question_text'  => trim($q['question'] ?? ''),
+                    'option_a'       => trim($q['options'][0] ?? ''),
+                    'option_b'       => trim($q['options'][1] ?? ''),
+                    'option_c'       => trim($q['options'][2] ?? ''),
+                    'option_d'       => trim($q['options'][3] ?? ''),
+                    'option_e'       => trim($q['options'][4] ?? ''),
+                    'correct_answer' => intval($q['correct'] ?? 0)
+                ]);
+                if ($saved) $questionsSaved++;
+            }
+
+            $this->updateQuestionCount($quiz_id, $questionsSaved);
+            $this->db->commit();
+            return true;
+        } catch (Throwable $e) {
+            $this->db->rollBack();
+            error_log('replaceQuestions error: ' . $e->getMessage());
+            return false;
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -178,13 +254,6 @@ class Quiz {
         $rows = $this->db->resultSet();
         if (!$rows) return array();
 
-        foreach ($rows as $row) {
-            if (!is_object($row)) continue;
-            if (!isset($row->reward_amount) || (int)$row->reward_amount <= 0) {
-                $row->reward_amount = $this->computeRewardAmount(isset($row->difficulty_level) ? $row->difficulty_level : '');
-            }
-        }
-
         return $rows;
     }
 
@@ -222,13 +291,6 @@ class Quiz {
         $rows = $this->db->resultSet();
         if (!$rows) return array();
 
-        foreach ($rows as $row) {
-            if (!is_object($row)) continue;
-            if (!isset($row->reward_amount) || (int)$row->reward_amount <= 0) {
-                $row->reward_amount = $this->computeRewardAmount(isset($row->difficulty_level) ? $row->difficulty_level : '');
-            }
-        }
-
         return $rows;
     }
 
@@ -246,11 +308,7 @@ class Quiz {
 
         if (!$result) return null;
 
-        $quizArray = (array)$result;
-        if (!isset($quizArray['reward_amount']) || (int)$quizArray['reward_amount'] <= 0) {
-            $quizArray['reward_amount'] = $this->computeRewardAmount(isset($quizArray['difficulty_level']) ? $quizArray['difficulty_level'] : '');
-        }
-        return $quizArray;
+        return (array)$result;
     }
 
     /**
@@ -423,11 +481,11 @@ class Quiz {
      */
     public function getAvailableBadges() {
         $this->db->query("SELECT id, name, icon FROM badges ORDER BY name ASC");
-        $result = $this->db->resultSet();
-        error_log("DEBUG MODEL: Query result: " . (is_array($result) ? count($result) : 'not array'));
-        if (is_array($result) && count($result) > 0) {
-            error_log("DEBUG MODEL: First badge: " . $result[0]->name);
-        }
-        return $result ?: array();
+        $results = $this->db->resultSet();
+        if (!$results) return array();
+
+        return array_map(function($row) {
+            return is_array($row) ? (object)$row : $row;
+        }, $results);
     }
 }

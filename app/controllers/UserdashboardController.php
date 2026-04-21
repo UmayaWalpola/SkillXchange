@@ -826,6 +826,20 @@ public function addCommunityComment() {
         
         $formattedQuizzes = array_map(function($quiz) {
             $quizArray = is_object($quiz) ? (array)$quiz : $quiz;
+            $badge = null;
+            if (!empty($quizArray['badge_id'])) {
+                $this->db->query("SELECT id, name, description, icon FROM badges WHERE id = :badge_id LIMIT 1");
+                $this->db->bind(':badge_id', $quizArray['badge_id']);
+                $badgeRow = $this->db->single();
+                if ($badgeRow) {
+                    $badge = [
+                        'id' => $badgeRow->id,
+                        'name' => $badgeRow->name,
+                        'description' => $badgeRow->description,
+                        'icon' => $badgeRow->icon
+                    ];
+                }
+            }
             return [
                 'id'            => $quizArray['quiz_id'] ?? $quizArray['id'],
                 'title'         => $quizArray['title'],
@@ -838,7 +852,7 @@ public function addCommunityComment() {
                 'status'        => $quizArray['user_status'] ?? 'not_started',
                 'lastScore'     => isset($quizArray['last_score']) ? round($quizArray['last_score'], 1) : null,
                 'isPremium'     => false,
-                'badge'         => null
+                'badge'         => $badge
             ];
         }, $dbQuizzes);
         
@@ -902,6 +916,21 @@ public function addCommunityComment() {
         
         $dbQuestions = $quizModel->getQuizQuestions($quizId);
         
+        $badge = null;
+        if (!empty($quiz['badge_id'])) {
+            $this->db->query("SELECT id, name, description, icon FROM badges WHERE id = :badge_id LIMIT 1");
+            $this->db->bind(':badge_id', $quiz['badge_id']);
+            $badgeRow = $this->db->single();
+            if ($badgeRow) {
+                $badge = [
+                    'id' => $badgeRow->id,
+                    'name' => $badgeRow->name,
+                    'description' => $badgeRow->description,
+                    'icon' => $badgeRow->icon
+                ];
+            }
+        }
+
         $quizData = [
             'id'            => $quiz['quiz_id'] ?? $quiz['id'],
             'title'         => $quiz['title'],
@@ -910,7 +939,7 @@ public function addCommunityComment() {
             'rewardAmount'  => (int)($quiz['reward_amount'] ?? 0),
             'questionCount' => $quiz['total_questions'],
             'timeLimit'     => $quiz['duration'],
-            'badge'         => null,
+            'badge'         => $badge,
             'questions'     => array_map(function($q) {
                 return [
                     'id'       => $q['question_id'],
@@ -1083,14 +1112,8 @@ public function addCommunityComment() {
         $score  = ($correctCount / $totalQuestions) * 100;
         $passed = $score >= 70;
 
-        // FIX 1: Use stored reward_amount from DB (set by trigger), fallback to difficulty_level
+        // Award exactly the BuckX amount allocated by the quiz manager.
         $rewardAmount = (int)($quiz['reward_amount'] ?? 0);
-        if ($rewardAmount <= 0) {
-            $difficulty   = $quiz['difficulty_level'] ?? '';
-            $key          = strtolower(trim($difficulty));
-            $map          = ['beginner' => 10, 'intermediate' => 20, 'expert' => 30];
-            $rewardAmount = (int)($map[$key] ?? 0);
-        }
 
         // FIX 2: Check for first completion BEFORE marking attempt complete
         $isFirstCompletion = false;
@@ -1126,9 +1149,14 @@ public function addCommunityComment() {
                 $existingBadge = $this->db->single();
 
                 if (!$existingBadge) {
-                    $this->db->query("INSERT INTO user_badges (user_id, badge_id, earned_at) VALUES (:user_id, :badge_id, NOW())");
+                    $this->db->query("
+                        INSERT INTO user_badges (user_id, badge_id, badge_name, badge_icon, earned_at)
+                        VALUES (:user_id, :badge_id, :badge_name, :badge_icon, NOW())
+                    ");
                     $this->db->bind(':user_id', $userId);
                     $this->db->bind(':badge_id', $badge->id);
+                    $this->db->bind(':badge_name', $badge->name ?? 'Quiz Badge');
+                    $this->db->bind(':badge_icon', $badge->icon ?? '🏆');
                     $this->db->execute();
 
                     $badgeEarned = [
@@ -1524,11 +1552,13 @@ public function addCommunityComment() {
         try {
             $this->db->query("
                 SELECT 
-                    b.id, b.name, b.description, b.icon,
-                    b.badge_type, b.requirement_type, b.requirement_value,
-                    b.color, ub.earned_at
+                    COALESCE(b.id, ub.badge_id) AS id,
+                    COALESCE(b.name, ub.badge_name) AS name,
+                    b.description,
+                    COALESCE(b.icon, ub.badge_icon) AS icon,
+                    ub.earned_at
                 FROM user_badges ub
-                INNER JOIN badges b ON ub.badge_id = b.id
+                LEFT JOIN badges b ON ub.badge_id = b.id
                 WHERE ub.user_id = :user_id
                 ORDER BY ub.earned_at DESC
             ");
@@ -1543,8 +1573,8 @@ public function addCommunityComment() {
                     'name'       => $badge->name,
                     'description'=> $badge->description,
                     'icon'       => $badge->icon,
-                    'badge_type' => $badge->badge_type,
-                    'color'      => $badge->color ?? '#3b82f6',
+                    'badge_type' => 'quiz',
+                    'color'      => '#3b82f6',
                     'earned_at'  => $this->timeAgo($badge->earned_at),
                     'earned_date'=> date('M d, Y', strtotime($badge->earned_at))
                 ];

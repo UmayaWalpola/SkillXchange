@@ -204,8 +204,19 @@ class Wallet {
         // ensure wallet exists (assume individual by default)
         $this->ensureWalletExists($userId, 'individual');
 
-        // sender_id must reference an existing user because of FK constraints
+        // sender_id must reference an existing user because of FK constraints.
         $systemSenderId = defined('SYSTEM_REWARD_SENDER_ID') ? (int)SYSTEM_REWARD_SENDER_ID : 1;
+        $this->db->query("SELECT id FROM users WHERE id = :id LIMIT 1");
+        $this->db->bind(':id', $systemSenderId);
+        if (!$this->db->single()) {
+            $this->db->query("SELECT id FROM users WHERE role IN ('admin', 'manager', 'quiz_manager') ORDER BY id LIMIT 1");
+            $fallbackSender = $this->db->single();
+            if (!$fallbackSender) {
+                $this->db->query("SELECT id FROM users ORDER BY id LIMIT 1");
+                $fallbackSender = $this->db->single();
+            }
+            $systemSenderId = $fallbackSender ? (int)$fallbackSender->id : $userId;
+        }
 
         $noteParts = ['Quiz Reward'];
         if (!empty($quizTitle)) $noteParts[] = $quizTitle;

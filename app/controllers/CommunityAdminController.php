@@ -18,7 +18,7 @@ class CommunityAdminController extends Controller {
     }
 
     public function create() {
-        $skills = $this->communityAdminModel->getAllSkills();
+        $skills = $this->communityAdminModel->getSkillsWithoutCommunities();
         $data = [
             'title' => 'Create New Community',
             'community_name' => '',
@@ -45,6 +45,9 @@ class CommunityAdminController extends Controller {
             $errors = [];
             if(empty($skillId) || !$skill) {
                 $errors[] = 'Valid skill selection is required';
+            }
+            if($skill && $this->communityAdminModel->skillHasCommunity($skill->skill_name)) {
+                $errors[] = 'A community for this skill already exists';
             }
             if(empty($description)) {
                 $errors[] = 'Description is required';

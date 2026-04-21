@@ -65,6 +65,11 @@ function renderQuizTable(filteredQuizzes = null) {
   const tbody = document.getElementById('quizTableBody');
   tbody.innerHTML = '';
 
+  if (quizzesToShow.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px;">No quizzes found.</td></tr>';
+    return;
+  }
+
   quizzesToShow.forEach(quiz => {
     const row = document.createElement('tr');
     
@@ -109,36 +114,62 @@ function filterQuizzes() {
   }
 }
 
-// Quiz management functions (placeholders for future)
 function viewQuiz(id) { 
-  alert(`Viewing quiz ${id}`); 
-  // Future: window.location.href = `${URLROOT}/quizmanager/view/${id}`;
+  window.location.href = `${window.URLROOT}/quizmanager/preview/${id}`;
 }
 
 function editQuiz(id) { 
-  alert(`Editing quiz ${id}`); 
-  // Future: window.location.href = `${URLROOT}/quizmanager/edit/${id}`;
+  window.location.href = `${window.URLROOT}/quizmanager/edit/${id}`;
 }
 
-function activateQuiz(id) {
-  const quiz = quizzes.find(q => q.id === id);
-  quiz.status = 'active'; 
-  renderQuizTable();
-  // Future: Make AJAX call to backend
+async function activateQuiz(id) {
+  await updateQuizStatus(id, 'active');
 }
 
-function pauseQuiz(id) {
-  const quiz = quizzes.find(q => q.id === id);
-  quiz.status = 'paused'; 
-  renderQuizTable();
-  // Future: Make AJAX call to backend
+async function pauseQuiz(id) {
+  await updateQuizStatus(id, 'paused');
 }
 
-function deleteQuiz(id) {
-  if(confirm('Are you sure you want to delete this quiz?')) {
-    quizzes = quizzes.filter(q => q.id !== id); 
+async function updateQuizStatus(id, status) {
+  try {
+    const response = await fetch(`${window.URLROOT}/quizmanager/updateStatus/${id}/${status}`, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json' }
+    });
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'Failed to update quiz status');
+    }
+
+    const quiz = quizzes.find(q => q.id === id);
+    if (quiz) quiz.status = status;
     renderQuizTable();
-    // Future: Make AJAX call to backend
+  } catch (error) {
+    console.error('Status update failed:', error);
+    alert(error.message || 'Failed to update quiz status');
+  }
+}
+
+async function deleteQuiz(id) {
+  if (!confirm('Are you sure you want to delete this quiz?')) return;
+
+  try {
+    const response = await fetch(`${window.URLROOT}/quizmanager/delete/${id}`, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json' }
+    });
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'Failed to delete quiz');
+    }
+
+    quizzes = quizzes.filter(q => q.id !== id);
+    renderQuizTable();
+  } catch (error) {
+    console.error('Delete failed:', error);
+    alert(error.message || 'Failed to delete quiz');
   }
 }
 

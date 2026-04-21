@@ -12,7 +12,7 @@
 <body>
     <div><!-- Sidebar Dashboard -->
     <nav class="sidebar">
-    <a href="<?= URLROOT ?>/quizmanager/dashboard.php" class="sidebar-item active">
+    <a href="<?= URLROOT ?>/quizmanager" class="sidebar-item active">
         <span>Dashboard</span>
     </a>
     </nav> </div>

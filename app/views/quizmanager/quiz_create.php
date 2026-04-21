@@ -9,7 +9,7 @@
         <!-- Header -->
         <div class="builder-header">
             <a href="<?php echo URLROOT; ?>/quizmanager" class="btn-back">← Back to Dashboard</a>
-            <h1 class="builder-title">Create New Quiz</h1>
+            <h1 class="builder-title"><?= htmlspecialchars($data['title'] ?? 'Create New Quiz') ?></h1>
             <p class="builder-subtitle">Build your quiz step by step (Max 20 questions)</p>
         </div>
 
@@ -24,6 +24,7 @@
                     id="quizTitle" 
                     placeholder="Enter quiz title"
                     maxlength="200"
+                    value="<?= htmlspecialchars($data['quiz']['title'] ?? '') ?>"
                 >
                 <span class="error-text" id="titleError"></span>
             </div>
@@ -33,9 +34,10 @@
                     <label for="quizBadge">Difficulty Level *</label>
                     <select id="quizBadge">
                         <option value="">Select difficulty</option>
-                        <option value="Beginner">Beginner</option>
-                        <option value="Intermediate">Intermediate</option>
-                        <option value="Expert">Expert</option>
+                        <?php $selectedDifficulty = $data['quiz']['difficulty_level'] ?? ''; ?>
+                        <option value="Beginner" <?= $selectedDifficulty === 'Beginner' ? 'selected' : '' ?>>Beginner</option>
+                        <option value="Intermediate" <?= $selectedDifficulty === 'Intermediate' ? 'selected' : '' ?>>Intermediate</option>
+                        <option value="Expert" <?= $selectedDifficulty === 'Expert' ? 'selected' : '' ?>>Expert</option>
                     </select>
                     <span class="error-text" id="badgeError"></span>
                 </div>
@@ -48,7 +50,7 @@
                         placeholder="30"
                         min="1"
                         max="180"
-                        value="30"
+                        value="<?= htmlspecialchars($data['quiz']['duration'] ?? 30) ?>"
                     >
                 </div>
             </div>
@@ -59,7 +61,8 @@
                     <select id="quizSkill">
                         <option value="">Select skill</option>
                         <?php foreach (($data['available_skills'] ?? []) as $skill): ?>
-                            <option value="<?= htmlspecialchars($skill->skill_name ?? '') ?>">
+                            <?php $skillName = $skill->skill_name ?? ''; ?>
+                            <option value="<?= htmlspecialchars($skillName) ?>" <?= (($data['quiz']['category'] ?? '') === $skillName) ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($skill->skill_name ?? '') ?>
                             </option>
                         <?php endforeach; ?>
@@ -71,16 +74,9 @@
                     <label for="badgeToAward">Badge to Award (Optional)</label>
                     <select id="badgeToAward">
                         <option value="">No badge</option>
-                        <?php
-                        // Debug: Check if badges data exists
-                        error_log("DEBUG VIEW: available_badges exists: " . (isset($data['available_badges']) ? 'yes' : 'no'));
-                        if (isset($data['available_badges'])) {
-                            error_log("DEBUG VIEW: badges count: " . (is_array($data['available_badges']) ? count($data['available_badges']) : 'not array'));
-                        }
-                        ?>
                         <?php if (!empty($data['available_badges'])): ?>
                             <?php foreach ($data['available_badges'] as $b): ?>
-                                <option value="<?= htmlspecialchars($b->id); ?>">
+                                <option value="<?= htmlspecialchars($b->id); ?>" <?= ((string)($data['quiz']['badge_id'] ?? '') === (string)$b->id) ? 'selected' : '' ?>>
                                     <?= htmlspecialchars($b->icon); ?> <?= htmlspecialchars($b->name); ?>
                                 </option>
                             <?php endforeach; ?>
@@ -90,13 +86,25 @@
             </div>
 
             <div class="form-group">
+                <label for="buckxReward">BuckX Reward</label>
+                <input
+                    type="number"
+                    id="buckxReward"
+                    min="0"
+                    step="1"
+                    placeholder="0"
+                    value="<?= htmlspecialchars($data['quiz']['reward_amount'] ?? 0) ?>"
+                >
+            </div>
+
+            <div class="form-group">
                 <label for="quizDescription">Description</label>
                 <textarea 
                     id="quizDescription" 
                     placeholder="Brief description of the quiz (optional)"
                     rows="3"
                     maxlength="500"
-                ></textarea>
+                ><?= htmlspecialchars($data['quiz']['description'] ?? '') ?></textarea>
             </div>
         </div>
 
@@ -127,7 +135,7 @@
                 Preview
             </button>
             <button class="btn btn-primary" onclick="publishQuiz()">
-                Publish Quiz
+                <?= (($data['mode'] ?? 'create') === 'edit') ? 'Update Quiz' : 'Publish Quiz' ?>
             </button>
         </div>
     </div>
@@ -213,6 +221,32 @@
 <script>
     // Pass URLROOT to JavaScript
     const URLROOT = '<?php echo URLROOT; ?>';
+    window.quizManagerMode = '<?= htmlspecialchars($data['mode'] ?? 'create') ?>';
+    window.quizSaveUrl = '<?= URLROOT ?>/quizmanager/<?= (($data['mode'] ?? 'create') === 'edit') ? 'update/' . (int)($data['quiz']['id'] ?? 0) : 'save' ?>';
+    window.initialQuizData = <?= json_encode([
+        'title' => $data['quiz']['title'] ?? '',
+        'badge' => $data['quiz']['difficulty_level'] ?? '',
+        'duration' => isset($data['quiz']['duration']) ? (int)$data['quiz']['duration'] : 30,
+        'description' => $data['quiz']['description'] ?? '',
+        'category' => $data['quiz']['category'] ?? '',
+        'badgeId' => isset($data['quiz']['badge_id']) ? (string)$data['quiz']['badge_id'] : '',
+        'rewardAmount' => isset($data['quiz']['reward_amount']) ? (int)$data['quiz']['reward_amount'] : 0,
+        'questions' => array_map(function($q) {
+            $question = (array)$q;
+            $options = [];
+            foreach (['a', 'b', 'c', 'd', 'e'] as $letter) {
+                $key = 'option_' . $letter;
+                if (isset($question[$key]) && $question[$key] !== '') {
+                    $options[] = $question[$key];
+                }
+            }
+            return [
+                'question' => $question['question_text'] ?? '',
+                'options' => $options,
+                'correct' => isset($question['correct_answer']) ? (int)$question['correct_answer'] : 0
+            ];
+        }, $data['questions'] ?? [])
+    ]) ?>;
 </script>
 <script src="<?php echo URLROOT; ?>/assets/js/quizcreate.js"></script>
 

@@ -31,8 +31,13 @@
                                 <?= htmlspecialchars($skill->skill_name) ?>
                             </option>
                         <?php endforeach; ?>
+                    <?php else: ?>
+                        <option value="" disabled>No available skills without communities</option>
                     <?php endif; ?>
                 </select>
+                <?php if(empty($data['skills'])): ?>
+                    <small class="help-text">Every skill already has a community. Add a new skill first if you want to create another community.</small>
+                <?php endif; ?>
                 <span class="error-text" id="nameError"></span>
             </div>
 

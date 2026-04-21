@@ -46,6 +46,9 @@
 </div>
 
 <!-- Link JavaScript -->
+<script>
+    window.URLROOT = '<?php echo URLROOT; ?>';
+</script>
 <script src="<?php echo URLROOT; ?>/assets/js/quizmandashboard.js"></script>
 
 <?php require_once '../app/views/layouts/footer_user.php'; ?>
