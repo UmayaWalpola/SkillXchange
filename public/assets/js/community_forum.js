@@ -63,8 +63,8 @@ async function createCommunityPost(communityId) {
     const linkUrl  = document.getElementById('postLink')?.value.trim() || '';
     const imageFile = document.getElementById('postImage')?.files[0] || null;
 
-    if (!content) {
-        showNotification('Post content is required.', 'error');
+    if (!content && !imageFile) {
+        showNotification('Post content or an image is required.', 'error');
         return;
     }
 

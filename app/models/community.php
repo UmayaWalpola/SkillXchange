@@ -64,6 +64,45 @@ class Community {
         $this->db->bind(':user_id', $userId);
         return $this->db->resultSet();
     }
+
+    /**
+     * Get one active community for the detail view, including user membership state.
+     */
+    public function getCommunityById($communityId, $userId = null) {
+        $this->db->query("
+            SELECT
+                c.*,
+                COUNT(DISTINCT cm.user_id) as member_count,
+                COUNT(DISTINCT cm.user_id) as members,
+                COUNT(DISTINCT p.id) as post_count,
+                COUNT(DISTINCT p.id) as totalPosts,
+                COUNT(DISTINCT p.id) as posts,
+                MAX(CASE
+                    WHEN cm2.user_id IS NOT NULL OR c.created_by = :user_id THEN 1
+                    ELSE 0
+                END) as is_member,
+                MAX(CASE WHEN c.created_by = :user_id THEN 1 ELSE 0 END) as is_owner,
+                COALESCE(
+                    MAX(CASE WHEN c.created_by = :user_id THEN 'admin' ELSE NULL END),
+                    MAX(cm2.role),
+                    'guest'
+                ) as user_role
+            FROM communities c
+            LEFT JOIN community_members cm ON c.id = cm.community_id
+            LEFT JOIN community_posts p ON c.id = p.community_id
+            LEFT JOIN community_members cm2
+                ON c.id = cm2.community_id
+                AND cm2.user_id = :user_id
+            WHERE c.id = :community_id
+              AND c.status = 'active'
+            GROUP BY c.id
+            LIMIT 1
+        ");
+
+        $this->db->bind(':community_id', $communityId);
+        $this->db->bind(':user_id', $userId);
+        return $this->db->single();
+    }
     
     /**
      * Join a community

@@ -849,6 +849,12 @@
     border: 1px solid var(--primary-blue);
 }
 
+.post-type-badge.question {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #22c55e;
+}
+
 .post-type-badge.announcement {
     background: #fef3c7;
     color: #b45309;

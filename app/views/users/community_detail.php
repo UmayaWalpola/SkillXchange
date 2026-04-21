@@ -52,6 +52,8 @@
 
                                         <select id="postType" class="post-input">
                                             <option value="discussion">Discussion</option>
+                                            <option value="question">Question</option>
+
                                             <?php if (in_array($data['community']->user_role, ['admin', 'moderator'])): ?>
                                                 <option value="announcement">Announcement</option>
                                             <?php endif; ?>

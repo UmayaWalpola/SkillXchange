@@ -1,3 +1,4 @@
+<?php $page = 'feedback'; ?>
 <?php require_once "../app/views/layouts/header_user.php"; ?>
 
 <?php 
@@ -14,7 +15,7 @@ if (isset($_SESSION['role'])) {
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/global.css">
 <link rel="stylesheet" href="<?= URLROOT ?>/assets/css/feedback.css">
 
-<main class="site-main">
+<main class="site-main feedback-page">
     <div class="container" style="max-width:1200px;margin:0 auto;padding:20px;">
         <!-- Page Header -->
         <div class="page-header" style="margin-bottom:30px;">

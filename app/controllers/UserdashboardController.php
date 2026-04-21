@@ -562,10 +562,16 @@ public function matches() {
         $title       = trim($_POST['title'] ?? '');
         $content     = trim($_POST['content'] ?? '');
         $postType    = trim($_POST['post_type'] ?? 'discussion');
+        $allowedPostTypes = ['discussion', 'question', 'announcement'];
+        if (!in_array($postType, $allowedPostTypes, true)) {
+            $postType = 'discussion';
+        }
         $linkUrl     = trim($_POST['link_url'] ?? '');
  
-        if (!$communityId || empty($content)) {
-            echo json_encode(['success' => false, 'message' => 'Content is required']);
+        $hasImageUpload = isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE;
+
+        if (!$communityId || (empty($content) && !$hasImageUpload)) {
+            echo json_encode(['success' => false, 'message' => 'Post content or an image is required']);
             exit;
         }
  
@@ -583,12 +589,18 @@ public function matches() {
  
         // Handle image upload
         $imagePath = null;
-        if (!empty($_FILES['image']['name'])) {
+        if ($hasImageUpload) {
             $file      = $_FILES['image'];
             $allowed   = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
             $maxSize   = 5 * 1024 * 1024; // 5 MB
- 
-            if (!in_array($file['type'], $allowed)) {
+
+            if ($file['error'] !== UPLOAD_ERR_OK) {
+                echo json_encode(['success' => false, 'message' => 'Image upload failed. Please try another image.']);
+                exit;
+            }
+
+            $detectedType = mime_content_type($file['tmp_name']);
+            if (!in_array($detectedType, $allowed, true)) {
                 echo json_encode(['success' => false, 'message' => 'Only JPEG, PNG, GIF and WebP images are allowed']);
                 exit;
             }
@@ -597,12 +609,23 @@ public function matches() {
                 exit;
             }
  
-            $uploadDir = APPROOT . '/../public/assets/uploads/community_posts/';
+            $uploadDir = dirname(__DIR__, 2) . '/public/assets/uploads/community_posts/';
             if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
+                mkdir($uploadDir, 0775, true);
+            }
+
+            if (!is_writable($uploadDir)) {
+                echo json_encode(['success' => false, 'message' => 'Image upload folder is not writable']);
+                exit;
             }
  
-            $ext       = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $extensions = [
+                'image/jpeg' => 'jpg',
+                'image/png' => 'png',
+                'image/gif' => 'gif',
+                'image/webp' => 'webp'
+            ];
+            $ext       = $extensions[$detectedType];
             $filename  = 'post_' . $userId . '_' . time() . '.' . strtolower($ext);
             $destPath  = $uploadDir . $filename;
  
@@ -614,15 +637,22 @@ public function matches() {
             $imagePath = 'assets/uploads/community_posts/' . $filename;
         }
  
-        $postId = $communityModel->createPost(
-            $userId,
-            $communityId,
-            $title    ?: null,
-            $content,
-            $postType ?: 'discussion',
-            $linkUrl  ?: null,
-            $imagePath
-        );
+        try {
+            $postId = $communityModel->createPost(
+                $userId,
+                $communityId,
+                $title    ?: null,
+                $content,
+                $postType ?: 'discussion',
+                $linkUrl  ?: null,
+                $imagePath
+            );
+        } catch (\Throwable $e) {
+            error_log('postToCommunity error: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Server error while creating post']);
+            exit;
+        }
  
         if ($postId) {
             echo json_encode(['success' => true, 'message' => 'Post created successfully', 'post_id' => $postId]);

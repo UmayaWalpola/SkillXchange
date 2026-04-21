@@ -240,7 +240,239 @@ class Wallet {
         }
     }
 
+    private function tableHasColumn($table, $column) {
+        static $cache = [];
+        $key = $table . ':' . $column;
+
+        if (array_key_exists($key, $cache)) {
+            return $cache[$key];
+        }
+
+        $this->db->query("SHOW COLUMNS FROM `$table` LIKE :column");
+        $this->db->bind(':column', $column);
+        $cache[$key] = (bool) $this->db->single();
+        return $cache[$key];
+    }
+
+    private function adjustUserSkillDebtHours($userId, $hours) {
+        if ($hours <= 0 || !$this->tableHasColumn('users', 'skillx_debt_hours')) {
+            return true;
+        }
+
+        $this->db->query("
+            UPDATE users
+            SET skillx_debt_hours = GREATEST(COALESCE(skillx_debt_hours, 0) - :hours, 0)
+            WHERE id = :user_id
+        ");
+        $this->db->bind(':hours', (float) $hours);
+        $this->db->bind(':user_id', (int) $userId);
+        return $this->db->execute();
+    }
+
+    private function applyDebtReduction($debtRow, $hoursToApply) {
+        $currentHours = (float) ($debtRow->hours_owed ?? 0);
+        $remainingHours = max(0, $currentHours - (float) $hoursToApply);
+
+        if ($remainingHours <= 0.00001) {
+            $this->db->query("
+                UPDATE skill_debt
+                SET hours_owed = 0,
+                    status = 'fulfilled',
+                    fulfilled_at = NOW()
+                WHERE id = :id
+            ");
+            $this->db->bind(':id', (int) $debtRow->id);
+            $this->db->execute();
+        } else {
+            $this->db->query("
+                UPDATE skill_debt
+                SET hours_owed = :hours_owed
+                WHERE id = :id
+            ");
+            $this->db->bind(':hours_owed', $remainingHours);
+            $this->db->bind(':id', (int) $debtRow->id);
+            $this->db->execute();
+        }
+
+        $this->adjustUserSkillDebtHours((int) ($debtRow->debtor_id ?? 0), min($currentHours, $hoursToApply));
+    }
+
+    private function consolidateDirectionalDebts($debtorId, $creditorId) {
+        $this->db->query("
+            SELECT id, debtor_id, creditor_id, hours_owed, skill_name, status, created_at
+            FROM skill_debt
+            WHERE debtor_id = :debtor_id
+              AND creditor_id = :creditor_id
+              AND status IN ('pending', 'active')
+              AND hours_owed > 0
+            ORDER BY created_at ASC, id ASC
+        ");
+        $this->db->bind(':debtor_id', (int) $debtorId);
+        $this->db->bind(':creditor_id', (int) $creditorId);
+        $rows = $this->db->resultSet() ?: [];
+
+        if (count($rows) < 2) {
+            return;
+        }
+
+        $grouped = [];
+        foreach ($rows as $row) {
+            $groupKey = strtolower(trim((string) ($row->skill_name ?? ''))) . '|' . strtolower(trim((string) ($row->status ?? 'active')));
+            if (!isset($grouped[$groupKey])) {
+                $grouped[$groupKey] = [];
+            }
+            $grouped[$groupKey][] = $row;
+        }
+
+        foreach ($grouped as $groupRows) {
+            if (count($groupRows) < 2) {
+                continue;
+            }
+
+            $keeper = array_shift($groupRows);
+            $totalHours = (float) ($keeper->hours_owed ?? 0);
+
+            foreach ($groupRows as $row) {
+                $totalHours += (float) ($row->hours_owed ?? 0);
+            }
+
+            $this->db->query("UPDATE skill_debt SET hours_owed = :hours_owed WHERE id = :id");
+            $this->db->bind(':hours_owed', $totalHours);
+            $this->db->bind(':id', (int) $keeper->id);
+            $this->db->execute();
+
+            foreach ($groupRows as $row) {
+                $this->db->query("
+                    UPDATE skill_debt
+                    SET hours_owed = 0,
+                        status = 'fulfilled',
+                        fulfilled_at = NOW()
+                    WHERE id = :id
+                ");
+                $this->db->bind(':id', (int) $row->id);
+                $this->db->execute();
+            }
+        }
+    }
+
+    private function reconcileDebtPair($userA, $userB) {
+        $this->db->query("
+            SELECT id, debtor_id, creditor_id, hours_owed, skill_name, status, created_at
+            FROM skill_debt
+            WHERE status IN ('pending', 'active')
+              AND hours_owed > 0
+              AND (
+                    (debtor_id = :user_a AND creditor_id = :user_b)
+                 OR (debtor_id = :user_b AND creditor_id = :user_a)
+              )
+            ORDER BY created_at ASC, id ASC
+        ");
+        $this->db->bind(':user_a', (int) $userA);
+        $this->db->bind(':user_b', (int) $userB);
+        $rows = $this->db->resultSet() ?: [];
+
+        if (count($rows) < 2) {
+            $this->consolidateDirectionalDebts($userA, $userB);
+            $this->consolidateDirectionalDebts($userB, $userA);
+            return;
+        }
+
+        $forward = [];
+        $reverse = [];
+
+        foreach ($rows as $row) {
+            if ((int) $row->debtor_id === (int) $userA && (int) $row->creditor_id === (int) $userB) {
+                $forward[] = $row;
+            } elseif ((int) $row->debtor_id === (int) $userB && (int) $row->creditor_id === (int) $userA) {
+                $reverse[] = $row;
+            }
+        }
+
+        if (empty($forward) || empty($reverse)) {
+            $this->consolidateDirectionalDebts($userA, $userB);
+            $this->consolidateDirectionalDebts($userB, $userA);
+            return;
+        }
+
+        $forwardTotal = array_sum(array_map(fn($row) => (float) ($row->hours_owed ?? 0), $forward));
+        $reverseTotal = array_sum(array_map(fn($row) => (float) ($row->hours_owed ?? 0), $reverse));
+        $offsetHours = min($forwardTotal, $reverseTotal);
+
+        if ($offsetHours > 0.00001) {
+            $remainingOffset = $offsetHours;
+
+            foreach ($forward as $row) {
+                if ($remainingOffset <= 0.00001) {
+                    break;
+                }
+
+                $hoursToApply = min((float) ($row->hours_owed ?? 0), $remainingOffset);
+                if ($hoursToApply <= 0) {
+                    continue;
+                }
+
+                $this->applyDebtReduction($row, $hoursToApply);
+                $remainingOffset -= $hoursToApply;
+            }
+
+            $remainingOffset = $offsetHours;
+
+            foreach ($reverse as $row) {
+                if ($remainingOffset <= 0.00001) {
+                    break;
+                }
+
+                $hoursToApply = min((float) ($row->hours_owed ?? 0), $remainingOffset);
+                if ($hoursToApply <= 0) {
+                    continue;
+                }
+
+                $this->applyDebtReduction($row, $hoursToApply);
+                $remainingOffset -= $hoursToApply;
+            }
+        }
+
+        $this->consolidateDirectionalDebts($userA, $userB);
+        $this->consolidateDirectionalDebts($userB, $userA);
+    }
+
+    public function reconcileDebtsForUser($userId) {
+        try {
+            $this->db->query("START TRANSACTION");
+
+            $this->db->query("
+                SELECT DISTINCT
+                    CASE
+                        WHEN debtor_id = :user_id THEN creditor_id
+                        ELSE debtor_id
+                    END AS counterparty_id
+                FROM skill_debt
+                WHERE status IN ('pending', 'active')
+                  AND hours_owed > 0
+                  AND (:user_id IN (debtor_id, creditor_id))
+            ");
+            $this->db->bind(':user_id', (int) $userId);
+            $counterparties = $this->db->resultSet() ?: [];
+
+            foreach ($counterparties as $counterparty) {
+                $counterpartyId = (int) ($counterparty->counterparty_id ?? 0);
+                if ($counterpartyId <= 0 || $counterpartyId === (int) $userId) {
+                    continue;
+                }
+
+                $this->reconcileDebtPair((int) $userId, $counterpartyId);
+            }
+
+            $this->db->query("COMMIT");
+        } catch (Exception $e) {
+            $this->db->query("ROLLBACK");
+            error_log('Debt reconciliation failed: ' . $e->getMessage());
+        }
+    }
+
     public function getDebts($userId) {
+        $this->reconcileDebtsForUser($userId);
+
         // Debts I OWE
         $this->db->query("
             SELECT sd.*, u.username AS creditor_name
@@ -272,6 +504,8 @@ class Wallet {
     }
 
     public function getCounterpartyDebtSummary($creditorId, $debtorId) {
+        $this->reconcileDebtPair((int) $creditorId, (int) $debtorId);
+
         $this->db->query("
             SELECT
                 COALESCE(SUM(hours_owed), 0) AS total_hours,

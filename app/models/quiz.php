@@ -259,7 +259,7 @@ class Quiz {
     public function getQuizQuestions($quiz_id) {
         $this->db->query("
             SELECT
-                qq.id            AS question_id,
+                qq.question_id,
                 qq.question_text,
                 qq.question_order,
                 GROUP_CONCAT(
@@ -268,9 +268,9 @@ class Quiz {
                     SEPARATOR '|'
                 ) AS options_data
             FROM quiz_questions qq
-            LEFT JOIN quiz_options qo ON qq.id = qo.question_id
+            LEFT JOIN quiz_options qo ON qq.question_id = qo.question_id
             WHERE qq.quiz_id = :id
-            GROUP BY qq.id, qq.question_text, qq.question_order
+            GROUP BY qq.question_id, qq.question_text, qq.question_order
             ORDER BY qq.question_order ASC
         ");
 

@@ -1,3 +1,25 @@
+/* Feedback Page */
+
+.feedback-page {
+    margin-left: 250px;
+    width: calc(100% - 250px);
+    padding-top: 96px;
+    padding-bottom: 48px;
+    background: var(--white-bg, #ffffff);
+}
+
+.feedback-page .container {
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .feedback-page {
+        margin-left: 0;
+        width: 100%;
+        padding-top: 24px;
+    }
+}
+
 /* Feedback Modal Styles - Matching existing dashboard design */
 
 .feedback-modal {
