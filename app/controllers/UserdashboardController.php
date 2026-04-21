@@ -557,20 +557,17 @@ public function matches() {
             exit;
         }
  
-        // CODECHECK GUIDE: Community post form fields arrive here from community_forum.js.
         // Add new post fields here first, then pass them into Community::createPost().
         $userId      = $this->checkAuth(true);
         $communityId = $_POST['community_id'] ?? null;
         $title       = trim($_POST['title'] ?? '');
         $content     = trim($_POST['content'] ?? '');
-        $postType    = trim($_POST['post_type'] ?? 'discussion');
+        $postType    = trim($_POST['post_type'] ?? 'Normal');
         $linkUrl     = trim($_POST['link_url'] ?? '');
 
-        // CODECHECK GUIDE: Post type validation.
-        // "Question" reuses community_posts.post_type, so no extra DB column is needed.
-        $allowedPostTypes = ['discussion', 'question', 'announcement'];
+        $allowedPostTypes = ['Normal', 'Famous',];
         if (!in_array($postType, $allowedPostTypes, true)) {
-            $postType = 'discussion';
+            $postType = 'Normal';
         }
  
         $hasImageUpload = isset($_FILES['image']) && $_FILES['image']['error'] !== UPLOAD_ERR_NO_FILE;
@@ -590,12 +587,7 @@ public function matches() {
  
         $member = $communityModel->getMemberRole($userId, $communityId);
 
-        // Only admins/moderators can create announcements; regular members fall back to discussion.
-        if ($postType === 'announcement' && !in_array($member->role, ['admin', 'moderator'])) {
-            $postType = 'discussion';
-        }
  
-        // CODECHECK GUIDE: Image upload validation.
         // Use MIME detection, not just the file extension, when checking uploaded files.
         $imagePath = null;
         if ($hasImageUpload) {
@@ -653,7 +645,7 @@ public function matches() {
                 $communityId,
                 $title    ?: null,
                 $content,
-                $postType ?: 'discussion',
+                $postType ?: 'Normal',
                 $linkUrl  ?: null,
                 $imagePath
             );
@@ -801,7 +793,6 @@ public function addCommunityComment() {
  
         $communityModel = $this->model('Community');
  
-        // Toggle: if already reacted with same type, remove it; otherwise add/swap
         $existing = $communityModel->getUserReaction($userId, $postId);
  
         if ($existing && $existing->reaction_type === $type) {
@@ -815,11 +806,18 @@ public function addCommunityComment() {
         }
  
         $likeCount = $communityModel->getReactionCount($postId, $type);
- 
+
+        if ($type === 'like' && (int)$likeCount >= 5) {
+            $communityModel->updatePostType($postId, 'famous');
+        }
+        $postType = ((int)$likeCount >= 5) ? 'famous' : null;
+
         echo json_encode([
             'success'    => true,
             'reacted'    => $reacted,
-            'like_count' => (int) $likeCount
+            'like_count' => (int) $likeCount, 
+            'post_type' => ((int)$likeCount >= 5) ? 'famous' : null
+
         ]);
         exit;
     }

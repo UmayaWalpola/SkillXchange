@@ -9,7 +9,7 @@ class Exchange extends Database {
     }
     
     /**
-     * CODECHECK GUIDE: Connection request creation.
+     * Connection request creation.
      * Matching page actions usually end here; this prevents duplicate pending/active exchanges.
      *
      * Create an exchange/connection request

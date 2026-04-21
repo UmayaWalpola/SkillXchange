@@ -45,20 +45,20 @@
                         <?php if ($data['community']->is_member): ?>
                             <div class="create-post-card">
                                 <h4>Create a Post</h4>
-                                <!-- CODECHECK GUIDE: This form is submitted by public/assets/js/community_forum.js using FormData. -->
                                 <form id="createPostForm" enctype="multipart/form-data">
                                     <div class="create-post-form">
                                         <input type="text" id="postTitle" class="post-input" placeholder="Post title (optional)">
-
-                                        <!-- CODECHECK GUIDE: Add new post categories here, then allow them in UserdashboardController::postToCommunity(). -->
+                                         
+                                        
                                         <select id="postType" class="post-input">
-                                            <option value="discussion">Discussion</option>
-                                            <option value="question">Question</option>
+                                            <h3>Post Type</h3>
+                                            <option value="normal" default>Normal</option>
 
                                             <?php if (in_array($data['community']->user_role, ['admin', 'moderator'])): ?>
                                                 <option value="announcement">Announcement</option>
                                             <?php endif; ?>
                                         </select>
+                                        
 
                                         <textarea id="postContent" class="post-textarea" placeholder="Share something with the community..." rows="5"></textarea>
 
@@ -118,9 +118,10 @@
                                                 </div>
                                             </div>
                                             <div class="feed-post-badges">
-                                                <!-- CODECHECK GUIDE: Badge text comes directly from community_posts.post_type. -->
                                                 <?php if (!empty($post->post_type)): ?>
-                                                    <span class="post-type-badge <?= htmlspecialchars($post->post_type) ?>"><?= ucfirst(htmlspecialchars($post->post_type)) ?></span>
+                                                  <span class="post-type-badge <?= htmlspecialchars($post->post_type) ?>">
+                                                  <?= ucfirst(htmlspecialchars($post->post_type)) ?>
+                                                  </span>
                                                 <?php endif; ?>
                                                 <?php if (!empty($post->is_pinned)): ?>
                                                     <span class="pinned-badge">Pinned</span>

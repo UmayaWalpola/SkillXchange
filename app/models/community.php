@@ -187,8 +187,7 @@ class Community {
     return $this->db->resultSet();
 }
 /**
- * CODECHECK GUIDE: Community feed query.
- * The view gets post_type from p.*, so badges like Discussion/Question/Announcement render automatically.
+
  *
  * Get posts in a community (for forum view)
  */
@@ -212,13 +211,11 @@ public function getCommunityPosts($communityId, $userId = null) {
         if ($userId) $this->db->bind(':user_id', $userId);
         return $this->db->resultSet();
     }
-    /**
-     * CODECHECK GUIDE: Community post insert.
-     * If a task adds a saved field to posts, add it to this method signature, INSERT columns, placeholders, and binds.
-     *
+
+    /**     *
      * Create a post in community
      */
-    public function createPost($userId, $communityId, $title, $content, $postType = 'discussion', $linkUrl = null, $imagePath = null) {
+    public function createPost($userId, $communityId, $title, $content, $postType = 'Normal', $linkUrl = null, $imagePath = null) {
     $this->db->query("
         INSERT INTO community_posts (
             user_id,
@@ -256,7 +253,20 @@ public function getCommunityPosts($communityId, $userId = null) {
     return false;
 }
 
-// CODECHECK GUIDE: Comments are saved as child rows in community_posts using parent_id.
+public function updatePostType($postId, $postType) {
+    $this->db->query("
+        UPDATE community_posts
+        SET post_type = :post_type
+        WHERE id = :post_id
+    ");
+
+    $this->db->bind(':post_type', $postType);
+    $this->db->bind(':post_id', $postId);
+
+    return $this->db->execute();
+}
+
+
 public function createComment($userId, $communityId, $parentId, $content) {
     $this->db->query("
         INSERT INTO community_posts (
@@ -278,7 +288,7 @@ public function createComment($userId, $communityId, $parentId, $content) {
             :content,
             NULL,
             NULL,
-            'discussion',
+            'normal',
             :parent_id,
             0,
             NOW(),
@@ -314,7 +324,6 @@ public function getCommentsForPost($postId) {
     return $this->db->resultSet();
 }
 
-// CODECHECK GUIDE: Reaction toggle flow uses this upsert, then the controller returns the new like count.
 public function addReaction($userId, $postId, $type) {
     $this->db->query("
         INSERT INTO community_post_reactions (user_id, post_id, reaction_type)
@@ -329,7 +338,6 @@ public function addReaction($userId, $postId, $type) {
     return $this->db->execute();
 }
 
-// CODECHECK GUIDE: Role-based post rules, such as "only moderators can announce", depend on this method.
 public function getMemberRole($userId, $communityId) {
     $this->db->query("
         SELECT role 
@@ -342,38 +350,7 @@ public function getMemberRole($userId, $communityId) {
 
     return $this->db->single();
 }
-    /**
-     * Create a new community (user-initiated)
-     */
-    public function createCommunity($userId, $name, $description, $about = '', $icon = '🌐', $category = null) {
-        $this->db->query("
-            INSERT INTO communities 
-            (name, description, privacy, status, created_by, created_at) 
-            VALUES (:name, :description, 'public', 'active', :created_by, NOW())
-        ");
-        
-        $this->db->bind(':name', $name);
-        $this->db->bind(':description', $description);
-        $this->db->bind(':created_by', $userId);
-        
-        if ($this->db->execute()) {
-            $communityId = $this->db->lastInsertId();
-            
-            // Auto-join creator as admin
-            $this->db->query("
-                INSERT INTO community_members (user_id, community_id, role, joined_at) 
-                VALUES (:user_id, :community_id, 'admin', NOW())
-            ");
-            
-            $this->db->bind(':user_id', $userId);
-            $this->db->bind(':community_id', $communityId);
-            $this->db->execute();
-            
-            return $communityId;
-        }
-        
-        return false;
-    }
+    
      /**
      * Get a single user reaction on a post (or null if none).
      */

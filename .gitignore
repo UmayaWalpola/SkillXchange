@@ -57,4 +57,5 @@ app/config/db.local.php
 .DS_Store
 public/uploads/
 app/config/mail.local.php
+check.php
 
