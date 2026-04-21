@@ -33,7 +33,7 @@
                 $projectType = 'commercial';
             }
 
-            // Project priority 
+            // Project priority (UI can be toggled via CSS; backend still supports it with a default)
             $priorityValue = $isEdit ? strtolower((string)($project->priority ?? 'medium')) : 'medium';
             if (!in_array($priorityValue, ['low', 'medium', 'high'], true)) {
                 $priorityValue = 'medium';
@@ -133,10 +133,10 @@
                         </select>
                     </div>
 
-                    <div class="small-card">
+                    <!--<div class="small-card">
                         <label>Max Members</label>
                         <input type="number" name="max_members" min="1" value="<?= $isEdit ? $project->max_members : 5 ?>" required>
-                    </div>   
+                    </div>   -->
 
                     <!-- Priority (hidden by default via CSS: .project-priority-field) -->
                     <div class="small-card project-priority-field">
